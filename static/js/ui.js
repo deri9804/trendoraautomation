@@ -119,17 +119,16 @@ function renderLoggedInUI(user, autoNavigateToDashboard = true) {
   if (dashEmail) dashEmail.innerText = user.email || '-';
   
   if (dashStatus) {
-    // REVISI PENTING: Selalu tampilkan teks murni dari Database (Google Sheets)
     dashStatus.innerText = user.status || 'Active (7-Day Free Trial)';
     
     if (user.isPaid) {
-      dashStatus.style.color = '#34d399'; // Warna hijau
+      dashStatus.style.color = '#34d399';
       if (btnDashUpgrade) btnDashUpgrade.style.display = 'none'; 
     } else if (user.apiKey && user.apiKey !== '-') {
-      dashStatus.style.color = '#f87171'; // Warna merah
+      dashStatus.style.color = '#f87171';
       if (btnDashUpgrade) btnDashUpgrade.style.display = 'inline-block';
     } else {
-      dashStatus.style.color = '#f59e0b'; // Warna kuning
+      dashStatus.style.color = '#f59e0b';
       if (btnDashUpgrade) btnDashUpgrade.style.display = 'inline-block';
     }
   }

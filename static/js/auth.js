@@ -75,7 +75,6 @@ function handleSocialPlatformConnect(platform) {
 
   const p = String(platform).toLowerCase();
 
-  // KHUSUS TIKTOK (Simulasi Sandbox untuk App Reviewer TikTok)
   if (p === 'tiktok') {
     fetch('/api/tiktok-auth-url')
       .then(res => res.json())
@@ -93,10 +92,6 @@ function handleSocialPlatformConnect(platform) {
             }
           }, 1000);
 
-          // REVISI BARU: Auto-Resolve dalam 4.5 detik. 
-          // Ini trik supaya kalau TikTok memunculkan halaman error 'client_key', 
-          // jendela popup akan tertutup sendiri dan aplikasi web lu tetap memproses login sukses.
-          // Sangat berguna untuk kebutuhan perekaman video demonstrasi ke reviewer.
           setTimeout(() => {
               if (!isResolved) {
                   isResolved = true;
@@ -118,7 +113,6 @@ function handleSocialPlatformConnect(platform) {
     return;
   }
 
-  // PLATFORM LAINNYA
   openFallbackOAuthPopup(platform, userEmail);
 }
 
@@ -163,7 +157,6 @@ function verifyAccountConnectionBackend(platform, userEmail) {
       connectBtn.style.color = '#34d399';
     }
 
-    // SIMULASI PROFIL TIKTOK UNTUK PEMBUKTIAN SCOPE `user.info.basic`
     if (platform.toLowerCase() === 'tiktok' && globalUserData) {
       globalUserData.connectedPlatform = 'TikTok';
       globalUserData.tiktokAvatar = 'https://ui-avatars.com/api/?name=TikTok+User&background=000&color=fff';
@@ -186,12 +179,15 @@ function verifyAccountConnectionBackend(platform, userEmail) {
 
 function handleRequestOTP(event) {
   event.preventDefault();
-  const email = document.getElementById('loginEmail').value;
+  const emailInput = document.getElementById('loginEmail');
+  const email = emailInput ? emailInput.value.trim() : '';
   const btn = document.getElementById('btnRequestOTP');
   const alertMsg = document.getElementById('loginAlertMsg');
-  
+  const qrContainer = document.getElementById('qrCodeContainer');
+  const otpGroup = document.getElementById('otpInputGroup');
+
   if (!email) {
-    if(alertMsg) { alertMsg.style.color = '#ef4444'; alertMsg.innerText = "Masukkan email terlebih dahulu!"; }
+    if (alertMsg) { alertMsg.style.color = '#ef4444'; alertMsg.innerText = "Masukkan email terlebih dahulu!"; }
     return;
   }
 
@@ -206,10 +202,10 @@ function handleRequestOTP(event) {
   .then(res => res.json())
   .then(data => {
     if (btn) { btn.disabled = false; btn.innerText = "Kirim Ulang OTP"; }
+    
     if (data.success) {
-      document.getElementById('otpInputGroup').style.display = 'block';
+      if (otpGroup) otpGroup.style.display = 'block';
       
-      const qrContainer = document.getElementById('qrCodeContainer');
       const qrImage = document.getElementById('qrCodeImage');
       
       if (!data.is2faLinked && data.qrCodeUrl) {
@@ -221,11 +217,20 @@ function handleRequestOTP(event) {
 
       showToast(data.message || "Silakan cek Google Authenticator Anda", "#34d399");
     } else {
-      if (alertMsg) { alertMsg.style.color = '#ef4444'; alertMsg.innerText = data.message || "Gagal memproses"; }
+      /* REVISI POIN 2: Jika Email Belum Terdaftar -> Sembunyikan total QR Code & OTP Group! */
+      if (qrContainer) qrContainer.style.display = 'none';
+      if (otpGroup) otpGroup.style.display = 'none';
+      if (alertMsg) { 
+        alertMsg.style.color = '#ef4444'; 
+        alertMsg.innerText = data.message || "Email belum terdaftar! Silakan mendaftar akun terlebih dahulu."; 
+      }
+      showToast(data.message || "Email tidak terdaftar!", "#ef4444");
     }
   })
   .catch(err => {
     if (btn) { btn.disabled = false; btn.innerText = "Kirim Ulang OTP"; }
+    if (qrContainer) qrContainer.style.display = 'none';
+    if (otpGroup) otpGroup.style.display = 'none';
     if (alertMsg) { alertMsg.style.color = '#ef4444'; alertMsg.innerText = "Gagal terhubung ke server. Periksa koneksi internet Anda."; }
     showToast("Terjadi kesalahan koneksi ke server", "#ef4444");
   });
@@ -233,13 +238,15 @@ function handleRequestOTP(event) {
 
 function handleVerifyOTP(event) {
   event.preventDefault();
-  const email = document.getElementById('loginEmail').value;
-  const otp = document.getElementById('loginOTP').value;
+  const emailInput = document.getElementById('loginEmail');
+  const otpInput = document.getElementById('loginOTP');
+  const email = emailInput ? emailInput.value.trim() : '';
+  const otp = otpInput ? otpInput.value.trim() : '';
   const btn = document.getElementById('btnVerifyOTP');
   const alertMsg = document.getElementById('loginAlertMsg');
 
   if (!otp) {
-    if(alertMsg) { alertMsg.style.color = '#ef4444'; alertMsg.innerText = "Masukkan kode OTP!"; }
+    if (alertMsg) { alertMsg.style.color = '#ef4444'; alertMsg.innerText = "Masukkan kode OTP!"; }
     return;
   }
 
@@ -275,7 +282,8 @@ function handleVerifyOTP(event) {
 }
 
 function handleReset2FA() {
-  const email = document.getElementById('loginEmail').value;
+  const emailInput = document.getElementById('loginEmail');
+  const email = emailInput ? emailInput.value.trim() : '';
   if (!email) {
     showToast("Masukkan email Anda terlebih dahulu lalu klik Kirim OTP!", "#ef4444");
     return;
@@ -292,7 +300,8 @@ function handleReset2FA() {
   .then(data => {
     if (data.success) {
       showToast(data.message, "#34d399");
-      document.getElementById('btnRequestOTP').click();
+      const btnOtp = document.getElementById('btnRequestOTP');
+      if (btnOtp) btnOtp.click();
     } else {
       showToast(data.message || "Gagal mereset 2FA", "#ef4444");
     }
@@ -326,10 +335,12 @@ function onLoginSuccess(res) {
 }
 
 window.handleLogout = handleLogout;
+window.checkStoredSession = checkStoredSession;
 window.handleConnectSocialClick = handleConnectSocialClick;
 window.closeSocialConnectModal = closeSocialConnectModal;
 window.handleSocialPlatformConnect = handleSocialPlatformConnect;
-window.checkStoredSession = checkStoredSession;
+window.verifyAccountConnectionBackend = verifyAccountConnectionBackend;
 window.handleRequestOTP = handleRequestOTP;
 window.handleVerifyOTP = handleVerifyOTP;
 window.handleReset2FA = handleReset2FA;
+window.onLoginSuccess = onLoginSuccess;

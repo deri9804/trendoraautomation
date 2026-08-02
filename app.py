@@ -94,9 +94,9 @@ def db_get_user(email):
                     return {
                         'secret': str(row.get('Secret', '')),
                         'is_linked': str(row.get('IsLinked', '')).lower() == 'true',
-                        'name': str(row.get('Nama', '')),
-                        'api_key': str(row.get('APIKey', '')),
-                        'status': str(row.get('Status', '')),
+                        'name': str(row.get('Nama', '') or row.get('Nama User', '')),
+                        'api_key': str(row.get('APIKey', '') or row.get('API Key (TREND_...)', '')),
+                        'status': str(row.get('Status', '') or row.get('Status Plan', '')),
                         'row_idx': idx + 2  
                     }
             return None
@@ -245,21 +245,12 @@ def request_otp():
     
     user_data = db_get_user(email)
     
+    # REVISI POIN 2: Jika email BELUM TERDAFTAR di database -> PENOLAKAN! QR Code TIDAK MUNCUL!
     if not user_data:
-        new_secret = generate_base32_secret()
-        default_name = email.split('@')[0].capitalize()
-        default_api_key = "TREND_" + uuid.uuid4().hex[:12].upper()
-        default_status = "Active (7-Day Free Trial)"
-        
-        db_save_user(email, new_secret, False, default_name, default_api_key, default_status)
-        
-        user_data = {
-            'secret': new_secret, 
-            'is_linked': False,
-            'name': default_name,
-            'api_key': default_api_key,
-            'status': default_status
-        }
+        return jsonify({
+            "success": False, 
+            "message": "Email belum terdaftar! Silakan mendaftar akun terlebih dahulu."
+        })
     
     secret = user_data['secret']
     is_linked = user_data['is_linked']
@@ -292,25 +283,21 @@ def verify_otp_route():
         return jsonify({"success": False, "message": "Email dan OTP wajib diisi!"})
         
     user_data = db_get_user(email)
-    
-    is_valid = False
-    if user_data and verify_totp(user_data['secret'], otp):
-        is_valid = True
+    if not user_data:
+        return jsonify({"success": False, "message": "Email belum terdaftar!"})
+        
+    is_valid = verify_totp(user_data['secret'], otp)
         
     if is_valid:
         name = user_data.get('name') or email.split('@')[0].capitalize()
-        api_key = user_data.get('api_key') or ("TREND_" + uuid.uuid4().hex[:12].upper())
+        api_key = user_data.get('api_key') or "-"
         status = user_data.get('status') or "Active (7-Day Free Trial)"
         
-        # PERBAIKAN: Hanya "save" kalau user sebelumnya belum is_linked
-        # Jika sudah pernah linked, kita TIDAK MENYIMPAN (menimpa) data GSheets lagi. 
-        # Ini mencegah status 'Admin' kembali menjadi 'Trial' saat login.
         if not user_data.get('is_linked'):
             db_save_user(email, user_data['secret'], True, name, api_key, status)
             
-        # Cek lebih cerdas apakah user berbayar atau admin
         status_lower = status.lower()
-        is_paid_user = any(word in status_lower for word in ["paid", "subscriber", "admin"])
+        is_paid_user = any(word in status_lower for word in ["paid", "subscriber", "admin", "lifetime"])
         
         return jsonify({
             "success": True, 
@@ -332,9 +319,12 @@ def reset_2fa_qr():
     if not email:
         return jsonify({"success": False, "message": "Email tidak ditemukan!"})
         
-    old_data = db_get_user(email) or {}
+    old_data = db_get_user(email)
+    if not old_data:
+        return jsonify({"success": False, "message": "Email belum terdaftar di database!"})
+
     name = old_data.get('name', email.split('@')[0].capitalize())
-    api_key = old_data.get('api_key', "TREND_" + uuid.uuid4().hex[:12].upper())
+    api_key = old_data.get('api_key', "-")
     status = old_data.get('status', "Active (7-Day Free Trial)")
     
     new_secret = generate_base32_secret()
@@ -363,7 +353,7 @@ def reset_2fa_qr():
 
 @app.route('/api/register-trial', methods=['POST'])
 def register_trial():
-    data = request.json
+    data = request.json or {}
     email = data.get('email', '').strip().lower()
     name = data.get('name', 'User').strip()
 
@@ -375,10 +365,11 @@ def register_trial():
         return jsonify({"success": False, "message": "Email ini sudah terdaftar! Silakan kembali dan gunakan menu Login."})
     
     new_secret = generate_base32_secret()
-    new_api_key = "TREND_" + uuid.uuid4().hex[:12].upper()
+    # REVISI POIN 3: Pendaftaran baru tidak langsung memproduksi API Key
+    default_api_key = "-"
     default_status = "Active (7-Day Free Trial - View Only)"
     
-    db_save_user(email, new_secret, False, name, new_api_key, default_status)
+    db_save_user(email, new_secret, False, name, default_api_key, default_status)
     
     return jsonify({
         "success": True,
@@ -386,15 +377,58 @@ def register_trial():
         "user": {
             "name": name,
             "email": email,
-            "apiKey": new_api_key, 
+            "apiKey": default_api_key, 
             "status": default_status,
             "isPaid": False
         }
     })
 
+# REVISI POIN 3: Route khusus untuk membuat API Key secara manual oleh User
+@app.route('/api/generate-api-key', methods=['POST'])
+def generate_api_key_route():
+    data = request.json or {}
+    email = data.get('email', '').strip().lower()
+    
+    if not email:
+        return jsonify({"success": False, "message": "Email wajib diisi!"})
+
+    user_data = db_get_user(email)
+    if not user_data:
+        return jsonify({"success": False, "message": "User tidak ditemukan di database!"})
+
+    status = user_data.get('status', '')
+    status_lower = status.lower()
+    is_paid_user = any(word in status_lower for word in ["paid", "subscriber", "admin", "lifetime"])
+
+    if not is_paid_user:
+        return jsonify({
+            "success": False,
+            "isPaid": False,
+            "message": "Akun Anda masih Free Trial! Silakan selesaikan pembayaran langganan untuk membuat API Key."
+        })
+
+    # Jika berbayar / Admin -> buatkan API Key baru
+    new_api_key = "TREND_" + uuid.uuid4().hex[:12].upper()
+    
+    db_save_user(
+        email=email,
+        secret=user_data['secret'],
+        is_linked=user_data['is_linked'],
+        name=user_data.get('name', ''),
+        api_key=new_api_key,
+        status=status
+    )
+
+    return jsonify({
+        "success": True,
+        "isPaid": True,
+        "apiKey": new_api_key,
+        "message": "🎉 API Key berhasil dibuat!"
+    })
+
 @app.route('/api/create-transaction', methods=['POST'])
 def create_transaction():
-    data = request.json
+    data = request.json or {}
     name = data.get('name', 'User')
     email = data.get('email', 'user@example.com').strip().lower()
     plan = data.get('plan', 'Creator Monthly')
@@ -450,8 +484,8 @@ def create_transaction():
             if response.status == 201:
                 if not existing_user:
                     new_secret = generate_base32_secret()
-                    new_api_key = "TREND_" + uuid.uuid4().hex[:12].upper()
-                    db_save_user(email, new_secret, False, name, new_api_key, "Pending Payment")
+                    default_api_key = "-"
+                    db_save_user(email, new_secret, False, name, default_api_key, "Pending Payment")
                 
                 return jsonify({
                     "success": True,

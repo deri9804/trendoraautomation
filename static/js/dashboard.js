@@ -82,6 +82,55 @@ function showLockedResultModal() {
   showToast("Masa Free Trial Berakhir! API Key Anda telah dibuat namun terkunci.", "#ef4444");
 }
 
+function handleGenerateApiKeyClick() {
+  if (!globalUserData || !globalUserData.email) {
+    showToast("Silakan login terlebih dahulu!", "#ef4444");
+    return;
+  }
+
+  const btn = document.getElementById('btnGenerateApiKey');
+  if (btn) {
+    btn.disabled = true;
+    btn.innerText = "Memproses Key...";
+  }
+
+  fetch('/api/generate-api-key', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email: globalUserData.email })
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerText = "🔑 Generate API Key";
+    }
+
+    if (data.success) {
+      globalUserData.apiKey = data.apiKey;
+      localStorage.setItem('automedia_user', JSON.stringify(globalUserData));
+      updateDashApiKeyDisplay(data.apiKey);
+      showToast(data.message || "🎉 API Key berhasil dibuat!", "#34d399");
+    } else {
+      if (data.isPaid === false) {
+        showToast(data.message || "Akun Anda masih Free Trial! Membuka menu pembayaran...", "#f59e0b");
+        setTimeout(() => {
+          openUpgradePayment();
+        }, 1200);
+      } else {
+        showToast(data.message || "Gagal membuat API Key", "#ef4444");
+      }
+    }
+  })
+  .catch(err => {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerText = "🔑 Generate API Key";
+    }
+    showToast("Server Error saat membuat API Key: " + err, "#ef4444");
+  });
+}
+
 function openUpgradePayment() {
   const storedToken = lastSnapToken || localStorage.getItem('automedia_snap_token');
   if (storedToken && window.snap) {
@@ -106,11 +155,14 @@ function finishOnboardingToDashboard() {
 function updateDashApiKeyDisplay(key) {
   const display = document.getElementById('dashApiKeyDisplay');
   const maskBtn = document.getElementById('btnToggleKeyMask');
+  const copyBtn = document.getElementById('btnCopyApiKey');
   if (!display) return;
   
   if (!key || key === '-') {
-    display.innerText = 'Belum Ada API Key (View-Only Trial)';
+    display.innerText = 'Belum Ada API Key (Klik Generate API Key)';
+    display.style.color = '#9ca3af';
     if (maskBtn) maskBtn.style.display = 'none';
+    if (copyBtn) copyBtn.style.display = 'none';
     return;
   }
 
@@ -121,11 +173,13 @@ function updateDashApiKeyDisplay(key) {
       maskBtn.style.display = 'inline-block';
       maskBtn.innerText = '🔒 Buka Key';
     }
+    if (copyBtn) copyBtn.style.display = 'none';
     return;
   }
 
   display.style.color = '#34d399';
   if (maskBtn) maskBtn.style.display = 'inline-block';
+  if (copyBtn) copyBtn.style.display = 'inline-block';
 
   if (isKeyMasked) {
     display.innerText = key.substring(0, 8) + '••••••••••••••••';
@@ -269,7 +323,7 @@ function runTikTokSandbox(mode) {
     body: JSON.stringify({
       platform: "tiktok",
       post_mode: mode,
-      is_sandbox: true, // FLAG UNTUK MEMASTIKAN BACKEND MENGGUNAKAN SIMULASI
+      is_sandbox: true,
       status: mode === 'draft' ? "DRAFT_UPLOADED" : "PUBLISHED",
       details: { caption: `[Auto Test] TikTok Sandbox - ${mode.toUpperCase()}`, media_url: "https://domain.com/sample_video.mp4" }
     })
@@ -331,7 +385,7 @@ function runWebhookTest(context) {
     body: JSON.stringify({
       platform: "instagram",
       status: "PUBLISHED",
-      is_sandbox: isSandboxMode, // KIRIM STATUS SANDBOX KE BACKEND
+      is_sandbox: isSandboxMode,
       details: { caption: "Webhook Auto-Test from Web UI", media_url: videoUrl }
     })
   })
@@ -381,12 +435,9 @@ function handleSimulationError(err, btn, consoleBox) {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-   // Cek apakah ada data profile mock TikTok
    setTimeout(() => {
      if (globalUserData && globalUserData.tiktokAvatar) {
          const dashAvatar = document.getElementById('dashAvatar');
-         // REVISI: Logika penimpaan dashName sengaja DIHAPUS agar nama asli user tetap tampil
-         
          if (dashAvatar) {
             dashAvatar.src = globalUserData.tiktokAvatar;
             dashAvatar.style.display = 'block';
@@ -398,6 +449,7 @@ document.addEventListener('DOMContentLoaded', () => {
 window.toggleSandboxMode = toggleSandboxMode;
 window.handleSurveySelect = handleSurveySelect;
 window.handleUnlockApiClick = handleUnlockApiClick;
+window.handleGenerateApiKeyClick = handleGenerateApiKeyClick;
 window.openUpgradePayment = openUpgradePayment;
 window.finishOnboardingToDashboard = finishOnboardingToDashboard;
 window.updateDashApiKeyDisplay = updateDashApiKeyDisplay;
@@ -406,5 +458,6 @@ window.copyDashApiKey = copyDashApiKey;
 window.loadWebhookUrl = loadWebhookUrl;
 window.copyWebhookUrl = copyWebhookUrl;
 window.loadUserPostLogs = loadUserPostLogs;
+window.renderLogsTable = renderLogsTable;
 window.runWebhookTest = runWebhookTest;
 window.runTikTokSandbox = runTikTokSandbox;

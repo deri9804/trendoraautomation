@@ -10,28 +10,28 @@
   {% include 'navbar.html' %}
 
   <!-- PAGE WRAPPER UNTUK DASHBOARD -->
-  <div style="padding: 120px 8% 60px 8%; max-width: 1400px; margin: 0 auto; min-height: 85vh;">
+  <div style="padding: 120px 5% 60px 5%; max-width: 1400px; margin: 0 auto; min-height: 85vh;">
     
     <!-- HEADER DASHBOARD: PROFIL & API KEY -->
     <div class="dashboard-hero-card" style="margin-bottom: 30px;">
       
       <!-- BAGIAN KIRI: INFO PROFIL -->
       <div class="dash-welcome">
-        <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 12px;">
-          <img id="dashAvatar" src="" style="width: 56px; height: 56px; border-radius: 50%; border: 2px solid #ec4899; display: none;" alt="User Avatar" />
+        <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 12px; flex-wrap: wrap;">
+          <img id="dashAvatar" src="" style="width: 52px; height: 52px; border-radius: 50%; border: 2px solid #ec4899; display: none;" alt="User Avatar" />
           <h2 style="margin-bottom: 0;">Halo, <span id="dashName">User</span>! 👋</h2>
         </div>
 
-        <p style="color: #9ca3af; font-size: 14px; margin-bottom: 16px;">
+        <p style="color: #9ca3af; font-size: 14px; margin-bottom: 16px; word-break: break-all;">
           Email: <span id="dashUserEmail">-</span><br>
           Status: <strong id="dashAccountStatus" style="color: #f59e0b;">Active (7-Day Free Trial)</strong>
         </p>
         <button class="btn-pink" onclick="handleConnectSocialClick()">🔗 Hubungkan Sosial Media</button>
 
-        <!-- TAMBAHAN: TOMBOL TOGGLE SANDBOX MODE -->
+        <!-- TOMBOL TOGGLE SANDBOX MODE -->
         <div style="margin-top: 24px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.1);">
           <h4 style="font-size: 13px; color: #9ca3af; margin-bottom: 12px;">🛠️ Pengaturan Developer</h4>
-          <button id="btnSandboxToggle" onclick="toggleSandboxMode()" class="btn-secondary" style="border-color: rgba(255,255,255,0.15); color: #9ca3af; font-size: 12px; padding: 8px 16px; display: flex; align-items: center; gap: 8px;">
+          <button id="btnSandboxToggle" onclick="toggleSandboxMode()" class="btn-secondary" style="border-color: rgba(255,255,255,0.15); color: #9ca3af; font-size: 12px; padding: 8px 16px; display: flex; align-items: center; gap: 8px; width: 100%; justify-content: center;">
             <span id="sandboxIcon">📴</span> Mode Sandbox (App Review & Testing)
           </button>
         </div>
@@ -40,28 +40,33 @@
       <!-- BAGIAN KANAN: API KEY & WEBHOOK URL -->
       <div class="dash-key-card">
         <h3 style="font-size: 15px; color: #9ca3af; margin-bottom: 12px;">🔑 API Key Anda</h3>
-        <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 12px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center;">
-          <span id="dashApiKeyDisplay" style="font-family: monospace; font-size: 14px; color: #34d399;">Memuat...</span>
-          <button id="btnToggleKeyMask" onclick="toggleApiKeyMask()" style="background: transparent; border: none; color: #60a5fa; cursor: pointer; font-size: 12px; font-weight: 600;">👁️ Show</button>
+        
+        <!-- Key display container with responsive flex wrapping -->
+        <div class="key-display-box" style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 12px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+          <span id="dashApiKeyDisplay" style="font-family: monospace; font-size: 13px; color: #34d399; word-break: break-all;">Belum Ada API Key</span>
+          <button id="btnToggleKeyMask" onclick="toggleApiKeyMask()" style="background: transparent; border: none; color: #60a5fa; cursor: pointer; font-size: 12px; font-weight: 600; display: none;">👁️ Show</button>
         </div>
-        <div style="display: flex; gap: 8px;">
-          <button class="btn-secondary" style="font-size: 12px; padding: 8px 16px;" onclick="copyDashApiKey()">📋 Copy Key</button>
-          <button id="btnDashUpgrade" class="btn-secondary" style="font-size: 12px; padding: 8px 16px; border-color: #ec4899; color: #ec4899;" onclick="openUpgradePayment()">⭐ Upgrade</button>
+
+        <!-- REVISI PERMINTAAN 3: Tombol Generate API Key Manual -->
+        <div class="dash-actions-row" style="display: flex; gap: 8px; flex-wrap: wrap;">
+          <button id="btnGenerateApiKey" class="btn-pink" style="font-size: 12px; padding: 8px 16px; flex: 1; min-width: 140px;" onclick="handleGenerateApiKeyClick()">🔑 Generate API Key</button>
+          <button id="btnCopyApiKey" class="btn-secondary" style="font-size: 12px; padding: 8px 16px; display: none;" onclick="copyDashApiKey()">📋 Copy Key</button>
+          <button id="btnDashUpgrade" class="btn-secondary" style="font-size: 12px; padding: 8px 16px; border-color: #ec4899; color: #ec4899; display: none;" onclick="openUpgradePayment()">⭐ Upgrade</button>
         </div>
         
         <h3 style="font-size: 15px; color: #9ca3af; margin-top: 20px; margin-bottom: 12px;">🔗 Webhook Endpoint (n8n Target)</h3>
-        <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 12px; margin-bottom: 12px; overflow-x: auto;">
-          <span id="dashWebhookUrlDisplay" style="font-family: monospace; font-size: 12px; color: #f472b6; white-space: nowrap;">Memuat Webhook URL...</span>
+        <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 12px; margin-bottom: 12px;">
+          <span id="dashWebhookUrlDisplay" style="font-family: monospace; font-size: 11px; color: #f472b6; word-break: break-all; white-space: normal;">Memuat Webhook URL...</span>
         </div>
-        <button class="btn-secondary" style="font-size: 12px; padding: 8px 16px;" onclick="copyWebhookUrl()">📋 Copy URL</button>
+        <button class="btn-secondary" style="font-size: 12px; padding: 8px 16px; width: 100%;" onclick="copyWebhookUrl()">📋 Copy URL</button>
       </div>
     </div>
 
-    <!-- PANEL SIMULASI TIKTOK APP REVIEW (DISEMBUNYIKAN SECARA DEFAULT, MUNCUL SAAT SANDBOX ON) -->
+    <!-- PANEL SIMULASI TIKTOK SANDBOX -->
     <div id="tiktokSandboxPanel" class="dashboard-hero-card" style="display: none; margin-bottom: 30px; border-color: #38bdf8; background: rgba(56, 189, 248, 0.05);">
-      <h3 style="margin-bottom: 12px; font-size: 18px; color: #fff;">🎵 TikTok Sandbox Simulator (Khusus App Review)</h3>
+      <h3 style="margin-bottom: 12px; font-size: 18px; color: #fff;">🎵 TikTok Sandbox Simulator (App Review)</h3>
       <p style="color: #9ca3af; font-size: 13px; margin-bottom: 16px;">
-        Panel ini disediakan khusus untuk mendemonstrasikan fungsi <strong>video.upload</strong> (Upload sebagai Draft) dan <strong>video.publish</strong> (Posting Langsung) kepada tim reviewer TikTok.
+        Panel khusus untuk pengujian fungsi <strong>video.upload</strong> (Draft) & <strong>video.publish</strong> (Posting Direct).
       </p>
       
       <div style="display: flex; gap: 12px; flex-wrap: wrap;">
@@ -73,20 +78,20 @@
       </div>
     </div>
 
-    <!-- LOG AKTIVITAS UPLOAD VIDEO TABLE -->
-    <div class="dashboard-hero-card" style="display: block;">
+    <!-- LOG AKTIVITAS TABLE WITH RESPONSIVE SCROLLING -->
+    <div class="dashboard-hero-card" style="display: block; overflow-x: auto;">
       <h3 style="margin-bottom: 16px; font-size: 20px; color: #fff;">📊 Riwayat Aktivitas Upload Video</h3>
       <p style="color: #9ca3af; font-size: 13px; margin-bottom: 20px;">Pantau log pengiriman video dari n8n ke sosial media secara real-time.</p>
       
-      <div style="overflow-x: auto; background: rgba(0, 0, 0, 0.2); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 12px; padding: 10px;">
-        <table style="width: 100%; border-collapse: collapse; text-align: left;">
+      <div style="overflow-x: auto; background: rgba(0, 0, 0, 0.2); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 12px; padding: 10px; width: 100%;">
+        <table style="width: 100%; min-width: 600px; border-collapse: collapse; text-align: left;">
           <thead>
             <tr style="border-bottom: 1px solid rgba(255,255,255,0.1); color: #9ca3af;">
-              <th style="padding: 16px 12px; font-size: 13px; font-weight: 600;">Waktu</th>
-              <th style="padding: 16px 12px; font-size: 13px; font-weight: 600;">Log ID</th>
-              <th style="padding: 16px 12px; font-size: 13px; font-weight: 600;">Platform Target</th>
-              <th style="padding: 16px 12px; font-size: 13px; font-weight: 600;">Status Publikasi</th>
-              <th style="padding: 16px 12px; font-size: 13px; font-weight: 600;">Detail Video / Caption</th>
+              <th style="padding: 12px; font-size: 12px; font-weight: 600;">Waktu</th>
+              <th style="padding: 12px; font-size: 12px; font-weight: 600;">Log ID</th>
+              <th style="padding: 12px; font-size: 12px; font-weight: 600;">Platform</th>
+              <th style="padding: 12px; font-size: 12px; font-weight: 600;">Status</th>
+              <th style="padding: 12px; font-size: 12px; font-weight: 600;">Detail Video / Caption</th>
             </tr>
           </thead>
           <tbody id="dashLogsTableBody">
@@ -100,7 +105,6 @@
 
   </div>
 
-  <!-- INCLUDE MODAL (Legal & Sosial) -->
   {% include 'apiKeyModal.html' %}
 
   <!-- SCRIPTS -->
