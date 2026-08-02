@@ -9,7 +9,7 @@
 <body>
   {% include 'navbar.html' %}
 
-  <!-- PAGE WRAPPER UNTUK LOGIN (REVISI: Mengubah align-items agar tidak terpotong saat scroll) -->
+  <!-- PAGE WRAPPER UNTUK LOGIN -->
   <div style="display: flex; justify-content: center; align-items: flex-start; min-height: 100vh; padding: 120px 20px 60px;">
     
     <div class="modal-card" id="loginModalCard" style="max-height: none; margin-bottom: 40px;">
@@ -54,8 +54,9 @@
         </div>
       </form>
 
+      <!-- REVISI: Link ToS dan Privacy Policy diubah agar membuka halaman baru (Tab Baru) -->
       <p class="terms-caption" style="margin-top: 16px; text-align: center;">
-        Dengan masuk, Anda menyetujui <a style="cursor: pointer; color: #ec4899; text-decoration: underline;" onclick="openLegalModal('tos')">Terms of Service</a> dan <a style="cursor: pointer; color: #ec4899; text-decoration: underline;" onclick="openLegalModal('privacy')">Privacy Policy</a> TRENDORA.
+        Dengan masuk, Anda menyetujui <a href="/tos" target="_blank" style="cursor: pointer; color: #ec4899; text-decoration: underline;">Terms of Service</a> dan <a href="/privacy" target="_blank" style="cursor: pointer; color: #ec4899; text-decoration: underline;">Privacy Policy</a> TRENDORA.
       </p>
       
       <div id="loginAlertMsg" class="modal-alert-msg"></div>

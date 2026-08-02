@@ -237,6 +237,16 @@ def checkout_page():
 def dashboard_page():
     return render_template('dashboard.html')
 
+# ROUTE BARU: Halaman mandiri untuk Terms of Service (Verifikasi TikTok)
+@app.route('/tos')
+def tos_page():
+    return render_template('tos.html')
+
+# ROUTE BARU: Halaman mandiri untuk Privacy Policy (Verifikasi TikTok)
+@app.route('/privacy')
+def privacy_page():
+    return render_template('privacy.html')
+
 @app.route('/api/request-otp', methods=['POST'])
 def request_otp():
     email = request.json.get('email', '').strip().lower()
@@ -245,7 +255,7 @@ def request_otp():
     
     user_data = db_get_user(email)
     
-    # REVISI POIN 2: Jika email BELUM TERDAFTAR di database -> PENOLAKAN! QR Code TIDAK MUNCUL!
+    # Mencegah email belum terdaftar request OTP
     if not user_data:
         return jsonify({
             "success": False, 
@@ -365,7 +375,6 @@ def register_trial():
         return jsonify({"success": False, "message": "Email ini sudah terdaftar! Silakan kembali dan gunakan menu Login."})
     
     new_secret = generate_base32_secret()
-    # REVISI POIN 3: Pendaftaran baru tidak langsung memproduksi API Key
     default_api_key = "-"
     default_status = "Active (7-Day Free Trial - View Only)"
     
@@ -383,7 +392,6 @@ def register_trial():
         }
     })
 
-# REVISI POIN 3: Route khusus untuk membuat API Key secara manual oleh User
 @app.route('/api/generate-api-key', methods=['POST'])
 def generate_api_key_route():
     data = request.json or {}
@@ -407,7 +415,6 @@ def generate_api_key_route():
             "message": "Akun Anda masih Free Trial! Silakan selesaikan pembayaran langganan untuk membuat API Key."
         })
 
-    # Jika berbayar / Admin -> buatkan API Key baru
     new_api_key = "TREND_" + uuid.uuid4().hex[:12].upper()
     
     db_save_user(
@@ -519,7 +526,6 @@ def check_payment():
 @app.route('/api/tiktok-auth-url', methods=['GET'])
 def get_tiktok_auth_url():
     """Route untuk menggenerate URL Login TikTok asli (Mode Sandbox)."""
-    # INI YANG TADI ERROR TYPO, SEKARANG UDAH GW BENERIN:
     redirect_uri = "https://trendoraautomation.my.id/auth/tiktok/callback"
     state = uuid.uuid4().hex
     
