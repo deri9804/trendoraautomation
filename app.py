@@ -235,16 +235,17 @@ def checkout_page():
 def dashboard_page():
     return render_template('dashboard.html')
 
-# ROUTE BARU: Halaman mandiri untuk Terms of Service (Verifikasi TikTok)
 @app.route('/tos')
 def tos_page():
     return render_template('tos.html')
 
-# ROUTE BARU: Halaman mandiri untuk Privacy Policy (Verifikasi TikTok)
 @app.route('/privacy')
 def privacy_page():
     return render_template('privacy.html')
 
+# ==========================================
+# AUTHENTICATION & API KEY ROUTES
+# ==========================================
 @app.route('/api/request-otp', methods=['POST'])
 def request_otp():
     email = request.json.get('email', '').strip().lower()
@@ -431,6 +432,71 @@ def generate_api_key_route():
         "message": "🎉 API Key berhasil dibuat!"
     })
 
+# ==========================================
+# RESTORED SOCIAL AUTH ROUTES
+# ==========================================
+@app.route('/api/tiktok-auth-url', methods=['GET'])
+def get_tiktok_auth_url():
+    """Route untuk menggenerate URL Login TikTok asli."""
+    redirect_uri = "https://trendoraautomation.my.id/auth/tiktok/callback"
+    state = uuid.uuid4().hex
+    
+    params = {
+        "client_key": TIKTOK_CLIENT_KEY,
+        "response_type": "code",
+        "scope": "user.info.basic,video.upload,video.publish",
+        "redirect_uri": redirect_uri,
+        "state": state
+    }
+    
+    base_url = "https://www.tiktok.com/v2/auth/authorize/"
+    full_url = f"{base_url}?{urllib.parse.urlencode(params)}"
+    
+    return jsonify({"success": True, "url": full_url})
+
+@app.route('/auth/tiktok/callback', methods=['GET'])
+def tiktok_callback():
+    """Route ini akan dipanggil oleh TikTok setelah user berhasil login."""
+    code = request.args.get('code')
+    state = request.args.get('state')
+    
+    # KODE INI AKAN MENUTUP WINDOW POPUP DAN MEMBERITAHU DASHBOARD KALAU SUKSES
+    html_response = """
+    <html>
+    <head><title>TikTok Authorization Successful</title></head>
+    <body style="background-color: #0d0a1a; color: #fff; font-family: sans-serif; text-align: center; padding-top: 50px;">
+        <h2 style="color: #34d399;">TikTok Authorization Successful!</h2>
+        <p style="color: #9ca3af;">Please wait, closing this window...</p>
+        <script>
+            // Ngirim sinyal success ke window utama (dashboard lu)
+            if (window.opener) {
+                window.opener.postMessage({type: 'OAUTH_SUCCESS', platform: 'TikTok'}, '*');
+                window.close();
+            }
+        </script>
+    </body>
+    </html>
+    """
+    return html_response
+
+@app.route('/api/social-auth/<platform>', methods=['GET'])
+def social_auth(platform):
+    """Route untuk menggenerate URL OAuth masing-masing platform selain TikTok."""
+    platform = platform.lower()
+    
+    # Dummy logic untuk mengembalikan URL OAuth masing-masing platform
+    auth_urls = {
+        "facebook": "https://www.facebook.com/v18.0/dialog/oauth?client_id=FB_ID&redirect_uri=...",
+        "instagram": "https://api.instagram.com/oauth/authorize?...",
+        "twitter": "https://twitter.com/i/oauth2/authorize?...",
+        "linkedin": "https://www.linkedin.com/oauth/v2/authorization?..."
+    }
+    
+    return jsonify({"success": True, "url": auth_urls.get(platform, "https://google.com")})
+
+# ==========================================
+# TRANSACTIONS LOGIC (MIDTRANS)
+# ==========================================
 @app.route('/api/create-transaction', methods=['POST'])
 def create_transaction():
     data = request.json or {}
@@ -520,25 +586,6 @@ def create_transaction():
 def check_payment():
     email = request.json.get('email')
     return jsonify({"success": True, "isPaid": False})
-
-@app.route('/api/tiktok-auth-url', methods=['GET'])
-def get_tiktok_auth_url():
-    """Route untuk menggenerate URL Login TikTok asli (Mode Sandbox)."""
-    redirect_uri = "https://trendoraautomation.my.id/auth/tiktok/callback"
-    state = uuid.uuid4().hex
-    
-    params = {
-        "client_key": TIKTOK_CLIENT_KEY,
-        "response_type": "code",
-        "scope": "user.info.basic,video.upload,video.publish",
-        "redirect_uri": redirect_uri,
-        "state": state
-    }
-    
-    base_url = "https://www.tiktok.com/v2/auth/authorize/"
-    full_url = f"{base_url}?{urllib.parse.urlencode(params)}"
-    
-    return jsonify({"success": True, "url": full_url})
 
 # ==========================================
 # WEBHOOK LISTENER DARI N8N & BACA LOG
