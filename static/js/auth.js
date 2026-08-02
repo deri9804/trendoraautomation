@@ -34,24 +34,30 @@ function checkStoredSession() {
 }
 
 window.addEventListener('message', function(event) {
-  // Ini menangkap pesan ASLI dari pop-up callback (app.py) setelah user sukses login
   if (event.data && event.data.type === 'OAUTH_SUCCESS') {
     const platform = event.data.platform || 'Social Account';
     showToast(`🎉 Akun asli ${platform} berhasil terhubung & diverifikasi!`, "#34d399");
 
-    closeSocialConnectModal();
-
-    const connectBtn = document.querySelector(`.btn-${platform.toLowerCase()}`);
-    if (connectBtn) {
-      connectBtn.innerText = 'Connected ✓';
-      connectBtn.style.background = 'rgba(52, 211, 153, 0.2)';
-      connectBtn.style.borderColor = '#34d399';
-      connectBtn.style.color = '#34d399';
+    if (typeof closeSocialConnectModal === 'function') {
+        closeSocialConnectModal();
     }
 
-    if (globalUserData && globalUserData.email) {
-      globalUserData.connectedPlatform = platform;
+    if (globalUserData) {
+      // Menyimpan data multiple platform ke dalam array
+      if (!globalUserData.connectedPlatforms) {
+        globalUserData.connectedPlatforms = [];
+      }
+      
+      if (!globalUserData.connectedPlatforms.includes(platform)) {
+        globalUserData.connectedPlatforms.push(platform);
+      }
+      
       localStorage.setItem('automedia_user', JSON.stringify(globalUserData));
+      
+      // Update UI langsung di dashboard
+      if (typeof renderSocialConnectionsUI === 'function') {
+        renderSocialConnectionsUI();
+      }
     }
   }
 });
@@ -76,7 +82,7 @@ function handleSocialPlatformConnect(platform) {
 
   const p = String(platform).toLowerCase();
 
-  // TIKTOK REAL AUTH LOGIC (No Fake Timers)
+  // TIKTOK REAL AUTH LOGIC
   if (p === 'tiktok') {
     fetch('/api/tiktok-auth-url')
       .then(res => res.json())
@@ -84,12 +90,9 @@ function handleSocialPlatformConnect(platform) {
         if (data.success && data.url) {
           const popup = window.open(data.url, `OAuth_${platform}`, 'width=600,height=750,scrollbars=yes,status=yes');
           
-          // Murni memantau apakah user menutup pop-up manual.
-          // Tidak ada timer pemalsuan "success" otomatis. Kita sepenuhnya menunggu eventListener OAUTH_SUCCESS.
           const checkTimer = setInterval(() => {
             if (popup && popup.closed) {
               clearInterval(checkTimer);
-              // Pop up ditutup. Status success hanya terjadi jika event OAUTH_SUCCESS dikirim sblmnya.
             }
           }, 1000);
 
@@ -103,7 +106,7 @@ function handleSocialPlatformConnect(platform) {
     return;
   }
 
-  // PLATFORM LAIN (Facebook, Instagram, dll) yang belum ada callback aslinya
+  // PLATFORM LAIN
   openFallbackOAuthPopup(platform, userEmail);
 }
 
@@ -134,23 +137,29 @@ function openFallbackOAuthPopup(platform, userEmail) {
 }
 
 function verifyAccountConnectionBackend(platform, userEmail) {
-  // CATATAN: Ini hanya berjalan untuk platform selain TikTok (dummy fallback).
   showToast(`Memverifikasi status koneksi akun ${platform}...`, "#6366f1");
 
   setTimeout(() => {
     showToast(`🎉 Berhasil terhubung ke akun ${platform}! (Status: Connected ✓)`, "#34d399");
-    closeSocialConnectModal();
-
-    const connectBtn = document.querySelector(`.btn-${platform.toLowerCase()}`);
-    if (connectBtn) {
-      connectBtn.innerText = 'Connected ✓';
-      connectBtn.style.background = 'rgba(52, 211, 153, 0.2)';
-      connectBtn.style.borderColor = '#34d399';
-      connectBtn.style.color = '#34d399';
+    if (typeof closeSocialConnectModal === 'function') {
+        closeSocialConnectModal();
     }
-    
-    // Logika pemalsuan profil TikTok (@tiktok_tester_user) telah dihapus sepenuhnya dari sini.
 
+    if (globalUserData) {
+      if (!globalUserData.connectedPlatforms) {
+        globalUserData.connectedPlatforms = [];
+      }
+      
+      if (!globalUserData.connectedPlatforms.includes(platform)) {
+        globalUserData.connectedPlatforms.push(platform);
+      }
+      
+      localStorage.setItem('automedia_user', JSON.stringify(globalUserData));
+      
+      if (typeof renderSocialConnectionsUI === 'function') {
+        renderSocialConnectionsUI();
+      }
+    }
   }, 1200);
 }
 

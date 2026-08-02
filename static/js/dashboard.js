@@ -276,95 +276,61 @@ function renderLogsTable(res) {
   tbody.innerHTML = html;
 }
 
-function runWebhookTest(context) {
-  const isDoc = context === 'doc';
-  const inputId = isDoc ? 'videoUrlInputDoc' : 'videoUrlInputHero';
-  const btnId = isDoc ? 'btnTestWebhookDoc' : 'btnTestWebhookHero';
-  const consoleId = isDoc ? 'terminalConsoleDoc' : 'terminalConsoleHero';
+const SUPPORTED_PLATFORMS = [
+  { id: 'TikTok', icon: '🎵', name: 'TikTok Video', bg: '#000000' },
+  { id: 'Instagram', icon: '📷', name: 'Instagram Reels', bg: '#d62976' },
+  { id: 'YouTube', icon: '▶️', name: 'YouTube Shorts', bg: '#ff0000' },
+  { id: 'Facebook', icon: 'f', name: 'Facebook Page', bg: '#1877f2' },
+  { id: 'Twitter', icon: '𝕏', name: 'X / Twitter', bg: '#000000' },
+  { id: 'LinkedIn', icon: 'in', name: 'LinkedIn', bg: '#2867b2' },
+  { id: 'Threads', icon: '@', name: 'Threads', bg: '#000000' },
+  { id: 'Pinterest', icon: '📌', name: 'Pinterest', bg: '#e60023' },
+  { id: 'Bluesky', icon: '🦋', name: 'Bluesky', bg: '#1185fe' }
+];
 
-  const inputEl = document.getElementById(inputId);
-  const videoUrl = inputEl ? inputEl.value : '';
-  const btn = document.getElementById(btnId);
-  const consoleBox = document.getElementById(consoleId);
+function renderSocialConnectionsUI() {
+  const container = document.getElementById('socialConnectionsList');
+  if (!container) return;
 
-  if (!videoUrl) {
-    showToast('Masukkan URL Video terlebih dahulu!', '#ef4444');
-    return;
-  }
-
-  if (btn) {
-    btn.disabled = true;
-    btn.innerText = "Processing...";
-  }
-  if (consoleBox) {
-    consoleBox.innerHTML = '<p class="cmd">> POST /api/n8n-webhook</p><p class="param">> Connecting to Backend Webhook Listener...</p>';
-  }
-
-  const apiKey = globalUserData ? globalUserData.apiKey : 'TREND_TESTER';
-
-  fetch('/api/n8n-webhook', {
-    method: 'POST',
-    headers: { 
-        'Content-Type': 'application/json',
-        'X-API-Key': apiKey 
-    },
-    body: JSON.stringify({
-      platform: "instagram",
-      status: "PUBLISHED",
-      details: { caption: "Webhook Auto-Test from Web UI", media_url: videoUrl }
-    })
-  })
-  .then(res => res.json())
-  .then(data => {
-    renderSimulationResult(data, btn, consoleBox);
-    if (data.success) {
-      setTimeout(loadUserPostLogs, 1500); 
-    }
-  })
-  .catch(err => {
-    handleSimulationError(err, btn, consoleBox);
-  });
-}
-
-function renderSimulationResult(res, btn, consoleBox) {
-  if (btn) {
-    btn.disabled = false;
-    btn.innerText = "Test Webhook ⚡";
-  }
-
-  if (!res.success) {
-    if (consoleBox) consoleBox.innerHTML += '<p style="color: #ef4444;">✕ Error: ' + res.message + '</p>';
-    return;
-  }
-
+  const connected = (globalUserData && globalUserData.connectedPlatforms) ? globalUserData.connectedPlatforms : [];
   let html = '';
-  html += '<p><span class="cmd">> POST /api/n8n-webhook</span></p>';
-  html += '<p class="success">✓ Payload successfully processed by Web Backend</p>';
-  html += '<p><span class="param">Response JSON:</span></p>';
-  html += '<pre style="color: #34d399; font-size: 11px;">' + JSON.stringify(res, null, 2) + '</pre>';
 
-  if (consoleBox) consoleBox.innerHTML = html;
+  SUPPORTED_PLATFORMS.forEach(plat => {
+    const isConnected = connected.includes(plat.id);
+    
+    if (isConnected) {
+      html += `
+        <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(52, 211, 153, 0.4); border-radius: 12px; padding: 16px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <div style="width: 32px; height: 32px; border-radius: 8px; background: ${plat.bg}; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 800;">
+              ${plat.icon}
+            </div>
+            <span style="font-size: 14px; font-weight: 600; color: #fff;">${plat.name}</span>
+          </div>
+          <button disabled style="background: rgba(52, 211, 153, 0.15); border: 1px solid #34d399; color: #34d399; padding: 8px 14px; border-radius: 8px; font-size: 11px; font-weight: 700; cursor: not-allowed;">
+            Connected ✓
+          </button>
+        </div>
+      `;
+    } else {
+      html += `
+        <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 16px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <div style="width: 32px; height: 32px; border-radius: 8px; background: #1e293b; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 800; border: 1px solid rgba(255,255,255,0.1);">
+              ${plat.icon}
+            </div>
+            <span style="font-size: 14px; font-weight: 600; color: #cbd5e1;">${plat.name}</span>
+          </div>
+          <button onclick="handleSocialPlatformConnect('${plat.id}')" style="background: #1e293b; border: 1px solid rgba(255,255,255,0.2); color: #fff; padding: 8px 14px; border-radius: 8px; font-size: 11px; font-weight: 700; cursor: pointer; transition: all 0.2s ease;" onmouseover="this.style.background='#334155'" onmouseout="this.style.background='#1e293b'">
+            Hubungkan 🔗
+          </button>
+        </div>
+      `;
+    }
+  });
+
+  container.innerHTML = html;
 }
-
-function handleSimulationError(err, btn, consoleBox) {
-  if (btn) {
-    btn.disabled = false;
-    btn.innerText = "Test Webhook ⚡";
-  }
-  if (consoleBox) consoleBox.innerHTML += '<p style="color: #ef4444;">✕ Server Error: ' + err + '</p>';
-}
-
-document.addEventListener('DOMContentLoaded', () => {
-   setTimeout(() => {
-     if (globalUserData && globalUserData.tiktokAvatar) {
-         const dashAvatar = document.getElementById('dashAvatar');
-         if (dashAvatar) {
-            dashAvatar.src = globalUserData.tiktokAvatar;
-            dashAvatar.style.display = 'block';
-         }
-     }
-   }, 500);
-});
 
 window.handleSurveySelect = handleSurveySelect;
 window.handleUnlockApiClick = handleUnlockApiClick;
@@ -378,4 +344,4 @@ window.loadWebhookUrl = loadWebhookUrl;
 window.copyWebhookUrl = copyWebhookUrl;
 window.loadUserPostLogs = loadUserPostLogs;
 window.renderLogsTable = renderLogsTable;
-window.runWebhookTest = runWebhookTest;
+window.renderSocialConnectionsUI = renderSocialConnectionsUI;

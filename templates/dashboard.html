@@ -26,20 +26,17 @@
           Email: <span id="dashUserEmail">-</span><br>
           Status: <strong id="dashAccountStatus" style="color: #f59e0b;">Active (7-Day Free Trial)</strong>
         </p>
-        <button class="btn-pink" onclick="handleConnectSocialClick()">🔗 Hubungkan Sosial Media</button>
       </div>
       
       <!-- BAGIAN KANAN: API KEY & WEBHOOK URL -->
       <div class="dash-key-card">
         <h3 style="font-size: 15px; color: #9ca3af; margin-bottom: 12px;">🔑 API Key Anda</h3>
         
-        <!-- Key display container with responsive flex wrapping -->
         <div class="key-display-box" style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 12px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
           <span id="dashApiKeyDisplay" style="font-family: monospace; font-size: 13px; color: #34d399; word-break: break-all;">Belum Ada API Key</span>
           <button id="btnToggleKeyMask" onclick="toggleApiKeyMask()" style="background: transparent; border: none; color: #60a5fa; cursor: pointer; font-size: 12px; font-weight: 600; display: none;">👁️ Show</button>
         </div>
 
-        <!-- REVISI PERMINTAAN 3: Tombol Generate API Key Manual -->
         <div class="dash-actions-row" style="display: flex; gap: 8px; flex-wrap: wrap;">
           <button id="btnGenerateApiKey" class="btn-pink" style="font-size: 12px; padding: 8px 16px; flex: 1; min-width: 140px;" onclick="handleGenerateApiKeyClick()">🔑 Generate API Key</button>
           <button id="btnCopyApiKey" class="btn-secondary" style="font-size: 12px; padding: 8px 16px; display: none;" onclick="copyDashApiKey()">📋 Copy Key</button>
@@ -54,7 +51,18 @@
       </div>
     </div>
 
-    <!-- LOG AKTIVITAS TABLE WITH RESPONSIVE SCROLLING -->
+    <!-- MANAJEMEN SOSIAL MEDIA (BAGIAN BARU) -->
+    <div class="dashboard-hero-card" style="margin-bottom: 30px; display: block;">
+      <h3 style="margin-bottom: 8px; font-size: 20px; color: #fff;">🔗 Integrasi Sosial Media</h3>
+      <p style="color: #9ca3af; font-size: 13px; margin-bottom: 24px;">Hubungkan akun sosial media Anda. Akun yang terhubung akan dapat menerima video secara otomatis dari n8n.</p>
+      
+      <div id="socialConnectionsList" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px;">
+        <!-- Akan di-render secara dinamis via JavaScript berdasarkan status akun -->
+        <p style="color: #6b7280; font-size: 13px;">Memuat daftar platform...</p>
+      </div>
+    </div>
+
+    <!-- LOG AKTIVITAS TABLE -->
     <div class="dashboard-hero-card" style="display: block; overflow-x: auto;">
       <h3 style="margin-bottom: 16px; font-size: 20px; color: #fff;">📊 Riwayat Aktivitas Upload Video</h3>
       <p style="color: #9ca3af; font-size: 13px; margin-bottom: 20px;">Pantau log pengiriman video dari n8n ke sosial media secara real-time.</p>
