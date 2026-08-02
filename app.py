@@ -35,11 +35,9 @@ SERVICE_ACCOUNT_FILE = "service_account.json"
 
 user_2fa_store = {}
 
-# ==========================================
-# KONFIGURASI TIKTOK DEVELOPER (SANDBOX MODE)
-# ==========================================
-TIKTOK_CLIENT_KEY = "sbawmw2g5rcvqcdbva"
-TIKTOK_CLIENT_SECRET = "hArvrUMfXot3Pwl8r8XcXWHIMPm3Rnpp"
+# KONFIGURASI TIKTOK DEVELOPER (Sekarang ambil dari Vercel Env)
+TIKTOK_CLIENT_KEY = os.environ.get("TIKTOK_CLIENT_KEY")
+TIKTOK_CLIENT_SECRET = os.environ.get("TIKTOK_CLIENT_SECRET")
 
 def get_gsheet():
     """Koneksi ke Google Sheets (Sheet Utama)."""
