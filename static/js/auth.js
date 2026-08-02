@@ -88,14 +88,7 @@ function handleSocialPlatformConnect(platform) {
       .then(res => res.json())
       .then(data => {
         if (data.success && data.url) {
-          const popup = window.open(data.url, `OAuth_${platform}`, 'width=600,height=750,scrollbars=yes,status=yes');
-          
-          const checkTimer = setInterval(() => {
-            if (popup && popup.closed) {
-              clearInterval(checkTimer);
-            }
-          }, 1000);
-
+          window.open(data.url, `OAuth_${platform}`, 'width=600,height=750,scrollbars=yes,status=yes');
         } else {
           openFallbackOAuthPopup(platform, userEmail);
         }
@@ -106,7 +99,7 @@ function handleSocialPlatformConnect(platform) {
     return;
   }
 
-  // PLATFORM LAIN
+  // PLATFORM LAIN (Facebook, IG, dll)
   openFallbackOAuthPopup(platform, userEmail);
 }
 
@@ -126,41 +119,10 @@ function openFallbackOAuthPopup(platform, userEmail) {
     authUrl = 'https://accounts.google.com/o/oauth2/v2/auth';
   }
 
-  const popup = window.open(authUrl, `OAuth_${platform}`, 'width=600,height=750,scrollbars=yes,status=yes');
-
-  const checkTimer = setInterval(() => {
-    if (popup && popup.closed) {
-      clearInterval(checkTimer);
-      verifyAccountConnectionBackend(platform, userEmail);
-    }
-  }, 1000);
-}
-
-function verifyAccountConnectionBackend(platform, userEmail) {
-  showToast(`Memverifikasi status koneksi akun ${platform}...`, "#6366f1");
-
-  setTimeout(() => {
-    showToast(`🎉 Berhasil terhubung ke akun ${platform}! (Status: Connected ✓)`, "#34d399");
-    if (typeof closeSocialConnectModal === 'function') {
-        closeSocialConnectModal();
-    }
-
-    if (globalUserData) {
-      if (!globalUserData.connectedPlatforms) {
-        globalUserData.connectedPlatforms = [];
-      }
-      
-      if (!globalUserData.connectedPlatforms.includes(platform)) {
-        globalUserData.connectedPlatforms.push(platform);
-      }
-      
-      localStorage.setItem('automedia_user', JSON.stringify(globalUserData));
-      
-      if (typeof renderSocialConnectionsUI === 'function') {
-        renderSocialConnectionsUI();
-      }
-    }
-  }, 1200);
+  // Membuka jendela login pihak ketiga.
+  // Tidak ada lagi timer yang memaksa status menjadi "Connected". 
+  // UI hanya akan berubah jika backend mengirim postMessage 'OAUTH_SUCCESS'.
+  window.open(authUrl, `OAuth_${platform}`, 'width=600,height=750,scrollbars=yes,status=yes');
 }
 
 function handleRequestOTP(event) {
@@ -324,7 +286,6 @@ window.checkStoredSession = checkStoredSession;
 window.handleConnectSocialClick = handleConnectSocialClick;
 window.closeSocialConnectModal = closeSocialConnectModal;
 window.handleSocialPlatformConnect = handleSocialPlatformConnect;
-window.verifyAccountConnectionBackend = verifyAccountConnectionBackend;
 window.handleRequestOTP = handleRequestOTP;
 window.handleVerifyOTP = handleVerifyOTP;
 window.handleReset2FA = handleReset2FA;
