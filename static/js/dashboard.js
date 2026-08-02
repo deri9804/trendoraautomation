@@ -277,15 +277,13 @@ function renderLogsTable(res) {
 }
 
 const SUPPORTED_PLATFORMS = [
-  { id: 'TikTok', icon: '🎵', name: 'TikTok Video', bg: '#000000' },
-  { id: 'Instagram', icon: '📷', name: 'Instagram Reels', bg: '#d62976' },
-  { id: 'YouTube', icon: '▶️', name: 'YouTube Shorts', bg: '#ff0000' },
-  { id: 'Facebook', icon: 'f', name: 'Facebook Page', bg: '#1877f2' },
+  { id: 'TikTok', icon: '🎵', name: 'TikTok', bg: '#000000' },
+  { id: 'Instagram', icon: '📷', name: 'Instagram', bg: '#d62976' },
+  { id: 'YouTube', icon: '▶️', name: 'YouTube', bg: '#ff0000' },
+  { id: 'Facebook', icon: 'f', name: 'Facebook', bg: '#1877f2' },
   { id: 'Twitter', icon: '𝕏', name: 'X / Twitter', bg: '#000000' },
   { id: 'LinkedIn', icon: 'in', name: 'LinkedIn', bg: '#2867b2' },
   { id: 'Threads', icon: '@', name: 'Threads', bg: '#000000' },
-  { id: 'Pinterest', icon: '📌', name: 'Pinterest', bg: '#e60023' },
-  { id: 'Bluesky', icon: '🦋', name: 'Bluesky', bg: '#1185fe' }
 ];
 
 function renderSocialConnectionsUI() {
@@ -299,6 +297,7 @@ function renderSocialConnectionsUI() {
     const isConnected = connected.includes(plat.id);
     
     if (isConnected) {
+      // Tombol menjadi fitur 'Disconnect' ketika disentuh
       html += `
         <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(52, 211, 153, 0.4); border-radius: 12px; padding: 16px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
           <div style="display: flex; align-items: center; gap: 12px;">
@@ -307,7 +306,7 @@ function renderSocialConnectionsUI() {
             </div>
             <span style="font-size: 14px; font-weight: 600; color: #fff;">${plat.name}</span>
           </div>
-          <button disabled style="background: rgba(52, 211, 153, 0.15); border: 1px solid #34d399; color: #34d399; padding: 8px 14px; border-radius: 8px; font-size: 11px; font-weight: 700; cursor: not-allowed;">
+          <button onclick="handleDisconnectSocial('${plat.id}')" style="background: rgba(52, 211, 153, 0.15); border: 1px solid #34d399; color: #34d399; padding: 8px 14px; border-radius: 8px; font-size: 11px; font-weight: 700; cursor: pointer; transition: all 0.2s ease;" onmouseover="this.innerText='Putuskan ✖'; this.style.borderColor='#ef4444'; this.style.color='#ef4444'; this.style.background='rgba(239, 68, 68, 0.15)';" onmouseout="this.innerText='Connected ✓'; this.style.borderColor='#34d399'; this.style.color='#34d399'; this.style.background='rgba(52, 211, 153, 0.15)';">
             Connected ✓
           </button>
         </div>
