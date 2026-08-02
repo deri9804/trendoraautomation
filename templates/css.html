@@ -1007,7 +1007,7 @@
   }
 
   @media (max-width: 900px) {
-    .hero { grid-template-columns: 1fr; padding-top: 180px; }
+    .hero { grid-template-columns: 1fr; padding-top: 120px; }
     .nav-links { display: none; }
     .webhook-tester-box { flex-direction: column; }
     .checkout-grid { grid-template-columns: 1fr; gap: 20px; }
@@ -1018,29 +1018,33 @@
     .onboard-card { padding: 16px; }
     .social-modal-card { padding: 24px 18px; }
     .legal-modal-card { max-width: 95% !important; padding: 20px !important; }
-    
-    /* REVISI 1 & 2: Fix Top Banner and Dashboard Kotak Mobile */
-    .top-banner { 
-      flex-direction: column !important; 
-      padding: 10px !important; 
-      font-size: 11px !important; 
-      gap: 6px !important; 
-      line-height: 1.4 !important; 
-    }
-    
-    .dashboard-hero-card { 
-      padding: 16px !important; 
-      margin-bottom: 20px !important; 
-      width: 100% !important; 
-      box-sizing: border-box !important; 
-      overflow: hidden !important; 
+
+    /* PERBAIKAN 1: HEADER & LOGO DI HP */
+    .top-banner { display: none !important; } 
+    .navbar { padding: 10px 4% !important; gap: 8px; }
+    .logo { gap: 6px !important; overflow: hidden; white-space: nowrap; }
+    .logo img { height: 22px !important; }
+    .logo span { font-size: 12px !important; } /* Tulisan logo dikecilin biar muat sebaris */
+
+    /* PERBAIKAN 2: NAMA USER & TOMBOL KELUAR DI HP */
+    .auth-buttons { gap: 6px !important; }
+    .user-profile-badge { padding: 4px 8px !important; font-size: 11px !important; }
+    .user-profile-badge .user-avatar { display: none; } 
+    .user-profile-badge #navUserName { max-width: 70px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .auth-buttons .btn-secondary { padding: 6px 8px !important; font-size: 10px !important; white-space: nowrap; }
+
+    /* PERBAIKAN 3: KOTAK DASHBOARD & LOG (Lebar disamakan & bebas overlap) */
+    .dashboard-hero-card {
       grid-template-columns: 1fr !important;
+      padding: 16px !important;
+      margin-top: 10px !important; /* Mencegah tertutup header */
+      width: 100% !important;
+      box-sizing: border-box !important;
     }
     
-    .dash-key-card { 
-      padding: 16px !important; 
-      width: 100% !important; 
-      box-sizing: border-box !important; 
-    }
+    .dash-welcome { width: 100% !important; box-sizing: border-box !important; }
+    .dash-welcome h2 { font-size: 22px !important; }
+    .dash-key-card { padding: 16px !important; width: 100% !important; box-sizing: border-box !important; }
+    .key-display-box { flex-direction: column; align-items: flex-start !important; word-break: break-all; }
   }
 </style>
