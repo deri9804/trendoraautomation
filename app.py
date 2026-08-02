@@ -38,8 +38,8 @@ user_2fa_store = {}
 # ==========================================
 # KONFIGURASI TIKTOK DEVELOPER (SANDBOX MODE)
 # ==========================================
-TIKTOK_CLIENT_KEY = "aw1pdjf3lvp63bsd"
-TIKTOK_CLIENT_SECRET = "1aPWEik5BhluPtwalGChTq0pvgr6QOF3"
+TIKTOK_CLIENT_KEY = "sbawmw2g5rcvqcdbva"
+TIKTOK_CLIENT_SECRET = "hArvrUMfXot3Pwl8r8XcXWHIMPm3Rnpp"
 
 def get_gsheet():
     """Koneksi ke Google Sheets (Sheet Utama)."""
