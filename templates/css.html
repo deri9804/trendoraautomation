@@ -134,6 +134,7 @@
   .hero-left h1 { font-size: 52px; line-height: 1.1; font-weight: 800; margin-bottom: 20px; color: #fff; }
   .hero-left h1 span { color: #ec4899; }
   .hero-left p { color: #9ca3af; font-size: 18px; line-height: 1.6; margin-bottom: 30px; }
+  
   .cta-group { display: flex; gap: 16px; margin-bottom: 24px; }
   .btn-secondary { background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.15); color: #fff; padding: 12px 24px; border-radius: 20px; font-weight: 600; cursor: pointer; backdrop-filter: blur(10px); }
   .subtext { color: #6b7280; font-size: 13px; display: flex; align-items: center; gap: 6px; }
@@ -149,6 +150,7 @@
   .dot-yellow { background: #f59e0b; }
   .dot-green { background: #10b981; }
   .terminal-title { font-size: 11px; color: #6b7280; font-family: monospace; }
+  
   .webhook-tester-box { display: flex; gap: 8px; margin-bottom: 16px; background: rgba(255, 255, 255, 0.03); padding: 6px; border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.08); }
   .webhook-tester-box input { flex: 1; background: transparent; border: none; color: #fff; padding: 8px 12px; font-size: 12px; outline: none; }
   .webhook-tester-box button { background: #ec4899; color: white; border: none; padding: 8px 16px; border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer; }
@@ -232,6 +234,7 @@
   .checkout-modal-card { max-width: 920px !important; padding: 28px !important; }
   .modal-close-btn { position: absolute; top: 16px; right: 20px; background: transparent; border: none; color: #9ca3af; font-size: 24px; cursor: pointer; z-index: 10; }
   .modal-header { margin-bottom: 24px; text-align: center; }
+  
   .modal-badge { display: inline-block; background: rgba(236, 72, 153, 0.15); color: #ec4899; padding: 4px 12px; border-radius: 12px; font-size: 11px; font-weight: 700; margin-bottom: 12px; }
   .success-badge { background: rgba(52, 211, 153, 0.15); color: #34d399; }
   .expired-badge { background: rgba(239, 68, 68, 0.2) !important; color: #f87171 !important; border: 1px solid rgba(239, 68, 68, 0.4); }
@@ -258,7 +261,6 @@
   .input-card-wrapper input { padding-right: 100px; }
   .card-brands { position: absolute; right: 10px; display: flex; gap: 4px; pointer-events: none; }
   
-  /* REVISI NOMOR 2: Animasi transisi opacity untuk fitur deteksi kartu cerdas */
   .brand-badge { font-size: 9px; font-weight: 800; padding: 2px 5px; border-radius: 4px; color: #fff; transition: opacity 0.3s ease; }
   .brand-badge.visa { background: #1a1f71; }
   .brand-badge.mc { background: #eb001b; }
@@ -1016,5 +1018,29 @@
     .onboard-card { padding: 16px; }
     .social-modal-card { padding: 24px 18px; }
     .legal-modal-card { max-width: 95% !important; padding: 20px !important; }
+    
+    /* REVISI 1 & 2: Fix Top Banner and Dashboard Kotak Mobile */
+    .top-banner { 
+      flex-direction: column !important; 
+      padding: 10px !important; 
+      font-size: 11px !important; 
+      gap: 6px !important; 
+      line-height: 1.4 !important; 
+    }
+    
+    .dashboard-hero-card { 
+      padding: 16px !important; 
+      margin-bottom: 20px !important; 
+      width: 100% !important; 
+      box-sizing: border-box !important; 
+      overflow: hidden !important; 
+      grid-template-columns: 1fr !important;
+    }
+    
+    .dash-key-card { 
+      padding: 16px !important; 
+      width: 100% !important; 
+      box-sizing: border-box !important; 
+    }
   }
 </style>
