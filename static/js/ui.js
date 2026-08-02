@@ -113,26 +113,23 @@ function renderLoggedInUI(user, autoNavigateToDashboard = true) {
   const dashName = document.getElementById('dashName');
   const dashEmail = document.getElementById('dashUserEmail');
   const dashStatus = document.getElementById('dashAccountStatus');
-  const btnDashUpgrade = document.getElementById('btnDashUpgrade'); // REVISI: Mengambil elemen tombol upgrade
+  const btnDashUpgrade = document.getElementById('btnDashUpgrade'); 
 
   if (dashName) dashName.innerText = user.name || 'User';
   if (dashEmail) dashEmail.innerText = user.email || '-';
   
   if (dashStatus) {
+    // REVISI PENTING: Selalu tampilkan teks murni dari Database (Google Sheets)
+    dashStatus.innerText = user.status || 'Active (7-Day Free Trial)';
+    
     if (user.isPaid) {
-      dashStatus.innerText = user.status || 'Active Subscriber (Paid)';
-      dashStatus.style.color = '#34d399';
-      // REVISI: Sembunyikan tombol upgrade jika akun sudah paid
+      dashStatus.style.color = '#34d399'; // Warna hijau
       if (btnDashUpgrade) btnDashUpgrade.style.display = 'none'; 
     } else if (user.apiKey && user.apiKey !== '-') {
-      dashStatus.innerText = 'Trial Expired (Perlu Langganan)';
-      dashStatus.style.color = '#f87171';
-      // Tampilkan kembali tombol upgrade jika belum paid
+      dashStatus.style.color = '#f87171'; // Warna merah
       if (btnDashUpgrade) btnDashUpgrade.style.display = 'inline-block';
     } else {
-      dashStatus.innerText = 'Active (7-Day Free Trial - View Only)';
-      dashStatus.style.color = '#f59e0b';
-      // Tampilkan kembali tombol upgrade jika belum paid
+      dashStatus.style.color = '#f59e0b'; // Warna kuning
       if (btnDashUpgrade) btnDashUpgrade.style.display = 'inline-block';
     }
   }

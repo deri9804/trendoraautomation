@@ -48,13 +48,11 @@ def get_gsheet():
     try:
         scopes = ["https://www.googleapis.com/auth/spreadsheets"]
         
-        # REVISI VERCEL: Cek apakah ada environment variable JSON untuk kredensial
         env_creds = os.environ.get("GOOGLE_APPLICATION_CREDENTIALS_JSON")
         if env_creds:
             creds_dict = json.loads(env_creds)
             creds = Credentials.from_service_account_info(creds_dict, scopes=scopes)
         else:
-            # Fallback ke file lokal jika tidak ada env (saat jalan di localhost)
             creds = Credentials.from_service_account_file(SERVICE_ACCOUNT_FILE, scopes=scopes)
             
         client = gspread.authorize(creds)
@@ -71,20 +69,18 @@ def get_logs_sheet():
     try:
         scopes = ["https://www.googleapis.com/auth/spreadsheets"]
         
-        # REVISI VERCEL: Cek apakah ada environment variable JSON untuk kredensial
         env_creds = os.environ.get("GOOGLE_APPLICATION_CREDENTIALS_JSON")
         if env_creds:
             creds_dict = json.loads(env_creds)
             creds = Credentials.from_service_account_info(creds_dict, scopes=scopes)
         else:
-            # Fallback ke file lokal jika tidak ada env (saat jalan di localhost)
             creds = Credentials.from_service_account_file(SERVICE_ACCOUNT_FILE, scopes=scopes)
             
         client = gspread.authorize(creds)
         sheet = client.open_by_key(GOOGLE_SHEET_ID).worksheet("Logs")
         return sheet
     except Exception as e:
-        print(f"GSheets Logs Connection Error (Pastikan ada tab bernama 'Logs'): {e}")
+        print(f"GSheets Logs Connection Error: {e}")
         return None
 
 def db_get_user(email):
@@ -151,7 +147,7 @@ SMTP_PASSWORD = os.environ.get("SMTP_PASSWORD", "")
 
 def send_email_qr(recipient_email, qr_url, secret):
     """Kirim email berisi QR Code 2FA menggunakan Gmail SMTP."""
-    if SMTP_EMAIL == "email.anda@gmail.com" or not SMTP_PASSWORD:
+    if not SMTP_PASSWORD:
         return False
         
     msg = MIMEMultipart("alternative")
@@ -220,11 +216,10 @@ def verify_totp(secret, token):
 # KONFIGURASI MIDTRANS (PRODUCTION)
 # ==========================================
 MIDTRANS_API_URL = "https://app.midtrans.com/snap/v1/transactions"
-# Kunci disembunyikan pakai os.environ biar aman dari hacker
 MIDTRANS_SERVER_KEY = os.environ.get("MIDTRANS_SERVER_KEY", "Mid-server-zF-SefFUBo7r1t-qcRPzdBEr_DUMMY")
 
 # ==========================================
-# FLASK ROUTES
+# FLASK ROUTES (Frontend)
 # ==========================================
 @app.route('/')
 def index():
@@ -303,24 +298,31 @@ def verify_otp_route():
         is_valid = True
         
     if is_valid:
-        if user_data:
-            name = user_data.get('name') or email.split('@')[0].capitalize()
-            api_key = user_data.get('api_key') or ("TREND_" + uuid.uuid4().hex[:12].upper())
-            status = user_data.get('status') or "Active (7-Day Free Trial)"
-            
+        name = user_data.get('name') or email.split('@')[0].capitalize()
+        api_key = user_data.get('api_key') or ("TREND_" + uuid.uuid4().hex[:12].upper())
+        status = user_data.get('status') or "Active (7-Day Free Trial)"
+        
+        # PERBAIKAN: Hanya "save" kalau user sebelumnya belum is_linked
+        # Jika sudah pernah linked, kita TIDAK MENYIMPAN (menimpa) data GSheets lagi. 
+        # Ini mencegah status 'Admin' kembali menjadi 'Trial' saat login.
+        if not user_data.get('is_linked'):
             db_save_user(email, user_data['secret'], True, name, api_key, status)
             
-            return jsonify({
-                "success": True, 
-                "message": "Login berhasil!",
-                "user": {
-                    "name": name,
-                    "email": email,
-                    "apiKey": api_key,
-                    "status": status,
-                    "isPaid": "Paid" in status or "Subscriber" in status
-                }
-            })
+        # Cek lebih cerdas apakah user berbayar atau admin
+        status_lower = status.lower()
+        is_paid_user = any(word in status_lower for word in ["paid", "subscriber", "admin"])
+        
+        return jsonify({
+            "success": True, 
+            "message": "Login berhasil!",
+            "user": {
+                "name": name,
+                "email": email,
+                "apiKey": api_key,
+                "status": status,
+                "isPaid": is_paid_user
+            }
+        })
     
     return jsonify({"success": False, "message": "Kode OTP Google Authenticator salah atau kadaluarsa!"})
 
@@ -480,9 +482,6 @@ def check_payment():
     email = request.json.get('email')
     return jsonify({"success": True, "isPaid": False})
 
-# ==========================================
-# TIKTOK OAUTH SIMULATION ROUTE
-# ==========================================
 @app.route('/api/tiktok-auth-url', methods=['GET'])
 def get_tiktok_auth_url():
     """Route untuk menggenerate URL Login TikTok asli (Mode Sandbox)."""
