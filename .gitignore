@@ -1,0 +1,4 @@
+service_account.json
+   database.xlsx
+   __pycache__/
+   .venv/

@@ -1,0 +1,162 @@
+<!-- PRICING SECTION -->
+<section id="pricing" class="pricing-section">
+  <!-- PRICING HERO HEADER -->
+  <div class="pricing-header">
+    <span class="pricing-tag">&bull; SIMPLE PRICING</span>
+    <h1>Pick a plan. <span>Ship more content.</span></h1>
+    <p>Free 7-day trial on any plan. Cancel anytime. No per-post fees, no seat fees, no hidden tax on your soul.</p>
+  </div>
+
+  <!-- PRICING CARDS GRID -->
+  <div class="pricing-grid">
+    <!-- STARTER PLAN -->
+    <div class="pricing-card">
+      <div class="plan-head">
+        <h3>Starter</h3>
+        <div class="plan-price">Rp.150.000 <span>/mo</span></div>
+        <p class="plan-desc">Solo creators getting started.</p>
+        <button class="btn-plan-secondary" onclick="handleStartFree('Starter Monthly', 'Rp.150.000/mo')">Start Free Trial &rarr;</button>
+      </div>
+      <ul class="plan-features">
+        <li>&check; 58 languages</li>
+        <li>&check; Mobile friendly</li>
+        <li>&check; Social media API</li>
+        <li>&check; <strong>Unlimited</strong> threads</li>
+        <li>&check; <strong>Unlimited</strong> sources</li>
+        <li>&check; <strong>Unlimited</strong> AI writing</li>
+        <li>&check; AI image generation</li>
+        <li>&check; AI video generation</li>
+        <li>&check; AI voices & captions</li>
+        <li>&check; Proven viral templates</li>
+        <li>&check; <strong>1,250</strong> AI credits per month</li>
+        <li>&check; ElevenLabs AI voiceovers</li>
+        <li>&check; <strong>20</strong> social media accounts</li>
+      </ul>
+    </div>
+
+    <!-- CREATOR PLAN (MOST POPULAR) -->
+    <div class="pricing-card popular">
+      <div class="popular-badge">MOST POPULAR</div>
+      <div class="plan-head">
+        <h3>Creator</h3>
+        <div class="plan-price">Rp.200.000 <span>/mo</span></div>
+        <p class="plan-desc">Operators scaling to a real audience.</p>
+        <button class="btn-pink btn-block" onclick="handleStartFree('Creator Monthly', 'Rp.200.000/mo')">Start Free Trial &rarr;</button>
+      </div>
+      <ul class="plan-features">
+        <li>&check; <strong>Everything</strong> in Starter</li>
+        <li>&check; <strong>5,000</strong> AI credits per month</li>
+        <li>&check; Faster video processing</li>
+        <li>&check; <strong>40</strong> social media accounts</li>
+        <li>&check; <strong>Unlimited</strong> database of viral posts for inspiration</li>
+        <li>&check; Support troubleshooting your n8n/Make automations</li>
+      </ul>
+    </div>
+
+    <!-- AGENCY PLAN -->
+    <div class="pricing-card">
+      <div class="plan-head">
+        <h3>Agency</h3>
+        <div class="plan-price">Rp.250.000 <span>/mo</span></div>
+        <p class="plan-desc">Agencies and teams running multiple brands.</p>
+        <button class="btn-plan-secondary" onclick="handleStartFree('Agency Monthly', 'Rp.250.000/mo')">Start Free Trial &rarr;</button>
+      </div>
+      <ul class="plan-features">
+        <li>&check; <strong>Everything</strong> in Creator</li>
+        <li>&check; <strong>28,000</strong> AI credits per month</li>
+        <li>&check; Dedicated video processing</li>
+        <li>&check; Dedicated support channel</li>
+        <li>&check; Dedicated support troubleshooting automations</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- FREE TRIAL INFO BANNER -->
+  <div class="trial-info-card">
+    <div class="trial-info-content">
+      <span class="icon-gift">🎁</span>
+      <div>
+        <h4>What's in your free trial</h4>
+        <p>&check; Access to <strong>all features</strong> &mdash; except the API</p>
+        <p>&check; A <strong>limited amount of AI credits</strong> for image & video generation</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="trial-perks">
+    <span>&check; 7-day free trial</span>
+    <span>&check; Cancel anytime</span>
+    <span>&check; No per-post fees</span>
+    <span>&check; 10,000+ operators</span>
+  </div>
+
+  <!-- FAQ SECTION -->
+  <div id="faq" class="faq-container">
+    <div class="faq-header">
+      <span class="pricing-tag">&bull; PRICING FAQ</span>
+      <h2>Common <span>questions</span>.</h2>
+    </div>
+
+    <div class="faq-list">
+      <!-- FAQ 1 -->
+      <div class="faq-item active">
+        <div class="faq-question" onclick="toggleFaq(this)">
+          <span class="faq-num">#01</span>
+          <h4>What happens after my free trial?</h4>
+          <span class="faq-icon">&minus;</span>
+        </div>
+        <div class="faq-answer">
+          <p>Your trial runs for 7 days. We'll email you before it ends. If you cancel before then, you're not charged. If you stay, your card is charged for the plan you signed up for. You can downgrade or cancel any time after that, no clawback, no calls.</p>
+        </div>
+      </div>
+
+      <!-- FAQ 2 -->
+      <div class="faq-item">
+        <div class="faq-question" onclick="toggleFaq(this)">
+          <span class="faq-num">#02</span>
+          <h4>What's an AI credit?</h4>
+          <span class="faq-icon">&plus;</span>
+        </div>
+        <div class="faq-answer">
+          <p>AI credits are used when generating videos, rendering captions, or generating images using our AI models. 1 credit generally equals 1 standard image or video output.</p>
+        </div>
+      </div>
+
+      <!-- FAQ 3 -->
+      <div class="faq-item">
+        <div class="faq-question" onclick="toggleFaq(this)">
+          <span class="faq-num">#03</span>
+          <h4>Can I switch plans?</h4>
+          <span class="faq-icon">&plus;</span>
+        </div>
+        <div class="faq-answer">
+          <p>Yes! You can upgrade or downgrade your plan at any time directly from your account settings page.</p>
+        </div>
+      </div>
+
+      <!-- FAQ 4 -->
+      <div class="faq-item">
+        <div class="faq-question" onclick="toggleFaq(this)">
+          <span class="faq-num">#04</span>
+          <h4>Do you offer annual pricing?</h4>
+          <span class="faq-icon">&plus;</span>
+        </div>
+        <div class="faq-answer">
+          <p>Yes, choosing annual billing gets you 2 months free on any of our plans.</p>
+        </div>
+      </div>
+
+      <!-- FAQ 5 -->
+      <div class="faq-item">
+        <div class="faq-question" onclick="toggleFaq(this)">
+          <span class="faq-num">#05</span>
+          <h4>Is there a refund policy?</h4>
+          <span class="faq-icon">&plus;</span>
+        </div>
+        <div class="faq-answer">
+          <p>We offer a 14-day money-back guarantee if you are unsatisfied with our platform for any reason.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

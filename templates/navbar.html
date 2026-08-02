@@ -1,0 +1,50 @@
+<!-- STICKY HEADER CONTAINER -->
+<header class="header-sticky">
+  <!-- TOP BANNER -->
+  <div class="top-banner" id="topBanner">
+    <span class="banner-badge">AUTOMATION ENGINE</span>
+    <span>Hubungkan n8n ke 10+ Sosial Media Secara Otomatis</span>
+    <button class="btn-banner" onclick="scrollToPricing()">Mulai Gratis &rarr;</button>
+  </div>
+
+  <!-- NAVBAR -->
+  <nav class="navbar">
+    <!-- REVISI: Menampilkan gambar logo berdampingan dengan teks, ukuran diperbesar -->
+    <div class="logo" style="cursor: pointer; display: flex; align-items: center; gap: 12px;" onclick="showLandingPage()">
+      <img src="{{ url_for('static', filename='logo-trendora.png') }}" alt="TRENDORA Logo" style="height: 65px; width: auto; object-fit: contain;" onerror="this.src='logo-trendora.png'">
+      <span>⚡ TRENDORA AUTOMATION</span>
+    </div>
+    
+    <!-- LANDING PAGE NAVIGATION LINKS -->
+    <ul class="nav-links" id="navLinksLanding">
+      <li><a href="#hero" onclick="showLandingPage()">Beranda</a></li>
+      <li><a id="navDashLink" style="display: none; color: #34d399; font-weight: bold; cursor: pointer;" onclick="showDashboardPage()">Dashboard 🚀</a></li>
+      <li><a href="#features" onclick="showLandingPage()">Fitur</a></li>
+      <li><a href="#about" onclick="showLandingPage()">Tentang</a></li>
+      <li><a href="#pricing" onclick="showLandingPage()">Harga</a></li>
+      <li><a href="#faq" onclick="showLandingPage()">FAQ</a></li>
+      <li><a href="#n8n-docs" onclick="showLandingPage()">Dokumentasi API</a></li>
+    </ul>
+
+    <!-- DASHBOARD PAGE NAVIGATION LINKS (Aktif saat di halaman dashboard) -->
+    <ul class="nav-links" id="navLinksDashboard" style="display: none;">
+      <li><a class="active" style="color: #ec4899; font-weight: 700; cursor: pointer;">🎛️ User Dashboard</a></li>
+      <li><a style="cursor: pointer;" onclick="showLandingPage()">🌐 Landing Page / Web</a></li>
+    </ul>
+
+    <!-- GUEST AUTH BUTTONS -->
+    <div class="auth-buttons" id="navGuestGroup">
+      <a class="btn-login" style="cursor: pointer;" onclick="openLoginModal()">Log in</a>
+      <button class="btn-pink" onclick="openRegisterModal('Creator Monthly', 'Rp.200.000/mo')">Start free &rarr;</button>
+    </div>
+
+    <!-- LOGGED IN USER MENU -->
+    <div class="auth-buttons" id="navUserGroup" style="display: none;">
+      <div class="user-profile-badge" style="cursor: pointer;" onclick="showDashboardPage()" title="Buka Dashboard">
+        <span class="user-avatar">👤</span>
+        <span id="navUserName">User</span>
+      </div>
+      <button class="btn-secondary" style="padding: 6px 14px; font-size: 12px;" onclick="handleLogout()">Keluar 🚪</button>
+    </div>
+  </nav>
+</header>

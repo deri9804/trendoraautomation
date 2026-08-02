@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TRENDORA - Python Version</title>
+  {% include 'css.html' %} 
+</head>
+<body>
+  {% include 'navbar.html' %}
+  
+  <main id="main-content">
+    {% include 'hero.html' %}
+    {% include 'mediaAccounts.html' %}
+    {% include 'pricing.html' %}
+    {% include 'n8n_node_doc.html' %}
+    {% include 'kontak.html' %}
+  </main>
+
+  {% include 'apiKeyModal.html' %}
+
+  <!-- SCRIPT REAL MIDTRANS SNAP -->
+  <!-- URL SNAP Production dan Client Key hasil ekstrak gambar -->
+  <script src="https://app.midtrans.com/snap/snap.js" data-client-key="Mid-client-cNBEMqcP3nVAyEzI"></script>
+
+  <!-- LOGIKA JAVASCRIPT MODULAR (STATIC FILES) -->
+  <!-- Pastikan urutan ini tidak berubah agar variabel global terbaca dengan benar -->
+  <script src="{{ url_for('static', filename='js/ui.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/auth.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/payment.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+</body>
+</html>

@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard - TRENDORA</title>
+  {% include 'css.html' %}
+</head>
+<body>
+  {% include 'navbar.html' %}
+
+  <!-- PAGE WRAPPER UNTUK DASHBOARD -->
+  <div style="padding: 120px 8% 60px 8%; max-width: 1400px; margin: 0 auto; min-height: 85vh;">
+    
+    <!-- HEADER DASHBOARD: PROFIL & API KEY -->
+    <div class="dashboard-hero-card" style="margin-bottom: 30px;">
+      
+      <!-- BAGIAN KIRI: INFO PROFIL -->
+      <div class="dash-welcome">
+        <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 12px;">
+          <img id="dashAvatar" src="" style="width: 56px; height: 56px; border-radius: 50%; border: 2px solid #ec4899; display: none;" alt="User Avatar" />
+          <h2 style="margin-bottom: 0;">Halo, <span id="dashName">User</span>! 👋</h2>
+        </div>
+
+        <p style="color: #9ca3af; font-size: 14px; margin-bottom: 16px;">
+          Email: <span id="dashUserEmail">-</span><br>
+          Status: <strong id="dashAccountStatus" style="color: #f59e0b;">Active (7-Day Free Trial)</strong>
+        </p>
+        <button class="btn-pink" onclick="handleConnectSocialClick()">🔗 Hubungkan Sosial Media</button>
+
+        <!-- TAMBAHAN: TOMBOL TOGGLE SANDBOX MODE -->
+        <div style="margin-top: 24px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.1);">
+          <h4 style="font-size: 13px; color: #9ca3af; margin-bottom: 12px;">🛠️ Pengaturan Developer</h4>
+          <button id="btnSandboxToggle" onclick="toggleSandboxMode()" class="btn-secondary" style="border-color: rgba(255,255,255,0.15); color: #9ca3af; font-size: 12px; padding: 8px 16px; display: flex; align-items: center; gap: 8px;">
+            <span id="sandboxIcon">📴</span> Mode Sandbox (App Review & Testing)
+          </button>
+        </div>
+      </div>
+      
+      <!-- BAGIAN KANAN: API KEY & WEBHOOK URL -->
+      <div class="dash-key-card">
+        <h3 style="font-size: 15px; color: #9ca3af; margin-bottom: 12px;">🔑 API Key Anda</h3>
+        <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 12px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center;">
+          <span id="dashApiKeyDisplay" style="font-family: monospace; font-size: 14px; color: #34d399;">Memuat...</span>
+          <button id="btnToggleKeyMask" onclick="toggleApiKeyMask()" style="background: transparent; border: none; color: #60a5fa; cursor: pointer; font-size: 12px; font-weight: 600;">👁️ Show</button>
+        </div>
+        <div style="display: flex; gap: 8px;">
+          <button class="btn-secondary" style="font-size: 12px; padding: 8px 16px;" onclick="copyDashApiKey()">📋 Copy Key</button>
+          <button id="btnDashUpgrade" class="btn-secondary" style="font-size: 12px; padding: 8px 16px; border-color: #ec4899; color: #ec4899;" onclick="openUpgradePayment()">⭐ Upgrade</button>
+        </div>
+        
+        <h3 style="font-size: 15px; color: #9ca3af; margin-top: 20px; margin-bottom: 12px;">🔗 Webhook Endpoint (n8n Target)</h3>
+        <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 12px; margin-bottom: 12px; overflow-x: auto;">
+          <span id="dashWebhookUrlDisplay" style="font-family: monospace; font-size: 12px; color: #f472b6; white-space: nowrap;">Memuat Webhook URL...</span>
+        </div>
+        <button class="btn-secondary" style="font-size: 12px; padding: 8px 16px;" onclick="copyWebhookUrl()">📋 Copy URL</button>
+      </div>
+    </div>
+
+    <!-- PANEL SIMULASI TIKTOK APP REVIEW (DISEMBUNYIKAN SECARA DEFAULT, MUNCUL SAAT SANDBOX ON) -->
+    <div id="tiktokSandboxPanel" class="dashboard-hero-card" style="display: none; margin-bottom: 30px; border-color: #38bdf8; background: rgba(56, 189, 248, 0.05);">
+      <h3 style="margin-bottom: 12px; font-size: 18px; color: #fff;">🎵 TikTok Sandbox Simulator (Khusus App Review)</h3>
+      <p style="color: #9ca3af; font-size: 13px; margin-bottom: 16px;">
+        Panel ini disediakan khusus untuk mendemonstrasikan fungsi <strong>video.upload</strong> (Upload sebagai Draft) dan <strong>video.publish</strong> (Posting Langsung) kepada tim reviewer TikTok.
+      </p>
+      
+      <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+        <button class="btn-secondary" style="border-color: #38bdf8; color: #38bdf8;" onclick="runTikTokSandbox('draft')">1. Upload to Draft (video.upload)</button>
+        <button class="btn-pink" onclick="runTikTokSandbox('publish')">2. Direct Publish (video.publish)</button>
+      </div>
+      
+      <div id="tiktokSandboxConsole" style="margin-top: 16px; background: #090d16; padding: 16px; border-radius: 8px; font-family: monospace; font-size: 12px; color: #34d399; display: none; max-height: 300px; overflow-y: auto;">
+      </div>
+    </div>
+
+    <!-- LOG AKTIVITAS UPLOAD VIDEO TABLE -->
+    <div class="dashboard-hero-card" style="display: block;">
+      <h3 style="margin-bottom: 16px; font-size: 20px; color: #fff;">📊 Riwayat Aktivitas Upload Video</h3>
+      <p style="color: #9ca3af; font-size: 13px; margin-bottom: 20px;">Pantau log pengiriman video dari n8n ke sosial media secara real-time.</p>
+      
+      <div style="overflow-x: auto; background: rgba(0, 0, 0, 0.2); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 12px; padding: 10px;">
+        <table style="width: 100%; border-collapse: collapse; text-align: left;">
+          <thead>
+            <tr style="border-bottom: 1px solid rgba(255,255,255,0.1); color: #9ca3af;">
+              <th style="padding: 16px 12px; font-size: 13px; font-weight: 600;">Waktu</th>
+              <th style="padding: 16px 12px; font-size: 13px; font-weight: 600;">Log ID</th>
+              <th style="padding: 16px 12px; font-size: 13px; font-weight: 600;">Platform Target</th>
+              <th style="padding: 16px 12px; font-size: 13px; font-weight: 600;">Status Publikasi</th>
+              <th style="padding: 16px 12px; font-size: 13px; font-weight: 600;">Detail Video / Caption</th>
+            </tr>
+          </thead>
+          <tbody id="dashLogsTableBody">
+            <tr>
+              <td colspan="5" style="padding: 20px; text-align: center; color: #6b7280;">⏳ Memuat log postingan terbaru...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- INCLUDE MODAL (Legal & Sosial) -->
+  {% include 'apiKeyModal.html' %}
+
+  <!-- SCRIPTS -->
+  <script src="{{ url_for('static', filename='js/ui.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/auth.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/payment.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+</body>
+</html>

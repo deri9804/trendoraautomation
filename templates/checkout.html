@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Checkout - TRENDORA</title>
+  {% include 'css.html' %}
+</head>
+<body>
+  {% include 'navbar.html' %}
+
+  <!-- PAGE WRAPPER UNTUK CHECKOUT (REVISI: Mengubah align-items agar tidak terpotong saat scroll) -->
+  <div style="display: flex; justify-content: center; align-items: flex-start; min-height: 100vh; padding: 120px 20px 60px;">
+    
+    <div class="modal-card checkout-modal-card" id="mainModalCard" style="max-height: none; margin-bottom: 40px;">
+      <button class="modal-close-btn" onclick="window.location.href='/'">&times;</button>
+      
+      <!-- FORM PEMBAYARAN / CHECKOUT -->
+      <div id="modalStepForm" style="display: block;">
+        <div class="checkout-grid">
+          
+          <div class="checkout-left">
+            <form id="checkoutForm" onsubmit="handleCheckoutSubmit(event)">
+              
+              <div class="form-row-2">
+                <div class="form-group">
+                  <label for="regFirstName">First Name <span class="req">*</span></label>
+                  <input type="text" id="regFirstName" placeholder="John" required />
+                </div>
+                <div class="form-group">
+                  <label for="regLastName">Last Name <span class="req">*</span></label>
+                  <input type="text" id="regLastName" placeholder="Hinton" required />
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label for="regEmail">Email <span class="req">*</span></label>
+                <input type="email" id="regEmail" placeholder="me@example.com" required />
+              </div>
+
+              <div class="form-group">
+                <label for="regDiscountCode">Discount Code</label>
+                <input type="text" id="regDiscountCode" placeholder="Masukkan kode promo (opsional)" />
+              </div>
+
+              <div class="pay-methods-group">
+                <button type="button" class="pay-method-btn active" onclick="selectPayMethod(this, 'card')">
+                  <span>💳 Kartu</span>
+                </button>
+                <button type="button" class="pay-method-btn" onclick="selectPayMethod(this, 'ewallet')">
+                  <span>📱 E-Wallet</span>
+                </button>
+                <button type="button" class="pay-method-btn" onclick="selectPayMethod(this, 'bank')">
+                  <span>🏦 Transfer Bank</span>
+                </button>
+              </div>
+
+              <div class="secure-checkout-bar">
+                🔒 Checkout yang aman dan cepat dengan Midtrans Snap <span>&or;</span>
+              </div>
+
+              <!-- CARD DETAILS GROUP -->
+              <div id="cardDetailsGroup" style="display: block;">
+                <div class="form-group">
+                  <label for="regCardNumber">Nomor kartu</label>
+                  <div class="input-card-wrapper">
+                    <input type="text" id="regCardNumber" placeholder="1234 1234 1234 1234" maxlength="19" />
+                    <div class="card-brands">
+                      <span class="brand-badge visa">VISA</span>
+                      <span class="brand-badge mc">MC</span>
+                      <span class="brand-badge jcb">JCB</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="form-row-2">
+                  <div class="form-group">
+                    <label for="regCardExpiry">Tanggal kedaluwarsa</label>
+                    <input type="text" id="regCardExpiry" placeholder="BB / TT" maxlength="5" />
+                  </div>
+                  <div class="form-group">
+                    <label for="regCardCVC">Kode keamanan</label>
+                    <div class="input-card-wrapper">
+                      <input type="text" id="regCardCVC" placeholder="CVC" maxlength="4" />
+                      <span class="cvc-icon">💳<sup>123</sup></span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- E-WALLET DETAILS GROUP -->
+              <div id="ewalletDetailsGroup" style="display: none;">
+                <div class="form-group">
+                  <label for="regEwalletType">Pilih E-Wallet <span class="req">*</span></label>
+                  <select id="regEwalletType" class="checkout-select">
+                    <option value="gopay" selected>GoPay</option>
+                    <option value="shopeepay">ShopeePay</option>
+                    <option value="other_qris">QRIS (DANA, OVO, LinkAja, dll)</option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- BANK DETAILS GROUP -->
+              <div id="bankDetailsGroup" style="display: none;">
+                <div class="form-group">
+                  <label for="regBankType">Pilih Bank Tujuan <span class="req">*</span></label>
+                  <select id="regBankType" class="checkout-select">
+                    <option value="bca_va" selected>BCA Virtual Account</option>
+                    <option value="bni_va">BNI Virtual Account</option>
+                    <option value="bri_va">BRI Virtual Account</option>
+                    <option value="permata_va">Permata Virtual Account</option>
+                    <option value="echannel">Mandiri Bill Payment</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label for="regCountry">Negara</label>
+                <select id="regCountry" class="checkout-select">
+                  <option value="Indonesia" selected>Indonesia</option>
+                  <option value="Malaysia">Malaysia</option>
+                  <option value="Singapore">Singapore</option>
+                </select>
+              </div>
+
+              <p class="mandate-disclaimer">
+                Dengan berlangganan, Anda memberi wewenang kepada TRENDORA Inc. untuk menagih Anda sesuai dengan ketentuan hingga Anda membatalkannya.
+              </p>
+
+              <!-- REVISI: Pemisahan Tombol Trial dan Bayar -->
+              <div style="display: flex; gap: 12px; margin-top: 16px;">
+                <button type="button" id="btnFreeTrial" class="btn-secondary" style="flex: 1; padding: 14px; border-radius: 12px; text-align: center; border-color: rgba(236, 72, 153, 0.5); color: #f472b6;" onclick="handleFreeTrial(event)">
+                  Start my free trial
+                </button>
+                <button type="submit" id="btnRegisterSubmit" class="btn-checkout-purple" style="flex: 1;">
+                  💳 Bayar Sekarang
+                </button>
+              </div>
+
+              <p class="terms-caption" style="margin-top: 16px; text-align: center;">
+                Dengan mendaftar, Anda menyetujui <a style="cursor: pointer; color: #ec4899; text-decoration: underline;" onclick="openLegalModal('tos')">Terms of Service</a> dan <a style="cursor: pointer; color: #ec4899; text-decoration: underline;" onclick="openLegalModal('privacy')">Privacy Policy</a> TRENDORA.
+              </p>
+            </form>
+          </div>
+
+          <div class="checkout-right">
+            <h2 class="checkout-headline">
+              Create Viral Posts 10x Faster And Grow Your Brand On Multiple Social Media Platforms!
+            </h2>
+
+            <h3 class="trial-risk-title">100% NO-RISK FREE TRIAL</h3>
+
+            <ul class="checkout-benefits">
+              <li><span class="check-green">&check;</span> Cancel anytime, hassle-free</li>
+              <li><span class="check-green">&check;</span> Pay nothing for the first 7 days</li>
+              <li><span class="check-green">&check;</span> 30-day money back GUARANTEE</li>
+            </ul>
+
+            <div class="order-summary-box">
+              <span class="summary-label">Plan</span>
+              <div class="summary-row">
+                <strong id="summaryPlanName">Creator Monthly</strong>
+                <strong id="summaryDueToday" class="due-today-badge">$0 due today</strong>
+              </div>
+              <div class="summary-price" id="summaryPlanPrice">Rp.200.000/mo</div>
+            </div>
+
+            <div class="mascot-wrapper">
+              <div class="mascot-circle" title="100% Risk Free Guarantee">
+                🦭
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- STEP SURVEY -->
+      <div id="modalStepSurvey" style="display: none;">
+        <div class="survey-wrapper">
+          <h2 class="survey-title">How did you hear about us?</h2>
+          
+          <div class="survey-chips-container">
+            <div class="survey-row">
+              <button type="button" class="survey-chip chip-google" onclick="handleSurveySelect('Google')">
+                <span class="chip-icon google-badge">G</span> Google
+              </button>
+              <button type="button" class="survey-chip" onclick="handleSurveySelect('YouTube')">
+                <span class="chip-icon" style="color:#ef4444">▶</span> YouTube
+              </button>
+              <button type="button" class="survey-chip" onclick="handleSurveySelect('Instagram')">
+                <span class="chip-icon" style="color:#e1306c">📷</span> Instagram
+              </button>
+            </div>
+            <div class="survey-row">
+              <button type="button" class="survey-chip" onclick="handleSurveySelect('TikTok')">
+                <span class="chip-icon">🎵</span> TikTok
+              </button>
+              <button type="button" class="survey-chip" onclick="handleSurveySelect('Other')">
+                <span class="chip-icon">🧘</span> Other
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- STEP ONBOARDING -->
+      <div id="modalStepOnboarding" style="display: none;">
+        <div class="onboarding-container">
+          <div class="onboarding-header">
+            <span class="step-indicator">Step 2 of 3</span>
+            <div class="progress-pills">
+              <span class="pill-bar active"></span><span class="pill-bar active"></span><span class="pill-bar"></span>
+            </div>
+            <h2 class="onboarding-title">3 steps to your first automation</h2>
+          </div>
+
+          <div class="onboard-card">
+            <div class="onboard-num-badge">1</div>
+            <div class="onboard-card-body">
+              <div class="onboard-item-row">
+                <div class="onboard-item-left">
+                  <span class="onboard-icon">🔑</span>
+                  <div>
+                    <div class="onboard-item-title">
+                      <h4>Unlock automation with AI tools</h4>
+                      <span class="tag-required">REQUIRED</span>
+                    </div>
+                    <p class="onboard-item-desc">API is limited to paying users to reduce spam/bots.</p>
+                  </div>
+                </div>
+                <button type="button" class="btn-unlock-api" onclick="window.handleUnlockApiClick()">Unlock API access &rarr;</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="onboard-footer">
+            <button type="button" class="btn-see-dashboard" onclick="finishOnboardingToDashboard()">See Your Dashboard &rarr;</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- STEP RESULT -->
+      <div id="modalStepResult" style="display: none;">
+        <div class="modal-header">
+          <span class="modal-badge expired-badge">🔒 FREE TRIAL EXPIRED & API KEY LOCKED</span>
+          <h2>API Key Berhasil Dibuat (Status: Terkunci)</h2>
+        </div>
+
+        <div class="api-key-box" style="display: flex; align-items: center; justify-content: space-between; background: #1f1315; border: 1px dashed rgba(239, 68, 68, 0.4); border-radius: 12px; padding: 12px 16px;">
+          <span id="generatedApiKeyText" class="key-text" style="font-family: monospace; font-size: 14px; color: #f87171;">TREND_••••••••••••••••</span>
+          <button class="btn-copy" onclick="reopenSnapPayment()" style="background: #ef4444; color: #fff; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 700;">🔒 Buka Key</button>
+        </div>
+
+        <button class="btn-checkout-purple btn-block" onclick="reopenSnapPayment()" style="margin-top: 20px;">
+          💳 Selesaikan Pembayaran & Buka API Key
+        </button>
+
+        <button class="btn-secondary btn-block" onclick="finishOnboardingToDashboard()" style="margin-top: 10px; width: 100%;">
+          Ke Dashboard (Mode Terkunci)
+        </button>
+      </div>
+
+      <div id="checkoutAlertMsg" class="modal-alert-msg" style="margin-top: 15px;"></div>
+
+    </div>
+  </div>
+
+  <!-- INCLUDE SISA MODAL (Legal & Sosial) -->
+  {% include 'apiKeyModal.html' %}
+
+  <!-- SCRIPTS -->
+  <script src="https://app.midtrans.com/snap/snap.js" data-client-key="Mid-client-cNBEMqcP3nVAyEzI"></script>
+  <script src="{{ url_for('static', filename='js/ui.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/auth.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/payment.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+</body>
+</html>
