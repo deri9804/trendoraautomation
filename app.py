@@ -519,7 +519,7 @@ def check_payment():
 @app.route('/api/tiktok-auth-url', methods=['GET'])
 def get_tiktok_auth_url():
     """Route untuk menggenerate URL Login TikTok asli (Mode Sandbox)."""
-    redirect_uri = "redirect_uri = "https://trendoraautomation.my.id/auth/tiktok/callback""
+    redirect_uri = "redirect_uri" = "https://trendoraautomation.my.id/auth/tiktok/callback"
     state = uuid.uuid4().hex
     
     params = {
