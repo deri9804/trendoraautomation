@@ -27,14 +27,6 @@
           Status: <strong id="dashAccountStatus" style="color: #f59e0b;">Active (7-Day Free Trial)</strong>
         </p>
         <button class="btn-pink" onclick="handleConnectSocialClick()">🔗 Hubungkan Sosial Media</button>
-
-        <!-- TOMBOL TOGGLE SANDBOX MODE -->
-        <div style="margin-top: 24px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.1);">
-          <h4 style="font-size: 13px; color: #9ca3af; margin-bottom: 12px;">🛠️ Pengaturan Developer</h4>
-          <button id="btnSandboxToggle" onclick="toggleSandboxMode()" class="btn-secondary" style="border-color: rgba(255,255,255,0.15); color: #9ca3af; font-size: 12px; padding: 8px 16px; display: flex; align-items: center; gap: 8px; width: 100%; justify-content: center;">
-            <span id="sandboxIcon">📴</span> Mode Sandbox (App Review & Testing)
-          </button>
-        </div>
       </div>
       
       <!-- BAGIAN KANAN: API KEY & WEBHOOK URL -->
@@ -59,22 +51,6 @@
           <span id="dashWebhookUrlDisplay" style="font-family: monospace; font-size: 11px; color: #f472b6; word-break: break-all; white-space: normal;">Memuat Webhook URL...</span>
         </div>
         <button class="btn-secondary" style="font-size: 12px; padding: 8px 16px; width: 100%;" onclick="copyWebhookUrl()">📋 Copy URL</button>
-      </div>
-    </div>
-
-    <!-- PANEL SIMULASI TIKTOK SANDBOX -->
-    <div id="tiktokSandboxPanel" class="dashboard-hero-card" style="display: none; margin-bottom: 30px; border-color: #38bdf8; background: rgba(56, 189, 248, 0.05);">
-      <h3 style="margin-bottom: 12px; font-size: 18px; color: #fff;">🎵 TikTok Sandbox Simulator (App Review)</h3>
-      <p style="color: #9ca3af; font-size: 13px; margin-bottom: 16px;">
-        Panel khusus untuk pengujian fungsi <strong>video.upload</strong> (Draft) & <strong>video.publish</strong> (Posting Direct).
-      </p>
-      
-      <div style="display: flex; gap: 12px; flex-wrap: wrap;">
-        <button class="btn-secondary" style="border-color: #38bdf8; color: #38bdf8;" onclick="runTikTokSandbox('draft')">1. Upload to Draft (video.upload)</button>
-        <button class="btn-pink" onclick="runTikTokSandbox('publish')">2. Direct Publish (video.publish)</button>
-      </div>
-      
-      <div id="tiktokSandboxConsole" style="margin-top: 16px; background: #090d16; padding: 16px; border-radius: 8px; font-family: monospace; font-size: 12px; color: #34d399; display: none; max-height: 300px; overflow-y: auto;">
       </div>
     </div>
 

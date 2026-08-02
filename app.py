@@ -592,7 +592,7 @@ def check_payment():
 # ==========================================
 @app.route('/api/n8n-webhook', methods=['POST'])
 def n8n_webhook():
-    """Menerima POST Webhook dari n8n, mencatat log, & MENSIMULASIKAN TIKTOK API BILA MODE SANDBOX AKTIF."""
+    """Menerima POST Webhook dari n8n, mencatat log."""
     api_key = request.headers.get('X-API-Key', '').strip()
     
     if not api_key:
@@ -604,85 +604,14 @@ def n8n_webhook():
     platform = data.get('platform', 'unknown').lower()
     status = data.get('status', 'RECEIVED')
     post_mode = data.get('post_mode', 'publish')
-    is_sandbox = data.get('is_sandbox', False)
     details = data.get('details', {})
     
     if not api_key:
         return jsonify({"success": False, "message": "API Key is required in Header (X-API-Key or Authorization)"}), 400
     
-    tiktok_simulation_log = None
     if platform == 'tiktok':
-        media_url = details.get('media_url', '') if isinstance(details, dict) else ''
-        caption = details.get('caption', '') if isinstance(details, dict) else ''
-        
-        if is_sandbox:
-            if post_mode == 'draft':
-                tiktok_simulation_log = {
-                    "action": "Upload to TikTok Drafts (video.upload)",
-                    "tiktok_endpoint": "https://open.tiktokapis.com/v2/post/publish/video/init/",
-                    "method": "POST",
-                    "headers": {
-                        "Authorization": "Bearer <sandbox_access_token_simulated>",
-                        "Content-Type": "application/json; charset=UTF-8"
-                    },
-                    "payload_sent": {
-                        "post_info": {
-                            "title": caption,
-                            "privacy_level": "SELF_ONLY",
-                            "disable_duet": False,
-                            "disable_comment": False,
-                            "disable_stitch": False
-                        },
-                        "source_info": {
-                            "source": "PULL_FROM_URL",
-                            "video_url": media_url
-                        }
-                    },
-                    "tiktok_simulated_response": {
-                        "data": {
-                            "publish_id": f"v_draft_{uuid.uuid4().hex[:12]}",
-                            "error_code": 0,
-                            "error_msg": "Success - Saved to Drafts"
-                        }
-                    }
-                }
-            else:
-                tiktok_simulation_log = {
-                    "action": "Direct Publish to TikTok (video.publish)",
-                    "tiktok_endpoint": "https://open.tiktokapis.com/v2/post/publish/video/init/",
-                    "method": "POST",
-                    "headers": {
-                        "Authorization": "Bearer <sandbox_access_token_simulated>",
-                        "Content-Type": "application/json; charset=UTF-8"
-                    },
-                    "payload_sent": {
-                        "post_info": {
-                            "title": caption,
-                            "privacy_level": "PUBLIC",
-                            "disable_duet": False,
-                            "disable_comment": False,
-                            "disable_stitch": False
-                        },
-                        "source_info": {
-                            "source": "PULL_FROM_URL",
-                            "video_url": media_url
-                        }
-                    },
-                    "tiktok_simulated_response": {
-                        "data": {
-                            "publish_id": f"v_publish_{uuid.uuid4().hex[:12]}",
-                            "error_code": 0,
-                            "error_msg": "Success - Published directly"
-                        }
-                    }
-                }
-            
-            if isinstance(details, dict):
-                details['tiktok_api_trace'] = f"Success via Sandbox ({post_mode.upper()})"
-        
-        else:
-            if isinstance(details, dict):
-                details['tiktok_api_trace'] = "Success via Live Production API"
+        if isinstance(details, dict):
+            details['tiktok_api_trace'] = "Success via Live Production API"
 
     if isinstance(details, dict):
         details_str = json.dumps(details)
@@ -696,17 +625,11 @@ def n8n_webhook():
     if sheet:
         try:
             sheet.append_row([timestamp, log_id, api_key, platform, status, details_str])
-            
-            response_data = {
+            return jsonify({
                 "success": True, 
                 "message": "Log saved and payload processed", 
-                "log_id": log_id,
-                "sandbox_active": is_sandbox
-            }
-            if tiktok_simulation_log:
-                response_data["tiktok_sandbox_trace"] = tiktok_simulation_log
-                
-            return jsonify(response_data)
+                "log_id": log_id
+            })
         except Exception as e:
             print(f"GSheet Append Error: {e}")
             return jsonify({"success": False, "message": f"Failed to save to sheet: {str(e)}"}), 500
@@ -722,11 +645,7 @@ def n8n_webhook():
             "Details": details_str
         })
         
-        response_data = {"success": True, "message": "Log saved to memory (fallback)", "log_id": log_id, "sandbox_active": is_sandbox}
-        if tiktok_simulation_log:
-            response_data["tiktok_sandbox_trace"] = tiktok_simulation_log
-            
-        return jsonify(response_data)
+        return jsonify({"success": True, "message": "Log saved to memory (fallback)", "log_id": log_id})
 
 @app.route('/api/get-logs', methods=['POST'])
 def get_logs():

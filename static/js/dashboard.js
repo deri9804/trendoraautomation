@@ -1,32 +1,3 @@
-let isSandboxMode = false;
-
-function toggleSandboxMode() {
-  isSandboxMode = !isSandboxMode;
-  const btn = document.getElementById('btnSandboxToggle');
-  const icon = document.getElementById('sandboxIcon');
-  const panel = document.getElementById('tiktokSandboxPanel');
-
-  if (isSandboxMode) {
-    if (btn) {
-      btn.style.background = 'rgba(56, 189, 248, 0.15)';
-      btn.style.color = '#38bdf8';
-      btn.style.borderColor = '#38bdf8';
-    }
-    if (icon) icon.innerText = '📲';
-    if (panel) panel.style.display = 'block';
-    showToast('Mode Sandbox Aktif! Panel simulasi TikTok terbuka.', '#38bdf8');
-  } else {
-    if (btn) {
-      btn.style.background = 'transparent';
-      btn.style.color = '#9ca3af';
-      btn.style.borderColor = 'rgba(255,255,255,0.15)';
-    }
-    if (icon) icon.innerText = '📴';
-    if (panel) panel.style.display = 'none';
-    showToast('Mode Sandbox Dimatikan. Kembali ke Mode Live (Production).', '#34d399');
-  }
-}
-
 function handleSurveySelect(sourceName) {
   if (globalUserData) {
     globalUserData.referralSource = sourceName;
@@ -305,51 +276,6 @@ function renderLogsTable(res) {
   tbody.innerHTML = html;
 }
 
-function runTikTokSandbox(mode) {
-  const consoleBox = document.getElementById('tiktokSandboxConsole');
-  if (consoleBox) {
-    consoleBox.style.display = 'block';
-    consoleBox.innerHTML = `<p class="cmd">> Inisiasi simulasi TikTok API (${mode.toUpperCase()})...</p>`;
-  }
-
-  const apiKey = globalUserData ? globalUserData.apiKey : 'TREND_TESTER';
-
-  fetch('/api/n8n-webhook', {
-    method: 'POST',
-    headers: { 
-        'Content-Type': 'application/json',
-        'X-API-Key': apiKey 
-    },
-    body: JSON.stringify({
-      platform: "tiktok",
-      post_mode: mode,
-      is_sandbox: true,
-      status: mode === 'draft' ? "DRAFT_UPLOADED" : "PUBLISHED",
-      details: { caption: `[Auto Test] TikTok Sandbox - ${mode.toUpperCase()}`, media_url: "https://domain.com/sample_video.mp4" }
-    })
-  })
-  .then(res => res.json())
-  .then(data => {
-    if (consoleBox) {
-      if (data.success) {
-        consoleBox.innerHTML += `<p class="success">✓ Payload berhasil diproses (API Otorisasi: ${mode === 'draft' ? 'video.upload' : 'video.publish'})</p>`;
-        if (data.tiktok_sandbox_trace) {
-           consoleBox.innerHTML += `<p class="param">Response dari Endpoint TikTok:</p>`;
-           consoleBox.innerHTML += `<pre style="color: #60a5fa; margin-top: 8px;">${JSON.stringify(data.tiktok_sandbox_trace, null, 2)}</pre>`;
-        }
-      } else {
-        consoleBox.innerHTML += `<p style="color: #ef4444;">✕ Error: ${data.message}</p>`;
-      }
-    }
-    if (data.success) {
-      setTimeout(loadUserPostLogs, 1500); 
-    }
-  })
-  .catch(err => {
-    if (consoleBox) consoleBox.innerHTML += `<p style="color: #ef4444;">✕ Server Error: ${err}</p>`;
-  });
-}
-
 function runWebhookTest(context) {
   const isDoc = context === 'doc';
   const inputId = isDoc ? 'videoUrlInputDoc' : 'videoUrlInputHero';
@@ -385,7 +311,6 @@ function runWebhookTest(context) {
     body: JSON.stringify({
       platform: "instagram",
       status: "PUBLISHED",
-      is_sandbox: isSandboxMode,
       details: { caption: "Webhook Auto-Test from Web UI", media_url: videoUrl }
     })
   })
@@ -415,11 +340,6 @@ function renderSimulationResult(res, btn, consoleBox) {
   let html = '';
   html += '<p><span class="cmd">> POST /api/n8n-webhook</span></p>';
   html += '<p class="success">✓ Payload successfully processed by Web Backend</p>';
-  
-  if (res.sandbox_active) {
-     html += '<p style="color: #38bdf8;">⚠️ (Processed in Sandbox Simulation Mode)</p>';
-  }
-  
   html += '<p><span class="param">Response JSON:</span></p>';
   html += '<pre style="color: #34d399; font-size: 11px;">' + JSON.stringify(res, null, 2) + '</pre>';
 
@@ -446,7 +366,6 @@ document.addEventListener('DOMContentLoaded', () => {
    }, 500);
 });
 
-window.toggleSandboxMode = toggleSandboxMode;
 window.handleSurveySelect = handleSurveySelect;
 window.handleUnlockApiClick = handleUnlockApiClick;
 window.handleGenerateApiKeyClick = handleGenerateApiKeyClick;
@@ -460,4 +379,3 @@ window.copyWebhookUrl = copyWebhookUrl;
 window.loadUserPostLogs = loadUserPostLogs;
 window.renderLogsTable = renderLogsTable;
 window.runWebhookTest = runWebhookTest;
-window.runTikTokSandbox = runTikTokSandbox;

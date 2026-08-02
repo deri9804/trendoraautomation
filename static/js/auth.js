@@ -34,6 +34,7 @@ function checkStoredSession() {
 }
 
 window.addEventListener('message', function(event) {
+  // Ini menangkap pesan ASLI dari pop-up callback (app.py) setelah user sukses login
   if (event.data && event.data.type === 'OAUTH_SUCCESS') {
     const platform = event.data.platform || 'Social Account';
     showToast(`🎉 Akun asli ${platform} berhasil terhubung & diverifikasi!`, "#34d399");
@@ -75,6 +76,7 @@ function handleSocialPlatformConnect(platform) {
 
   const p = String(platform).toLowerCase();
 
+  // TIKTOK REAL AUTH LOGIC (No Fake Timers)
   if (p === 'tiktok') {
     fetch('/api/tiktok-auth-url')
       .then(res => res.json())
@@ -82,26 +84,14 @@ function handleSocialPlatformConnect(platform) {
         if (data.success && data.url) {
           const popup = window.open(data.url, `OAuth_${platform}`, 'width=600,height=750,scrollbars=yes,status=yes');
           
-          let isResolved = false;
-
+          // Murni memantau apakah user menutup pop-up manual.
+          // Tidak ada timer pemalsuan "success" otomatis. Kita sepenuhnya menunggu eventListener OAUTH_SUCCESS.
           const checkTimer = setInterval(() => {
-            if (popup && popup.closed && !isResolved) {
-              isResolved = true;
+            if (popup && popup.closed) {
               clearInterval(checkTimer);
-              verifyAccountConnectionBackend(platform, userEmail);
+              // Pop up ditutup. Status success hanya terjadi jika event OAUTH_SUCCESS dikirim sblmnya.
             }
           }, 1000);
-
-          setTimeout(() => {
-              if (!isResolved) {
-                  isResolved = true;
-                  clearInterval(checkTimer);
-                  if (popup && !popup.closed) {
-                      popup.close();
-                  }
-                  verifyAccountConnectionBackend(platform, userEmail);
-              }
-          }, 4500);
 
         } else {
           openFallbackOAuthPopup(platform, userEmail);
@@ -113,6 +103,7 @@ function handleSocialPlatformConnect(platform) {
     return;
   }
 
+  // PLATFORM LAIN (Facebook, Instagram, dll) yang belum ada callback aslinya
   openFallbackOAuthPopup(platform, userEmail);
 }
 
@@ -143,6 +134,7 @@ function openFallbackOAuthPopup(platform, userEmail) {
 }
 
 function verifyAccountConnectionBackend(platform, userEmail) {
+  // CATATAN: Ini hanya berjalan untuk platform selain TikTok (dummy fallback).
   showToast(`Memverifikasi status koneksi akun ${platform}...`, "#6366f1");
 
   setTimeout(() => {
@@ -156,24 +148,9 @@ function verifyAccountConnectionBackend(platform, userEmail) {
       connectBtn.style.borderColor = '#34d399';
       connectBtn.style.color = '#34d399';
     }
+    
+    // Logika pemalsuan profil TikTok (@tiktok_tester_user) telah dihapus sepenuhnya dari sini.
 
-    if (platform.toLowerCase() === 'tiktok' && globalUserData) {
-      globalUserData.connectedPlatform = 'TikTok';
-      globalUserData.tiktokAvatar = 'https://ui-avatars.com/api/?name=TikTok+User&background=000&color=fff';
-      globalUserData.tiktokName = '@tiktok_tester_user';
-      localStorage.setItem('automedia_user', JSON.stringify(globalUserData));
-      
-      const dashAvatar = document.getElementById('dashAvatar');
-      
-      if (dashAvatar) {
-        dashAvatar.src = globalUserData.tiktokAvatar;
-        dashAvatar.style.display = 'block';
-      }
-      
-      setTimeout(() => {
-         showToast("✅ Berhasil mendapatkan data profil TikTok (user.info.basic)", "#38bdf8");
-      }, 1000);
-    }
   }, 1200);
 }
 
@@ -217,7 +194,6 @@ function handleRequestOTP(event) {
 
       showToast(data.message || "Silakan cek Google Authenticator Anda", "#34d399");
     } else {
-      /* REVISI POIN 2: Jika Email Belum Terdaftar -> Sembunyikan total QR Code & OTP Group! */
       if (qrContainer) qrContainer.style.display = 'none';
       if (otpGroup) otpGroup.style.display = 'none';
       if (alertMsg) { 
