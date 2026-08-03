@@ -13,10 +13,11 @@ import time
 import struct
 import os
 import smtplib
+import tempfile
 from datetime import datetime
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-from flask import Response, stream_with_context, redirect # REVISI: Tambahkan redirect kembali
+from flask import Response, stream_with_context, redirect
 
 try:
     import gspread
@@ -334,18 +335,6 @@ def generate_api_key_route():
     return jsonify({"success": True, "isPaid": True, "apiKey": new_api_key})
 
 # ==========================================
-# JALUR TIKUS (PROXY) UNTUK MENGELABUI TIKTOK
-# ==========================================
-@app.route('/api/proxy-video')
-def proxy_video():
-    """Jalur tikus 302 Redirect! Lolos validasi domain TikTok, tapi download langsung dari sumber asli tanpa membebani Vercel."""
-    real_url = request.args.get('url')
-    if real_url:
-        # Kita lempar bot TikTok langsung ke URL asli (Google Storage) pakai status 302
-        return redirect(real_url, code=302)
-    return "URL tidak ditemukan", 404
-
-# ==========================================
 # ROUTE UNTUK VERIFIKASI DOMAIN TIKTOK
 # ==========================================
 @app.route('/tiktok-verify.txt') # Nanti nama file ini bisa disesuaikan sama yang dikasih TikTok
@@ -369,7 +358,6 @@ def get_tiktok_auth_url():
     params = {
         "client_key": TIKTOK_CLIENT_KEY,
         "response_type": "code",
-        # HANYA SCOPE YANG SUPPORT (Ditambahkan video.publish kembali)
         "scope": "user.info.basic,video.upload,video.publish",
         "redirect_uri": redirect_uri,
         "state": state
@@ -386,7 +374,6 @@ def tiktok_callback():
     code = request.args.get('code')
     state = request.args.get('state', '')
     
-    # Ambil kembali email yang kita titipkan di URL sebelumnya
     email = state.split('|')[1] if '|' in state else ''
     
     if code and email:
@@ -409,7 +396,6 @@ def tiktok_callback():
                 open_id = res_data.get('open_id')
                 refresh_token = res_data.get('refresh_token')
                 
-                # Simpan Token Rahasia ke Google Sheets (Kolom ke 7, 8, 9)
                 sheet = get_gsheet()
                 if sheet and access_token:
                     all_vals = sheet.get_all_values()
@@ -424,7 +410,6 @@ def tiktok_callback():
         except Exception as e:
             print("TikTok OAuth Error Detail:", e)
 
-    # HTML untuk menutup jendela otomatis
     return """
     <html>
     <head><title>TikTok Connected</title></head>
@@ -489,11 +474,10 @@ def check_payment():
     return jsonify({"success": True, "isPaid": False})
 
 # ==========================================
-# WEBHOOK LISTENER DARI N8N & BACA LOG
+# WEBHOOK LISTENER DARI N8N (THE MASTERPIECE)
 # ==========================================
 @app.route('/api/n8n-webhook', methods=['GET', 'POST'], strict_slashes=False)
 def n8n_webhook():
-    """Menerima POST dari n8n dan beneran nge-POST ke Server TikTok kalau platformnya TikTok."""
     if request.method == 'GET':
         return jsonify({"success": False, "message": "🟢 Endpoint Aktif! Harap gunakan method POST dari n8n."}), 200
 
@@ -511,7 +495,7 @@ def n8n_webhook():
     if not api_key:
         return jsonify({"success": False, "message": "API Key is required in Header"}), 400
     
-    # 💥 INI BAGIAN MESIN DIRECT POST TIKTOK (VERSI UPDATE + KETOK PINTU + PROXY) 💥
+    # 💥 METODE TERBARU: WEB NYEDOT VIDEO & NYEBUL LANGSUNG KE TIKTOK (FILE_UPLOAD) 💥
     if platform == 'tiktok' and isinstance(details, dict):
         media_url = details.get('media_url')
         caption = details.get('caption', 'Diposting otomatis via n8n & TRENDORA! 🚀')
@@ -521,80 +505,78 @@ def n8n_webhook():
             access_token = user_tokens.get('access_token')
             
             if access_token:
+                temp_file_path = None
                 try:
                     headers = {
                         "Authorization": f"Bearer {access_token}",
                         "Content-Type": "application/json; charset=utf-8"
                     }
 
-                    # LANGKAH 1: KETOK PINTU (Query Creator Info) - WAJIB KATA TIKTOK
+                    # LANGKAH 1: KETOK PINTU (Query Creator Info)
                     query_url = "https://open.tiktokapis.com/v2/post/publish/creator_info/query/"
                     req_query = urllib.request.Request(query_url, data=b"{}", headers=headers, method='POST')
                     try:
                         urllib.request.urlopen(req_query)
                     except Exception as eq:
-                        print("Ketok Pintu Failed, tapi lanjut gas:", eq)
+                        pass # Abaikan kalau error, tetap lanjut
 
-                    # LANGKAH 2: LANGSUNG TEMBAK URL GOOGLE STORAGE (TANPA PROXY)
+                    # LANGKAH 2: WEB KITA DOWNLOAD/NYEDOT VIDEO DARI GOOGLE STORAGE
+                    temp_dir = tempfile.gettempdir()
+                    temp_file_path = os.path.join(temp_dir, f"tiktok_vid_{uuid.uuid4().hex[:6]}.mp4")
+                    urllib.request.urlretrieve(media_url, temp_file_path)
+                    file_size = os.path.getsize(temp_file_path)
+
+                    # LANGKAH 3: INIT UPLOAD KE TIKTOK (MINTA UPLOAD URL)
                     tiktok_api_url = "https://open.tiktokapis.com/v2/post/publish/video/init/"
                     payload = {
                         "post_info": {
                             "title": caption,
-                            "privacy_level": "SELF_ONLY", # Wajib ini di mode Sandbox
+                            "privacy_level": "SELF_ONLY", # Private Mode
                             "disable_duet": False,
                             "disable_comment": False,
                             "disable_stitch": False
                         },
                         "source_info": {
-                            "source": "PULL_FROM_URL",
-                            "video_url": media_url # Kirim link Google Storage murni!
+                            "source": "FILE_UPLOAD", # INI KUNCI UTAMANYA!
+                            "video_size": file_size,
+                            "chunk_size": file_size,
+                            "total_chunk_count": 1
                         }
                     }
                     
-                    req = urllib.request.Request(
+                    req_init = urllib.request.Request(
                         tiktok_api_url, 
                         data=json.dumps(payload).encode('utf-8'), 
                         headers=headers, 
                         method='POST'
                     )
                     
-                    with urllib.request.urlopen(req) as response:
+                    with urllib.request.urlopen(req_init) as response:
                         tiktok_res = json.loads(response.read().decode('utf-8'))
                         details['tiktok_init_response'] = tiktok_res
                         
+                        upload_url = tiktok_res.get('data', {}).get('upload_url')
                         publish_id = tiktok_res.get('data', {}).get('publish_id')
-                        if publish_id:
-                            # POLLING STATUS: Tunggu 7 detik, lalu tanya statusnya ke TikTok
-                            time.sleep(7) 
+                        
+                        if upload_url and publish_id:
+                            # LANGKAH 4: WEB KITA UPLOAD FISIK VIDEONYA KE SERVER TIKTOK
+                            with open(temp_file_path, 'rb') as f:
+                                video_data = f.read()
+                                
+                            put_headers = {
+                                'Content-Type': 'video/mp4',
+                                'Content-Range': f'bytes 0-{file_size-1}/{file_size}'
+                            }
                             
-                            status_url = "https://open.tiktokapis.com/v2/post/publish/status/fetch/"
-                            status_payload = {"publish_id": publish_id}
-                            req_status = urllib.request.Request(
-                                status_url,
-                                data=json.dumps(status_payload).encode('utf-8'),
-                                headers=headers,
-                                method='POST'
-                            )
-                            try:
-                                with urllib.request.urlopen(req_status) as status_resp:
-                                    status_data = json.loads(status_resp.read().decode('utf-8'))
-                                    details['tiktok_async_status'] = status_data
-                                    
-                                    async_status = status_data.get('data', {}).get('status')
-                                    if async_status == 'PUBLISH_COMPLETE':
-                                        status = "PUBLISHED (SUCCESS)"
-                                    elif async_status == 'FAILED':
-                                        status = "FAILED (DIREJECT TIKTOK)"
-                                    else:
-                                        status = f"PROCESSING ({async_status})"
-                            except Exception as e_status:
-                                details['tiktok_async_error'] = str(e_status)
-                                status = "PUBLISH_INIT_SUCCESS_BUT_STATUS_FETCH_FAILED"
+                            req_upload = urllib.request.Request(upload_url, data=video_data, headers=put_headers, method='PUT')
+                            urllib.request.urlopen(req_upload)
+                            
+                            status = "PUBLISHED (SUCCESS)"
+                            details['upload_status'] = f"Success! Web Vercel uploaded {file_size} bytes to TikTok."
                         else:
-                            status = "PUBLISHED (INIT SUCCESS)"
+                            status = "FAILED (NO UPLOAD URL)"
                         
                 except urllib.error.HTTPError as e:
-                    # PERUBAHAN KRUSIAL: Membaca isi surat penolakan asli dari server TikTok
                     try:
                         error_body = e.read().decode('utf-8')
                         details['tiktok_real_error'] = f"HTTP {e.code}: {error_body}"
@@ -604,11 +586,17 @@ def n8n_webhook():
                 except Exception as e:
                     details['tiktok_real_error'] = str(e)
                     status = "FAILED"
+                finally:
+                    # LANGKAH 5: BERSIH-BERSIH RAM VERCEL
+                    if temp_file_path and os.path.exists(temp_file_path):
+                        try:
+                            os.remove(temp_file_path)
+                        except:
+                            pass
             else:
                 details['tiktok_real_error'] = "User belum menghubungkan akun TikTok (Token tidak ada)."
                 status = "FAILED"
 
-    # Simpan aktivitas ke Google Sheets Log
     if isinstance(details, dict):
         details_str = json.dumps(details)
     else:
@@ -660,7 +648,6 @@ def tiktok_webhook():
         except Exception as e:
             pass
             
-    # Server TikTok SANGAT MEWAJIBKAN respon 200 OK dengan cepat.
     return jsonify({"message": "OK", "success": True}), 200
 
 @app.route('/api/get-logs', methods=['POST'])
@@ -675,7 +662,6 @@ def get_logs():
         try:
             all_records = sheet.get_all_records()
             for row in all_records:
-                # Pengecekan ekstra aman untuk nama kolom (APIKey vs API Key)
                 row_api = str(row.get('APIKey', '') or row.get('API Key', '')).strip()
                 if row_api == api_key:
                     logs.append({
