@@ -16,7 +16,7 @@ import smtplib
 from datetime import datetime
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-from flask import Response, stream_with_context # REVISI: Hapus redirect, ganti jadi Response & stream
+from flask import Response, stream_with_context, redirect # REVISI: Tambahkan redirect kembali
 
 try:
     import gspread
@@ -338,23 +338,11 @@ def generate_api_key_route():
 # ==========================================
 @app.route('/api/proxy-video')
 def proxy_video():
-    """Jalur tikus sejati! Server kita yang download & suapin videonya langsung ke TikTok."""
+    """Jalur tikus 302 Redirect! Lolos validasi domain TikTok, tapi download langsung dari sumber asli tanpa membebani Vercel."""
     real_url = request.args.get('url')
     if real_url:
-        try:
-            req = urllib.request.Request(real_url, headers={'User-Agent': 'Mozilla/5.0'})
-            remote_response = urllib.request.urlopen(req)
-            
-            def generate():
-                while True:
-                    chunk = remote_response.read(8192)
-                    if not chunk:
-                        break
-                    yield chunk
-                    
-            return Response(stream_with_context(generate()), mimetype='video/mp4')
-        except Exception as e:
-            return f"Proxy Error: {e}", 500
+        # Kita lempar bot TikTok langsung ke URL asli (Google Storage) pakai status 302
+        return redirect(real_url, code=302)
     return "URL tidak ditemukan", 404
 
 # ==========================================
