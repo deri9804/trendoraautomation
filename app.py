@@ -59,7 +59,7 @@ def get_gsheet():
         return None
 
 def get_logs_sheet():
-    """Koneksi ke Google Sheets khusus tab 'Logs'."""
+    """Koneksi ke Google Sheets khusus tab 'Logs'. Sangat kebal error!"""
     if not HAS_GSPREAD:
         return None
     try:
@@ -71,7 +71,24 @@ def get_logs_sheet():
         else:
             creds = Credentials.from_service_account_file(SERVICE_ACCOUNT_FILE, scopes=scopes)
         client = gspread.authorize(creds)
-        sheet = client.open_by_key(GOOGLE_SHEET_ID).worksheet("Logs")
+        
+        doc = client.open_by_key(GOOGLE_SHEET_ID)
+        
+        # Cari berbagai kemungkinan nama tab yang mungkin diketik user
+        possible_names = ["Logs", "logs", "Log", "log", "LOGS", "Logs "]
+        sheet = None
+        for name in possible_names:
+            try:
+                sheet = doc.worksheet(name)
+                break
+            except:
+                continue
+                
+        # SUPER BULLETPROOF: Kalau beneran gak ketemu, BIKININ OTOMATIS!
+        if not sheet:
+            sheet = doc.add_worksheet(title="Logs", rows="1000", cols="10")
+            sheet.append_row(["Timestamp", "LogID", "APIKey", "Platform", "Status", "Details"])
+            
         return sheet
     except Exception as e:
         print(f"GSheets Logs Connection Error: {e}")
@@ -591,11 +608,15 @@ def get_logs():
         try:
             all_records = sheet.get_all_records()
             for row in all_records:
-                if str(row.get('APIKey', '')).strip() == api_key:
+                # Pengecekan ekstra aman untuk nama kolom (APIKey vs API Key)
+                row_api = str(row.get('APIKey', '') or row.get('API Key', '')).strip()
+                if row_api == api_key:
                     logs.append({
-                        "Timestamp": str(row.get('Timestamp', '')), "LogID": str(row.get('LogID', '')),
-                        "Platform": str(row.get('Platform', '')), "Status": str(row.get('Status', '')),
-                        "Details": str(row.get('Details', ''))
+                        "Timestamp": str(row.get('Timestamp', '') or row.get('Waktu', '')), 
+                        "LogID": str(row.get('LogID', '') or row.get('Log ID', '')),
+                        "Platform": str(row.get('Platform', '')), 
+                        "Status": str(row.get('Status', '')),
+                        "Details": str(row.get('Details', '') or row.get('Detail', ''))
                     })
             logs.reverse()
             return jsonify({"success": True, "logs": logs})
