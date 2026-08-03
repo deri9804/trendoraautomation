@@ -575,8 +575,38 @@ def n8n_webhook():
                     
                     with urllib.request.urlopen(req) as response:
                         tiktok_res = json.loads(response.read().decode('utf-8'))
-                        details['tiktok_real_response'] = tiktok_res
-                        status = "PUBLISHED (SUCCESS)"
+                        details['tiktok_init_response'] = tiktok_res
+                        
+                        publish_id = tiktok_res.get('data', {}).get('publish_id')
+                        if publish_id:
+                            # POLLING STATUS: Tunggu 7 detik, lalu tanya statusnya ke TikTok
+                            time.sleep(7) 
+                            
+                            status_url = "https://open.tiktokapis.com/v2/post/publish/status/fetch/"
+                            status_payload = {"publish_id": publish_id}
+                            req_status = urllib.request.Request(
+                                status_url,
+                                data=json.dumps(status_payload).encode('utf-8'),
+                                headers=headers,
+                                method='POST'
+                            )
+                            try:
+                                with urllib.request.urlopen(req_status) as status_resp:
+                                    status_data = json.loads(status_resp.read().decode('utf-8'))
+                                    details['tiktok_async_status'] = status_data
+                                    
+                                    async_status = status_data.get('data', {}).get('status')
+                                    if async_status == 'PUBLISH_COMPLETE':
+                                        status = "PUBLISHED (SUCCESS)"
+                                    elif async_status == 'FAILED':
+                                        status = "FAILED (DIREJECT TIKTOK)"
+                                    else:
+                                        status = f"PROCESSING ({async_status})"
+                            except Exception as e_status:
+                                details['tiktok_async_error'] = str(e_status)
+                                status = "PUBLISH_INIT_SUCCESS_BUT_STATUS_FETCH_FAILED"
+                        else:
+                            status = "PUBLISHED (INIT SUCCESS)"
                         
                 except urllib.error.HTTPError as e:
                     # PERUBAHAN KRUSIAL: Membaca isi surat penolakan asli dari server TikTok
