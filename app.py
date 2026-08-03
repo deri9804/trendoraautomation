@@ -444,7 +444,7 @@ def get_tiktok_auth_url():
     params = {
         "client_key": TIKTOK_CLIENT_KEY,
         "response_type": "code",
-        "scope": "user.info.basic,video.upload",
+        "scope": "user.info.basic,video.upload,video.publish",
         "redirect_uri": redirect_uri,
         "state": state
     }
