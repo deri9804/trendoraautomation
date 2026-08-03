@@ -535,10 +535,7 @@ def n8n_webhook():
                     except Exception as eq:
                         print("Ketok Pintu Failed, tapi lanjut gas:", eq)
 
-                    # LANGKAH 2: BUNGKUS URL ASLI JADI URL WEB KITA (Jalur Tikus)
-                    proxy_url = f"https://trendoraautomation.my.id/api/proxy-video?url={urllib.parse.quote(media_url)}"
-
-                    # LANGKAH 3: TEMBAK API POSTING TIKTOK
+                    # LANGKAH 2: LANGSUNG TEMBAK URL GOOGLE STORAGE (TANPA PROXY)
                     tiktok_api_url = "https://open.tiktokapis.com/v2/post/publish/video/init/"
                     payload = {
                         "post_info": {
@@ -550,7 +547,7 @@ def n8n_webhook():
                         },
                         "source_info": {
                             "source": "PULL_FROM_URL",
-                            "video_url": proxy_url # Kita setor link bungkusan kita
+                            "video_url": media_url # Kirim link Google Storage murni!
                         }
                     }
                     
