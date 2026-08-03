@@ -16,6 +16,7 @@ import smtplib
 from datetime import datetime
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+from flask import redirect # TAMBAHAN BARU UNTUK PROXY REDIRECT
 
 try:
     import gspread
@@ -333,6 +334,26 @@ def generate_api_key_route():
     return jsonify({"success": True, "isPaid": True, "apiKey": new_api_key})
 
 # ==========================================
+# JALUR TIKUS (PROXY) UNTUK MENGELABUI TIKTOK
+# ==========================================
+@app.route('/api/proxy-video')
+def proxy_video():
+    """Jalur tikus agar TikTok melihat domain kita, lalu kita lempar ke link video asli."""
+    real_url = request.args.get('url')
+    if real_url:
+        return redirect(real_url, code=302)
+    return "URL tidak ditemukan", 404
+
+# ==========================================
+# ROUTE UNTUK VERIFIKASI DOMAIN TIKTOK
+# ==========================================
+@app.route('/tiktok-verify.txt') # Nanti nama file ini bisa disesuaikan sama yang dikasih TikTok
+def tiktok_verify():
+    # Kalau TikTok minta verifikasi domain, lu masukin kode unik dari mereka ke sini
+    tiktok_verification_code = "tiktok-verification-code-masukin-nanti-disini"
+    return tiktok_verification_code, 200, {'Content-Type': 'text/plain'}
+
+# ==========================================
 # REAL TIKTOK OAUTH & DIRECT POST INTEGRATION
 # ==========================================
 @app.route('/api/tiktok-auth-url', methods=['GET'])
@@ -489,35 +510,46 @@ def n8n_webhook():
     if not api_key:
         return jsonify({"success": False, "message": "API Key is required in Header"}), 400
     
-    # 💥 INI BAGIAN MESIN DIRECT POST TIKTOK 💥
+    # 💥 INI BAGIAN MESIN DIRECT POST TIKTOK (VERSI UPDATE + KETOK PINTU + PROXY) 💥
     if platform == 'tiktok' and isinstance(details, dict):
         media_url = details.get('media_url')
         caption = details.get('caption', 'Diposting otomatis via n8n & TRENDORA! 🚀')
         
         if media_url:
-            # Ambil token rahasia user dari Google Sheets berdasarkan API Key
             user_tokens = db_get_tiktok_tokens_by_api_key(api_key)
             access_token = user_tokens.get('access_token')
             
             if access_token:
                 try:
-                    # Tembak API Resmi TikTok (Direct Post PULL_FROM_URL)
-                    tiktok_api_url = "https://open.tiktokapis.com/v2/post/publish/video/init/"
                     headers = {
                         "Authorization": f"Bearer {access_token}",
                         "Content-Type": "application/json; charset=utf-8"
                     }
+
+                    # LANGKAH 1: KETOK PINTU (Query Creator Info) - WAJIB KATA TIKTOK
+                    query_url = "https://open.tiktokapis.com/v2/post/publish/creator_info/query/"
+                    req_query = urllib.request.Request(query_url, data=b"{}", headers=headers, method='POST')
+                    try:
+                        urllib.request.urlopen(req_query)
+                    except Exception as eq:
+                        print("Ketok Pintu Failed, tapi lanjut gas:", eq)
+
+                    # LANGKAH 2: BUNGKUS URL ASLI JADI URL WEB KITA (Jalur Tikus)
+                    proxy_url = f"https://trendoraautomation.my.id/api/proxy-video?url={urllib.parse.quote(media_url)}"
+
+                    # LANGKAH 3: TEMBAK API POSTING TIKTOK
+                    tiktok_api_url = "https://open.tiktokapis.com/v2/post/publish/video/init/"
                     payload = {
                         "post_info": {
                             "title": caption,
-                            "privacy_level": "SELF_ONLY", # <--- DIREVISI SESUAI PERMINTAAN (KHUSUS MODE SANDBOX)
+                            "privacy_level": "SELF_ONLY", # Wajib ini di mode Sandbox
                             "disable_duet": False,
                             "disable_comment": False,
                             "disable_stitch": False
                         },
                         "source_info": {
                             "source": "PULL_FROM_URL",
-                            "video_url": media_url
+                            "video_url": proxy_url # Kita setor link bungkusan kita
                         }
                     }
                     
@@ -530,10 +562,17 @@ def n8n_webhook():
                     
                     with urllib.request.urlopen(req) as response:
                         tiktok_res = json.loads(response.read().decode('utf-8'))
-                        # Sisipkan hasil dari server TikTok ke dalam detail log web kita
                         details['tiktok_real_response'] = tiktok_res
                         status = "PUBLISHED (SUCCESS)"
                         
+                except urllib.error.HTTPError as e:
+                    # PERUBAHAN KRUSIAL: Membaca isi surat penolakan asli dari server TikTok
+                    try:
+                        error_body = e.read().decode('utf-8')
+                        details['tiktok_real_error'] = f"HTTP {e.code}: {error_body}"
+                    except:
+                        details['tiktok_real_error'] = f"HTTP {e.code}: Forbidden"
+                    status = "FAILED"
                 except Exception as e:
                     details['tiktok_real_error'] = str(e)
                     status = "FAILED"
