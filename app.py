@@ -347,7 +347,7 @@ def get_tiktok_auth_url():
     params = {
         "client_key": TIKTOK_CLIENT_KEY,
         "response_type": "code",
-        # HANYA SCOPE YANG SUPPORT (Agar tidak error saat otorisasi)
+        # HANYA SCOPE YANG SUPPORT (Ditambahkan video.publish kembali)
         "scope": "user.info.basic,video.upload,video.publish",
         "redirect_uri": redirect_uri,
         "state": state
@@ -510,7 +510,7 @@ def n8n_webhook():
                     payload = {
                         "post_info": {
                             "title": caption,
-                            "privacy_level": "PUBLIC_TO_EVERYONE",
+                            "privacy_level": "SELF_ONLY", # <--- DIREVISI SESUAI PERMINTAAN (KHUSUS MODE SANDBOX)
                             "disable_duet": False,
                             "disable_comment": False,
                             "disable_stitch": False
