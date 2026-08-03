@@ -36,14 +36,13 @@ function checkStoredSession() {
 window.addEventListener('message', function(event) {
   if (event.data && event.data.type === 'OAUTH_SUCCESS') {
     const platform = event.data.platform || 'Social Account';
-    showToast(`🎉 Akun asli ${platform} berhasil terhubung & diverifikasi!`, "#34d399");
+    showToast(`🎉 Akun asli ${platform} berhasil terhubung & token diamankan!`, "#34d399");
 
     if (typeof closeSocialConnectModal === 'function') {
         closeSocialConnectModal();
     }
 
     if (globalUserData) {
-      // Menyimpan data multiple platform ke dalam array
       if (!globalUserData.connectedPlatforms) {
         globalUserData.connectedPlatforms = [];
       }
@@ -54,7 +53,6 @@ window.addEventListener('message', function(event) {
       
       localStorage.setItem('automedia_user', JSON.stringify(globalUserData));
       
-      // Update UI langsung di dashboard
       if (typeof renderSocialConnectionsUI === 'function') {
         renderSocialConnectionsUI();
       }
@@ -82,9 +80,9 @@ function handleSocialPlatformConnect(platform) {
 
   const p = String(platform).toLowerCase();
 
-  // TIKTOK REAL AUTH LOGIC
+  // 100% REAL TIKTOK AUTHENTICATION (Menitipkan email agar backend tau Token milik siapa)
   if (p === 'tiktok') {
-    fetch('/api/tiktok-auth-url')
+    fetch('/api/tiktok-auth-url?email=' + encodeURIComponent(userEmail))
       .then(res => res.json())
       .then(data => {
         if (data.success && data.url) {
@@ -119,19 +117,15 @@ function openFallbackOAuthPopup(platform, userEmail) {
     authUrl = 'https://accounts.google.com/o/oauth2/v2/auth';
   }
 
-  // MURNI MEMBUKA JENDELA ASLI TANPA DUMMY TIMER
+  // MURNI MEMBUKA JENDELA ASLI TANPA DUMMY TIMER APAPUN
   window.open(authUrl, `OAuth_${platform}`, 'width=600,height=750,scrollbars=yes,status=yes');
 }
 
 function handleDisconnectSocial(platform) {
   if (globalUserData && globalUserData.connectedPlatforms) {
-    // Menghapus platform spesifik dari array memori
     globalUserData.connectedPlatforms = globalUserData.connectedPlatforms.filter(p => p !== platform);
-    
-    // Menyimpan kembali data bersih ke Local Storage
     localStorage.setItem('automedia_user', JSON.stringify(globalUserData));
     
-    // Memperbarui UI di Dashboard secara instan
     if (typeof renderSocialConnectionsUI === 'function') {
       renderSocialConnectionsUI();
     }

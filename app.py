@@ -45,14 +45,12 @@ def get_gsheet():
         return None
     try:
         scopes = ["https://www.googleapis.com/auth/spreadsheets"]
-        
         env_creds = os.environ.get("GOOGLE_APPLICATION_CREDENTIALS_JSON")
         if env_creds:
             creds_dict = json.loads(env_creds)
             creds = Credentials.from_service_account_info(creds_dict, scopes=scopes)
         else:
             creds = Credentials.from_service_account_file(SERVICE_ACCOUNT_FILE, scopes=scopes)
-            
         client = gspread.authorize(creds)
         sheet = client.open_by_key(GOOGLE_SHEET_ID).sheet1
         return sheet
@@ -66,14 +64,12 @@ def get_logs_sheet():
         return None
     try:
         scopes = ["https://www.googleapis.com/auth/spreadsheets"]
-        
         env_creds = os.environ.get("GOOGLE_APPLICATION_CREDENTIALS_JSON")
         if env_creds:
             creds_dict = json.loads(env_creds)
             creds = Credentials.from_service_account_info(creds_dict, scopes=scopes)
         else:
             creds = Credentials.from_service_account_file(SERVICE_ACCOUNT_FILE, scopes=scopes)
-            
         client = gspread.authorize(creds)
         sheet = client.open_by_key(GOOGLE_SHEET_ID).worksheet("Logs")
         return sheet
@@ -101,7 +97,6 @@ def db_get_user(email):
         except Exception as e:
             print(f"GSheet Read Error: {e}")
             return None
-            
     return user_2fa_store.get(email)
 
 def db_save_user(email, secret, is_linked, name="", api_key="", status=""):
@@ -111,12 +106,10 @@ def db_save_user(email, secret, is_linked, name="", api_key="", status=""):
         try:
             all_records = sheet.get_all_records()
             found_idx = -1
-            
             for idx, row in enumerate(all_records):
                 if str(row.get('Email', '')).strip().lower() == email:
                     found_idx = idx + 2
                     break
-                    
             if found_idx != -1:
                 sheet.update_cell(found_idx, 2, secret)
                 sheet.update_cell(found_idx, 3, str(is_linked))
@@ -128,14 +121,27 @@ def db_save_user(email, secret, is_linked, name="", api_key="", status=""):
             return
         except Exception as e:
             print(f"GSheet Write Error: {e}")
-            
     user_2fa_store[email] = {
-        'secret': secret, 
-        'is_linked': is_linked,
-        'name': name,
-        'api_key': api_key,
-        'status': status
+        'secret': secret, 'is_linked': is_linked, 'name': name, 'api_key': api_key, 'status': status
     }
+
+def db_get_tiktok_tokens_by_api_key(api_key):
+    """Fungsi krusial untuk mengambil Access Token TikTok saat n8n mengirim webhook."""
+    sheet = get_gsheet()
+    if sheet:
+        try:
+            all_values = sheet.get_all_values()
+            # Mencari baris yang API Key-nya cocok (Kolom ke-5 / index 4)
+            for idx, row in enumerate(all_values):
+                if idx == 0: continue # Skip header
+                if len(row) >= 5 and row[4].strip() == api_key:
+                    return {
+                        'access_token': row[6] if len(row) >= 7 else None,
+                        'open_id': row[7] if len(row) >= 8 else None
+                    }
+        except Exception as e:
+            print(f"GSheet Get Tokens Error: {e}")
+    return {}
 
 # ==========================================
 # KONFIGURASI SMTP EMAIL (GMAIL)
@@ -144,31 +150,20 @@ SMTP_EMAIL = os.environ.get("SMTP_EMAIL", "trendoraautomation@gmail.com")
 SMTP_PASSWORD = os.environ.get("SMTP_PASSWORD", "") 
 
 def send_email_qr(recipient_email, qr_url, secret):
-    """Kirim email berisi QR Code 2FA menggunakan Gmail SMTP."""
-    if not SMTP_PASSWORD:
-        return False
-        
+    if not SMTP_PASSWORD: return False
     msg = MIMEMultipart("alternative")
     msg["Subject"] = "Reset Kode QR Google Authenticator - TRENDORA"
     msg["From"] = f"TRENDORA Security <{SMTP_EMAIL}>"
     msg["To"] = recipient_email
-
     html = f"""
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #333; background-color: #0f1524; color: #fff; border-radius: 10px;">
       <h2 style="color: #ec4899; text-align: center;">Reset 2FA Google Authenticator</h2>
-      <p style="color: #d1d5db;">Halo,</p>
-      <p style="color: #d1d5db;">Anda telah meminta untuk mereset kode keamanan Google Authenticator Anda.</p>
       <p style="color: #d1d5db;">Silakan scan QR Code di bawah ini menggunakan aplikasi Google Authenticator:</p>
-      <div style="text-align: center; margin: 20px 0;">
-          <img src="{qr_url}" alt="QR Code 2FA" width="200" height="200" style="border: 4px solid #fff; border-radius: 10px;">
-      </div>
-      <p style="color: #d1d5db; text-align: center;">Atau masukkan kunci rahasia ini secara manual:<br><br>
-      <strong style="background: #1e293b; padding: 8px 16px; border-radius: 6px; color: #34d399; letter-spacing: 2px;">{secret}</strong></p>
-      <hr style="border-color: #333; margin-top: 30px;">
+      <div style="text-align: center; margin: 20px 0;"><img src="{qr_url}" alt="QR Code" width="200" height="200"></div>
+      <p style="color: #d1d5db; text-align: center;">Kunci manual: <strong>{secret}</strong></p>
     </div>
     """
     msg.attach(MIMEText(html, "html"))
-
     try:
         server = smtplib.SMTP_SSL("smtp.gmail.com", 465)
         server.login(SMTP_EMAIL, SMTP_PASSWORD)
@@ -176,7 +171,7 @@ def send_email_qr(recipient_email, qr_url, secret):
         server.quit()
         return True
     except Exception as e:
-        print(f"SMTP Gagal Kirim: {e}")
+        print(f"SMTP Error: {e}")
         return False
 
 # ==========================================
@@ -187,13 +182,9 @@ def generate_base32_secret():
     return base64.b32encode(bytes_secret).decode('utf-8').replace('=', '')
 
 def get_totp_token(secret, intervals_no=None):
-    if intervals_no is None:
-        intervals_no = int(time.time()) // 30
-    
+    if intervals_no is None: intervals_no = int(time.time()) // 30
     missing_padding = len(secret) % 8
-    if missing_padding != 0:
-        secret += '=' * (8 - missing_padding)
-        
+    if missing_padding != 0: secret += '=' * (8 - missing_padding)
     key = base64.b32decode(secret, casefold=True)
     msg = struct.pack(">Q", intervals_no)
     h = hmac.new(key, msg, hashlib.sha1).digest()
@@ -202,8 +193,7 @@ def get_totp_token(secret, intervals_no=None):
     return str(h).zfill(6)
 
 def verify_totp(secret, token):
-    if not secret or not token:
-        return False
+    if not secret or not token: return False
     curr_interval = int(time.time()) // 30
     for delta in [-1, 0, 1]:
         if get_totp_token(secret, curr_interval + delta) == str(token).strip():
@@ -220,28 +210,22 @@ MIDTRANS_SERVER_KEY = os.environ.get("MIDTRANS_SERVER_KEY", "Mid-server-zF-SefFU
 # FLASK ROUTES (Frontend)
 # ==========================================
 @app.route('/')
-def index():
-    return render_template('index.html')
+def index(): return render_template('index.html')
 
 @app.route('/login')
-def login_page():
-    return render_template('login.html')
+def login_page(): return render_template('login.html')
 
 @app.route('/checkout')
-def checkout_page():
-    return render_template('checkout.html')
+def checkout_page(): return render_template('checkout.html')
 
 @app.route('/dashboard')
-def dashboard_page():
-    return render_template('dashboard.html')
+def dashboard_page(): return render_template('dashboard.html')
 
 @app.route('/tos')
-def tos_page():
-    return render_template('tos.html')
+def tos_page(): return render_template('tos.html')
 
 @app.route('/privacy')
-def privacy_page():
-    return render_template('privacy.html')
+def privacy_page(): return render_template('privacy.html')
 
 # ==========================================
 # AUTHENTICATION & API KEY ROUTES
@@ -249,17 +233,9 @@ def privacy_page():
 @app.route('/api/request-otp', methods=['POST'])
 def request_otp():
     email = request.json.get('email', '').strip().lower()
-    if not email:
-        return jsonify({"success": False, "message": "Email wajib diisi!"})
-    
+    if not email: return jsonify({"success": False, "message": "Email wajib diisi!"})
     user_data = db_get_user(email)
-    
-    # Mencegah email belum terdaftar request OTP
-    if not user_data:
-        return jsonify({
-            "success": False, 
-            "message": "Email belum terdaftar! Silakan mendaftar akun terlebih dahulu."
-        })
+    if not user_data: return jsonify({"success": False, "message": "Email belum terdaftar!"})
     
     secret = user_data['secret']
     is_linked = user_data['is_linked']
@@ -268,39 +244,24 @@ def request_otp():
         issuer = "TRENDORA"
         totp_uri = f"otpauth://totp/{issuer}:{email}?secret={secret}&issuer={issuer}"
         qr_code_url = f"https://api.qrserver.com/v1/create-qr-code/?size=200x200&data={urllib.parse.quote(totp_uri)}"
-        
-        return jsonify({
-            "success": True,
-            "message": "Silakan scan QR Code dengan Google Authenticator",
-            "is2faLinked": False,
-            "qrCodeUrl": qr_code_url,
-            "secret": secret
-        })
+        return jsonify({"success": True, "is2faLinked": False, "qrCodeUrl": qr_code_url})
     else:
-        return jsonify({
-            "success": True,
-            "message": "Masukkan kode OTP dari Google Authenticator Anda",
-            "is2faLinked": True
-        })
+        return jsonify({"success": True, "is2faLinked": True})
 
 @app.route('/api/verify-otp', methods=['POST'])
 def verify_otp_route():
     email = request.json.get('email', '').strip().lower()
     otp = request.json.get('otp', '').strip()
-    
-    if not email or not otp:
-        return jsonify({"success": False, "message": "Email dan OTP wajib diisi!"})
+    if not email or not otp: return jsonify({"success": False, "message": "Data tidak lengkap!"})
         
     user_data = db_get_user(email)
-    if not user_data:
-        return jsonify({"success": False, "message": "Email belum terdaftar!"})
+    if not user_data: return jsonify({"success": False, "message": "Email belum terdaftar!"})
         
     is_valid = verify_totp(user_data['secret'], otp)
-        
     if is_valid:
         name = user_data.get('name') or email.split('@')[0].capitalize()
         api_key = user_data.get('api_key') or "-"
-        status = user_data.get('status') or "Active (7-Day Free Trial)"
+        status = user_data.get('status') or "Active"
         
         if not user_data.get('is_linked'):
             db_save_user(email, user_data['secret'], True, name, api_key, status)
@@ -310,140 +271,66 @@ def verify_otp_route():
         
         return jsonify({
             "success": True, 
-            "message": "Login berhasil!",
-            "user": {
-                "name": name,
-                "email": email,
-                "apiKey": api_key,
-                "status": status,
-                "isPaid": is_paid_user
-            }
+            "user": {"name": name, "email": email, "apiKey": api_key, "status": status, "isPaid": is_paid_user}
         })
-    
-    return jsonify({"success": False, "message": "Kode OTP Google Authenticator salah atau kadaluarsa!"})
+    return jsonify({"success": False, "message": "OTP salah/kadaluarsa!"})
 
 @app.route('/api/reset-2fa-qr', methods=['POST'])
 def reset_2fa_qr():
     email = request.json.get('email', '').strip().lower()
-    if not email:
-        return jsonify({"success": False, "message": "Email tidak ditemukan!"})
-        
     old_data = db_get_user(email)
-    if not old_data:
-        return jsonify({"success": False, "message": "Email belum terdaftar di database!"})
-
-    name = old_data.get('name', email.split('@')[0].capitalize())
-    api_key = old_data.get('api_key', "-")
-    status = old_data.get('status', "Active (7-Day Free Trial)")
+    if not old_data: return jsonify({"success": False, "message": "Email tidak ditemukan!"})
     
     new_secret = generate_base32_secret()
-    db_save_user(email, new_secret, False, name, api_key, status)
-    
-    issuer = "TRENDORA"
-    totp_uri = f"otpauth://totp/{issuer}:{email}?secret={new_secret}&issuer={issuer}"
-    qr_code_url = f"https://api.qrserver.com/v1/create-qr-code/?size=200x200&data={urllib.parse.quote(totp_uri)}"
-    
-    email_sent = send_email_qr(email, qr_code_url, new_secret)
-    
-    if email_sent:
-        return jsonify({
-            "success": True,
-            "message": f"QR Code baru telah dikirimkan ke email {email}. Silakan cek kotak masuk/spam email Anda!",
-            "newQrCodeUrl": qr_code_url,
-            "newSecret": new_secret
-        })
-    else:
-        return jsonify({
-            "success": True,
-            "message": "Konfigurasi Email belum siap di server, namun QR Code berhasil direset.",
-            "newQrCodeUrl": qr_code_url,
-            "newSecret": new_secret
-        })
+    db_save_user(email, new_secret, False, old_data.get('name', ''), old_data.get('api_key', ''), old_data.get('status', ''))
+    return jsonify({"success": True, "message": "Reset berhasil."})
 
 @app.route('/api/register-trial', methods=['POST'])
 def register_trial():
     data = request.json or {}
     email = data.get('email', '').strip().lower()
     name = data.get('name', 'User').strip()
-
-    if not email:
-        return jsonify({"success": False, "message": "Email wajib diisi!"})
     
     existing_user = db_get_user(email)
-    if existing_user:
-        return jsonify({"success": False, "message": "Email ini sudah terdaftar! Silakan kembali dan gunakan menu Login."})
+    if existing_user: return jsonify({"success": False, "message": "Email sudah terdaftar!"})
     
     new_secret = generate_base32_secret()
-    default_api_key = "-"
-    default_status = "Active (7-Day Free Trial - View Only)"
-    
-    db_save_user(email, new_secret, False, name, default_api_key, default_status)
-    
-    return jsonify({
-        "success": True,
-        "message": "Registrasi Free Trial berhasil!",
-        "user": {
-            "name": name,
-            "email": email,
-            "apiKey": default_api_key, 
-            "status": default_status,
-            "isPaid": False
-        }
-    })
+    db_save_user(email, new_secret, False, name, "-", "Active (7-Day Free Trial - View Only)")
+    return jsonify({"success": True, "message": "Registrasi berhasil", "user": {"name": name, "email": email, "apiKey": "-", "isPaid": False}})
 
 @app.route('/api/generate-api-key', methods=['POST'])
 def generate_api_key_route():
     data = request.json or {}
     email = data.get('email', '').strip().lower()
-    
-    if not email:
-        return jsonify({"success": False, "message": "Email wajib diisi!"})
-
     user_data = db_get_user(email)
-    if not user_data:
-        return jsonify({"success": False, "message": "User tidak ditemukan di database!"})
+    if not user_data: return jsonify({"success": False})
 
-    status = user_data.get('status', '')
-    status_lower = status.lower()
+    status_lower = user_data.get('status', '').lower()
     is_paid_user = any(word in status_lower for word in ["paid", "subscriber", "admin", "lifetime"])
 
     if not is_paid_user:
-        return jsonify({
-            "success": False,
-            "isPaid": False,
-            "message": "Akun Anda masih Free Trial! Silakan selesaikan pembayaran langganan untuk membuat API Key."
-        })
+        return jsonify({"success": False, "isPaid": False, "message": "Akun Free Trial, upgrade untuk unlock!"})
 
     new_api_key = "TREND_" + uuid.uuid4().hex[:12].upper()
-    
-    db_save_user(
-        email=email,
-        secret=user_data['secret'],
-        is_linked=user_data['is_linked'],
-        name=user_data.get('name', ''),
-        api_key=new_api_key,
-        status=status
-    )
-
-    return jsonify({
-        "success": True,
-        "isPaid": True,
-        "apiKey": new_api_key,
-        "message": "🎉 API Key berhasil dibuat!"
-    })
+    db_save_user(email, user_data['secret'], user_data['is_linked'], user_data.get('name', ''), new_api_key, user_data.get('status', ''))
+    return jsonify({"success": True, "isPaid": True, "apiKey": new_api_key})
 
 # ==========================================
-# RESTORED SOCIAL AUTH ROUTES
+# REAL TIKTOK OAUTH & DIRECT POST INTEGRATION
 # ==========================================
 @app.route('/api/tiktok-auth-url', methods=['GET'])
 def get_tiktok_auth_url():
-    """Route untuk menggenerate URL Login TikTok asli."""
+    """Route untuk menggenerate URL Login TikTok asli. Membawa email user di parameter 'state'."""
+    email = request.args.get('email', '').strip()
     redirect_uri = "https://trendoraautomation.my.id/auth/tiktok/callback"
-    state = uuid.uuid4().hex
+    
+    # Kita titip email user di parameter state biar pas callback kita tau ini akun siapa
+    state = f"{uuid.uuid4().hex[:8]}|{email}"
     
     params = {
         "client_key": TIKTOK_CLIENT_KEY,
         "response_type": "code",
+        # HANYA SCOPE YANG SUPPORT (Agar tidak error saat otorisasi)
         "scope": "user.info.basic,video.upload,video.publish",
         "redirect_uri": redirect_uri,
         "state": state
@@ -456,19 +343,56 @@ def get_tiktok_auth_url():
 
 @app.route('/auth/tiktok/callback', methods=['GET'])
 def tiktok_callback():
-    """Route ini akan dipanggil oleh TikTok setelah user berhasil login."""
+    """Menerima kode dari TikTok, lalu menukarnya dengan Access Token secara real."""
     code = request.args.get('code')
-    state = request.args.get('state')
+    state = request.args.get('state', '')
     
-    # KODE INI AKAN MENUTUP WINDOW POPUP DAN MEMBERITAHU DASHBOARD KALAU SUKSES
-    html_response = """
+    # Ambil kembali email yang kita titipkan di URL sebelumnya
+    email = state.split('|')[1] if '|' in state else ''
+    
+    if code and email:
+        try:
+            token_url = "https://open.tiktokapis.com/v2/oauth/token/"
+            payload = {
+                "client_key": TIKTOK_CLIENT_KEY,
+                "client_secret": TIKTOK_CLIENT_SECRET,
+                "code": code,
+                "grant_type": "authorization_code",
+                "redirect_uri": "https://trendoraautomation.my.id/auth/tiktok/callback"
+            }
+            
+            data = urllib.parse.urlencode(payload).encode('utf-8')
+            req = urllib.request.Request(token_url, data=data, headers={"Content-Type": "application/x-www-form-urlencoded"})
+            
+            with urllib.request.urlopen(req) as response:
+                res_data = json.loads(response.read().decode('utf-8'))
+                access_token = res_data.get('access_token')
+                open_id = res_data.get('open_id')
+                refresh_token = res_data.get('refresh_token')
+                
+                # Simpan Token Rahasia ke Google Sheets (Kolom ke 7, 8, 9)
+                sheet = get_gsheet()
+                if sheet and access_token:
+                    all_vals = sheet.get_all_values()
+                    for idx, row in enumerate(all_vals):
+                        if row[0].strip().lower() == email.lower():
+                            row_idx = idx + 1
+                            sheet.update_cell(row_idx, 7, access_token)
+                            sheet.update_cell(row_idx, 8, open_id)
+                            sheet.update_cell(row_idx, 9, refresh_token)
+                            break
+                            
+        except Exception as e:
+            print("TikTok OAuth Error Detail:", e)
+
+    # HTML untuk menutup jendela otomatis
+    return """
     <html>
-    <head><title>TikTok Authorization Successful</title></head>
+    <head><title>TikTok Connected</title></head>
     <body style="background-color: #0d0a1a; color: #fff; font-family: sans-serif; text-align: center; padding-top: 50px;">
-        <h2 style="color: #34d399;">TikTok Authorization Successful!</h2>
-        <p style="color: #9ca3af;">Please wait, closing this window...</p>
+        <h2 style="color: #34d399;">TikTok Successfully Authorized!</h2>
+        <p style="color: #9ca3af;">Please wait, saving your token...</p>
         <script>
-            // Ngirim sinyal success ke window utama (dashboard lu)
             if (window.opener) {
                 window.opener.postMessage({type: 'OAUTH_SUCCESS', platform: 'TikTok'}, '*');
                 window.close();
@@ -477,22 +401,6 @@ def tiktok_callback():
     </body>
     </html>
     """
-    return html_response
-
-@app.route('/api/social-auth/<platform>', methods=['GET'])
-def social_auth(platform):
-    """Route untuk menggenerate URL OAuth masing-masing platform selain TikTok."""
-    platform = platform.lower()
-    
-    # Dummy logic untuk mengembalikan URL OAuth masing-masing platform
-    auth_urls = {
-        "facebook": "https://www.facebook.com/v18.0/dialog/oauth?client_id=FB_ID&redirect_uri=...",
-        "instagram": "https://api.instagram.com/oauth/authorize?...",
-        "twitter": "https://twitter.com/i/oauth2/authorize?...",
-        "linkedin": "https://www.linkedin.com/oauth/v2/authorization?..."
-    }
-    
-    return jsonify({"success": True, "url": auth_urls.get(platform, "https://google.com")})
 
 # ==========================================
 # TRANSACTIONS LOGIC (MIDTRANS)
@@ -502,89 +410,43 @@ def create_transaction():
     data = request.json or {}
     name = data.get('name', 'User')
     email = data.get('email', 'user@example.com').strip().lower()
-    plan = data.get('plan', 'Creator Monthly')
+    plan = data.get('plan', 'Creator')
     price_str = data.get('price', '200000')
-    method = data.get('method', 'credit_card')
     is_upgrading = data.get('isUpgrading', False)
 
     existing_user = db_get_user(email)
     if existing_user and not is_upgrading:
-        return jsonify({"success": False, "message": "Email sudah terdaftar! Silakan login via Beranda lalu klik Upgrade dari Dashboard Anda."})
-
+        return jsonify({"success": False, "message": "Email sudah terdaftar!"})
     try:
-        clean_price = re.sub(r'[^\d]', '', price_str)
-        amount = int(clean_price)
+        amount = int(re.sub(r'[^\d]', '', price_str))
     except:
         amount = 200000
 
-    enabled_payments = [method] if method else []
     order_id = f"ORDER-{uuid.uuid4().hex[:8].upper()}"
-
     auth_string = base64.b64encode(f"{MIDTRANS_SERVER_KEY}:".encode()).decode()
-    headers = {
-        "Accept": "application/json",
-        "Content-Type": "application/json",
-        "Authorization": f"Basic {auth_string}"
-    }
-
     payload = {
-        "transaction_details": {
-            "order_id": order_id,
-            "gross_amount": amount
-        },
-        "customer_details": {
-            "first_name": name,
-            "email": email
-        }
+        "transaction_details": {"order_id": order_id, "gross_amount": amount},
+        "customer_details": {"first_name": name, "email": email}
     }
-
-    if enabled_payments:
-        payload["enabled_payments"] = enabled_payments
 
     try:
         req = urllib.request.Request(
             MIDTRANS_API_URL, 
             data=json.dumps(payload).encode('utf-8'), 
-            headers=headers, 
+            headers={"Authorization": f"Basic {auth_string}", "Content-Type": "application/json"}, 
             method='POST'
         )
-        
         with urllib.request.urlopen(req) as response:
             res_data = json.loads(response.read().decode('utf-8'))
-            
             if response.status == 201:
                 if not existing_user:
-                    new_secret = generate_base32_secret()
-                    default_api_key = "-"
-                    db_save_user(email, new_secret, False, name, default_api_key, "Pending Payment")
-                
-                return jsonify({
-                    "success": True,
-                    "token": res_data.get('token'),
-                    "redirect_url": res_data.get('redirect_url')
-                })
-            else:
-                return jsonify({
-                    "success": False, 
-                    "message": res_data.get('error_messages', ['Gagal memproses ke Midtrans'])[0]
-                })
-                
-    except urllib.error.HTTPError as e:
-        try:
-            error_data = json.loads(e.read().decode('utf-8'))
-            return jsonify({
-                "success": False,
-                "message": error_data.get('error_messages', [str(e)])[0]
-            })
-        except:
-            return jsonify({"success": False, "message": f"HTTP Error: {e.code}"})
-            
+                    db_save_user(email, generate_base32_secret(), False, name, "-", "Pending Payment")
+                return jsonify({"success": True, "token": res_data.get('token')})
     except Exception as e:
         return jsonify({"success": False, "message": str(e)})
 
 @app.route('/api/check-payment', methods=['POST'])
 def check_payment():
-    email = request.json.get('email')
     return jsonify({"success": True, "isPaid": False})
 
 # ==========================================
@@ -592,15 +454,11 @@ def check_payment():
 # ==========================================
 @app.route('/api/n8n-webhook', methods=['GET', 'POST'], strict_slashes=False)
 def n8n_webhook():
-    """Menerima POST Webhook dari n8n, mencatat log."""
+    """Menerima POST dari n8n dan beneran nge-POST ke Server TikTok kalau platformnya TikTok."""
     if request.method == 'GET':
-        return jsonify({
-            "success": False, 
-            "message": "🟢 Webhook Endpoint Aktif! Tapi kamu harus menggunakan method POST dari n8n, bukan GET. Pastikan URL di n8n pakai https:// ya!"
-        }), 200
+        return jsonify({"success": False, "message": "🟢 Endpoint Aktif! Harap gunakan method POST dari n8n."}), 200
 
     api_key = request.headers.get('X-API-Key', '').strip()
-    
     if not api_key:
         auth_header = request.headers.get('Authorization', '').strip()
         if auth_header.startswith('Bearer '):
@@ -609,16 +467,64 @@ def n8n_webhook():
     data = request.json or {}
     platform = data.get('platform', 'unknown').lower()
     status = data.get('status', 'RECEIVED')
-    post_mode = data.get('post_mode', 'publish')
     details = data.get('details', {})
     
     if not api_key:
-        return jsonify({"success": False, "message": "API Key is required in Header (X-API-Key or Authorization)"}), 400
+        return jsonify({"success": False, "message": "API Key is required in Header"}), 400
     
-    if platform == 'tiktok':
-        if isinstance(details, dict):
-            details['tiktok_api_trace'] = "Success via Live Production API"
+    # 💥 INI BAGIAN MESIN DIRECT POST TIKTOK 💥
+    if platform == 'tiktok' and isinstance(details, dict):
+        media_url = details.get('media_url')
+        caption = details.get('caption', 'Diposting otomatis via n8n & TRENDORA! 🚀')
+        
+        if media_url:
+            # Ambil token rahasia user dari Google Sheets berdasarkan API Key
+            user_tokens = db_get_tiktok_tokens_by_api_key(api_key)
+            access_token = user_tokens.get('access_token')
+            
+            if access_token:
+                try:
+                    # Tembak API Resmi TikTok (Direct Post PULL_FROM_URL)
+                    tiktok_api_url = "https://open.tiktokapis.com/v2/post/publish/video/init/"
+                    headers = {
+                        "Authorization": f"Bearer {access_token}",
+                        "Content-Type": "application/json; charset=utf-8"
+                    }
+                    payload = {
+                        "post_info": {
+                            "title": caption,
+                            "privacy_level": "PUBLIC_TO_EVERYONE",
+                            "disable_duet": False,
+                            "disable_comment": False,
+                            "disable_stitch": False
+                        },
+                        "source_info": {
+                            "source": "PULL_FROM_URL",
+                            "video_url": media_url
+                        }
+                    }
+                    
+                    req = urllib.request.Request(
+                        tiktok_api_url, 
+                        data=json.dumps(payload).encode('utf-8'), 
+                        headers=headers, 
+                        method='POST'
+                    )
+                    
+                    with urllib.request.urlopen(req) as response:
+                        tiktok_res = json.loads(response.read().decode('utf-8'))
+                        # Sisipkan hasil dari server TikTok ke dalam detail log web kita
+                        details['tiktok_real_response'] = tiktok_res
+                        status = "PUBLISHED (SUCCESS)"
+                        
+                except Exception as e:
+                    details['tiktok_real_error'] = str(e)
+                    status = "FAILED"
+            else:
+                details['tiktok_real_error'] = "User belum menghubungkan akun TikTok (Token tidak ada)."
+                status = "FAILED"
 
+    # Simpan aktivitas ke Google Sheets Log
     if isinstance(details, dict):
         details_str = json.dumps(details)
     else:
@@ -631,27 +537,13 @@ def n8n_webhook():
     if sheet:
         try:
             sheet.append_row([timestamp, log_id, api_key, platform, status, details_str])
-            return jsonify({
-                "success": True, 
-                "message": "Log saved and payload processed", 
-                "log_id": log_id
-            })
+            return jsonify({"success": True, "message": "Processed & Logged", "log_id": log_id})
         except Exception as e:
-            print(f"GSheet Append Error: {e}")
-            return jsonify({"success": False, "message": f"Failed to save to sheet: {str(e)}"}), 500
+            return jsonify({"success": False, "message": str(e)}), 500
     else:
-        if 'logs' not in user_2fa_store:
-            user_2fa_store['logs'] = []
-        user_2fa_store['logs'].append({
-            "Timestamp": timestamp,
-            "LogID": log_id,
-            "APIKey": api_key,
-            "Platform": platform,
-            "Status": status,
-            "Details": details_str
-        })
-        
-        return jsonify({"success": True, "message": "Log saved to memory (fallback)", "log_id": log_id})
+        if 'logs' not in user_2fa_store: user_2fa_store['logs'] = []
+        user_2fa_store['logs'].append({"Timestamp": timestamp, "LogID": log_id, "APIKey": api_key, "Platform": platform, "Status": status, "Details": details_str})
+        return jsonify({"success": True, "log_id": log_id})
 
 # ==========================================
 # WEBHOOK RESMI DARI TIKTOK (ADS / LEAD GEN)
@@ -664,7 +556,7 @@ def tiktok_webhook():
     if request.method == 'GET':
         challenge = request.args.get('challenge')
         if challenge:
-            # Wajib membalas challenge agar TikTok memvalidasi URL webhook lu
+            # Wajib membalas challenge agar TikTok memvalidasi URL webhook
             return jsonify({"challenge": challenge}), 200
         return jsonify({"success": True, "message": "🟢 Endpoint Webhook TikTok Aktif dan Siap Menerima Data!"}), 200
 
@@ -674,61 +566,45 @@ def tiktok_webhook():
     # Bikin ID Log khusus buat ngebedain dari n8n
     log_id = f"TK-ADS-{uuid.uuid4().hex[:6].upper()}"
     timestamp = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
-    
-    # Ubah data JSON dari TikTok jadi string biar bisa disimpen ke tabel
     details_str = json.dumps(data)
     
-    # Simpan ke Google Sheets (Tab Logs) 
+    # Simpan ke Google Sheets (Tab Logs)
     sheet = get_logs_sheet()
     if sheet:
         try:
-            # Kita isi kolom APIKey dengan 'TIKTOK_SYSTEM' dan platform 'tiktok_ads' 
-            # supaya lu gampang nyarinya di Google Sheets nanti.
             sheet.append_row([timestamp, log_id, "TIKTOK_SYSTEM", "tiktok_ads", "RECEIVED", details_str])
         except Exception as e:
-            print(f"GSheet Append Error TikTok Webhook: {e}")
+            pass
             
     # Server TikTok SANGAT MEWAJIBKAN respon 200 OK dengan cepat.
     return jsonify({"message": "OK", "success": True}), 200
 
 @app.route('/api/get-logs', methods=['POST'])
 def get_logs():
-    """Membaca data Log dari tab 'Logs' berdasarkan API Key user."""
     api_key = request.headers.get('X-API-Key', '').strip()
-    
-    data = request.json or {}
-    if not api_key:
-        api_key = data.get('api_key', '').strip()
-    
-    if not api_key:
-        return jsonify({"success": False, "message": "API Key is required in Header (X-API-Key)"})
+    if not api_key: api_key = request.json.get('api_key', '').strip()
+    if not api_key: return jsonify({"success": False, "message": "API Key is required"})
         
     logs = []
     sheet = get_logs_sheet()
-    
     if sheet:
         try:
             all_records = sheet.get_all_records()
             for row in all_records:
                 if str(row.get('APIKey', '')).strip() == api_key:
                     logs.append({
-                        "Timestamp": str(row.get('Timestamp', '')),
-                        "LogID": str(row.get('LogID', '')),
-                        "Platform": str(row.get('Platform', '')),
-                        "Status": str(row.get('Status', '')),
+                        "Timestamp": str(row.get('Timestamp', '')), "LogID": str(row.get('LogID', '')),
+                        "Platform": str(row.get('Platform', '')), "Status": str(row.get('Status', '')),
                         "Details": str(row.get('Details', ''))
                     })
             logs.reverse()
             return jsonify({"success": True, "logs": logs})
-        except Exception as e:
-            print(f"Read Logs Error: {e}")
-            
+        except Exception as e: pass
+    
     if 'logs' in user_2fa_store:
         for row in user_2fa_store['logs']:
-            if str(row.get('APIKey')).strip() == api_key:
-                logs.append(row)
+            if str(row.get('APIKey')).strip() == api_key: logs.append(row)
         logs.reverse()
-        
     return jsonify({"success": True, "logs": logs})
 
 if __name__ == '__main__':
