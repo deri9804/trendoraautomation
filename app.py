@@ -638,7 +638,7 @@ def n8n_webhook():
                     file_size = os.path.getsize(temp_file_path)
 
                     payload = {
-                        "post_info": {"title": caption, "privacy_level": "SELF_ONLY", "disable_duet": False, "disable_comment": False, "disable_stitch": False},
+                        "post_info": {"title": caption, "privacy_level": "PUBLIC_TO_EVERYONE", "disable_duet": False, "disable_comment": False, "disable_stitch": False},
                         "source_info": {"source": "FILE_UPLOAD", "video_size": file_size, "chunk_size": file_size, "total_chunk_count": 1}
                     }
                     
@@ -816,6 +816,12 @@ def n8n_webhook():
 
 @app.route('/api/get-logs', methods=['POST', 'GET'])
 def get_logs():
+    # SAAS LOGIC: Ambil API Key user untuk memfilter log agar tidak bocor ke user lain
+    api_key = request.headers.get('X-API-Key', '').strip()
+    if not api_key:
+        data = request.json or {}
+        api_key = data.get('api_key', '').strip()
+        
     logs = []
     sheet = get_logs_sheet()
     
@@ -825,6 +831,12 @@ def get_logs():
             if len(all_values) > 1:
                 for row in all_values[1:]:
                     if len(row) >= 3:
+                        row_api_key = str(row[2]).strip()
+                        
+                        # HANYA TAMPILKAN LOG JIKA API KEY COCOK DENGAN MILIK USER YANG LOGIN
+                        if api_key and row_api_key != api_key:
+                            continue
+                            
                         log_entry = {
                             "Timestamp": str(row[0]).strip() if len(row) > 0 else "-", 
                             "LogID": str(row[1]).strip() if len(row) > 1 else "-",
@@ -841,7 +853,11 @@ def get_logs():
             return jsonify({"success": False, "message": str(e)})
     
     if 'logs' in user_2fa_store:
-        logs = user_2fa_store['logs']
+        all_mem_logs = user_2fa_store['logs']
+        if api_key:
+            logs = [log for log in all_mem_logs if log.get('APIKey') == api_key]
+        else:
+            logs = all_mem_logs
         logs.reverse()
         return jsonify({"success": True, "logs": logs[:50]})
         
