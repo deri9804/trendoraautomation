@@ -97,14 +97,15 @@ def get_logs_sheet():
         return None
 
 def db_get_user(email):
-    """Ambil data user dari Google Sheets secara bulletproof menggunakan index kolom."""
+    """Ambil data user dari Google Sheets (scan dari BAWAH agar selalu dapat yg terbaru jika duplikat)."""
     sheet = get_gsheet()
     if sheet:
         try:
             all_values = sheet.get_all_values()
             if len(all_values) > 1:
-                # Loop dari baris ke-2 (skip header)
-                for idx, row in enumerate(all_values[1:]):
+                # Loop dari bawah ke atas
+                for idx in range(len(all_values)-1, 0, -1):
+                    row = all_values[idx]
                     if len(row) > 0 and str(row[0]).strip().lower() == email:
                         return {
                             'email': str(row[0]).strip().lower(),
@@ -113,8 +114,8 @@ def db_get_user(email):
                             'name': str(row[3]) if len(row) > 3 else '',
                             'api_key': str(row[4]) if len(row) > 4 else '',
                             'status': str(row[5]) if len(row) > 5 else '',
-                            'tiktok_connected': bool(str(row[6]).strip()) if len(row) > 6 else False, # Kolom ke-7
-                            'row_idx': idx + 2  
+                            'tiktok_connected': bool(str(row[6]).strip()) if len(row) > 6 else False,
+                            'row_idx': idx + 1  
                         }
             return None
         except Exception as e:
@@ -129,16 +130,16 @@ def db_get_user(email):
     return None
 
 def db_save_user(email, secret, is_linked, name="", api_key="", status=""):
-    """Simpan atau update seluruh data user ke Google Sheets."""
+    """Simpan data (scan dari BAWAH)."""
     sheet = get_gsheet()
     if sheet:
         try:
             all_values = sheet.get_all_values()
             found_idx = -1
-            for idx, row in enumerate(all_values):
-                if idx == 0: continue # Skip header
+            for idx in range(len(all_values)-1, 0, -1):
+                row = all_values[idx]
                 if len(row) > 0 and str(row[0]).strip().lower() == email:
-                    found_idx = idx + 1 # Index gspread dimulai dari 1
+                    found_idx = idx + 1
                     break
                     
             if found_idx != -1:
@@ -358,6 +359,34 @@ def generate_api_key_route():
     db_save_user(email, user_data['secret'], user_data['is_linked'], user_data.get('name', ''), new_api_key, user_data.get('status', ''))
     return jsonify({"success": True, "isPaid": True, "apiKey": new_api_key})
 
+@app.route('/api/me', methods=['POST'])
+def get_me():
+    """Route rahasia buat sinkronisasi otomatis status frontend dan database."""
+    email = request.json.get('email', '').strip().lower()
+    if not email: return jsonify({"success": False})
+    
+    user_data = db_get_user(email)
+    if not user_data: return jsonify({"success": False})
+    
+    connected_platforms = []
+    if user_data.get('tiktok_connected'):
+        connected_platforms.append('TikTok')
+        
+    status_lower = user_data.get('status', '').lower()
+    is_paid_user = any(word in status_lower for word in ["paid", "subscriber", "admin", "lifetime"])
+    
+    return jsonify({
+        "success": True,
+        "user": {
+            "name": user_data.get('name', ''),
+            "email": email,
+            "apiKey": user_data.get('api_key', '-'),
+            "status": user_data.get('status', ''),
+            "isPaid": is_paid_user,
+            "connectedPlatforms": connected_platforms
+        }
+    })
+
 # ==========================================
 # ROUTE UNTUK VERIFIKASI DOMAIN TIKTOK
 # ==========================================
@@ -423,8 +452,10 @@ def tiktok_callback():
                 sheet = get_gsheet()
                 if sheet and access_token:
                     all_vals = sheet.get_all_values()
-                    for idx, row in enumerate(all_vals):
-                        if row[0].strip().lower() == email.lower():
+                    # Cari dari bawah biar selalu nemu row terbaru
+                    for idx in range(len(all_vals)-1, 0, -1):
+                        row = all_vals[idx]
+                        if len(row) > 0 and str(row[0]).strip().lower() == email.lower():
                             row_idx = idx + 1
                             sheet.update_cell(row_idx, 7, access_token)
                             sheet.update_cell(row_idx, 8, open_id)

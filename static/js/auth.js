@@ -27,6 +27,24 @@ function checkStoredSession() {
     if (savedUser) {
       globalUserData = JSON.parse(savedUser);
       renderLoggedInUI(globalUserData, false);
+      
+      // Silent sync dengan database tiap kali halamannya dimuat
+      if (globalUserData && globalUserData.email) {
+        fetch('/api/me', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: globalUserData.email })
+        })
+        .then(res => res.json())
+        .then(data => {
+          if (data.success) {
+            globalUserData = data.user;
+            localStorage.setItem('automedia_user', JSON.stringify(globalUserData));
+            renderLoggedInUI(globalUserData, false);
+          }
+        })
+        .catch(err => console.log("Sync error:", err));
+      }
     }
   } catch (e) {
     console.error('Session parse error:', e);
