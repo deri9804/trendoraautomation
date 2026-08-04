@@ -41,6 +41,10 @@ user_2fa_store = {}
 TIKTOK_CLIENT_KEY = os.environ.get("TIKTOK_CLIENT_KEY")
 TIKTOK_CLIENT_SECRET = os.environ.get("TIKTOK_CLIENT_SECRET")
 
+# KONFIGURASI META (FACEBOOK & INSTAGRAM)
+META_CLIENT_ID = os.environ.get("META_CLIENT_ID")
+META_CLIENT_SECRET = os.environ.get("META_CLIENT_SECRET")
+
 def get_gsheet():
     """Koneksi ke Google Sheets (Sheet Utama)."""
     if not HAS_GSPREAD:
@@ -119,6 +123,7 @@ def db_get_user(email):
                             'api_key': str(row[4]) if len(row) > 4 else '',
                             'status': str(row[5]) if len(row) > 5 else '',
                             'tiktok_connected': bool(str(row[6]).strip()) if len(row) > 6 else False,
+                            'meta_connected': bool(str(row[9]).strip()) if len(row) > 9 else False,
                             'row_idx': idx + 1  
                         }
             return None
@@ -309,6 +314,9 @@ def verify_otp_route():
         connected_platforms = []
         if user_data.get('tiktok_connected'):
             connected_platforms.append('TikTok')
+        if user_data.get('meta_connected'):
+            connected_platforms.append('Facebook')
+            connected_platforms.append('Instagram')
         
         return jsonify({
             "success": True, 
@@ -375,6 +383,9 @@ def get_me():
     connected_platforms = []
     if user_data.get('tiktok_connected'):
         connected_platforms.append('TikTok')
+    if user_data.get('meta_connected'):
+        connected_platforms.append('Facebook')
+        connected_platforms.append('Instagram')
         
     status_lower = user_data.get('status', '').lower()
     is_paid_user = any(word in status_lower for word in ["paid", "subscriber", "admin", "lifetime"])
@@ -478,6 +489,84 @@ def tiktok_callback():
         <script>
             if (window.opener) {
                 window.opener.postMessage({type: 'OAUTH_SUCCESS', platform: 'TikTok'}, '*');
+                window.close();
+            }
+        </script>
+    </body>
+    </html>
+    """
+
+# ==========================================
+# REAL META (FB & IG) OAUTH INTEGRATION
+# ==========================================
+@app.route('/api/meta-auth-url', methods=['GET'])
+def get_meta_auth_url():
+    email = request.args.get('email', '').strip()
+    redirect_uri = "https://trendoraautomation.my.id/auth/meta/callback"
+    state = f"{uuid.uuid4().hex[:8]}|{email}"
+    
+    # Minta izin buat baca FB Page dan Publish ke Instagram/Facebook
+    scopes = "pages_show_list,pages_read_engagement,pages_manage_posts,instagram_basic,instagram_content_publish"
+    
+    params = {
+        "client_id": META_CLIENT_ID or "DUMMY_ID",
+        "redirect_uri": redirect_uri,
+        "state": state,
+        "scope": scopes,
+        "response_type": "code"
+    }
+    
+    base_url = "https://www.facebook.com/v18.0/dialog/oauth"
+    full_url = f"{base_url}?{urllib.parse.urlencode(params)}"
+    
+    return jsonify({"success": True, "url": full_url})
+
+@app.route('/auth/meta/callback', methods=['GET'])
+def meta_callback():
+    code = request.args.get('code')
+    state = request.args.get('state', '')
+    email = state.split('|')[1] if '|' in state else ''
+    
+    if code and email:
+        try:
+            token_url = "https://graph.facebook.com/v18.0/oauth/access_token"
+            payload = {
+                "client_id": META_CLIENT_ID,
+                "client_secret": META_CLIENT_SECRET,
+                "redirect_uri": "https://trendoraautomation.my.id/auth/meta/callback",
+                "code": code
+            }
+            
+            data = urllib.parse.urlencode(payload).encode('utf-8')
+            req = urllib.request.Request(token_url, data=data)
+            
+            with urllib.request.urlopen(req) as response:
+                res_data = json.loads(response.read().decode('utf-8'))
+                access_token = res_data.get('access_token')
+                
+                sheet = get_gsheet()
+                if sheet and access_token:
+                    all_vals = sheet.get_all_values()
+                    for idx in range(len(all_vals)-1, 0, -1):
+                        row = all_vals[idx]
+                        if len(row) > 0 and str(row[0]).strip().lower() == email.lower():
+                            row_idx = idx + 1
+                            # Simpan Access Token Meta di Kolom ke-10 (J)
+                            sheet.update_cell(row_idx, 10, access_token)
+                            break
+                            
+        except Exception as e:
+            print("Meta OAuth Error Detail:", e)
+
+    return """
+    <html>
+    <head><title>Meta Connected</title></head>
+    <body style="background-color: #0d0a1a; color: #fff; font-family: sans-serif; text-align: center; padding-top: 50px;">
+        <h2 style="color: #34d399;">Meta (Facebook & Instagram) Successfully Authorized!</h2>
+        <p style="color: #9ca3af;">Saving your token...</p>
+        <script>
+            if (window.opener) {
+                window.opener.postMessage({type: 'OAUTH_SUCCESS', platform: 'Meta'}, '*');
                 window.close();
             }
         </script>

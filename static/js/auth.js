@@ -65,8 +65,14 @@ window.addEventListener('message', function(event) {
         globalUserData.connectedPlatforms = [];
       }
       
-      if (!globalUserData.connectedPlatforms.includes(platform)) {
-        globalUserData.connectedPlatforms.push(platform);
+      // Jika yang login adalah Meta, aktifkan badge FB dan IG sekaligus
+      if (platform === 'Meta') {
+          if (!globalUserData.connectedPlatforms.includes('Facebook')) globalUserData.connectedPlatforms.push('Facebook');
+          if (!globalUserData.connectedPlatforms.includes('Instagram')) globalUserData.connectedPlatforms.push('Instagram');
+      } else {
+          if (!globalUserData.connectedPlatforms.includes(platform)) {
+            globalUserData.connectedPlatforms.push(platform);
+          }
       }
       
       localStorage.setItem('automedia_user', JSON.stringify(globalUserData));
@@ -115,7 +121,24 @@ function handleSocialPlatformConnect(platform) {
     return;
   }
 
-  // PLATFORM LAIN (Facebook, IG, dll)
+  // REAL META AUTHENTICATION (FB & IG)
+  if (p === 'facebook' || p === 'instagram') {
+    fetch('/api/meta-auth-url?email=' + encodeURIComponent(userEmail))
+      .then(res => res.json())
+      .then(data => {
+        if (data.success && data.url) {
+          window.open(data.url, `OAuth_Meta`, 'width=600,height=750,scrollbars=yes,status=yes');
+        } else {
+          openFallbackOAuthPopup(platform, userEmail);
+        }
+      })
+      .catch(err => {
+        openFallbackOAuthPopup(platform, userEmail);
+      });
+    return;
+  }
+
+  // PLATFORM LAIN (YouTube, dll)
   openFallbackOAuthPopup(platform, userEmail);
 }
 
