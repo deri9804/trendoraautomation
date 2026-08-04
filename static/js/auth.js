@@ -172,7 +172,41 @@ function handleSocialPlatformConnect(platform) {
     return;
   }
 
-  // PLATFORM LAIN (Twitter, dll - Pakai Fallback)
+  // REAL THREADS AUTHENTICATION
+  if (p === 'threads') {
+    fetch('/api/threads-auth-url?email=' + encodeURIComponent(userEmail))
+      .then(res => res.json())
+      .then(data => {
+        if (data.success && data.url) {
+          window.open(data.url, `OAuth_Threads`, 'width=600,height=750,scrollbars=yes,status=yes');
+        } else {
+          openFallbackOAuthPopup(platform, userEmail);
+        }
+      })
+      .catch(err => {
+        openFallbackOAuthPopup(platform, userEmail);
+      });
+    return;
+  }
+
+  // REAL TWITTER AUTHENTICATION
+  if (p === 'twitter' || p === 'x') {
+    fetch('/api/twitter-auth-url?email=' + encodeURIComponent(userEmail))
+      .then(res => res.json())
+      .then(data => {
+        if (data.success && data.url) {
+          window.open(data.url, `OAuth_Twitter`, 'width=600,height=750,scrollbars=yes,status=yes');
+        } else {
+          openFallbackOAuthPopup(platform, userEmail);
+        }
+      })
+      .catch(err => {
+        openFallbackOAuthPopup(platform, userEmail);
+      });
+    return;
+  }
+
+  // PLATFORM LAIN (Pinterest, dll - Pakai Fallback)
   openFallbackOAuthPopup(platform, userEmail);
 }
 

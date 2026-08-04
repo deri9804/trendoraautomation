@@ -44,6 +44,7 @@ TIKTOK_CLIENT_SECRET = os.environ.get("TIKTOK_CLIENT_SECRET")
 # KONFIGURASI META (FACEBOOK & INSTAGRAM)
 META_CLIENT_ID = os.environ.get("META_CLIENT_ID")
 META_CLIENT_SECRET = os.environ.get("META_CLIENT_SECRET")
+META_WEBHOOK_VERIFY_TOKEN = os.environ.get("META_WEBHOOK_VERIFY_TOKEN", "trendora_meta_secret_123")
 
 # KONFIGURASI LINKEDIN
 LINKEDIN_CLIENT_ID = os.environ.get("LINKEDIN_CLIENT_ID")
@@ -52,6 +53,14 @@ LINKEDIN_CLIENT_SECRET = os.environ.get("LINKEDIN_CLIENT_SECRET")
 # KONFIGURASI YOUTUBE / GOOGLE
 GOOGLE_CLIENT_ID = os.environ.get("GOOGLE_CLIENT_ID")
 GOOGLE_CLIENT_SECRET = os.environ.get("GOOGLE_CLIENT_SECRET")
+
+# KONFIGURASI THREADS
+THREADS_CLIENT_ID = os.environ.get("THREADS_CLIENT_ID")
+THREADS_CLIENT_SECRET = os.environ.get("THREADS_CLIENT_SECRET")
+
+# KONFIGURASI TWITTER
+TWITTER_CLIENT_ID = os.environ.get("TWITTER_CLIENT_ID")
+TWITTER_CLIENT_SECRET = os.environ.get("TWITTER_CLIENT_SECRET")
 
 def get_gsheet():
     """Koneksi ke Google Sheets (Sheet Utama)."""
@@ -225,6 +234,32 @@ def db_get_youtube_tokens_by_api_key(api_key):
         except Exception as e:
             print(f"GSheet Get YouTube Token Error: {e}")
     return {}
+
+def db_get_threads_token_by_api_key(api_key):
+    sheet = get_gsheet()
+    if sheet:
+        try:
+            all_values = sheet.get_all_values()
+            for idx, row in enumerate(all_values):
+                if idx == 0: continue
+                if len(row) >= 5 and row[4].strip() == api_key:
+                    return row[13] if len(row) >= 14 else None
+        except Exception as e:
+            print(f"GSheet Get Threads Token Error: {e}")
+    return None
+
+def db_get_twitter_token_by_api_key(api_key):
+    sheet = get_gsheet()
+    if sheet:
+        try:
+            all_values = sheet.get_all_values()
+            for idx, row in enumerate(all_values):
+                if idx == 0: continue
+                if len(row) >= 5 and row[4].strip() == api_key:
+                    return row[14] if len(row) >= 15 else None
+        except Exception as e:
+            print(f"GSheet Get Twitter Token Error: {e}")
+    return None
 
 # ==========================================
 # KONFIGURASI SMTP EMAIL (GMAIL)
@@ -585,6 +620,34 @@ def meta_callback():
     """
 
 # ==========================================
+# META WEBHOOK (VERIFIKASI & PENERIMA EVENT)
+# ==========================================
+@app.route('/api/meta-webhook', methods=['GET', 'POST'])
+def meta_webhook():
+    if request.method == 'GET':
+        # 1. Tahap Verifikasi dari Meta Developer Dashboard
+        mode = request.args.get('hub.mode')
+        token = request.args.get('hub.verify_token')
+        challenge = request.args.get('hub.challenge')
+
+        if mode and token:
+            if mode == 'subscribe' and token == META_WEBHOOK_VERIFY_TOKEN:
+                # Meta mewajibkan kita me-return raw text 'hub.challenge'
+                return challenge, 200
+            else:
+                return "Forbidden", 403
+        return "Bad Request", 400
+
+    elif request.method == 'POST':
+        # 2. Tahap Menerima Event (Notifikasi real-time) dari Meta
+        payload = request.json
+        print("Menerima Event dari Meta Webhook:", payload)
+        
+        # PENTING: Selalu return 200 OK secepat mungkin
+        # Jika tidak, Meta akan mengira server mati dan memutuskan langganan webhook
+        return "EVENT_RECEIVED", 200
+
+# ==========================================
 # REAL LINKEDIN OAUTH
 # ==========================================
 @app.route('/api/linkedin-auth-url', methods=['GET'])
@@ -710,6 +773,139 @@ def youtube_callback():
     return """
     <html><body style="background:#0d0a1a;"><h2 style="color:#ff0000;text-align:center;margin-top:50px;">YouTube Connected!</h2>
     <script>if(window.opener){window.opener.postMessage({type:'OAUTH_SUCCESS', platform:'YouTube'}, '*');window.close();}</script>
+    </body></html>
+    """
+
+# ==========================================
+# REAL THREADS OAUTH
+# ==========================================
+@app.route('/api/threads-auth-url', methods=['GET'])
+def get_threads_auth_url():
+    email = request.args.get('email', '').strip()
+    redirect_uri = "https://trendoraautomation.my.id/auth/threads/callback"
+    state = f"{uuid.uuid4().hex[:8]}|{email}"
+    
+    params = {
+        "client_id": THREADS_CLIENT_ID or "DUMMY_ID",
+        "redirect_uri": redirect_uri,
+        "scope": "threads_basic,threads_content_publish",
+        "response_type": "code",
+        "state": state
+    }
+    base_url = "https://threads.net/oauth/authorize"
+    full_url = f"{base_url}?{urllib.parse.urlencode(params)}"
+    return jsonify({"success": True, "url": full_url})
+
+@app.route('/auth/threads/callback', methods=['GET'])
+def threads_callback():
+    code = request.args.get('code')
+    state = request.args.get('state', '')
+    email = state.split('|')[1] if '|' in state else ''
+    
+    if code and email:
+        try:
+            token_url = "https://graph.threads.net/oauth/access_token"
+            payload = {
+                "client_id": THREADS_CLIENT_ID,
+                "client_secret": THREADS_CLIENT_SECRET,
+                "grant_type": "authorization_code",
+                "redirect_uri": "https://trendoraautomation.my.id/auth/threads/callback",
+                "code": code
+            }
+            data = urllib.parse.urlencode(payload).encode('utf-8')
+            req = urllib.request.Request(token_url, data=data, headers={"Content-Type": "application/x-www-form-urlencoded"})
+            
+            with urllib.request.urlopen(req) as response:
+                res_data = json.loads(response.read().decode('utf-8'))
+                access_token = res_data.get('access_token')
+                
+                sheet = get_gsheet()
+                if sheet and access_token:
+                    all_vals = sheet.get_all_values()
+                    for idx in range(len(all_vals)-1, 0, -1):
+                        row = all_vals[idx]
+                        if len(row) > 0 and str(row[0]).strip().lower() == email.lower():
+                            row_idx = idx + 1
+                            # Simpan Access Token Threads di Kolom ke-14 (N)
+                            sheet.update_cell(row_idx, 14, access_token)
+                            break
+        except Exception as e:
+            print("Threads OAuth Error:", e)
+
+    return """
+    <html><body style="background:#0d0a1a;"><h2 style="color:#ffffff;text-align:center;margin-top:50px;">Threads Connected!</h2>
+    <script>if(window.opener){window.opener.postMessage({type:'OAUTH_SUCCESS', platform:'Threads'}, '*');window.close();}</script>
+    </body></html>
+    """
+
+# ==========================================
+# REAL TWITTER (X) OAUTH 2.0
+# ==========================================
+@app.route('/api/twitter-auth-url', methods=['GET'])
+def get_twitter_auth_url():
+    email = request.args.get('email', '').strip()
+    redirect_uri = "https://trendoraautomation.my.id/auth/twitter/callback"
+    state = f"{uuid.uuid4().hex[:8]}|{email}"
+    
+    # Twitter butuh PKCE, kita gunakan 'plain' verifier untuk mempermudah (disupport API v2)
+    params = {
+        "response_type": "code",
+        "client_id": TWITTER_CLIENT_ID or "DUMMY_ID",
+        "redirect_uri": redirect_uri,
+        "scope": "tweet.read tweet.write users.read offline.access",
+        "state": state,
+        "code_challenge": "trendora_twitter_challenge_123",
+        "code_challenge_method": "plain"
+    }
+    base_url = "https://twitter.com/i/oauth2/authorize"
+    full_url = f"{base_url}?{urllib.parse.urlencode(params)}"
+    return jsonify({"success": True, "url": full_url})
+
+@app.route('/auth/twitter/callback', methods=['GET'])
+def twitter_callback():
+    code = request.args.get('code')
+    state = request.args.get('state', '')
+    email = state.split('|')[1] if '|' in state else ''
+    
+    if code and email:
+        try:
+            token_url = "https://api.twitter.com/2/oauth2/token"
+            payload = {
+                "code": code,
+                "grant_type": "authorization_code",
+                "client_id": TWITTER_CLIENT_ID,
+                "redirect_uri": "https://trendoraautomation.my.id/auth/twitter/callback",
+                "code_verifier": "trendora_twitter_challenge_123"
+            }
+            # Twitter butuh Basic Auth untuk secret
+            auth_str = f"{TWITTER_CLIENT_ID}:{TWITTER_CLIENT_SECRET}"
+            b64_auth = base64.b64encode(auth_str.encode()).decode()
+            
+            data = urllib.parse.urlencode(payload).encode('utf-8')
+            req = urllib.request.Request(token_url, data=data, method='POST')
+            req.add_header('Content-Type', 'application/x-www-form-urlencoded')
+            req.add_header('Authorization', f'Basic {b64_auth}')
+            
+            with urllib.request.urlopen(req) as response:
+                res_data = json.loads(response.read().decode('utf-8'))
+                access_token = res_data.get('access_token')
+                
+                sheet = get_gsheet()
+                if sheet and access_token:
+                    all_vals = sheet.get_all_values()
+                    for idx in range(len(all_vals)-1, 0, -1):
+                        row = all_vals[idx]
+                        if len(row) > 0 and str(row[0]).strip().lower() == email.lower():
+                            row_idx = idx + 1
+                            # Simpan Access Token Twitter di Kolom ke-15 (O)
+                            sheet.update_cell(row_idx, 15, access_token)
+                            break
+        except Exception as e:
+            print("Twitter OAuth Error:", e)
+
+    return """
+    <html><body style="background:#0d0a1a;"><h2 style="color:#1d9bf0;text-align:center;margin-top:50px;">Twitter/X Connected!</h2>
+    <script>if(window.opener){window.opener.postMessage({type:'OAUTH_SUCCESS', platform:'Twitter'}, '*');window.close();}</script>
     </body></html>
     """
 
@@ -1067,6 +1263,105 @@ def n8n_webhook():
         else:
             status = "FAILED"
             details['yt_error'] = "Token YouTube tidak valid atau Media URL kosong."
+
+    # -----------------------------------------------------
+    # LOGIKA 6: POSTING KE THREADS
+    # -----------------------------------------------------
+    elif platform == 'threads' and isinstance(details, dict):
+        media_url = details.get('media_url')
+        caption = details.get('caption', 'Auto-post Threads by TRENDORA ⚡')
+        threads_token = db_get_threads_token_by_api_key(api_key)
+        
+        if threads_token and media_url:
+            try:
+                # 1. Dapatkan Threads User ID
+                me_url = f"https://graph.threads.net/v1.0/me?access_token={threads_token}"
+                req_me = urllib.request.Request(me_url)
+                with urllib.request.urlopen(req_me) as res_me:
+                    me_data = json.loads(res_me.read().decode('utf-8'))
+                    threads_user_id = me_data.get('id')
+                    
+                if threads_user_id:
+                    # 2. Bikin Container Video
+                    container_url = f"https://graph.threads.net/v1.0/{threads_user_id}/threads"
+                    payload = urllib.parse.urlencode({
+                        'media_type': 'VIDEO',
+                        'video_url': media_url,
+                        'text': caption,
+                        'access_token': threads_token
+                    }).encode('utf-8')
+                    
+                    req_cont = urllib.request.Request(container_url, data=payload, method='POST')
+                    with urllib.request.urlopen(req_cont) as res_cont:
+                        cont_data = json.loads(res_cont.read().decode('utf-8'))
+                        creation_id = cont_data.get('id')
+                        
+                    time.sleep(5) # Jeda untuk rendering video di server Meta
+                    
+                    # 3. Publish Container
+                    publish_url = f"https://graph.threads.net/v1.0/{threads_user_id}/threads_publish"
+                    pub_payload = urllib.parse.urlencode({
+                        'creation_id': creation_id,
+                        'access_token': threads_token
+                    }).encode('utf-8')
+                    
+                    try:
+                        req_pub = urllib.request.Request(publish_url, data=pub_payload, method='POST')
+                        with urllib.request.urlopen(req_pub) as res_pub:
+                            pub_data = json.loads(res_pub.read().decode('utf-8'))
+                            status = "PUBLISHED (SUCCESS)"
+                            details['threads_status'] = "Sukses upload ke Threads!"
+                            details['threads_media_id'] = pub_data.get('id')
+                    except urllib.error.HTTPError as ep:
+                        status = "PENDING / RENDERING"
+                        details['threads_status'] = f"Video mendarat di Meta (ID: {creation_id}). Sedang diproses Threads..."
+                else:
+                    status = "FAILED"
+                    details['threads_error'] = "Gagal mendapatkan ID Threads."
+            except Exception as e:
+                status = "FAILED"
+                details['threads_error'] = f"Threads API Error: {str(e)}"
+        else:
+            status = "FAILED"
+            details['threads_error'] = "Token Threads tidak valid atau Media URL kosong."
+
+    # -----------------------------------------------------
+    # LOGIKA 7: POSTING KE TWITTER (X)
+    # -----------------------------------------------------
+    elif platform == 'twitter' and isinstance(details, dict):
+        media_url = details.get('media_url')
+        caption = details.get('caption', 'Auto-post by TRENDORA')
+        twitter_token = db_get_twitter_token_by_api_key(api_key)
+        
+        if twitter_token:
+            try:
+                # Memasukkan link URL langsung ke dalam text Tweet
+                tweet_text = f"{caption}\n\n{media_url}" if media_url else caption
+                
+                tweet_url = "https://api.twitter.com/2/tweets"
+                payload = {"text": tweet_text}
+                
+                req_tweet = urllib.request.Request(
+                    tweet_url, 
+                    data=json.dumps(payload).encode('utf-8'),
+                    headers={
+                        "Authorization": f"Bearer {twitter_token}",
+                        "Content-Type": "application/json"
+                    },
+                    method='POST'
+                )
+                
+                with urllib.request.urlopen(req_tweet) as res_tweet:
+                    tweet_data = json.loads(res_tweet.read().decode('utf-8'))
+                    status = "PUBLISHED (SUCCESS)"
+                    details['twitter_status'] = "Sukses post Tweet!"
+                    details['tweet_id'] = tweet_data.get('data', {}).get('id')
+            except Exception as e:
+                status = "FAILED"
+                details['twitter_error'] = f"Twitter API Error: {str(e)}"
+        else:
+            status = "FAILED"
+            details['twitter_error'] = "Token Twitter tidak valid."
 
     # -----------------------------------------------------
     # LOGGING KE DATABASE (TER-ISOLASI PER USER)
