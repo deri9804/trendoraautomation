@@ -155,13 +155,13 @@ function handleSocialPlatformConnect(platform) {
     return;
   }
 
-  // REAL YOUTUBE AUTHENTICATION
+  // REAL YOUTUBE (GOOGLE) AUTHENTICATION
   if (p === 'youtube' || p === 'google') {
     fetch('/api/youtube-auth-url?email=' + encodeURIComponent(userEmail))
       .then(res => res.json())
       .then(data => {
         if (data.success && data.url) {
-          window.open(data.url, `OAuth_youtube`, 'width=600,height=750,scrollbars=yes,status=yes');
+          window.open(data.url, `OAuth_YouTube`, 'width=600,height=750,scrollbars=yes,status=yes');
         } else {
           openFallbackOAuthPopup(platform, userEmail);
         }
@@ -174,7 +174,6 @@ function handleSocialPlatformConnect(platform) {
 
   // PLATFORM LAIN (Twitter, dll - Pakai Fallback)
   openFallbackOAuthPopup(platform, userEmail);
-
 }
 
 function openFallbackOAuthPopup(platform, userEmail) {
