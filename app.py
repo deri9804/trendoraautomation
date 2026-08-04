@@ -49,6 +49,10 @@ META_CLIENT_SECRET = os.environ.get("META_CLIENT_SECRET")
 LINKEDIN_CLIENT_ID = os.environ.get("LINKEDIN_CLIENT_ID")
 LINKEDIN_CLIENT_SECRET = os.environ.get("LINKEDIN_CLIENT_SECRET")
 
+# KONFIGURASI YOUTUBE / GOOGLE
+GOOGLE_CLIENT_ID = os.environ.get("GOOGLE_CLIENT_ID")
+GOOGLE_CLIENT_SECRET = os.environ.get("GOOGLE_CLIENT_SECRET")
+
 def get_gsheet():
     """Koneksi ke Google Sheets (Sheet Utama)."""
     if not HAS_GSPREAD:
@@ -121,6 +125,7 @@ def db_get_user(email):
                             'tiktok_connected': bool(str(row[6]).strip()) if len(row) > 6 else False,
                             'meta_connected': bool(str(row[9]).strip()) if len(row) > 9 else False,
                             'linkedin_connected': bool(str(row[10]).strip()) if len(row) > 10 else False,
+                            'youtube_connected': bool(str(row[11]).strip()) if len(row) > 11 else False,
                             'row_idx': idx + 1  
                         }
             return None
@@ -203,6 +208,23 @@ def db_get_linkedin_token_by_api_key(api_key):
         except Exception as e:
             print(f"GSheet Get LinkedIn Token Error: {e}")
     return None
+
+def db_get_youtube_tokens_by_api_key(api_key):
+    """Ambil Access dan Refresh Token YouTube dari GSheet (Kolom L & M)."""
+    sheet = get_gsheet()
+    if sheet:
+        try:
+            all_values = sheet.get_all_values()
+            for idx, row in enumerate(all_values):
+                if idx == 0: continue
+                if len(row) >= 5 and row[4].strip() == api_key:
+                    return {
+                        'access_token': row[11] if len(row) >= 12 else None,
+                        'refresh_token': row[12] if len(row) >= 13 else None
+                    }
+        except Exception as e:
+            print(f"GSheet Get YouTube Token Error: {e}")
+    return {}
 
 # ==========================================
 # KONFIGURASI SMTP EMAIL (GMAIL)
@@ -343,6 +365,8 @@ def verify_otp_route():
             connected_platforms.append('Instagram')
         if user_data.get('linkedin_connected'):
             connected_platforms.append('LinkedIn')
+        if user_data.get('youtube_connected'):
+            connected_platforms.append('YouTube')
         
         return jsonify({
             "success": True, 
@@ -413,6 +437,8 @@ def get_me():
         connected_platforms.append('Instagram')
     if user_data.get('linkedin_connected'):
         connected_platforms.append('LinkedIn')
+    if user_data.get('youtube_connected'):
+        connected_platforms.append('YouTube')
         
     status_lower = user_data.get('status', '').lower()
     is_paid_user = any(word in status_lower for word in ["paid", "subscriber", "admin", "lifetime"])
@@ -617,6 +643,73 @@ def linkedin_callback():
     return """
     <html><body style="background:#0d0a1a;"><h2 style="color:#34d399;text-align:center;margin-top:50px;">LinkedIn Connected!</h2>
     <script>if(window.opener){window.opener.postMessage({type:'OAUTH_SUCCESS', platform:'LinkedIn'}, '*');window.close();}</script>
+    </body></html>
+    """
+
+# ==========================================
+# REAL YOUTUBE (GOOGLE) OAUTH
+# ==========================================
+@app.route('/api/youtube-auth-url', methods=['GET'])
+def get_youtube_auth_url():
+    email = request.args.get('email', '').strip()
+    redirect_uri = "https://trendoraautomation.my.id/auth/youtube/callback"
+    state = f"{uuid.uuid4().hex[:8]}|{email}"
+    
+    params = {
+        "client_id": GOOGLE_CLIENT_ID or "DUMMY_ID",
+        "redirect_uri": redirect_uri,
+        "response_type": "code",
+        "scope": "https://www.googleapis.com/auth/youtube.upload",
+        "access_type": "offline", # Agar dapat Refresh Token
+        "prompt": "consent",
+        "state": state
+    }
+    base_url = "https://accounts.google.com/o/oauth2/v2/auth"
+    full_url = f"{base_url}?{urllib.parse.urlencode(params)}"
+    return jsonify({"success": True, "url": full_url})
+
+@app.route('/auth/youtube/callback', methods=['GET'])
+def youtube_callback():
+    code = request.args.get('code')
+    state = request.args.get('state', '')
+    email = state.split('|')[1] if '|' in state else ''
+    
+    if code and email:
+        try:
+            token_url = "https://oauth2.googleapis.com/token"
+            payload = {
+                "client_id": GOOGLE_CLIENT_ID,
+                "client_secret": GOOGLE_CLIENT_SECRET,
+                "code": code,
+                "grant_type": "authorization_code",
+                "redirect_uri": "https://trendoraautomation.my.id/auth/youtube/callback"
+            }
+            data = urllib.parse.urlencode(payload).encode('utf-8')
+            req = urllib.request.Request(token_url, data=data, headers={"Content-Type": "application/x-www-form-urlencoded"})
+            
+            with urllib.request.urlopen(req) as response:
+                res_data = json.loads(response.read().decode('utf-8'))
+                access_token = res_data.get('access_token')
+                refresh_token = res_data.get('refresh_token', '')
+                
+                sheet = get_gsheet()
+                if sheet and access_token:
+                    all_vals = sheet.get_all_values()
+                    for idx in range(len(all_vals)-1, 0, -1):
+                        row = all_vals[idx]
+                        if len(row) > 0 and str(row[0]).strip().lower() == email.lower():
+                            row_idx = idx + 1
+                            # Simpan Access Token (L) dan Refresh Token (M)
+                            sheet.update_cell(row_idx, 12, access_token)
+                            if refresh_token:
+                                sheet.update_cell(row_idx, 13, refresh_token)
+                            break
+        except Exception as e:
+            print("YouTube OAuth Error:", e)
+
+    return """
+    <html><body style="background:#0d0a1a;"><h2 style="color:#ff0000;text-align:center;margin-top:50px;">YouTube Connected!</h2>
+    <script>if(window.opener){window.opener.postMessage({type:'OAUTH_SUCCESS', platform:'YouTube'}, '*');window.close();}</script>
     </body></html>
     """
 
@@ -910,6 +1003,70 @@ def n8n_webhook():
         else:
             status = "FAILED"
             details['linkedin_error'] = "Token LinkedIn tidak valid atau belum terhubung."
+
+    # -----------------------------------------------------
+    # LOGIKA 5: POSTING KE YOUTUBE SHORTS
+    # -----------------------------------------------------
+    elif platform == 'youtube' and isinstance(details, dict):
+        media_url = details.get('media_url')
+        caption = details.get('caption', 'Auto-post YouTube Shorts by TRENDORA ⚡')
+        
+        yt_tokens = db_get_youtube_tokens_by_api_key(api_key)
+        access_token = yt_tokens.get('access_token')
+        
+        if access_token and media_url:
+            temp_file_path = None
+            try:
+                # 1. Download video ke server
+                temp_dir = tempfile.gettempdir()
+                temp_file_path = os.path.join(temp_dir, f"yt_{uuid.uuid4().hex[:6]}.mp4")
+                urllib.request.urlretrieve(media_url, temp_file_path)
+                
+                # 2. Siapkan Payload Multipart
+                boundary = "TRENDORAYOUTUBEBOUNDARY123"
+                metadata = {
+                    "snippet": {
+                        "title": caption[:100], # Max karakter judul YouTube
+                        "description": caption
+                    },
+                    "status": {
+                        "privacyStatus": "public",
+                        "selfDeclaredMadeForKids": False
+                    }
+                }
+                
+                body = []
+                body.append(f"--{boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n{json.dumps(metadata)}\r\n".encode('utf-8'))
+                body.append(f"--{boundary}\r\nContent-Type: video/mp4\r\n\r\n".encode('utf-8'))
+                
+                with open(temp_file_path, 'rb') as f:
+                    video_data = f.read()
+                
+                footer = f"\r\n--{boundary}--\r\n".encode('utf-8')
+                full_body = b"".join(body) + video_data + footer
+                
+                # 3. Request ke YouTube Data API v3
+                yt_upload_url = "https://www.googleapis.com/upload/youtube/v3/videos?uploadType=multipart&part=snippet,status"
+                req = urllib.request.Request(yt_upload_url, data=full_body, method='POST')
+                req.add_header('Authorization', f'Bearer {access_token}')
+                req.add_header('Content-Type', f'multipart/related; boundary={boundary}')
+                req.add_header('Content-Length', str(len(full_body)))
+                
+                with urllib.request.urlopen(req) as res:
+                    yt_res = json.loads(res.read().decode('utf-8'))
+                    status = "PUBLISHED (SUCCESS)"
+                    details['yt_status'] = "Sukses upload ke YouTube!"
+                    details['yt_video_id'] = yt_res.get('id')
+            except Exception as e:
+                status = "FAILED"
+                details['yt_error'] = f"YouTube API Error: {str(e)}"
+            finally:
+                if temp_file_path and os.path.exists(temp_file_path):
+                    try: os.remove(temp_file_path)
+                    except: pass
+        else:
+            status = "FAILED"
+            details['yt_error'] = "Token YouTube tidak valid atau Media URL kosong."
 
     # -----------------------------------------------------
     # LOGGING KE DATABASE (TER-ISOLASI PER USER)
