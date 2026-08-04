@@ -228,7 +228,8 @@ function loadUserPostLogs() {
         'Content-Type': 'application/json',
         'X-API-Key': apiKey 
     },
-    body: JSON.stringify({})
+    // TAMBAHAN: Kirim juga via body JSON sebagai cadangan
+    body: JSON.stringify({ api_key: apiKey })
   })
   .then(res => res.json())
   .then(res => {

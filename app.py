@@ -708,7 +708,12 @@ def tiktok_webhook():
 @app.route('/api/get-logs', methods=['POST'])
 def get_logs():
     api_key = request.headers.get('X-API-Key', '').strip()
-    if not api_key: api_key = request.json.get('api_key', '').strip()
+    
+    # Toleransi kalau Header diblokir Vercel, kita ambil dari Body JSON
+    if not api_key: 
+        data = request.get_json(silent=True) or {}
+        api_key = data.get('api_key', '').strip()
+        
     if not api_key: return jsonify({"success": False, "message": "API Key is required"})
         
     logs = []
@@ -719,15 +724,16 @@ def get_logs():
             if len(all_values) > 1:
                 # Skip header, baca berdasarkan urutan index
                 for row in all_values[1:]:
-                    if len(row) >= 6:
+                    # BIKIN KEBAL: Google Sheet kadang motong kolom kosong di ujung, jadi kita cuma butuh minimal 3 kolom (Timestamp, LogID, API Key)
+                    if len(row) >= 3:
                         row_api = str(row[2]).strip() # Kolom ke-3 adalah API Key
                         if row_api == api_key:
                             logs.append({
-                                "Timestamp": str(row[0]), 
-                                "LogID": str(row[1]),
-                                "Platform": str(row[3]), 
-                                "Status": str(row[4]),
-                                "Details": str(row[5])
+                                "Timestamp": str(row[0]) if len(row) > 0 else "-", 
+                                "LogID": str(row[1]) if len(row) > 1 else "-",
+                                "Platform": str(row[3]) if len(row) > 3 else "-", 
+                                "Status": str(row[4]) if len(row) > 4 else "-",
+                                "Details": str(row[5]) if len(row) > 5 else "-"
                             })
             logs.reverse()
             return jsonify({"success": True, "logs": logs})
