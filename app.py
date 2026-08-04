@@ -133,12 +133,14 @@ def db_save_user(email, secret, is_linked, name="", api_key="", status=""):
     sheet = get_gsheet()
     if sheet:
         try:
-            all_records = sheet.get_all_records()
+            all_values = sheet.get_all_values()
             found_idx = -1
-            for idx, row in enumerate(all_records):
-                if str(row.get('Email', '')).strip().lower() == email:
-                    found_idx = idx + 2
+            for idx, row in enumerate(all_values):
+                if idx == 0: continue # Skip header
+                if len(row) > 0 and str(row[0]).strip().lower() == email:
+                    found_idx = idx + 1 # Index gspread dimulai dari 1
                     break
+                    
             if found_idx != -1:
                 sheet.update_cell(found_idx, 2, secret)
                 sheet.update_cell(found_idx, 3, str(is_linked))
