@@ -138,8 +138,40 @@ function handleSocialPlatformConnect(platform) {
     return;
   }
 
-  // PLATFORM LAIN (YouTube, dll)
-  openFallbackOAuthPopup(platform, userEmail);
+  // REAL LINKEDIN AUTHENTICATION
+  if (p === 'linkedin') {
+    fetch('/api/linkedin-auth-url?email=' + encodeURIComponent(userEmail))
+      .then(res => res.json())
+      .then(data => {
+        if (data.success && data.url) {
+          window.open(data.url, `OAuth_LinkedIn`, 'width=600,height=750,scrollbars=yes,status=yes');
+        } else {
+          openFallbackOAuthPopup(platform, userEmail);
+        }
+      })
+      .catch(err => {
+        openFallbackOAuthPopup(platform, userEmail);
+      });
+    return;
+  }
+
+  // REAL YOUTUBE AUTHENTICATION
+  if (p === 'youtube' || p === 'google') {
+    fetch('/api/google-auth-url?email=' + encodeURIComponent(userEmail))
+      .then(res => res.json())
+      .then(data => {
+        if (data.success && data.url) {
+          window.open(data.url, `OAuth_google`, 'width=600,height=750,scrollbars=yes,status=yes');
+        } else {
+          openFallbackOAuthPopup(platform, userEmail);
+        }
+      })
+      .catch(err => {
+        openFallbackOAuthPopup(platform, userEmail);
+      });
+    return;
+  }
+
 }
 
 function openFallbackOAuthPopup(platform, userEmail) {

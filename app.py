@@ -45,6 +45,10 @@ TIKTOK_CLIENT_SECRET = os.environ.get("TIKTOK_CLIENT_SECRET")
 META_CLIENT_ID = os.environ.get("META_CLIENT_ID")
 META_CLIENT_SECRET = os.environ.get("META_CLIENT_SECRET")
 
+# KONFIGURASI LINKEDIN
+LINKEDIN_CLIENT_ID = os.environ.get("LINKEDIN_CLIENT_ID")
+LINKEDIN_CLIENT_SECRET = os.environ.get("LINKEDIN_CLIENT_SECRET")
+
 def get_gsheet():
     """Koneksi ke Google Sheets (Sheet Utama)."""
     if not HAS_GSPREAD:
@@ -116,6 +120,7 @@ def db_get_user(email):
                             'status': str(row[5]) if len(row) > 5 else '',
                             'tiktok_connected': bool(str(row[6]).strip()) if len(row) > 6 else False,
                             'meta_connected': bool(str(row[9]).strip()) if len(row) > 9 else False,
+                            'linkedin_connected': bool(str(row[10]).strip()) if len(row) > 10 else False,
                             'row_idx': idx + 1  
                         }
             return None
@@ -158,7 +163,6 @@ def db_save_user(email, secret, is_linked, name="", api_key="", status=""):
     }
 
 def db_get_tiktok_tokens_by_api_key(api_key):
-    """Ambil Access Token TikTok berdasarkan API Key."""
     sheet = get_gsheet()
     if sheet:
         try:
@@ -175,18 +179,29 @@ def db_get_tiktok_tokens_by_api_key(api_key):
     return {}
 
 def db_get_meta_token_by_api_key(api_key):
-    """Ambil Access Token Meta (Facebook/IG) berdasarkan API Key."""
     sheet = get_gsheet()
     if sheet:
         try:
             all_values = sheet.get_all_values()
             for idx, row in enumerate(all_values):
                 if idx == 0: continue
-                # Cari baris dengan API Key yang cocok, Token Meta ada di kolom ke-10 (index 9)
                 if len(row) >= 5 and row[4].strip() == api_key:
                     return row[9] if len(row) >= 10 else None
         except Exception as e:
             print(f"GSheet Get Meta Token Error: {e}")
+    return None
+
+def db_get_linkedin_token_by_api_key(api_key):
+    sheet = get_gsheet()
+    if sheet:
+        try:
+            all_values = sheet.get_all_values()
+            for idx, row in enumerate(all_values):
+                if idx == 0: continue
+                if len(row) >= 5 and row[4].strip() == api_key:
+                    return row[10] if len(row) >= 11 else None
+        except Exception as e:
+            print(f"GSheet Get LinkedIn Token Error: {e}")
     return None
 
 # ==========================================
@@ -326,6 +341,8 @@ def verify_otp_route():
         if user_data.get('meta_connected'):
             connected_platforms.append('Facebook')
             connected_platforms.append('Instagram')
+        if user_data.get('linkedin_connected'):
+            connected_platforms.append('LinkedIn')
         
         return jsonify({
             "success": True, 
@@ -394,6 +411,8 @@ def get_me():
     if user_data.get('meta_connected'):
         connected_platforms.append('Facebook')
         connected_platforms.append('Instagram')
+    if user_data.get('linkedin_connected'):
+        connected_platforms.append('LinkedIn')
         
     status_lower = user_data.get('status', '').lower()
     is_paid_user = any(word in status_lower for word in ["paid", "subscriber", "admin", "lifetime"])
@@ -485,7 +504,6 @@ def get_meta_auth_url():
     redirect_uri = "https://trendoraautomation.my.id/auth/meta/callback"
     state = f"{uuid.uuid4().hex[:8]}|{email}"
     
-    # Permission super komplit buat FB Pages dan IG API
     scopes = "pages_show_list,pages_read_engagement,pages_manage_posts,instagram_basic,instagram_content_publish"
     
     params = {
@@ -529,7 +547,6 @@ def meta_callback():
                         row = all_vals[idx]
                         if len(row) > 0 and str(row[0]).strip().lower() == email.lower():
                             row_idx = idx + 1
-                            # Simpan Access Token Meta di Kolom ke-10 (J)
                             sheet.update_cell(row_idx, 10, access_token)
                             break
         except Exception as e:
@@ -538,6 +555,68 @@ def meta_callback():
     return """
     <html><body style="background:#0d0a1a;"><h2 style="color:#34d399;text-align:center;margin-top:50px;">Meta (Facebook & IG) Connected!</h2>
     <script>if(window.opener){window.opener.postMessage({type:'OAUTH_SUCCESS', platform:'Meta'}, '*');window.close();}</script>
+    </body></html>
+    """
+
+# ==========================================
+# REAL LINKEDIN OAUTH
+# ==========================================
+@app.route('/api/linkedin-auth-url', methods=['GET'])
+def get_linkedin_auth_url():
+    email = request.args.get('email', '').strip()
+    redirect_uri = "https://trendoraautomation.my.id/auth/linkedin/callback"
+    state = f"{uuid.uuid4().hex[:8]}|{email}"
+    
+    params = {
+        "response_type": "code",
+        "client_id": LINKEDIN_CLIENT_ID or "DUMMY_ID",
+        "redirect_uri": redirect_uri,
+        "scope": "openid profile email w_member_social", # Scope utk post text/gambar/video
+        "state": state
+    }
+    base_url = "https://www.linkedin.com/oauth/v2/authorization"
+    full_url = f"{base_url}?{urllib.parse.urlencode(params)}"
+    return jsonify({"success": True, "url": full_url})
+
+@app.route('/auth/linkedin/callback', methods=['GET'])
+def linkedin_callback():
+    code = request.args.get('code')
+    state = request.args.get('state', '')
+    email = state.split('|')[1] if '|' in state else ''
+    
+    if code and email:
+        try:
+            token_url = "https://www.linkedin.com/oauth/v2/accessToken"
+            payload = {
+                "grant_type": "authorization_code",
+                "code": code,
+                "client_id": LINKEDIN_CLIENT_ID,
+                "client_secret": LINKEDIN_CLIENT_SECRET,
+                "redirect_uri": "https://trendoraautomation.my.id/auth/linkedin/callback"
+            }
+            data = urllib.parse.urlencode(payload).encode('utf-8')
+            req = urllib.request.Request(token_url, data=data, headers={"Content-Type": "application/x-www-form-urlencoded"})
+            
+            with urllib.request.urlopen(req) as response:
+                res_data = json.loads(response.read().decode('utf-8'))
+                access_token = res_data.get('access_token')
+                
+                sheet = get_gsheet()
+                if sheet and access_token:
+                    all_vals = sheet.get_all_values()
+                    for idx in range(len(all_vals)-1, 0, -1):
+                        row = all_vals[idx]
+                        if len(row) > 0 and str(row[0]).strip().lower() == email.lower():
+                            row_idx = idx + 1
+                            # Simpan Access Token LinkedIn di Kolom ke-11 (K)
+                            sheet.update_cell(row_idx, 11, access_token)
+                            break
+        except Exception as e:
+            print("LinkedIn OAuth Error:", e)
+
+    return """
+    <html><body style="background:#0d0a1a;"><h2 style="color:#34d399;text-align:center;margin-top:50px;">LinkedIn Connected!</h2>
+    <script>if(window.opener){window.opener.postMessage({type:'OAUTH_SUCCESS', platform:'LinkedIn'}, '*');window.close();}</script>
     </body></html>
     """
 
@@ -589,8 +668,7 @@ def check_payment():
     return jsonify({"success": True, "isPaid": False})
 
 # ==========================================
-# WEBHOOK LISTENER DARI N8N (THE MASTERPIECE 3.0)
-# TIKTOK, FACEBOOK, & INSTAGRAM API INTEGRATION!
+# WEBHOOK LISTENER DARI N8N 
 # ==========================================
 @app.route('/api/n8n-webhook', methods=['GET', 'POST'], strict_slashes=False)
 def n8n_webhook():
@@ -612,7 +690,7 @@ def n8n_webhook():
     details = data.get('details', {})
     
     # -----------------------------------------------------
-    # LOGIKA 1: POSTING KE TIKTOK (FILE UPLOAD METHOD)
+    # LOGIKA 1: POSTING KE TIKTOK 
     # -----------------------------------------------------
     if platform == 'tiktok' and isinstance(details, dict):
         media_url = details.get('media_url')
@@ -626,8 +704,6 @@ def n8n_webhook():
                 temp_file_path = None
                 try:
                     headers = {"Authorization": f"Bearer {access_token}", "Content-Type": "application/json; charset=utf-8"}
-                    
-                    # Bypass Query
                     try:
                         urllib.request.urlopen(urllib.request.Request("https://open.tiktokapis.com/v2/post/publish/creator_info/query/", data=b"{}", headers=headers, method='POST'))
                     except: pass
@@ -676,10 +752,8 @@ def n8n_webhook():
         
         if meta_token and media_url:
             try:
-                # 1. Cari Facebook Page yang dimiliki user ini
                 page_url = f"https://graph.facebook.com/v18.0/me/accounts?access_token={meta_token}"
                 req_page = urllib.request.Request(page_url)
-                
                 with urllib.request.urlopen(req_page) as response:
                     page_data = json.loads(response.read().decode('utf-8'))
                     
@@ -688,7 +762,6 @@ def n8n_webhook():
                     page_token = page_data['data'][0]['access_token']
                     page_name = page_data['data'][0].get('name', 'Unknown Page')
                     
-                    # 2. Tembak Video ke Facebook Page
                     fb_post_url = f"https://graph.facebook.com/v18.0/{page_id}/videos"
                     fb_payload = urllib.parse.urlencode({
                         'file_url': media_url,
@@ -713,7 +786,7 @@ def n8n_webhook():
             details['meta_error'] = "Token Facebook tidak valid atau Media URL kosong."
 
     # -----------------------------------------------------
-    # LOGIKA 3: POSTING KE INSTAGRAM REELS (IG GRAPH API)
+    # LOGIKA 3: POSTING KE INSTAGRAM REELS 
     # -----------------------------------------------------
     elif platform == 'instagram' and isinstance(details, dict):
         media_url = details.get('media_url')
@@ -722,17 +795,13 @@ def n8n_webhook():
         
         if meta_token and media_url:
             try:
-                # 1. Cari FB Page untuk nyari akun IG-nya
                 page_url = f"https://graph.facebook.com/v18.0/me/accounts?access_token={meta_token}"
                 req_page = urllib.request.Request(page_url)
-                
                 with urllib.request.urlopen(req_page) as response:
                     page_data = json.loads(response.read().decode('utf-8'))
                     
                 if page_data.get('data') and len(page_data['data']) > 0:
                     page_id = page_data['data'][0]['id']
-                    
-                    # 2. Cari ID Akun Instagram Business yang nempel di Page itu
                     ig_info_url = f"https://graph.facebook.com/v18.0/{page_id}?fields=instagram_business_account&access_token={meta_token}"
                     req_ig = urllib.request.Request(ig_info_url)
                     with urllib.request.urlopen(req_ig) as res_ig:
@@ -741,7 +810,6 @@ def n8n_webhook():
                     ig_user_id = ig_data.get('instagram_business_account', {}).get('id')
                     
                     if ig_user_id:
-                        # 3. Bikin "Kontainer Video" di server IG (Meta bakal nyedot videonya)
                         ig_container_url = f"https://graph.facebook.com/v18.0/{ig_user_id}/media"
                         ig_payload = urllib.parse.urlencode({
                             'media_type': 'REELS',
@@ -755,11 +823,8 @@ def n8n_webhook():
                             cont_data = json.loads(res_cont.read().decode('utf-8'))
                             creation_id = cont_data.get('id')
                             
-                        # PENTING: Server Instagram butuh waktu beberapa detik buat nge-download/render videonya.
-                        # Kita suruh Python nahan napas 5 detik sebelum dipublish.
                         time.sleep(5) 
                         
-                        # 4. Perintah Publish Video yang udah di-render!
                         ig_publish_url = f"https://graph.facebook.com/v18.0/{ig_user_id}/media_publish"
                         ig_pub_payload = urllib.parse.urlencode({
                             'creation_id': creation_id,
@@ -774,13 +839,11 @@ def n8n_webhook():
                                 details['ig_status'] = "Sukses upload Instagram Reels!"
                                 details['ig_media_id'] = pub_data.get('id')
                         except urllib.error.HTTPError as ep:
-                            # Kalau 5 detik belum kelar render, IG bakal nolak dipublish.
-                            # Gak masalah, statusnya jadi PENDING aja.
                             status = "PENDING / RENDERING"
                             details['ig_status'] = f"Video mendarat di server Meta (ID: {creation_id}). Sedang diproses Instagram..."
                     else:
                         status = "FAILED"
-                        details['meta_error'] = "Tidak menemukan Instagram Business Account yang terhubung ke FB Page ini."
+                        details['meta_error'] = "Tidak menemukan Instagram Business Account."
                 else:
                     status = "FAILED"
                     details['meta_error'] = "Tidak menemukan FB Page untuk mengekstrak IG Account."
@@ -789,10 +852,67 @@ def n8n_webhook():
                 details['meta_error'] = f"Graph API Error: {str(e)}"
         else:
             status = "FAILED"
-            details['meta_error'] = "Token Meta tidak valid atau URL Media kosong."
+            details['meta_error'] = "Token Meta tidak valid."
+            
+    # -----------------------------------------------------
+    # LOGIKA 4: POSTING KE LINKEDIN
+    # -----------------------------------------------------
+    elif platform == 'linkedin' and isinstance(details, dict):
+        caption = details.get('caption', 'Posting via n8n & TRENDORA')
+        linkedin_token = db_get_linkedin_token_by_api_key(api_key)
+        
+        if linkedin_token:
+            try:
+                # 1. Dapatkan Profil URN User
+                profile_url = "https://api.linkedin.com/v2/userinfo"
+                req_profile = urllib.request.Request(profile_url, headers={"Authorization": f"Bearer {linkedin_token}"})
+                with urllib.request.urlopen(req_profile) as res_profile:
+                    profile_data = json.loads(res_profile.read().decode('utf-8'))
+                    sub_urn = profile_data.get('sub')
+                
+                if sub_urn:
+                    author_urn = f"urn:li:person:{sub_urn}"
+                    
+                    # 2. Post Text/Article ke LinkedIn
+                    post_url = "https://api.linkedin.com/v2/ugcPosts"
+                    post_payload = {
+                        "author": author_urn,
+                        "lifecycleState": "PUBLISHED",
+                        "specificContent": {
+                            "com.linkedin.ugc.ShareContent": {
+                                "shareCommentary": {"text": caption},
+                                "shareMediaCategory": "NONE"
+                            }
+                        },
+                        "visibility": {"com.linkedin.ugc.MemberNetworkVisibility": "PUBLIC"}
+                    }
+                    
+                    req_post = urllib.request.Request(
+                        post_url, 
+                        data=json.dumps(post_payload).encode('utf-8'),
+                        headers={
+                            "Authorization": f"Bearer {linkedin_token}",
+                            "Content-Type": "application/json",
+                            "X-Restli-Protocol-Version": "2.0.0"
+                        },
+                        method='POST'
+                    )
+                    
+                    with urllib.request.urlopen(req_post) as res_post:
+                        status = "PUBLISHED (SUCCESS)"
+                        details['linkedin_status'] = "Sukses upload ke Profil LinkedIn!"
+                else:
+                    status = "FAILED"
+                    details['linkedin_error'] = "Gagal mengambil ID Akun (URN)."
+            except Exception as e:
+                status = "FAILED"
+                details['linkedin_error'] = f"LinkedIn API Error: {str(e)}"
+        else:
+            status = "FAILED"
+            details['linkedin_error'] = "Token LinkedIn tidak valid atau belum terhubung."
 
     # -----------------------------------------------------
-    # LOGGING KE DATABASE 
+    # LOGGING KE DATABASE (TER-ISOLASI PER USER)
     # -----------------------------------------------------
     if isinstance(details, dict):
         details_str = json.dumps(details)
@@ -816,7 +936,7 @@ def n8n_webhook():
 
 @app.route('/api/get-logs', methods=['POST', 'GET'])
 def get_logs():
-    # SAAS LOGIC: Ambil API Key user untuk memfilter log agar tidak bocor ke user lain
+    # Mengamankan log agar user hanya bisa melihat milik mereka sendiri
     api_key = request.headers.get('X-API-Key', '').strip()
     if not api_key:
         data = request.json or {}
@@ -833,7 +953,7 @@ def get_logs():
                     if len(row) >= 3:
                         row_api_key = str(row[2]).strip()
                         
-                        # HANYA TAMPILKAN LOG JIKA API KEY COCOK DENGAN MILIK USER YANG LOGIN
+                        # Filter ketat berdasarkan API Key
                         if api_key and row_api_key != api_key:
                             continue
                             
@@ -846,7 +966,7 @@ def get_logs():
                         }
                         logs.append(log_entry)
             
-            logs.reverse() # Yang terbaru di atas
+            logs.reverse()
             return jsonify({"success": True, "logs": logs[:50]})
         except Exception as e: 
             print(f"Get logs error: {e}")
