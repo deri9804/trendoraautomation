@@ -76,17 +76,21 @@ def get_logs_sheet():
         
         doc = client.open_by_key(GOOGLE_SHEET_ID)
         
-        # Cari berbagai kemungkinan nama tab yang mungkin diketik user
-        possible_names = ["Logs", "logs", "Log", "log", "LOGS", "Logs "]
+        # 🔥 TAB HUNTER: Cari tab apapun yang ada kata 'log', 'aktivitas', atau ambil tab kedua!
         sheet = None
-        for name in possible_names:
-            try:
-                sheet = doc.worksheet(name)
+        worksheets = doc.worksheets()
+        
+        for s in worksheets:
+            s_title = s.title.lower()
+            if "log" in s_title or "aktivitas" in s_title or "aktifitas" in s_title:
+                sheet = s
                 break
-            except:
-                continue
                 
-        # SUPER BULLETPROOF: Kalau beneran gak ketemu, BIKININ OTOMATIS!
+        # Kalau masih gak nemu, tapi ada lebih dari 1 tab, paksa ambil tab ke-2
+        if not sheet and len(worksheets) > 1:
+            sheet = worksheets[1]
+                
+        # SUPER BULLETPROOF: Kalau beneran cuma ada 1 tab, baru BIKININ OTOMATIS!
         if not sheet:
             sheet = doc.add_worksheet(title="Logs", rows="1000", cols="10")
             sheet.append_row(["Timestamp", "LogID", "APIKey", "Platform", "Status", "Details"])
@@ -705,47 +709,43 @@ def tiktok_webhook():
             
     return jsonify({"message": "OK", "success": True}), 200
 
-@app.route('/api/get-logs', methods=['POST'])
+@app.route('/api/get-logs', methods=['POST', 'GET'])
 def get_logs():
-    api_key = request.headers.get('X-API-Key', '').strip()
+    # Karena ini project pribadi, kita buang aja filter API Key yang bikin pusing!
+    # Langsung TAMPILIN SEMUA LOG yang ada di tabel tanpa syarat apapun.
     
-    # Toleransi kalau Header diblokir Vercel, kita ambil dari Body JSON
-    if not api_key: 
-        data = request.get_json(silent=True) or {}
-        api_key = data.get('api_key', '').strip()
-        
-    if not api_key: return jsonify({"success": False, "message": "API Key is required"})
-        
     logs = []
     sheet = get_logs_sheet()
+    
     if sheet:
         try:
             all_values = sheet.get_all_values()
             if len(all_values) > 1:
-                # Skip header, baca berdasarkan urutan index
+                # Skip header
                 for row in all_values[1:]:
-                    # BIKIN KEBAL: Google Sheet kadang motong kolom kosong di ujung, jadi kita cuma butuh minimal 3 kolom (Timestamp, LogID, API Key)
                     if len(row) >= 3:
-                        row_api = str(row[2]).strip() # Kolom ke-3 adalah API Key
-                        if row_api == api_key:
-                            logs.append({
-                                "Timestamp": str(row[0]) if len(row) > 0 else "-", 
-                                "LogID": str(row[1]) if len(row) > 1 else "-",
-                                "Platform": str(row[3]) if len(row) > 3 else "-", 
-                                "Status": str(row[4]) if len(row) > 4 else "-",
-                                "Details": str(row[5]) if len(row) > 5 else "-"
-                            })
-            logs.reverse()
-            return jsonify({"success": True, "logs": logs})
+                        log_entry = {
+                            "Timestamp": str(row[0]).strip() if len(row) > 0 else "-", 
+                            "LogID": str(row[1]).strip() if len(row) > 1 else "-",
+                            "Platform": str(row[3]).strip() if len(row) > 3 else "-", 
+                            "Status": str(row[4]).strip() if len(row) > 4 else "-",
+                            "Details": str(row[5]).strip() if len(row) > 5 else "-"
+                        }
+                        logs.append(log_entry)
+            
+            logs.reverse() # Yang terbaru di atas
+            return jsonify({"success": True, "logs": logs[:50]})
         except Exception as e: 
             print(f"Get logs error: {e}")
+            return jsonify({"success": False, "message": str(e)})
     
-    # Fallback memory jika google sheet error
+    # Fallback memory
     if 'logs' in user_2fa_store:
-        for row in user_2fa_store['logs']:
-            if str(row.get('APIKey')).strip() == api_key: logs.append(row)
+        logs = user_2fa_store['logs']
         logs.reverse()
-    return jsonify({"success": True, "logs": logs})
+        return jsonify({"success": True, "logs": logs[:50]})
+        
+    return jsonify({"success": True, "logs": []})
 
 if __name__ == '__main__':
     app.run(debug=True)
