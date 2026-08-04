@@ -268,10 +268,10 @@ def tos_page(): return render_template('tos.html')
 @app.route('/privacy')
 def privacy_page(): return render_template('privacy.html')
 
-@app.route('/data-deletion')
+@app.route('/data_deletion_page')
 def data_deletion_page(): 
     """Route baru untuk halaman panduan penghapusan data (Wajib untuk Meta App Review)."""
-    return render_template('data_deletion.html')
+    return render_template('data_deletion_page.html')
 
 # ==========================================
 # AUTHENTICATION & API KEY ROUTES
