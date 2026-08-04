@@ -37,7 +37,7 @@ SERVICE_ACCOUNT_FILE = "service_account.json"
 
 user_2fa_store = {}
 
-# KONFIGURASI TIKTOK DEVELOPER (Sekarang ambil dari Vercel Env)
+# KONFIGURASI TIKTOK DEVELOPER
 TIKTOK_CLIENT_KEY = os.environ.get("TIKTOK_CLIENT_KEY")
 TIKTOK_CLIENT_SECRET = os.environ.get("TIKTOK_CLIENT_SECRET")
 
@@ -65,7 +65,7 @@ def get_gsheet():
         return None
 
 def get_logs_sheet():
-    """Koneksi ke Google Sheets khusus tab 'Logs'. Sangat kebal error!"""
+    """Koneksi ke Google Sheets khusus tab 'Logs'."""
     if not HAS_GSPREAD:
         return None
     try:
@@ -77,24 +77,17 @@ def get_logs_sheet():
         else:
             creds = Credentials.from_service_account_file(SERVICE_ACCOUNT_FILE, scopes=scopes)
         client = gspread.authorize(creds)
-        
         doc = client.open_by_key(GOOGLE_SHEET_ID)
         
-        # 🔥 TAB HUNTER: Cari tab apapun yang ada kata 'log', 'aktivitas', atau ambil tab kedua!
         sheet = None
         worksheets = doc.worksheets()
-        
         for s in worksheets:
             s_title = s.title.lower()
             if "log" in s_title or "aktivitas" in s_title or "aktifitas" in s_title:
                 sheet = s
                 break
-                
-        # Kalau masih gak nemu, tapi ada lebih dari 1 tab, paksa ambil tab ke-2
         if not sheet and len(worksheets) > 1:
             sheet = worksheets[1]
-                
-        # SUPER BULLETPROOF: Kalau beneran cuma ada 1 tab, baru BIKININ OTOMATIS!
         if not sheet:
             sheet = doc.add_worksheet(title="Logs", rows="1000", cols="10")
             sheet.append_row(["Timestamp", "LogID", "APIKey", "Platform", "Status", "Details"])
@@ -105,13 +98,12 @@ def get_logs_sheet():
         return None
 
 def db_get_user(email):
-    """Ambil data user dari Google Sheets (scan dari BAWAH agar selalu dapat yg terbaru jika duplikat)."""
+    """Ambil data user dari Google Sheets (scan dari BAWAH agar selalu dapat yg terbaru)."""
     sheet = get_gsheet()
     if sheet:
         try:
             all_values = sheet.get_all_values()
             if len(all_values) > 1:
-                # Loop dari bawah ke atas
                 for idx in range(len(all_values)-1, 0, -1):
                     row = all_values[idx]
                     if len(row) > 0 and str(row[0]).strip().lower() == email:
@@ -131,7 +123,6 @@ def db_get_user(email):
             print(f"GSheet Read Error: {e}")
             return None
             
-    # Fallback memory
     if email in user_2fa_store:
         user_data = user_2fa_store[email]
         user_data['tiktok_connected'] = user_data.get('tiktok_connected', False)
@@ -167,14 +158,13 @@ def db_save_user(email, secret, is_linked, name="", api_key="", status=""):
     }
 
 def db_get_tiktok_tokens_by_api_key(api_key):
-    """Fungsi krusial untuk mengambil Access Token TikTok saat n8n mengirim webhook."""
+    """Ambil Access Token TikTok berdasarkan API Key."""
     sheet = get_gsheet()
     if sheet:
         try:
             all_values = sheet.get_all_values()
-            # Mencari baris yang API Key-nya cocok (Kolom ke-5 / index 4)
             for idx, row in enumerate(all_values):
-                if idx == 0: continue # Skip header
+                if idx == 0: continue
                 if len(row) >= 5 and row[4].strip() == api_key:
                     return {
                         'access_token': row[6] if len(row) >= 7 else None,
@@ -183,6 +173,21 @@ def db_get_tiktok_tokens_by_api_key(api_key):
         except Exception as e:
             print(f"GSheet Get Tokens Error: {e}")
     return {}
+
+def db_get_meta_token_by_api_key(api_key):
+    """Ambil Access Token Meta (Facebook/IG) berdasarkan API Key."""
+    sheet = get_gsheet()
+    if sheet:
+        try:
+            all_values = sheet.get_all_values()
+            for idx, row in enumerate(all_values):
+                if idx == 0: continue
+                # Cari baris dengan API Key yang cocok, Token Meta ada di kolom ke-10 (index 9)
+                if len(row) >= 5 and row[4].strip() == api_key:
+                    return row[9] if len(row) >= 10 else None
+        except Exception as e:
+            print(f"GSheet Get Meta Token Error: {e}")
+    return None
 
 # ==========================================
 # KONFIGURASI SMTP EMAIL (GMAIL)
@@ -270,7 +275,6 @@ def privacy_page(): return render_template('privacy.html')
 
 @app.route('/data-deletion')
 def data_deletion_page(): 
-    """Route baru untuk halaman panduan penghapusan data (Wajib untuk Meta App Review)."""
     return render_template('data_deletion_page.html')
 
 # ==========================================
@@ -315,7 +319,7 @@ def verify_otp_route():
         status_lower = status.lower()
         is_paid_user = any(word in status_lower for word in ["paid", "subscriber", "admin", "lifetime"])
         
-        # CEK KONEKSI TIKTOK DARI DATABASE (Agar UI Dashboard Update)
+        # CEK KONEKSI PLATFORM
         connected_platforms = []
         if user_data.get('tiktok_connected'):
             connected_platforms.append('TikTok')
@@ -378,7 +382,6 @@ def generate_api_key_route():
 
 @app.route('/api/me', methods=['POST'])
 def get_me():
-    """Route rahasia buat sinkronisasi otomatis status frontend dan database."""
     email = request.json.get('email', '').strip().lower()
     if not email: return jsonify({"success": False})
     
@@ -408,15 +411,12 @@ def get_me():
     })
 
 # ==========================================
-# REAL TIKTOK OAUTH & DIRECT POST INTEGRATION
+# REAL TIKTOK OAUTH
 # ==========================================
 @app.route('/api/tiktok-auth-url', methods=['GET'])
 def get_tiktok_auth_url():
-    """Route untuk menggenerate URL Login TikTok asli. Membawa email user di parameter 'state'."""
     email = request.args.get('email', '').strip()
     redirect_uri = "https://trendoraautomation.my.id/auth/tiktok/callback"
-    
-    # Kita titip email user di parameter state biar pas callback kita tau ini akun siapa
     state = f"{uuid.uuid4().hex[:8]}|{email}"
     
     params = {
@@ -426,18 +426,14 @@ def get_tiktok_auth_url():
         "redirect_uri": redirect_uri,
         "state": state
     }
-    
     base_url = "https://www.tiktok.com/v2/auth/authorize/"
     full_url = f"{base_url}?{urllib.parse.urlencode(params)}"
-    
     return jsonify({"success": True, "url": full_url})
 
 @app.route('/auth/tiktok/callback', methods=['GET'])
 def tiktok_callback():
-    """Menerima kode dari TikTok, lalu menukarnya dengan Access Token secara real."""
     code = request.args.get('code')
     state = request.args.get('state', '')
-    
     email = state.split('|')[1] if '|' in state else ''
     
     if code and email:
@@ -463,7 +459,6 @@ def tiktok_callback():
                 sheet = get_gsheet()
                 if sheet and access_token:
                     all_vals = sheet.get_all_values()
-                    # Cari dari bawah biar selalu nemu row terbaru
                     for idx in range(len(all_vals)-1, 0, -1):
                         row = all_vals[idx]
                         if len(row) > 0 and str(row[0]).strip().lower() == email.lower():
@@ -472,28 +467,17 @@ def tiktok_callback():
                             sheet.update_cell(row_idx, 8, open_id)
                             sheet.update_cell(row_idx, 9, refresh_token)
                             break
-                            
         except Exception as e:
-            print("TikTok OAuth Error Detail:", e)
+            print("TikTok OAuth Error:", e)
 
     return """
-    <html>
-    <head><title>TikTok Connected</title></head>
-    <body style="background-color: #0d0a1a; color: #fff; font-family: sans-serif; text-align: center; padding-top: 50px;">
-        <h2 style="color: #34d399;">TikTok Successfully Authorized!</h2>
-        <p style="color: #9ca3af;">Please wait, saving your token...</p>
-        <script>
-            if (window.opener) {
-                window.opener.postMessage({type: 'OAUTH_SUCCESS', platform: 'TikTok'}, '*');
-                window.close();
-            }
-        </script>
-    </body>
-    </html>
+    <html><body><h2 style="color:#34d399;text-align:center;margin-top:50px;">TikTok Connected!</h2>
+    <script>if(window.opener){window.opener.postMessage({type:'OAUTH_SUCCESS', platform:'TikTok'}, '*');window.close();}</script>
+    </body></html>
     """
 
 # ==========================================
-# REAL META (FB & IG) OAUTH INTEGRATION
+# REAL META (FB & IG) OAUTH
 # ==========================================
 @app.route('/api/meta-auth-url', methods=['GET'])
 def get_meta_auth_url():
@@ -501,7 +485,7 @@ def get_meta_auth_url():
     redirect_uri = "https://trendoraautomation.my.id/auth/meta/callback"
     state = f"{uuid.uuid4().hex[:8]}|{email}"
     
-    # Minta izin buat baca FB Page dan Publish ke Instagram/Facebook
+    # Permission super komplit buat FB Pages dan IG API
     scopes = "pages_show_list,pages_read_engagement,pages_manage_posts,instagram_basic,instagram_content_publish"
     
     params = {
@@ -511,10 +495,8 @@ def get_meta_auth_url():
         "scope": scopes,
         "response_type": "code"
     }
-    
     base_url = "https://www.facebook.com/v18.0/dialog/oauth"
     full_url = f"{base_url}?{urllib.parse.urlencode(params)}"
-    
     return jsonify({"success": True, "url": full_url})
 
 @app.route('/auth/meta/callback', methods=['GET'])
@@ -550,24 +532,13 @@ def meta_callback():
                             # Simpan Access Token Meta di Kolom ke-10 (J)
                             sheet.update_cell(row_idx, 10, access_token)
                             break
-                            
         except Exception as e:
-            print("Meta OAuth Error Detail:", e)
+            print("Meta OAuth Error:", e)
 
     return """
-    <html>
-    <head><title>Meta Connected</title></head>
-    <body style="background-color: #0d0a1a; color: #fff; font-family: sans-serif; text-align: center; padding-top: 50px;">
-        <h2 style="color: #34d399;">Meta (Facebook & Instagram) Successfully Authorized!</h2>
-        <p style="color: #9ca3af;">Saving your token...</p>
-        <script>
-            if (window.opener) {
-                window.opener.postMessage({type: 'OAUTH_SUCCESS', platform: 'Meta'}, '*');
-                window.close();
-            }
-        </script>
-    </body>
-    </html>
+    <html><body style="background:#0d0a1a;"><h2 style="color:#34d399;text-align:center;margin-top:50px;">Meta (Facebook & IG) Connected!</h2>
+    <script>if(window.opener){window.opener.postMessage({type:'OAUTH_SUCCESS', platform:'Meta'}, '*');window.close();}</script>
+    </body></html>
     """
 
 # ==========================================
@@ -618,7 +589,8 @@ def check_payment():
     return jsonify({"success": True, "isPaid": False})
 
 # ==========================================
-# WEBHOOK LISTENER DARI N8N (THE MASTERPIECE)
+# WEBHOOK LISTENER DARI N8N (THE MASTERPIECE 3.0)
+# TIKTOK, FACEBOOK, & INSTAGRAM API INTEGRATION!
 # ==========================================
 @app.route('/api/n8n-webhook', methods=['GET', 'POST'], strict_slashes=False)
 def n8n_webhook():
@@ -631,15 +603,17 @@ def n8n_webhook():
         if auth_header.startswith('Bearer '):
             api_key = auth_header.replace('Bearer ', '')
 
+    if not api_key:
+        return jsonify({"success": False, "message": "API Key is required in Header"}), 400
+
     data = request.json or {}
     platform = data.get('platform', 'unknown').lower()
     status = data.get('status', 'RECEIVED')
     details = data.get('details', {})
     
-    if not api_key:
-        return jsonify({"success": False, "message": "API Key is required in Header"}), 400
-    
-    # 💥 METODE TERBARU: WEB NYEDOT VIDEO & NYEBUL LANGSUNG KE TIKTOK (FILE_UPLOAD) 💥
+    # -----------------------------------------------------
+    # LOGIKA 1: POSTING KE TIKTOK (FILE UPLOAD METHOD)
+    # -----------------------------------------------------
     if platform == 'tiktok' and isinstance(details, dict):
         media_url = details.get('media_url')
         caption = details.get('caption', 'Diposting otomatis via n8n & TRENDORA! 🚀')
@@ -651,96 +625,175 @@ def n8n_webhook():
             if access_token:
                 temp_file_path = None
                 try:
-                    headers = {
-                        "Authorization": f"Bearer {access_token}",
-                        "Content-Type": "application/json; charset=utf-8"
-                    }
-
-                    # LANGKAH 1: KETOK PINTU (Query Creator Info)
-                    query_url = "https://open.tiktokapis.com/v2/post/publish/creator_info/query/"
-                    req_query = urllib.request.Request(query_url, data=b"{}", headers=headers, method='POST')
+                    headers = {"Authorization": f"Bearer {access_token}", "Content-Type": "application/json; charset=utf-8"}
+                    
+                    # Bypass Query
                     try:
-                        urllib.request.urlopen(req_query)
-                    except Exception as eq:
-                        pass # Abaikan kalau error, tetap lanjut
+                        urllib.request.urlopen(urllib.request.Request("https://open.tiktokapis.com/v2/post/publish/creator_info/query/", data=b"{}", headers=headers, method='POST'))
+                    except: pass
 
-                    # LANGKAH 2: WEB KITA DOWNLOAD/NYEDOT VIDEO DARI GOOGLE STORAGE
                     temp_dir = tempfile.gettempdir()
-                    temp_file_path = os.path.join(temp_dir, f"tiktok_vid_{uuid.uuid4().hex[:6]}.mp4")
+                    temp_file_path = os.path.join(temp_dir, f"tk_{uuid.uuid4().hex[:6]}.mp4")
                     urllib.request.urlretrieve(media_url, temp_file_path)
                     file_size = os.path.getsize(temp_file_path)
 
-                    # LANGKAH 3: INIT UPLOAD KE TIKTOK (MINTA UPLOAD URL)
-                    tiktok_api_url = "https://open.tiktokapis.com/v2/post/publish/video/init/"
                     payload = {
-                        "post_info": {
-                            "title": caption,
-                            "privacy_level": "SELF_ONLY", # Private Mode
-                            "disable_duet": False,
-                            "disable_comment": False,
-                            "disable_stitch": False
-                        },
-                        "source_info": {
-                            "source": "FILE_UPLOAD", # INI KUNCI UTAMANYA!
-                            "video_size": file_size,
-                            "chunk_size": file_size,
-                            "total_chunk_count": 1
-                        }
+                        "post_info": {"title": caption, "privacy_level": "SELF_ONLY", "disable_duet": False, "disable_comment": False, "disable_stitch": False},
+                        "source_info": {"source": "FILE_UPLOAD", "video_size": file_size, "chunk_size": file_size, "total_chunk_count": 1}
                     }
                     
-                    req_init = urllib.request.Request(
-                        tiktok_api_url, 
-                        data=json.dumps(payload).encode('utf-8'), 
-                        headers=headers, 
-                        method='POST'
-                    )
-                    
+                    req_init = urllib.request.Request("https://open.tiktokapis.com/v2/post/publish/video/init/", data=json.dumps(payload).encode('utf-8'), headers=headers, method='POST')
                     with urllib.request.urlopen(req_init) as response:
                         tiktok_res = json.loads(response.read().decode('utf-8'))
-                        details['tiktok_init_response'] = tiktok_res
-                        
                         upload_url = tiktok_res.get('data', {}).get('upload_url')
-                        publish_id = tiktok_res.get('data', {}).get('publish_id')
-                        
-                        if upload_url and publish_id:
-                            # LANGKAH 4: WEB KITA UPLOAD FISIK VIDEONYA KE SERVER TIKTOK
+                        if upload_url:
                             with open(temp_file_path, 'rb') as f:
                                 video_data = f.read()
-                                
-                            put_headers = {
-                                'Content-Type': 'video/mp4',
-                                'Content-Range': f'bytes 0-{file_size-1}/{file_size}'
-                            }
-                            
-                            req_upload = urllib.request.Request(upload_url, data=video_data, headers=put_headers, method='PUT')
-                            urllib.request.urlopen(req_upload)
-                            
+                            put_headers = {'Content-Type': 'video/mp4', 'Content-Range': f'bytes 0-{file_size-1}/{file_size}'}
+                            urllib.request.urlopen(urllib.request.Request(upload_url, data=video_data, headers=put_headers, method='PUT'))
                             status = "PUBLISHED (SUCCESS)"
-                            details['upload_status'] = f"Success! Web Vercel uploaded {file_size} bytes to TikTok."
+                            details['upload_status'] = f"Success TikTok Upload ({file_size} bytes)."
                         else:
-                            status = "FAILED (NO UPLOAD URL)"
-                        
-                except urllib.error.HTTPError as e:
-                    try:
-                        error_body = e.read().decode('utf-8')
-                        details['tiktok_real_error'] = f"HTTP {e.code}: {error_body}"
-                    except:
-                        details['tiktok_real_error'] = f"HTTP {e.code}: Forbidden"
-                    status = "FAILED"
+                            status = "FAILED"
                 except Exception as e:
-                    details['tiktok_real_error'] = str(e)
+                    details['tiktok_error'] = str(e)
                     status = "FAILED"
                 finally:
-                    # LANGKAH 5: BERSIH-BERSIH RAM VERCEL
                     if temp_file_path and os.path.exists(temp_file_path):
-                        try:
-                            os.remove(temp_file_path)
-                        except:
-                            pass
+                        try: os.remove(temp_file_path)
+                        except: pass
             else:
-                details['tiktok_real_error'] = "User belum menghubungkan akun TikTok (Token tidak ada)."
+                details['error'] = "Akun TikTok belum terhubung."
                 status = "FAILED"
 
+    # -----------------------------------------------------
+    # LOGIKA 2: POSTING KE FACEBOOK PAGE
+    # -----------------------------------------------------
+    elif platform == 'facebook' and isinstance(details, dict):
+        media_url = details.get('media_url')
+        caption = details.get('caption', 'Auto-post by TRENDORA ⚡')
+        meta_token = db_get_meta_token_by_api_key(api_key)
+        
+        if meta_token and media_url:
+            try:
+                # 1. Cari Facebook Page yang dimiliki user ini
+                page_url = f"https://graph.facebook.com/v18.0/me/accounts?access_token={meta_token}"
+                req_page = urllib.request.Request(page_url)
+                
+                with urllib.request.urlopen(req_page) as response:
+                    page_data = json.loads(response.read().decode('utf-8'))
+                    
+                if page_data.get('data') and len(page_data['data']) > 0:
+                    page_id = page_data['data'][0]['id']
+                    page_token = page_data['data'][0]['access_token']
+                    page_name = page_data['data'][0].get('name', 'Unknown Page')
+                    
+                    # 2. Tembak Video ke Facebook Page
+                    fb_post_url = f"https://graph.facebook.com/v18.0/{page_id}/videos"
+                    fb_payload = urllib.parse.urlencode({
+                        'file_url': media_url,
+                        'description': caption,
+                        'access_token': page_token
+                    }).encode('utf-8')
+                    
+                    req_post = urllib.request.Request(fb_post_url, data=fb_payload, method='POST')
+                    with urllib.request.urlopen(req_post) as res_post:
+                        fb_res = json.loads(res_post.read().decode('utf-8'))
+                        status = "PUBLISHED (SUCCESS)"
+                        details['fb_status'] = f"Video sukses dipost ke Page: {page_name}"
+                        details['fb_video_id'] = fb_res.get('id')
+                else:
+                    status = "FAILED"
+                    details['meta_error'] = "Tidak menemukan satupun Facebook Page di akun ini."
+            except Exception as e:
+                status = "FAILED"
+                details['meta_error'] = f"Graph API Error: {str(e)}"
+        else:
+            status = "FAILED"
+            details['meta_error'] = "Token Facebook tidak valid atau Media URL kosong."
+
+    # -----------------------------------------------------
+    # LOGIKA 3: POSTING KE INSTAGRAM REELS (IG GRAPH API)
+    # -----------------------------------------------------
+    elif platform == 'instagram' and isinstance(details, dict):
+        media_url = details.get('media_url')
+        caption = details.get('caption', 'Auto-post Reels by TRENDORA ⚡')
+        meta_token = db_get_meta_token_by_api_key(api_key)
+        
+        if meta_token and media_url:
+            try:
+                # 1. Cari FB Page untuk nyari akun IG-nya
+                page_url = f"https://graph.facebook.com/v18.0/me/accounts?access_token={meta_token}"
+                req_page = urllib.request.Request(page_url)
+                
+                with urllib.request.urlopen(req_page) as response:
+                    page_data = json.loads(response.read().decode('utf-8'))
+                    
+                if page_data.get('data') and len(page_data['data']) > 0:
+                    page_id = page_data['data'][0]['id']
+                    
+                    # 2. Cari ID Akun Instagram Business yang nempel di Page itu
+                    ig_info_url = f"https://graph.facebook.com/v18.0/{page_id}?fields=instagram_business_account&access_token={meta_token}"
+                    req_ig = urllib.request.Request(ig_info_url)
+                    with urllib.request.urlopen(req_ig) as res_ig:
+                        ig_data = json.loads(res_ig.read().decode('utf-8'))
+                        
+                    ig_user_id = ig_data.get('instagram_business_account', {}).get('id')
+                    
+                    if ig_user_id:
+                        # 3. Bikin "Kontainer Video" di server IG (Meta bakal nyedot videonya)
+                        ig_container_url = f"https://graph.facebook.com/v18.0/{ig_user_id}/media"
+                        ig_payload = urllib.parse.urlencode({
+                            'media_type': 'REELS',
+                            'video_url': media_url,
+                            'caption': caption,
+                            'access_token': meta_token
+                        }).encode('utf-8')
+                        
+                        req_container = urllib.request.Request(ig_container_url, data=ig_payload, method='POST')
+                        with urllib.request.urlopen(req_container) as res_cont:
+                            cont_data = json.loads(res_cont.read().decode('utf-8'))
+                            creation_id = cont_data.get('id')
+                            
+                        # PENTING: Server Instagram butuh waktu beberapa detik buat nge-download/render videonya.
+                        # Kita suruh Python nahan napas 5 detik sebelum dipublish.
+                        time.sleep(5) 
+                        
+                        # 4. Perintah Publish Video yang udah di-render!
+                        ig_publish_url = f"https://graph.facebook.com/v18.0/{ig_user_id}/media_publish"
+                        ig_pub_payload = urllib.parse.urlencode({
+                            'creation_id': creation_id,
+                            'access_token': meta_token
+                        }).encode('utf-8')
+                        
+                        try:
+                            req_pub = urllib.request.Request(ig_publish_url, data=ig_pub_payload, method='POST')
+                            with urllib.request.urlopen(req_pub) as res_pub:
+                                pub_data = json.loads(res_pub.read().decode('utf-8'))
+                                status = "PUBLISHED (SUCCESS)"
+                                details['ig_status'] = "Sukses upload Instagram Reels!"
+                                details['ig_media_id'] = pub_data.get('id')
+                        except urllib.error.HTTPError as ep:
+                            # Kalau 5 detik belum kelar render, IG bakal nolak dipublish.
+                            # Gak masalah, statusnya jadi PENDING aja.
+                            status = "PENDING / RENDERING"
+                            details['ig_status'] = f"Video mendarat di server Meta (ID: {creation_id}). Sedang diproses Instagram..."
+                    else:
+                        status = "FAILED"
+                        details['meta_error'] = "Tidak menemukan Instagram Business Account yang terhubung ke FB Page ini."
+                else:
+                    status = "FAILED"
+                    details['meta_error'] = "Tidak menemukan FB Page untuk mengekstrak IG Account."
+            except Exception as e:
+                status = "FAILED"
+                details['meta_error'] = f"Graph API Error: {str(e)}"
+        else:
+            status = "FAILED"
+            details['meta_error'] = "Token Meta tidak valid atau URL Media kosong."
+
+    # -----------------------------------------------------
+    # LOGGING KE DATABASE 
+    # -----------------------------------------------------
     if isinstance(details, dict):
         details_str = json.dumps(details)
     else:
@@ -770,7 +823,6 @@ def get_logs():
         try:
             all_values = sheet.get_all_values()
             if len(all_values) > 1:
-                # Skip header
                 for row in all_values[1:]:
                     if len(row) >= 3:
                         log_entry = {
@@ -788,7 +840,6 @@ def get_logs():
             print(f"Get logs error: {e}")
             return jsonify({"success": False, "message": str(e)})
     
-    # Fallback memory
     if 'logs' in user_2fa_store:
         logs = user_2fa_store['logs']
         logs.reverse()
