@@ -135,6 +135,8 @@ def db_get_user(email):
                             'meta_connected': bool(str(row[9]).strip()) if len(row) > 9 else False,
                             'linkedin_connected': bool(str(row[10]).strip()) if len(row) > 10 else False,
                             'youtube_connected': bool(str(row[11]).strip()) if len(row) > 11 else False,
+                            'threads_connected': bool(str(row[13]).strip()) if len(row) > 13 else False,
+                            'twitter_connected': bool(str(row[14]).strip()) if len(row) > 14 else False,
                             'row_idx': idx + 1  
                         }
             return None
@@ -402,6 +404,10 @@ def verify_otp_route():
             connected_platforms.append('LinkedIn')
         if user_data.get('youtube_connected'):
             connected_platforms.append('YouTube')
+        if user_data.get('threads_connected'):
+            connected_platforms.append('Threads')
+        if user_data.get('twitter_connected'):
+            connected_platforms.append('Twitter')
         
         return jsonify({
             "success": True, 
@@ -474,6 +480,10 @@ def get_me():
         connected_platforms.append('LinkedIn')
     if user_data.get('youtube_connected'):
         connected_platforms.append('YouTube')
+    if user_data.get('threads_connected'):
+        connected_platforms.append('Threads')
+    if user_data.get('twitter_connected'):
+        connected_platforms.append('Twitter')
         
     status_lower = user_data.get('status', '').lower()
     is_paid_user = any(word in status_lower for word in ["paid", "subscriber", "admin", "lifetime"])
