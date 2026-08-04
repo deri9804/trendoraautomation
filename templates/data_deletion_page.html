@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Data Deletion Instructions - TRENDORA</title>
+  {% include 'css.html' %}
+</head>
+<body>
+  {% include 'navbar.html' %}
+
+  <!-- PAGE WRAPPER UNTUK DATA DELETION -->
+  <div style="padding: 120px 5% 80px 5%; max-width: 800px; margin: 0 auto; min-height: 85vh; color: #cbd5e1; line-height: 1.8;">
+    
+    <div style="border-bottom: 1px solid rgba(255,255,255,0.1); margin-bottom: 30px; padding-bottom: 20px; text-align: center;">
+        <span style="display: inline-block; background: rgba(239, 68, 68, 0.15); color: #ef4444; padding: 4px 12px; border-radius: 12px; font-size: 11px; font-weight: 700; margin-bottom: 12px;">GDPR & CCPA COMPLIANCE</span>
+        <h1 style="color: #fff; font-size: 32px; font-weight: 800; margin-bottom: 8px;">User Data Deletion Instructions</h1>
+        <p style="font-size: 14px; color: #9ca3af;">Petunjuk Penghapusan Data Pengguna dari Sistem TRENDORA</p>
+    </div>
+
+    <div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.1); padding: 30px; border-radius: 16px;">
+        <p style="margin-bottom: 16px;">Sesuai dengan Aturan Privasi Meta (Facebook/Instagram) dan GDPR, kami menghormati hak Anda untuk menghapus informasi pribadi dan memutus koneksi media sosial Anda dari platform <strong>TRENDORA AUTOMATION</strong> kapan saja.</p>
+        
+        <h3 style="color: #fff; font-size: 18px; margin-top: 24px; margin-bottom: 12px;">Opsi 1: Menghapus Akses secara Mandiri</h3>
+        <p style="margin-bottom: 8px;">Jika Anda hanya ingin memutuskan tautan antara akun Facebook/Instagram Anda dengan sistem kami (Mencabut Akses Token), ikuti langkah berikut:</p>
+        <ol style="margin-left: 20px; margin-bottom: 16px; color: #9ca3af;">
+            <li style="margin-bottom: 8px;">Login ke akun Facebook Anda.</li>
+            <li style="margin-bottom: 8px;">Buka menu <strong>Pengaturan & Privasi</strong> > <strong>Pengaturan</strong>.</li>
+            <li style="margin-bottom: 8px;">Di menu sebelah kiri, klik <strong>Keamanan dan Login</strong> lalu cari <strong>Integrasi Bisnis</strong> atau <strong>Aplikasi dan Situs Web</strong>.</li>
+            <li style="margin-bottom: 8px;">Cari aplikasi "Trendora Automation", centang kotak di sebelahnya, lalu klik tombol <strong>Hapus</strong>.</li>
+        </ol>
+
+        <h3 style="color: #fff; font-size: 18px; margin-top: 24px; margin-bottom: 12px;">Opsi 2: Permintaan Penghapusan Data Penuh (Akun & Log)</h3>
+        <p style="margin-bottom: 16px;">Jika Anda ingin kami menghapus <strong>seluruh data Anda secara permanen</strong> dari server dan database (Google Sheets) kami, termasuk API Key, riwayat log postingan, dan status akun, silakan kirimkan permohonan tertulis kepada kami.</p>
+        
+        <div style="background: rgba(236, 72, 153, 0.1); border-left: 4px solid #ec4899; padding: 16px; border-radius: 0 8px 8px 0; margin-bottom: 20px;">
+            <strong style="color: #fff; display: block; margin-bottom: 8px;">Kirimkan Email Ke:</strong>
+            <a href="mailto:deripernandi99@gmail.com" style="color: #f472b6; font-size: 18px; text-decoration: none; font-weight: 700;">deripernandi99@gmail.com</a>
+        </div>
+
+        <p style="margin-bottom: 8px;"><strong>Format Email:</strong></p>
+        <ul style="margin-left: 20px; margin-bottom: 16px; color: #9ca3af;">
+            <li style="margin-bottom: 4px;"><strong>Subjek:</strong> Request Penghapusan Data - [Email Akun Anda]</li>
+            <li style="margin-bottom: 4px;"><strong>Isi Pesan:</strong> Mohon hapus seluruh data saya yang terkait dengan email akun ini dari sistem TRENDORA.</li>
+        </ul>
+        <p style="font-size: 13px; color: #6b7280;">* Kami akan memproses permintaan Anda dan menghapus data secara permanen dalam waktu maksimal 2x24 jam hari kerja, lalu mengirimkan email konfirmasi kembali kepada Anda.</p>
+    </div>
+
+    <div style="margin-top: 40px; text-align: center;">
+        <button class="btn-secondary" onclick="window.location.href='/'">Kembali ke Beranda</button>
+    </div>
+
+  </div>
+
+  <script src="{{ url_for('static', filename='js/ui.js') }}"></script>
+</body>
+</html>

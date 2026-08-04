@@ -268,6 +268,11 @@ def tos_page(): return render_template('tos.html')
 @app.route('/privacy')
 def privacy_page(): return render_template('privacy.html')
 
+@app.route('/data-deletion')
+def data_deletion_page(): 
+    """Route baru untuk halaman panduan penghapusan data (Wajib untuk Meta App Review)."""
+    return render_template('data_deletion.html')
+
 # ==========================================
 # AUTHENTICATION & API KEY ROUTES
 # ==========================================
@@ -401,15 +406,6 @@ def get_me():
             "connectedPlatforms": connected_platforms
         }
     })
-
-# ==========================================
-# ROUTE UNTUK VERIFIKASI DOMAIN TIKTOK
-# ==========================================
-@app.route('/tiktok-verify.txt') # Nanti nama file ini bisa disesuaikan sama yang dikasih TikTok
-def tiktok_verify():
-    # Kalau TikTok minta verifikasi domain, lu masukin kode unik dari mereka ke sini
-    tiktok_verification_code = "tiktok-verification-code-masukin-nanti-disini"
-    return tiktok_verification_code, 200, {'Content-Type': 'text/plain'}
 
 # ==========================================
 # REAL TIKTOK OAUTH & DIRECT POST INTEGRATION
@@ -765,44 +761,8 @@ def n8n_webhook():
         user_2fa_store['logs'].append({"Timestamp": timestamp, "LogID": log_id, "APIKey": api_key, "Platform": platform, "Status": status, "Details": details_str})
         return jsonify({"success": True, "log_id": log_id})
 
-# ==========================================
-# WEBHOOK RESMI DARI TIKTOK (ADS / LEAD GEN)
-# ==========================================
-@app.route('/api/tiktok-webhook', methods=['GET', 'POST'], strict_slashes=False)
-def tiktok_webhook():
-    """Menerima Webhook resmi dari server TikTok (misal untuk Ads, Lead Gen, atau Event Subscription)."""
-    
-    # TikTok kadang mengirim challenge via GET request untuk memverifikasi kepemilikan URL
-    if request.method == 'GET':
-        challenge = request.args.get('challenge')
-        if challenge:
-            # Wajib membalas challenge agar TikTok memvalidasi URL webhook
-            return jsonify({"challenge": challenge}), 200
-        return jsonify({"success": True, "message": "🟢 Endpoint Webhook TikTok Aktif dan Siap Menerima Data!"}), 200
-
-    # Kalau POST, berarti TikTok sedang mengirim payload data beneran (iklan/event)
-    data = request.json or {}
-    
-    # Bikin ID Log khusus buat ngebedain dari n8n
-    log_id = f"TK-ADS-{uuid.uuid4().hex[:6].upper()}"
-    timestamp = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
-    details_str = json.dumps(data)
-    
-    # Simpan ke Google Sheets (Tab Logs)
-    sheet = get_logs_sheet()
-    if sheet:
-        try:
-            sheet.append_row([timestamp, log_id, "TIKTOK_SYSTEM", "tiktok_ads", "RECEIVED", details_str])
-        except Exception as e:
-            pass
-            
-    return jsonify({"message": "OK", "success": True}), 200
-
 @app.route('/api/get-logs', methods=['POST', 'GET'])
 def get_logs():
-    # Karena ini project pribadi, kita buang aja filter API Key yang bikin pusing!
-    # Langsung TAMPILIN SEMUA LOG yang ada di tabel tanpa syarat apapun.
-    
     logs = []
     sheet = get_logs_sheet()
     
