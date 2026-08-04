@@ -650,7 +650,7 @@ def meta_webhook():
 # ==========================================
 # TWITTER WEBHOOK (CRC VERIFICATION)
 # ==========================================
-@app.route('/api/twitter-webhook', methods=['GET', 'POST'])
+@app.route('/api/twitter-webhook', methods=['GET', 'POST'], strict_slashes=False)
 def twitter_webhook():
     if request.method == 'GET':
         # 1. Tahap Verifikasi CRC (Challenge-Response Check) dari Twitter
