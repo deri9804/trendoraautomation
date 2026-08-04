@@ -635,26 +635,20 @@ def meta_callback():
 @app.route('/api/meta-webhook', methods=['GET', 'POST'])
 def meta_webhook():
     if request.method == 'GET':
-        # 1. Tahap Verifikasi dari Meta Developer Dashboard
         mode = request.args.get('hub.mode')
         token = request.args.get('hub.verify_token')
         challenge = request.args.get('hub.challenge')
 
         if mode and token:
             if mode == 'subscribe' and token == META_WEBHOOK_VERIFY_TOKEN:
-                # Meta mewajibkan kita me-return raw text 'hub.challenge'
                 return challenge, 200
             else:
                 return "Forbidden", 403
         return "Bad Request", 400
 
     elif request.method == 'POST':
-        # 2. Tahap Menerima Event (Notifikasi real-time) dari Meta
         payload = request.json
         print("Menerima Event dari Meta Webhook:", payload)
-        
-        # PENTING: Selalu return 200 OK secepat mungkin
-        # Jika tidak, Meta akan mengira server mati dan memutuskan langganan webhook
         return "EVENT_RECEIVED", 200
 
 # ==========================================
@@ -663,11 +657,8 @@ def meta_webhook():
 @app.route('/api/twitter-webhook', methods=['GET', 'POST'], strict_slashes=False)
 def twitter_webhook():
     if request.method == 'GET':
-        # 1. Tahap Verifikasi CRC (Challenge-Response Check) dari Twitter
         crc_token = request.args.get('crc_token')
         if crc_token:
-            # Twitter mewajibkan kita membalas dengan HMAC SHA-256 hash dari crc_token
-            # menggunakan TWITTER_CLIENT_SECRET sebagai kuncinya
             secret = TWITTER_CLIENT_SECRET or ""
             sha256_hash_digest = hmac.new(
                 secret.encode('utf-8'),
@@ -680,11 +671,8 @@ def twitter_webhook():
         return "Bad Request", 400
 
     elif request.method == 'POST':
-        # 2. Tahap Menerima Event (Notifikasi) dari Twitter
         payload = request.json
         print("Menerima Event dari Twitter Webhook:", payload)
-        
-        # Wajib return 200 secepatnya agar Twitter tahu server kita hidup
         return "EVENT_RECEIVED", 200
 
 # ==========================================
@@ -700,7 +688,7 @@ def get_linkedin_auth_url():
         "response_type": "code",
         "client_id": LINKEDIN_CLIENT_ID or "DUMMY_ID",
         "redirect_uri": redirect_uri,
-        "scope": "openid profile email w_member_social", # Scope utk post text/gambar/video
+        "scope": "openid profile email w_member_social",
         "state": state
     }
     base_url = "https://www.linkedin.com/oauth/v2/authorization"
@@ -737,7 +725,6 @@ def linkedin_callback():
                         row = all_vals[idx]
                         if len(row) > 0 and str(row[0]).strip().lower() == email.lower():
                             row_idx = idx + 1
-                            # Simpan Access Token LinkedIn di Kolom ke-11 (K)
                             sheet.update_cell(row_idx, 11, access_token)
                             break
         except Exception as e:
@@ -763,7 +750,7 @@ def get_youtube_auth_url():
         "redirect_uri": redirect_uri,
         "response_type": "code",
         "scope": "https://www.googleapis.com/auth/youtube.upload",
-        "access_type": "offline", # Agar dapat Refresh Token
+        "access_type": "offline",
         "prompt": "consent",
         "state": state
     }
@@ -802,7 +789,6 @@ def youtube_callback():
                         row = all_vals[idx]
                         if len(row) > 0 and str(row[0]).strip().lower() == email.lower():
                             row_idx = idx + 1
-                            # Simpan Access Token (L) dan Refresh Token (M)
                             sheet.update_cell(row_idx, 12, access_token)
                             if refresh_token:
                                 sheet.update_cell(row_idx, 13, refresh_token)
@@ -866,7 +852,6 @@ def threads_callback():
                         row = all_vals[idx]
                         if len(row) > 0 and str(row[0]).strip().lower() == email.lower():
                             row_idx = idx + 1
-                            # Simpan Access Token Threads di Kolom ke-14 (N)
                             sheet.update_cell(row_idx, 14, access_token)
                             break
         except Exception as e:
@@ -887,7 +872,6 @@ def get_twitter_auth_url():
     redirect_uri = "https://trendoraautomation.my.id/auth/twitter/callback"
     state = f"{uuid.uuid4().hex[:8]}|{email}"
     
-    # Twitter butuh PKCE, kita gunakan 'plain' verifier untuk mempermudah (disupport API v2)
     params = {
         "response_type": "code",
         "client_id": TWITTER_CLIENT_ID or "DUMMY_ID",
@@ -917,7 +901,6 @@ def twitter_callback():
                 "redirect_uri": "https://trendoraautomation.my.id/auth/twitter/callback",
                 "code_verifier": "trendora_twitter_challenge_123"
             }
-            # Twitter butuh Basic Auth untuk secret
             auth_str = f"{TWITTER_CLIENT_ID}:{TWITTER_CLIENT_SECRET}"
             b64_auth = base64.b64encode(auth_str.encode()).decode()
             
@@ -937,7 +920,6 @@ def twitter_callback():
                         row = all_vals[idx]
                         if len(row) > 0 and str(row[0]).strip().lower() == email.lower():
                             row_idx = idx + 1
-                            # Simpan Access Token Twitter di Kolom ke-15 (O)
                             sheet.update_cell(row_idx, 15, access_token)
                             break
         except Exception as e:
@@ -1184,15 +1166,17 @@ def n8n_webhook():
             details['meta_error'] = "Token Meta tidak valid."
             
     # -----------------------------------------------------
-    # LOGIKA 4: POSTING KE LINKEDIN
+    # LOGIKA 4: POSTING KE LINKEDIN (TEXT & VIDEO)
     # -----------------------------------------------------
     elif platform == 'linkedin' and isinstance(details, dict):
         caption = details.get('caption', 'Posting via n8n & TRENDORA')
+        media_url = details.get('media_url')
         linkedin_token = db_get_linkedin_token_by_api_key(api_key)
         
         if linkedin_token:
+            temp_file_path = None
             try:
-                # 1. Dapatkan Profil URN User
+                # 1. Dapatkan URN Profil User
                 profile_url = "https://api.linkedin.com/v2/userinfo"
                 req_profile = urllib.request.Request(profile_url, headers={"Authorization": f"Bearer {linkedin_token}"})
                 with urllib.request.urlopen(req_profile) as res_profile:
@@ -1202,19 +1186,96 @@ def n8n_webhook():
                 if sub_urn:
                     author_urn = f"urn:li:person:{sub_urn}"
                     
-                    # 2. Post Text/Article ke LinkedIn
-                    post_url = "https://api.linkedin.com/v2/ugcPosts"
-                    post_payload = {
-                        "author": author_urn,
-                        "lifecycleState": "PUBLISHED",
-                        "specificContent": {
-                            "com.linkedin.ugc.ShareContent": {
-                                "shareCommentary": {"text": caption},
-                                "shareMediaCategory": "NONE"
+                    if media_url:
+                        # --- UNGGAH DENGAN VIDEO ---
+                        # A. Download file video temporer
+                        temp_dir = tempfile.gettempdir()
+                        temp_file_path = os.path.join(temp_dir, f"li_{uuid.uuid4().hex[:6]}.mp4")
+                        urllib.request.urlretrieve(media_url, temp_file_path)
+                        
+                        # B. Registrasikan Aset Video Upload
+                        reg_url = "https://api.linkedin.com/v2/assets?action=registerUpload"
+                        reg_payload = {
+                            "registerUploadRequest": {
+                                "recipes": ["urn:li:digitalmediaRecipe:feedshare-video"],
+                                "owner": author_urn,
+                                "serviceRelationships": [
+                                    {
+                                        "relationshipType": "OWNER",
+                                        "identifier": "urn:li:userGeneratedContent"
+                                    }
+                                ]
                             }
-                        },
-                        "visibility": {"com.linkedin.ugc.MemberNetworkVisibility": "PUBLIC"}
-                    }
+                        }
+                        req_reg = urllib.request.Request(
+                            reg_url, 
+                            data=json.dumps(reg_payload).encode('utf-8'),
+                            headers={
+                                "Authorization": f"Bearer {linkedin_token}",
+                                "Content-Type": "application/json"
+                            },
+                            method='POST'
+                        )
+                        
+                        with urllib.request.urlopen(req_reg) as res_reg:
+                            reg_data = json.loads(res_reg.read().decode('utf-8'))
+                            value = reg_data.get('value', {})
+                            asset_urn = value.get('asset')
+                            upload_url = value.get('uploadMechanism', {}).get('com.linkedin.digitalmedia.uploading.MediaUploadHttpRequest', {}).get('uploadUrl')
+                        
+                        if upload_url and asset_urn:
+                            # C. Upload Binary Data Video
+                            with open(temp_file_path, 'rb') as f:
+                                video_data = f.read()
+                                
+                            req_up = urllib.request.Request(
+                                upload_url,
+                                data=video_data,
+                                headers={
+                                    "Authorization": f"Bearer {linkedin_token}",
+                                    "Content-Type": "application/octet-stream"
+                                },
+                                method='PUT'
+                            )
+                            urllib.request.urlopen(req_up)
+                            
+                            # D. Publish UGC Video Post
+                            post_url = "https://api.linkedin.com/v2/ugcPosts"
+                            post_payload = {
+                                "author": author_urn,
+                                "lifecycleState": "PUBLISHED",
+                                "specificContent": {
+                                    "com.linkedin.ugc.ShareContent": {
+                                        "shareCommentary": {"text": caption},
+                                        "shareMediaCategory": "VIDEO",
+                                        "media": [
+                                            {
+                                                "status": "READY",
+                                                "description": {"text": caption[:200]},
+                                                "media": asset_urn,
+                                                "title": {"text": "Video"}
+                                            }
+                                        ]
+                                    }
+                                },
+                                "visibility": {"com.linkedin.ugc.MemberNetworkVisibility": "PUBLIC"}
+                            }
+                        else:
+                            raise Exception("Gagal mendapatkan URL upload dari LinkedIn API.")
+                    else:
+                        # --- POSTING TEKS SAJA ---
+                        post_url = "https://api.linkedin.com/v2/ugcPosts"
+                        post_payload = {
+                            "author": author_urn,
+                            "lifecycleState": "PUBLISHED",
+                            "specificContent": {
+                                "com.linkedin.ugc.ShareContent": {
+                                    "shareCommentary": {"text": caption},
+                                    "shareMediaCategory": "NONE"
+                                }
+                            },
+                            "visibility": {"com.linkedin.ugc.MemberNetworkVisibility": "PUBLIC"}
+                        }
                     
                     req_post = urllib.request.Request(
                         post_url, 
@@ -1229,13 +1290,17 @@ def n8n_webhook():
                     
                     with urllib.request.urlopen(req_post) as res_post:
                         status = "PUBLISHED (SUCCESS)"
-                        details['linkedin_status'] = "Sukses upload ke Profil LinkedIn!"
+                        details['linkedin_status'] = "Sukses upload video ke LinkedIn!"
                 else:
                     status = "FAILED"
                     details['linkedin_error'] = "Gagal mengambil ID Akun (URN)."
             except Exception as e:
                 status = "FAILED"
                 details['linkedin_error'] = f"LinkedIn API Error: {str(e)}"
+            finally:
+                if temp_file_path and os.path.exists(temp_file_path):
+                    try: os.remove(temp_file_path)
+                    except: pass
         else:
             status = "FAILED"
             details['linkedin_error'] = "Token LinkedIn tidak valid atau belum terhubung."
@@ -1253,16 +1318,14 @@ def n8n_webhook():
         if access_token and media_url:
             temp_file_path = None
             try:
-                # 1. Download video ke server
                 temp_dir = tempfile.gettempdir()
                 temp_file_path = os.path.join(temp_dir, f"yt_{uuid.uuid4().hex[:6]}.mp4")
                 urllib.request.urlretrieve(media_url, temp_file_path)
                 
-                # 2. Siapkan Payload Multipart
                 boundary = "TRENDORAYOUTUBEBOUNDARY123"
                 metadata = {
                     "snippet": {
-                        "title": caption[:100], # Max karakter judul YouTube
+                        "title": caption[:100],
                         "description": caption
                     },
                     "status": {
@@ -1281,7 +1344,6 @@ def n8n_webhook():
                 footer = f"\r\n--{boundary}--\r\n".encode('utf-8')
                 full_body = b"".join(body) + video_data + footer
                 
-                # 3. Request ke YouTube Data API v3
                 yt_upload_url = "https://www.googleapis.com/upload/youtube/v3/videos?uploadType=multipart&part=snippet,status"
                 req = urllib.request.Request(yt_upload_url, data=full_body, method='POST')
                 req.add_header('Authorization', f'Bearer {access_token}')
@@ -1314,7 +1376,6 @@ def n8n_webhook():
         
         if threads_token and media_url:
             try:
-                # 1. Dapatkan Threads User ID
                 me_url = f"https://graph.threads.net/v1.0/me?access_token={threads_token}"
                 req_me = urllib.request.Request(me_url)
                 with urllib.request.urlopen(req_me) as res_me:
@@ -1322,7 +1383,6 @@ def n8n_webhook():
                     threads_user_id = me_data.get('id')
                     
                 if threads_user_id:
-                    # 2. Bikin Container Video
                     container_url = f"https://graph.threads.net/v1.0/{threads_user_id}/threads"
                     payload = urllib.parse.urlencode({
                         'media_type': 'VIDEO',
@@ -1336,9 +1396,8 @@ def n8n_webhook():
                         cont_data = json.loads(res_cont.read().decode('utf-8'))
                         creation_id = cont_data.get('id')
                         
-                    time.sleep(5) # Jeda untuk rendering video di server Meta
+                    time.sleep(5)
                     
-                    # 3. Publish Container
                     publish_url = f"https://graph.threads.net/v1.0/{threads_user_id}/threads_publish"
                     pub_payload = urllib.parse.urlencode({
                         'creation_id': creation_id,
@@ -1375,7 +1434,6 @@ def n8n_webhook():
         
         if twitter_token:
             try:
-                # Memasukkan link URL langsung ke dalam text Tweet
                 tweet_text = f"{caption}\n\n{media_url}" if media_url else caption
                 
                 tweet_url = "https://api.twitter.com/2/tweets"
@@ -1428,7 +1486,6 @@ def n8n_webhook():
 
 @app.route('/api/get-logs', methods=['POST', 'GET'])
 def get_logs():
-    # Mengamankan log agar user hanya bisa melihat milik mereka sendiri
     api_key = request.headers.get('X-API-Key', '').strip()
     if not api_key:
         data = request.json or {}
@@ -1445,7 +1502,6 @@ def get_logs():
                     if len(row) >= 3:
                         row_api_key = str(row[2]).strip()
                         
-                        # Filter ketat berdasarkan API Key
                         if api_key and row_api_key != api_key:
                             continue
                             
