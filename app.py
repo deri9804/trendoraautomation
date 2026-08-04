@@ -622,7 +622,7 @@ def meta_callback():
 # ==========================================
 # META WEBHOOK (VERIFIKASI & PENERIMA EVENT)
 # ==========================================
-@app.route('/api/meta-webhook', methods=['GET', 'POST'], strict_slashes=False)
+@app.route('/api/meta-webhook', methods=['GET', 'POST'])
 def meta_webhook():
     if request.method == 'GET':
         # 1. Tahap Verifikasi dari Meta Developer Dashboard
@@ -630,16 +630,12 @@ def meta_webhook():
         token = request.args.get('hub.verify_token')
         challenge = request.args.get('hub.challenge')
 
-        # Tarik token langsung di dalam fungsi biar selalu dapet data terbaru dari Vercel
-        valid_token = os.environ.get("META_WEBHOOK_VERIFY_TOKEN", "trendora_meta_secret_123")
-
         if mode and token:
-            if mode == 'subscribe' and token == valid_token:
-                # Meta SANGAT sensitif, kita paksa kembalikan murni text/plain
-                from flask import Response
-                return Response(challenge, status=200, mimetype='text/plain')
+            if mode == 'subscribe' and token == META_WEBHOOK_VERIFY_TOKEN:
+                # Meta mewajibkan kita me-return raw text 'hub.challenge'
+                return challenge, 200
             else:
-                return "Forbidden: Token tidak cocok", 403
+                return "Forbidden", 403
         return "Bad Request", 400
 
     elif request.method == 'POST':
@@ -649,6 +645,36 @@ def meta_webhook():
         
         # PENTING: Selalu return 200 OK secepat mungkin
         # Jika tidak, Meta akan mengira server mati dan memutuskan langganan webhook
+        return "EVENT_RECEIVED", 200
+
+# ==========================================
+# TWITTER WEBHOOK (CRC VERIFICATION)
+# ==========================================
+@app.route('/api/twitter-webhook', methods=['GET', 'POST'])
+def twitter_webhook():
+    if request.method == 'GET':
+        # 1. Tahap Verifikasi CRC (Challenge-Response Check) dari Twitter
+        crc_token = request.args.get('crc_token')
+        if crc_token:
+            # Twitter mewajibkan kita membalas dengan HMAC SHA-256 hash dari crc_token
+            # menggunakan TWITTER_CLIENT_SECRET sebagai kuncinya
+            secret = TWITTER_CLIENT_SECRET or ""
+            sha256_hash_digest = hmac.new(
+                secret.encode('utf-8'),
+                msg=crc_token.encode('utf-8'),
+                digestmod=hashlib.sha256
+            ).digest()
+            
+            response_token = 'sha256=' + base64.b64encode(sha256_hash_digest).decode('utf-8')
+            return jsonify({"response_token": response_token}), 200
+        return "Bad Request", 400
+
+    elif request.method == 'POST':
+        # 2. Tahap Menerima Event (Notifikasi) dari Twitter
+        payload = request.json
+        print("Menerima Event dari Twitter Webhook:", payload)
+        
+        # Wajib return 200 secepatnya agar Twitter tahu server kita hidup
         return "EVENT_RECEIVED", 200
 
 # ==========================================
