@@ -32,13 +32,13 @@
     background: linear-gradient(90deg, #facc15 0%, #ec4899 50%, #8b5cf6 100%);
     color: #000;
     text-align: center;
-    padding: 8px 16px;
-    font-size: 13px;
+    padding: 6px 16px; /* Padding atas bawah dikecilin */
+    font-size: 12px; /* Ukuran font dikecilin sedikit */
     font-weight: 700;
     display: flex;
     justify-content: center;
     align-items: center;
-    gap: 12px;
+    gap: 8px; /* Jarak antar elemen dirapatkan */
   }
 
   .banner-badge {
@@ -52,23 +52,25 @@
     background: #ec4899;
     color: #fff;
     border: none;
-    padding: 4px 12px;
+    padding: 3px 10px; /* Padding tombol dikecilin */
     border-radius: 12px;
     font-weight: 600;
     cursor: pointer;
-    font-size: 12px;
+    font-size: 11px; /* Font tombol dikecilin */
   }
 
   .navbar {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 16px 8%;
+    padding: 10px 8%; /* Padding atas bawah navbar dikurangi signifikan */
     max-width: 1400px;
     margin: 0 auto;
   }
 
-  .logo { font-size: 20px; font-weight: 900; letter-spacing: 1px; color: #fff; }
+  .logo { font-size: 18px; font-weight: 900; letter-spacing: 1px; color: #fff; display: flex; align-items: center; gap: 8px; }
+  .logo img { height: 35px !important; width: auto; object-fit: contain; } /* Ini KUNCI UTAMANYA: Paksa logo jadi kecil biar header gak bengkak */
+  
   .nav-links { display: flex; gap: 24px; list-style: none; }
   .nav-links a { color: #9ca3af; text-decoration: none; font-size: 14px; transition: color 0.3s; }
   .nav-links a:hover, .nav-links a.active { color: #34d399; font-weight: 600; }
