@@ -622,7 +622,7 @@ def meta_callback():
 # ==========================================
 # META WEBHOOK (VERIFIKASI & PENERIMA EVENT)
 # ==========================================
-@app.route('/api/meta-webhook', methods=['GET', 'POST'])
+@app.route('/api/meta-webhook', methods=['GET', 'POST'], strict_slashes=False)
 def meta_webhook():
     if request.method == 'GET':
         # 1. Tahap Verifikasi dari Meta Developer Dashboard
@@ -630,12 +630,16 @@ def meta_webhook():
         token = request.args.get('hub.verify_token')
         challenge = request.args.get('hub.challenge')
 
+        # Tarik token langsung di dalam fungsi biar selalu dapet data terbaru dari Vercel
+        valid_token = os.environ.get("META_WEBHOOK_VERIFY_TOKEN", "trendora_meta_secret_123")
+
         if mode and token:
-            if mode == 'subscribe' and token == META_WEBHOOK_VERIFY_TOKEN:
-                # Meta mewajibkan kita me-return raw text 'hub.challenge'
-                return challenge, 200
+            if mode == 'subscribe' and token == valid_token:
+                # Meta SANGAT sensitif, kita paksa kembalikan murni text/plain
+                from flask import Response
+                return Response(challenge, status=200, mimetype='text/plain')
             else:
-                return "Forbidden", 403
+                return "Forbidden: Token tidak cocok", 403
         return "Bad Request", 400
 
     elif request.method == 'POST':
