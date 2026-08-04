@@ -97,26 +97,36 @@ def get_logs_sheet():
         return None
 
 def db_get_user(email):
-    """Ambil data user dari Google Sheets secara bulletproof."""
+    """Ambil data user dari Google Sheets secara bulletproof menggunakan index kolom."""
     sheet = get_gsheet()
     if sheet:
         try:
-            all_records = sheet.get_all_records()
-            for idx, row in enumerate(all_records):
-                if str(row.get('Email', '')).strip().lower() == email:
-                    return {
-                        'secret': str(row.get('Secret', '')),
-                        'is_linked': str(row.get('IsLinked', '')).lower() == 'true',
-                        'name': str(row.get('Nama', '') or row.get('Nama User', '')),
-                        'api_key': str(row.get('APIKey', '') or row.get('API Key (TREND_...)', '')),
-                        'status': str(row.get('Status', '') or row.get('Status Plan', '')),
-                        'row_idx': idx + 2  
-                    }
+            all_values = sheet.get_all_values()
+            if len(all_values) > 1:
+                # Loop dari baris ke-2 (skip header)
+                for idx, row in enumerate(all_values[1:]):
+                    if len(row) > 0 and str(row[0]).strip().lower() == email:
+                        return {
+                            'email': str(row[0]).strip().lower(),
+                            'secret': str(row[1]) if len(row) > 1 else '',
+                            'is_linked': str(row[2]).lower() == 'true' if len(row) > 2 else False,
+                            'name': str(row[3]) if len(row) > 3 else '',
+                            'api_key': str(row[4]) if len(row) > 4 else '',
+                            'status': str(row[5]) if len(row) > 5 else '',
+                            'tiktok_connected': bool(str(row[6]).strip()) if len(row) > 6 else False, # Kolom ke-7
+                            'row_idx': idx + 2  
+                        }
             return None
         except Exception as e:
             print(f"GSheet Read Error: {e}")
             return None
-    return user_2fa_store.get(email)
+            
+    # Fallback memory
+    if email in user_2fa_store:
+        user_data = user_2fa_store[email]
+        user_data['tiktok_connected'] = user_data.get('tiktok_connected', False)
+        return user_data
+    return None
 
 def db_save_user(email, secret, is_linked, name="", api_key="", status=""):
     """Simpan atau update seluruh data user ke Google Sheets."""
@@ -288,9 +298,21 @@ def verify_otp_route():
         status_lower = status.lower()
         is_paid_user = any(word in status_lower for word in ["paid", "subscriber", "admin", "lifetime"])
         
+        # CEK KONEKSI TIKTOK DARI DATABASE (Agar UI Dashboard Update)
+        connected_platforms = []
+        if user_data.get('tiktok_connected'):
+            connected_platforms.append('TikTok')
+        
         return jsonify({
             "success": True, 
-            "user": {"name": name, "email": email, "apiKey": api_key, "status": status, "isPaid": is_paid_user}
+            "user": {
+                "name": name, 
+                "email": email, 
+                "apiKey": api_key, 
+                "status": status, 
+                "isPaid": is_paid_user,
+                "connectedPlatforms": connected_platforms
+            }
         })
     return jsonify({"success": False, "message": "OTP salah/kadaluarsa!"})
 
@@ -660,21 +682,26 @@ def get_logs():
     sheet = get_logs_sheet()
     if sheet:
         try:
-            all_records = sheet.get_all_records()
-            for row in all_records:
-                row_api = str(row.get('APIKey', '') or row.get('API Key', '')).strip()
-                if row_api == api_key:
-                    logs.append({
-                        "Timestamp": str(row.get('Timestamp', '') or row.get('Waktu', '')), 
-                        "LogID": str(row.get('LogID', '') or row.get('Log ID', '')),
-                        "Platform": str(row.get('Platform', '')), 
-                        "Status": str(row.get('Status', '')),
-                        "Details": str(row.get('Details', '') or row.get('Detail', ''))
-                    })
+            all_values = sheet.get_all_values()
+            if len(all_values) > 1:
+                # Skip header, baca berdasarkan urutan index
+                for row in all_values[1:]:
+                    if len(row) >= 6:
+                        row_api = str(row[2]).strip() # Kolom ke-3 adalah API Key
+                        if row_api == api_key:
+                            logs.append({
+                                "Timestamp": str(row[0]), 
+                                "LogID": str(row[1]),
+                                "Platform": str(row[3]), 
+                                "Status": str(row[4]),
+                                "Details": str(row[5])
+                            })
             logs.reverse()
             return jsonify({"success": True, "logs": logs})
-        except Exception as e: pass
+        except Exception as e: 
+            print(f"Get logs error: {e}")
     
+    # Fallback memory jika google sheet error
     if 'logs' in user_2fa_store:
         for row in user_2fa_store['logs']:
             if str(row.get('APIKey')).strip() == api_key: logs.append(row)
