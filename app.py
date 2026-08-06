@@ -1306,66 +1306,137 @@ def n8n_webhook():
             details['linkedin_error'] = "Token LinkedIn tidak valid atau belum terhubung."
 
     # -----------------------------------------------------
-    # LOGIKA 5: POSTING KE YOUTUBE SHORTS
+    # LOGIKA 3: POSTING KE YOUTUBE (SHORTS/VIDEO)
     # -----------------------------------------------------
     elif platform == 'youtube' and isinstance(details, dict):
         media_url = details.get('media_url')
-        caption = details.get('caption', 'Auto-post YouTube Shorts by TRENDORA ⚡')
+        caption = details.get('caption', 'Auto-post by TRENDORA')
         
-        yt_tokens = db_get_youtube_tokens_by_api_key(api_key)
-        access_token = yt_tokens.get('access_token')
-        
-        if access_token and media_url:
-            temp_file_path = None
+        # Ambil Token YouTube dari GSheet
+        yt_tokens = {}
+        sheet = get_gsheet()
+        if sheet:
             try:
+                all_values = sheet.get_all_values()
+                for idx, row in enumerate(all_values):
+                    if idx == 0: continue
+                    if len(row) >= 5 and row[4].strip() == api_key:
+                        yt_tokens = {
+                            'access_token': row[10] if len(row) >= 11 else None, # Index 10 = Access Token
+                            'refresh_token': row[11] if len(row) >= 12 else None # Index 11 = Refresh Token
+                        }
+            except Exception as e:
+                print(f"GSheet Get YT Tokens Error: {e}")
+
+        access_token = yt_tokens.get('access_token')
+        refresh_token = yt_tokens.get('refresh_token')
+        
+        if access_token:
+            def attempt_youtube_upload(token):
+                # 1. Download Video Sementara
                 temp_dir = tempfile.gettempdir()
                 temp_file_path = os.path.join(temp_dir, f"yt_{uuid.uuid4().hex[:6]}.mp4")
                 urllib.request.urlretrieve(media_url, temp_file_path)
+                file_size = os.path.getsize(temp_file_path)
                 
-                boundary = "TRENDORAYOUTUBEBOUNDARY123"
-                metadata = {
-                    "snippet": {
-                        "title": caption[:100],
-                        "description": caption
-                    },
-                    "status": {
-                        "privacyStatus": "public",
-                        "selfDeclaredMadeForKids": False
+                try:
+                    # 2. Inisiasi Upload API YouTube (Resumable)
+                    headers = {
+                        "Authorization": f"Bearer {token}",
+                        "Content-Type": "application/json; charset=UTF-8",
+                        "X-Upload-Content-Length": str(file_size),
+                        "X-Upload-Content-Type": "video/mp4"
                     }
-                }
+                    body = {
+                        "snippet": {
+                            "title": caption[:100], # YouTube Title max 100 char
+                            "description": caption,
+                            "categoryId": "22" # Kategori People & Blogs
+                        },
+                        "status": {
+                            "privacyStatus": "public",
+                            "selfDeclaredMadeForKids": False
+                        }
+                    }
+                    req_init = urllib.request.Request(
+                        "https://www.googleapis.com/upload/youtube/v3/videos?uploadType=resumable&part=snippet,status",
+                        data=json.dumps(body).encode('utf-8'), headers=headers, method='POST'
+                    )
+                    
+                    with urllib.request.urlopen(req_init) as response:
+                        upload_url = response.headers.get('Location')
+                        
+                    if not upload_url:
+                        raise Exception("Gagal mendapatkan Upload URL dari YouTube")
+                        
+                    # 3. Upload File Video Binary
+                    with open(temp_file_path, 'rb') as f:
+                        video_data = f.read()
+                        
+                    put_headers = {"Authorization": f"Bearer {token}", "Content-Type": "video/mp4"}
+                    req_upload = urllib.request.Request(upload_url, data=video_data, headers=put_headers, method='PUT')
+                    with urllib.request.urlopen(req_upload) as res_upload:
+                        yt_res = json.loads(res_upload.read().decode('utf-8'))
+                        return yt_res
+                finally:
+                    # Hapus file sampah video biar server Vercel gak penuh
+                    if os.path.exists(temp_file_path):
+                        try: os.remove(temp_file_path)
+                        except: pass
                 
-                body = []
-                body.append(f"--{boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n{json.dumps(metadata)}\r\n".encode('utf-8'))
-                body.append(f"--{boundary}\r\nContent-Type: video/mp4\r\n\r\n".encode('utf-8'))
-                
-                with open(temp_file_path, 'rb') as f:
-                    video_data = f.read()
-                
-                footer = f"\r\n--{boundary}--\r\n".encode('utf-8')
-                full_body = b"".join(body) + video_data + footer
-                
-                yt_upload_url = "https://www.googleapis.com/upload/youtube/v3/videos?uploadType=multipart&part=snippet,status"
-                req = urllib.request.Request(yt_upload_url, data=full_body, method='POST')
-                req.add_header('Authorization', f'Bearer {access_token}')
-                req.add_header('Content-Type', f'multipart/related; boundary={boundary}')
-                req.add_header('Content-Length', str(len(full_body)))
-                
-                with urllib.request.urlopen(req) as res:
-                    yt_res = json.loads(res.read().decode('utf-8'))
-                    status = "PUBLISHED (SUCCESS)"
-                    details['yt_status'] = "Sukses upload ke YouTube!"
-                    details['yt_video_id'] = yt_res.get('id')
+            try:
+                # 1. PERCOBAAN PERTAMA
+                yt_result = attempt_youtube_upload(access_token)
+                status = "PUBLISHED (SUCCESS)"
+                details['yt_status'] = "Sukses Upload ke YouTube!"
+                details['youtube_video_id'] = yt_result.get('id')
+            except urllib.error.HTTPError as e:
+                # 2. AUTO REFRESH JIKA KENA ERROR 401
+                if e.code == 401 and refresh_token:
+                    try:
+                        token_url = "https://oauth2.googleapis.com/token"
+                        payload = {
+                            "client_id": os.environ.get("YOUTUBE_CLIENT_ID", ""),
+                            "client_secret": os.environ.get("YOUTUBE_CLIENT_SECRET", ""),
+                            "refresh_token": refresh_token,
+                            "grant_type": "refresh_token"
+                        }
+                        data = urllib.parse.urlencode(payload).encode('utf-8')
+                        req_refresh = urllib.request.Request(token_url, data=data, method='POST')
+                        
+                        with urllib.request.urlopen(req_refresh) as res_refresh:
+                            ref_data = json.loads(res_refresh.read().decode('utf-8'))
+                            new_access_token = ref_data.get('access_token')
+                            
+                            if new_access_token:
+                                # Update token baru ke Google Sheets
+                                if sheet:
+                                    all_vals = sheet.get_all_values()
+                                    for idx, row in enumerate(all_vals):
+                                        if idx == 0: continue
+                                        if len(row) >= 5 and row[4].strip() == api_key:
+                                            sheet.update_cell(idx + 1, 11, new_access_token)
+                                            break
+                                
+                                # 3. COBA UPLOAD ULANG DENGAN TOKEN BARU
+                                yt_result_retry = attempt_youtube_upload(new_access_token)
+                                status = "PUBLISHED (SUCCESS)"
+                                details['yt_status'] = "Sukses dengan Auto-Refresh Token"
+                                details['youtube_video_id'] = yt_result_retry.get('id')
+                            else:
+                                raise Exception("Gagal mendapat access_token baru.")
+                    except Exception as refresh_err:
+                        status = "FAILED"
+                        details['yt_error'] = f"YouTube 401 & Auto-Refresh Gagal: {str(refresh_err)}"
+                else:
+                    status = "FAILED"
+                    details['yt_error'] = f"YouTube HTTP Error: {str(e)}"
             except Exception as e:
                 status = "FAILED"
-                details['yt_error'] = f"YouTube API Error: {str(e)}"
-            finally:
-                if temp_file_path and os.path.exists(temp_file_path):
-                    try: os.remove(temp_file_path)
-                    except: pass
+                details['yt_error'] = f"YouTube Process Error: {str(e)}"
         else:
             status = "FAILED"
-            details['yt_error'] = "Token YouTube tidak valid atau Media URL kosong."
-
+            details['yt_error'] = "Token YouTube tidak valid atau belum login."
     # -----------------------------------------------------
     # LOGIKA 6: POSTING KE THREADS
     # -----------------------------------------------------
