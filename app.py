@@ -341,6 +341,9 @@ def checkout_page(): return render_template('checkout.html')
 @app.route('/dashboard')
 def dashboard_page(): return render_template('dashboard.html')
 
+@app.route('/webhook')
+def webhook_page(): return render_template('webhook.html')
+
 @app.route('/tos')
 def tos_page(): return render_template('tos.html')
 
