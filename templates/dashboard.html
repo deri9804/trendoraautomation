@@ -67,6 +67,32 @@
       <h3 style="margin-bottom: 16px; font-size: 20px; color: #fff;">📊 Riwayat Aktivitas Upload Video</h3>
       <p style="color: #9ca3af; font-size: 13px; margin-bottom: 20px;">Pantau log pengiriman video dari n8n ke sosial media secara real-time.</p>
       
+      <!-- BARIS FILTER -->
+      <div style="display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;">
+        <input type="text" id="filter-waktu" placeholder="Cari Waktu (ex: 06/08/2026)" style="padding: 10px 14px; border-radius: 8px; background: rgba(255,255,255,0.05); color: #e5e7eb; border: 1px solid rgba(255,255,255,0.15); outline: none; font-size: 12px; flex: 1; min-width: 150px;">
+        <input type="text" id="filter-logid" placeholder="Cari Log ID" style="padding: 10px 14px; border-radius: 8px; background: rgba(255,255,255,0.05); color: #e5e7eb; border: 1px solid rgba(255,255,255,0.15); outline: none; font-size: 12px; flex: 1; min-width: 150px;">
+        
+        <select id="filter-platform" style="padding: 10px 14px; border-radius: 8px; background: rgba(255,255,255,0.05); color: #e5e7eb; border: 1px solid rgba(255,255,255,0.15); outline: none; font-size: 12px; flex: 1; min-width: 120px; cursor: pointer;">
+          <option value="" style="background: #0f1524;">Semua Platform</option>
+          <option value="tiktok" style="background: #0f1524;">TikTok</option>
+          <option value="youtube" style="background: #0f1524;">YouTube</option>
+          <option value="instagram" style="background: #0f1524;">Instagram</option>
+          <option value="facebook" style="background: #0f1524;">Facebook</option>
+          <option value="linkedin" style="background: #0f1524;">LinkedIn</option>
+          <option value="twitter" style="background: #0f1524;">Twitter / X</option>
+          <option value="threads" style="background: #0f1524;">Threads</option>
+        </select>
+        
+        <select id="filter-status" style="padding: 10px 14px; border-radius: 8px; background: rgba(255,255,255,0.05); color: #e5e7eb; border: 1px solid rgba(255,255,255,0.15); outline: none; font-size: 12px; flex: 1; min-width: 120px; cursor: pointer;">
+          <option value="" style="background: #0f1524;">Semua Status</option>
+          <option value="success" style="background: #0f1524;">SUCCESS</option>
+          <option value="failed" style="background: #0f1524;">FAILED</option>
+        </select>
+        
+        <button onclick="applyLogFilters()" style="padding: 10px 20px; background: #6366f1; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 700; font-size: 12px; transition: background 0.2s;" onmouseover="this.style.background='#4f46e5'" onmouseout="this.style.background='#6366f1'">Filter</button>
+        <button onclick="resetLogFilters()" style="padding: 10px 20px; background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 12px; transition: background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.15)'" onmouseout="this.style.background='rgba(255,255,255,0.1)'">Reset</button>
+      </div>
+
       <div style="overflow-x: auto; background: rgba(0, 0, 0, 0.2); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 12px; padding: 10px; width: 100%;">
         <table style="width: 100%; min-width: 600px; border-collapse: collapse; text-align: left;">
           <thead>
@@ -75,12 +101,12 @@
               <th style="padding: 12px; font-size: 12px; font-weight: 600;">Log ID</th>
               <th style="padding: 12px; font-size: 12px; font-weight: 600;">Platform</th>
               <th style="padding: 12px; font-size: 12px; font-weight: 600;">Status</th>
-              <th style="padding: 12px; font-size: 12px; font-weight: 600;">Detail Video / Caption</th>
+              <th style="padding: 12px; font-size: 12px; font-weight: 600;">Details Status</th>
             </tr>
           </thead>
           <tbody id="dashLogsTableBody">
             <tr>
-              <td colspan="5" style="padding: 20px; text-align: center; color: #6b7280;">⏳ Memuat log postingan terbaru...</td>
+              <td colspan="5" style="padding: 20px; text-align: center; color: #6b7280;">⏳ Memuat log dari server...</td>
             </tr>
           </tbody>
         </table>

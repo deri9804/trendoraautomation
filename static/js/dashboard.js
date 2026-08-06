@@ -214,11 +214,13 @@ function copyWebhookUrl() {
   });
 }
 
+let allFetchedLogs = [];
+
 function loadUserPostLogs() {
   const tbody = document.getElementById('dashLogsTableBody');
   if (!tbody) return;
 
-  tbody.innerHTML = '<tr><td colspan="5" style="padding: 20px; text-align: center; color: #9ca3af;">⏳ Memuat log postingan real-time dari database...</td></tr>';
+  tbody.innerHTML = '<tr><td colspan="5" style="padding: 20px; text-align: center; color: #9ca3af;">⏳ Memuat data dari server...</td></tr>';
 
   const apiKey = globalUserData ? globalUserData.apiKey : '';
 
@@ -228,13 +230,14 @@ function loadUserPostLogs() {
         'Content-Type': 'application/json',
         'X-API-Key': apiKey 
     },
-    // TAMBAHAN: Kirim juga via body JSON sebagai cadangan
     body: JSON.stringify({ api_key: apiKey })
   })
   .then(res => res.json())
   .then(res => {
     if (res.success) {
-      renderLogsTable(res);
+      allFetchedLogs = res.logs || [];
+      // Tampilkan pesan untuk melakukan filter, bukan tabel data langsung
+      tbody.innerHTML = '<tr><td colspan="5" style="padding: 20px; text-align: center; color: #6b7280;">Silakan pilih filter di atas dan klik "Filter" untuk melihat log.</td></tr>';
     } else {
       tbody.innerHTML = '<tr><td colspan="5" style="padding: 20px; text-align: center; color: #ef4444;">✕ Gagal memuat log: ' + res.message + '</td></tr>';
     }
@@ -244,25 +247,66 @@ function loadUserPostLogs() {
   });
 }
 
-function renderLogsTable(res) {
+function applyLogFilters() {
+    const filterWaktu = document.getElementById('filter-waktu')?.value.trim().toLowerCase() || "";
+    const filterLogId = document.getElementById('filter-logid')?.value.trim().toLowerCase() || "";
+    const filterPlatform = document.getElementById('filter-platform')?.value.trim().toLowerCase() || "";
+    const filterStatus = document.getElementById('filter-status')?.value.trim().toLowerCase() || "";
+
+    const tbody = document.getElementById('dashLogsTableBody');
+    
+    // Cegah menampilkan data kalau tidak ada satupun filter yang dipilih
+    if (!filterWaktu && !filterLogId && !filterPlatform && !filterStatus) {
+        if (tbody) tbody.innerHTML = '<tr><td colspan="5" style="padding: 20px; text-align: center; color: #6b7280;">Silakan pilih minimal satu filter untuk melihat log.</td></tr>';
+        return;
+    }
+
+    const filteredLogs = allFetchedLogs.filter(log => {
+        const w = (log.Timestamp || "").toLowerCase();
+        const id = (log.LogID || "").toLowerCase();
+        const p = (log.Platform || "").toLowerCase();
+        const s = (log.Status || "").toLowerCase();
+
+        const matchWaktu = filterWaktu === "" || w.includes(filterWaktu);
+        const matchLogId = filterLogId === "" || id.includes(filterLogId);
+        const matchPlatform = filterPlatform === "" || p.includes(filterPlatform);
+        const matchStatus = filterStatus === "" || s.includes(filterStatus);
+
+        return matchWaktu && matchLogId && matchPlatform && matchStatus;
+    });
+
+    renderLogsTable(filteredLogs);
+}
+
+function resetLogFilters() {
+    if (document.getElementById('filter-waktu')) document.getElementById('filter-waktu').value = "";
+    if (document.getElementById('filter-logid')) document.getElementById('filter-logid').value = "";
+    if (document.getElementById('filter-platform')) document.getElementById('filter-platform').value = "";
+    if (document.getElementById('filter-status')) document.getElementById('filter-status').value = "";
+    
+    const tbody = document.getElementById('dashLogsTableBody');
+    if (tbody) tbody.innerHTML = '<tr><td colspan="5" style="padding: 20px; text-align: center; color: #6b7280;">Silakan pilih filter di atas dan klik "Filter" untuk melihat log.</td></tr>';
+}
+
+function renderLogsTable(logsArray) {
   const tbody = document.getElementById('dashLogsTableBody');
   if (!tbody) return;
 
-  if (!res.logs || res.logs.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="5" style="padding: 20px; text-align: center; color: #6b7280;">Belum ada log aktivitas. Pastikan Anda mengirim POST ke webhook web ini dari n8n!</td></tr>';
+  if (!logsArray || logsArray.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="5" style="padding: 20px; text-align: center; color: #6b7280;">Tidak ada log yang sesuai dengan filter pencarian.</td></tr>';
     return;
   }
 
   let html = '';
-  res.logs.forEach(log => {
+  logsArray.forEach(log => {
     const logStatus = (log.Status || 'UNKNOWN').toUpperCase();
     const isSuccess = logStatus.includes('PUBLISH') || logStatus.includes('SUCCESS') || logStatus.includes('DRAFT');
     const statusBadge = isSuccess ? 'background: rgba(16, 185, 129, 0.15); color: #34d399;' : 'background: rgba(239, 68, 68, 0.15); color: #f87171;';
     
-    let detailsStr = log.Details;
+    let detailsStr = log.Details || "-";
     try {
         const parsed = JSON.parse(log.Details);
-        detailsStr = parsed.caption || parsed.tiktok_api_trace || parsed.media_url || JSON.stringify(parsed);
+        detailsStr = parsed.caption || parsed.tiktok_error || parsed.yt_error || parsed.meta_error || parsed.linkedin_error || parsed.media_url || JSON.stringify(parsed);
     } catch(e) {}
 
     html += '<tr style="border-bottom: 1px solid rgba(255,255,255,0.05); color: #e5e7eb;">';
@@ -270,7 +314,7 @@ function renderLogsTable(res) {
     html += '<td style="padding: 12px; font-family: monospace; font-size: 12px; color: #818cf8;">' + (log.LogID || '-') + '</td>';
     html += '<td style="padding: 12px; text-transform: capitalize; font-weight: 600;">' + (log.Platform || '-') + '</td>';
     html += '<td style="padding: 12px;"><span style="font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 10px; ' + statusBadge + '">' + logStatus + '</span></td>';
-    html += '<td style="padding: 12px; font-size: 12px; color: #9ca3af; max-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title=\'' + detailsStr + '\'>' + detailsStr + '</td>';
+    html += '<td style="padding: 12px; font-size: 12px; color: #9ca3af; max-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title=\'' + detailsStr.replace(/'/g, "&#39;") + '\'>' + detailsStr + '</td>';
     html += '</tr>';
   });
 
@@ -344,4 +388,6 @@ window.loadWebhookUrl = loadWebhookUrl;
 window.copyWebhookUrl = copyWebhookUrl;
 window.loadUserPostLogs = loadUserPostLogs;
 window.renderLogsTable = renderLogsTable;
+window.applyLogFilters = applyLogFilters;
+window.resetLogFilters = resetLogFilters;
 window.renderSocialConnectionsUI = renderSocialConnectionsUI;
