@@ -1551,11 +1551,24 @@ def n8n_webhook():
     timestamp = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
     log_id = f"LOG-{uuid.uuid4().hex[:8].upper()}"
     
+    # SUSUNAN DATA VERTICAL (Sesuaikan dengan urutan Kolom Google Sheets Lu)
+    row_data = [
+        timestamp,       # Kolom A
+        log_id,          # Kolom B
+        api_key,         # Kolom C
+        platform,        # Kolom D
+        status,          # Kolom E
+        details_str,     # Kolom F
+        "",              # Kolom G (Keterangan - sengaja dikosongkan)
+        media_url_val,   # Kolom H (Media URL)
+        caption_val,     # Kolom I (Caption)
+        hashtag_val      # Kolom J (Hashtag)
+    ]
+    
     sheet = get_logs_sheet()
     if sheet:
         try:
-            # Kolom: A(Timestamp), B(LogID), C(APIKey), D(Platform), E(Status), F(Details), G(Keterangan kosong), H(MediaURL), I(Caption), J(Hashtag)
-            sheet.append_row([timestamp, log_id, api_key, platform, status, details_str, "", media_url_val, caption_val, hashtag_val])
+            sheet.append_row(row_data)
             return jsonify({"success": True, "message": "Processed & Logged", "log_id": log_id})
         except Exception as e:
             return jsonify({"success": False, "message": str(e)}), 500
@@ -1568,6 +1581,7 @@ def n8n_webhook():
             "Platform": platform, 
             "Status": status, 
             "Details": details_str,
+            "Keterangan": "",
             "MediaURL": media_url_val,
             "Caption": caption_val,
             "Hashtag": hashtag_val

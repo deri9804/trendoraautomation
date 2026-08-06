@@ -262,6 +262,7 @@ function applyLogFilters() {
     }
 
     const filteredLogs = allFetchedLogs.filter(log => {
+        // Menggunakan Object key sesuai response dari backend Python
         const w = (log.Timestamp || "").toLowerCase();
         const id = (log.LogID || "").toLowerCase();
         const p = (log.Platform || "").toLowerCase();
