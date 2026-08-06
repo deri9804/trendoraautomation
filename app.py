@@ -107,7 +107,7 @@ def get_logs_sheet():
             sheet = worksheets[1]
         if not sheet:
             sheet = doc.add_worksheet(title="Logs", rows="1000", cols="10")
-            sheet.append_row(["Timestamp", "LogID", "APIKey", "Platform", "Status", "Details"])
+            sheet.append_row(["Timestamp", "LogID", "APIKey", "Platform", "Status", "Details", "Keterangan", "MediaURL", "Caption", "Hashtag"])
             
         return sheet
     except Exception as e:
@@ -1535,7 +1535,15 @@ def n8n_webhook():
     # -----------------------------------------------------
     # LOGGING KE DATABASE (TER-ISOLASI PER USER)
     # -----------------------------------------------------
+    media_url_val = ""
+    caption_val = ""
+    hashtag_val = ""
+    
     if isinstance(details, dict):
+        # Gunakan .pop() untuk mencabut data dari 'details' agar pindah ke kolom baru
+        media_url_val = details.pop('media_url', '')
+        caption_val = details.pop('caption', '')
+        hashtag_val = details.pop('hashtag', '')
         details_str = json.dumps(details)
     else:
         details_str = str(details)
@@ -1546,13 +1554,24 @@ def n8n_webhook():
     sheet = get_logs_sheet()
     if sheet:
         try:
-            sheet.append_row([timestamp, log_id, api_key, platform, status, details_str])
+            # Kolom: A(Timestamp), B(LogID), C(APIKey), D(Platform), E(Status), F(Details), G(Keterangan kosong), H(MediaURL), I(Caption), J(Hashtag)
+            sheet.append_row([timestamp, log_id, api_key, platform, status, details_str, "", media_url_val, caption_val, hashtag_val])
             return jsonify({"success": True, "message": "Processed & Logged", "log_id": log_id})
         except Exception as e:
             return jsonify({"success": False, "message": str(e)}), 500
     else:
         if 'logs' not in user_2fa_store: user_2fa_store['logs'] = []
-        user_2fa_store['logs'].append({"Timestamp": timestamp, "LogID": log_id, "APIKey": api_key, "Platform": platform, "Status": status, "Details": details_str})
+        user_2fa_store['logs'].append({
+            "Timestamp": timestamp, 
+            "LogID": log_id, 
+            "APIKey": api_key, 
+            "Platform": platform, 
+            "Status": status, 
+            "Details": details_str,
+            "MediaURL": media_url_val,
+            "Caption": caption_val,
+            "Hashtag": hashtag_val
+        })
         return jsonify({"success": True, "log_id": log_id})
 
 @app.route('/api/get-logs', methods=['POST', 'GET'])
