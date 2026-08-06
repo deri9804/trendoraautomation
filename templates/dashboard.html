@@ -7,16 +7,14 @@
   {% include 'css.html' %}
   
   <style>
-    /* CUSTOM LAYOUT KHUSUS DASHBOARD DENGAN SIDEBAR */
     body { background-color: #0d0a1a; overflow-x: hidden; }
     
     .dash-layout { 
       display: flex; 
-      padding-top: 75px; /* Menyesuaikan tinggi navbar sticky */
+      padding-top: 75px; 
       min-height: 100vh; 
     }
     
-    /* STYLE SIDEBAR KIRI */
     .dash-sidebar { 
       width: 260px; 
       background: rgba(9, 13, 22, 0.95); 
@@ -28,6 +26,7 @@
       overflow-y: auto; 
       padding: 24px 16px;
       z-index: 100;
+      transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
     
     .sidebar-menu-title { 
@@ -39,88 +38,67 @@
       text-transform: uppercase; 
     }
     
-    .sidebar-menu { 
-      list-style: none; 
-      padding: 0; 
-      margin: 0; 
-      display: flex; 
-      flex-direction: column; 
-      gap: 6px; 
-    }
+    .sidebar-menu { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 6px; }
+    .sidebar-menu li a { display: flex; align-items: center; gap: 12px; padding: 12px 16px; color: #9ca3af; text-decoration: none; border-radius: 12px; font-size: 14px; font-weight: 600; transition: all 0.2s ease; }
+    .sidebar-menu li a:hover { background: rgba(255, 255, 255, 0.05); color: #e5e7eb; }
+    .sidebar-menu li a.active { background: rgba(236, 72, 153, 0.15); color: #ec4899; border-left: 3px solid #ec4899; }
     
-    .sidebar-menu li a {
-      display: flex; 
-      align-items: center; 
-      gap: 12px;
-      padding: 12px 16px; 
-      color: #9ca3af; 
-      text-decoration: none;
-      border-radius: 12px; 
-      font-size: 14px; 
-      font-weight: 600;
-      transition: all 0.2s ease;
-    }
-    
-    .sidebar-menu li a:hover {
-      background: rgba(255, 255, 255, 0.05); 
-      color: #e5e7eb;
-    }
-    
-    .sidebar-menu li a.active {
-      background: rgba(236, 72, 153, 0.15); 
-      color: #ec4899;
-      border-left: 3px solid #ec4899;
-    }
-    
-    /* STYLE MAIN CONTENT KANAN */
     .dash-content { 
       flex: 1; 
-      margin-left: 260px; /* Menyediakan ruang untuk sidebar */
+      margin-left: 260px; 
       padding: 30px 4% 60px 4%; 
       max-width: 1400px;
+      transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    /* Class yang men-trigger sidebar bersembunyi */
+    body.sidebar-hidden .dash-sidebar { transform: translateX(-100%); }
+    body.sidebar-hidden .dash-content { margin-left: 0; }
+
+    .btn-toggle-sidebar {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      color: #cbd5e1;
+      padding: 8px 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      margin-bottom: 20px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      transition: all 0.2s;
     }
     
-    /* RESPONSIVE UNTUK HP & TABLET */
+    .btn-toggle-sidebar:hover { background: rgba(255,255,255,0.1); color: #fff; }
+
     @media (max-width: 900px) {
       .dash-layout { flex-direction: column; }
-      
-      /* Sidebar berubah jadi Horizontal Menu di bawah Navbar */
       .dash-sidebar { 
-        position: relative; 
-        width: 100%; 
-        top: 0; 
-        border-right: none; 
-        border-bottom: 1px solid rgba(255,255,255,0.08); 
-        padding: 12px 16px; 
-        display: flex; 
-        flex-direction: row; 
-        align-items: center;
-        overflow-x: auto; 
-        white-space: nowrap; 
-        gap: 8px; 
+        position: relative; width: 100%; top: 0; border-right: none; 
+        border-bottom: 1px solid rgba(255,255,255,0.08); padding: 12px 16px; 
+        display: flex; flex-direction: row; align-items: center;
+        overflow-x: auto; white-space: nowrap; gap: 8px; 
       }
-      
+      body.sidebar-hidden .dash-sidebar { transform: none; display: none; } /* Hide on mobile if toggled */
       .dash-sidebar::-webkit-scrollbar { height: 4px; }
       .dash-sidebar::-webkit-scrollbar-thumb { background: #3f3f46; border-radius: 4px; }
-      
       .sidebar-menu-title { display: none; }
       .sidebar-menu { flex-direction: row; gap: 8px; }
       .sidebar-menu li a { padding: 10px 16px; font-size: 13px; border-left: none; }
       .sidebar-menu li a.active { border-bottom: 3px solid #ec4899; }
-      
-      /* Content menyesuaikan ke layar penuh */
       .dash-content { margin-left: 0; padding: 20px 4%; }
       .dashboard-hero-card { grid-template-columns: 1fr !important; }
+      .btn-toggle-sidebar { display: none; } /* Sembunyikan toggle button di mobile */
     }
   </style>
 </head>
 <body>
   {% include 'navbar.html' %}
 
-  <!-- PAGE WRAPPER DASHBOARD -->
   <div class="dash-layout">
     
-    <!-- ==================== KIRI: SIDEBAR ==================== -->
     <aside class="dash-sidebar">
       <div class="sidebar-menu-title">Main Menu</div>
       <ul class="sidebar-menu">
@@ -138,14 +116,15 @@
       </ul>
     </aside>
 
-    <!-- ==================== KANAN: MAIN CONTENT ==================== -->
     <main class="dash-content">
+      <!-- Tombol Toggle Sidebar -->
+      <button class="btn-toggle-sidebar" onclick="toggleSidebar()">
+        <span id="sidebarIconDash">◀</span> <span>Tutup Menu</span>
+      </button>
       
-      <!-- SECTION 1: RINGKASAN & API KEY -->
       <section id="section-overview" style="scroll-margin-top: 100px;">
         <div class="dashboard-hero-card" style="margin-bottom: 30px;">
           
-          <!-- INFO PROFIL -->
           <div class="dash-welcome">
             <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 12px; flex-wrap: wrap;">
               <img id="dashAvatar" src="" style="width: 52px; height: 52px; border-radius: 50%; border: 2px solid #ec4899; display: none;" alt="User Avatar" />
@@ -157,7 +136,6 @@
             </p>
           </div>
           
-          <!-- API KEY & WEBHOOK URL -->
           <div class="dash-key-card">
             <h3 style="font-size: 15px; color: #9ca3af; margin-bottom: 12px;">🔑 API Key Anda</h3>
             
@@ -181,7 +159,6 @@
         </div>
       </section>
 
-      <!-- SECTION 2: INTEGRASI SOSIAL MEDIA -->
       <section id="section-social" style="scroll-margin-top: 100px;">
         <div class="dashboard-hero-card" style="margin-bottom: 30px; display: block;">
           <h3 style="margin-bottom: 8px; font-size: 20px; color: #fff;">🔗 Integrasi Sosial Media</h3>
@@ -193,13 +170,11 @@
         </div>
       </section>
 
-      <!-- SECTION 3: LOG AKTIVITAS -->
       <section id="section-logs" style="scroll-margin-top: 100px;">
         <div class="dashboard-hero-card" style="display: block; overflow-x: auto;">
           <h3 style="margin-bottom: 16px; font-size: 20px; color: #fff;">📊 Riwayat Aktivitas Upload Video</h3>
           <p style="color: #9ca3af; font-size: 13px; margin-bottom: 20px;">Pantau log pengiriman video dari n8n ke sosial media secara real-time.</p>
           
-          <!-- BARIS FILTER -->
           <div style="display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;">
             <input type="text" id="filter-waktu" placeholder="Cari Waktu (ex: 06/08/2026)" style="padding: 10px 14px; border-radius: 8px; background: rgba(255,255,255,0.05); color: #e5e7eb; border: 1px solid rgba(255,255,255,0.15); outline: none; font-size: 12px; flex: 1; min-width: 150px;">
             <input type="text" id="filter-logid" placeholder="Cari Log ID" style="padding: 10px 14px; border-radius: 8px; background: rgba(255,255,255,0.05); color: #e5e7eb; border: 1px solid rgba(255,255,255,0.15); outline: none; font-size: 12px; flex: 1; min-width: 150px;">
@@ -251,16 +226,25 @@
 
   {% include 'apiKeyModal.html' %}
 
-  <!-- SCRIPT LOGIKA KLIK MENU SIDEBAR (ACTIVE STATE) -->
   <script>
+    function toggleSidebar() {
+      document.body.classList.toggle('sidebar-hidden');
+      const icon = document.getElementById('sidebarIconDash');
+      const btnText = icon.nextElementSibling;
+      if (document.body.classList.contains('sidebar-hidden')) {
+        icon.innerText = '▶';
+        btnText.innerText = 'Buka Menu';
+      } else {
+        icon.innerText = '◀';
+        btnText.innerText = 'Tutup Menu';
+      }
+    }
+    
     document.addEventListener('DOMContentLoaded', () => {
       const sidebarLinks = document.querySelectorAll('.sidebar-link');
-      
       sidebarLinks.forEach(link => {
         link.addEventListener('click', function(e) {
-          // Hapus class 'active' dari semua menu
           sidebarLinks.forEach(l => l.classList.remove('active'));
-          // Tambahkan class 'active' ke menu yang diklik
           this.classList.add('active');
         });
       });
