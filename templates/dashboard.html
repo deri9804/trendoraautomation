@@ -5,117 +5,266 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Dashboard - TRENDORA</title>
   {% include 'css.html' %}
+  
+  <style>
+    /* CUSTOM LAYOUT KHUSUS DASHBOARD DENGAN SIDEBAR */
+    body { background-color: #0d0a1a; overflow-x: hidden; }
+    
+    .dash-layout { 
+      display: flex; 
+      padding-top: 75px; /* Menyesuaikan tinggi navbar sticky */
+      min-height: 100vh; 
+    }
+    
+    /* STYLE SIDEBAR KIRI */
+    .dash-sidebar { 
+      width: 260px; 
+      background: rgba(9, 13, 22, 0.95); 
+      backdrop-filter: blur(10px);
+      border-right: 1px solid rgba(255,255,255,0.08); 
+      position: fixed; 
+      top: 75px; 
+      bottom: 0; 
+      overflow-y: auto; 
+      padding: 24px 16px;
+      z-index: 100;
+    }
+    
+    .sidebar-menu-title { 
+      font-size: 11px; 
+      font-weight: 800; 
+      color: #6b7280; 
+      letter-spacing: 1px; 
+      margin: 20px 0 10px 16px; 
+      text-transform: uppercase; 
+    }
+    
+    .sidebar-menu { 
+      list-style: none; 
+      padding: 0; 
+      margin: 0; 
+      display: flex; 
+      flex-direction: column; 
+      gap: 6px; 
+    }
+    
+    .sidebar-menu li a {
+      display: flex; 
+      align-items: center; 
+      gap: 12px;
+      padding: 12px 16px; 
+      color: #9ca3af; 
+      text-decoration: none;
+      border-radius: 12px; 
+      font-size: 14px; 
+      font-weight: 600;
+      transition: all 0.2s ease;
+    }
+    
+    .sidebar-menu li a:hover {
+      background: rgba(255, 255, 255, 0.05); 
+      color: #e5e7eb;
+    }
+    
+    .sidebar-menu li a.active {
+      background: rgba(236, 72, 153, 0.15); 
+      color: #ec4899;
+      border-left: 3px solid #ec4899;
+    }
+    
+    /* STYLE MAIN CONTENT KANAN */
+    .dash-content { 
+      flex: 1; 
+      margin-left: 260px; /* Menyediakan ruang untuk sidebar */
+      padding: 30px 4% 60px 4%; 
+      max-width: 1400px;
+    }
+    
+    /* RESPONSIVE UNTUK HP & TABLET */
+    @media (max-width: 900px) {
+      .dash-layout { flex-direction: column; }
+      
+      /* Sidebar berubah jadi Horizontal Menu di bawah Navbar */
+      .dash-sidebar { 
+        position: relative; 
+        width: 100%; 
+        top: 0; 
+        border-right: none; 
+        border-bottom: 1px solid rgba(255,255,255,0.08); 
+        padding: 12px 16px; 
+        display: flex; 
+        flex-direction: row; 
+        align-items: center;
+        overflow-x: auto; 
+        white-space: nowrap; 
+        gap: 8px; 
+      }
+      
+      .dash-sidebar::-webkit-scrollbar { height: 4px; }
+      .dash-sidebar::-webkit-scrollbar-thumb { background: #3f3f46; border-radius: 4px; }
+      
+      .sidebar-menu-title { display: none; }
+      .sidebar-menu { flex-direction: row; gap: 8px; }
+      .sidebar-menu li a { padding: 10px 16px; font-size: 13px; border-left: none; }
+      .sidebar-menu li a.active { border-bottom: 3px solid #ec4899; }
+      
+      /* Content menyesuaikan ke layar penuh */
+      .dash-content { margin-left: 0; padding: 20px 4%; }
+      .dashboard-hero-card { grid-template-columns: 1fr !important; }
+    }
+  </style>
 </head>
 <body>
   {% include 'navbar.html' %}
 
-  <!-- PAGE WRAPPER UNTUK DASHBOARD -->
-  <div style="padding: 120px 5% 60px 5%; max-width: 1400px; margin: 0 auto; min-height: 85vh;">
+  <!-- PAGE WRAPPER DASHBOARD -->
+  <div class="dash-layout">
     
-    <!-- HEADER DASHBOARD: PROFIL & API KEY -->
-    <div class="dashboard-hero-card" style="margin-bottom: 30px;">
+    <!-- ==================== KIRI: SIDEBAR ==================== -->
+    <aside class="dash-sidebar">
+      <div class="sidebar-menu-title">Main Menu</div>
+      <ul class="sidebar-menu">
+        <li><a href="#section-overview" class="sidebar-link active">🏠 Ringkasan</a></li>
+        <li><a href="#section-social" class="sidebar-link">🔗 Akun Sosial</a></li>
+        <li><a href="#section-logs" class="sidebar-link">📊 Log Aktivitas</a></li>
+      </ul>
       
-      <!-- BAGIAN KIRI: INFO PROFIL -->
-      <div class="dash-welcome">
-        <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 12px; flex-wrap: wrap;">
-          <img id="dashAvatar" src="" style="width: 52px; height: 52px; border-radius: 50%; border: 2px solid #ec4899; display: none;" alt="User Avatar" />
-          <h2 style="margin-bottom: 0;">Halo, <span id="dashName">User</span>! 👋</h2>
-        </div>
+      <div class="sidebar-menu-title">Pengaturan Akun</div>
+      <ul class="sidebar-menu">
+        <li><a href="#" onclick="openUpgradePayment()">💳 Langganan (Upgrade)</a></li>
+        <li><a href="/#n8n-docs">📚 Dokumentasi API</a></li>
+        <li><a href="#" onclick="handleLogout()" style="color: #ef4444;">🚪 Keluar Akun</a></li>
+      </ul>
+    </aside>
 
-        <p style="color: #9ca3af; font-size: 14px; margin-bottom: 16px; word-break: break-all;">
-          Email: <span id="dashUserEmail">-</span><br>
-          Status: <strong id="dashAccountStatus" style="color: #f59e0b;">Active (7-Day Free Trial)</strong>
-        </p>
-      </div>
+    <!-- ==================== KANAN: MAIN CONTENT ==================== -->
+    <main class="dash-content">
       
-      <!-- BAGIAN KANAN: API KEY & WEBHOOK URL -->
-      <div class="dash-key-card">
-        <h3 style="font-size: 15px; color: #9ca3af; margin-bottom: 12px;">🔑 API Key Anda</h3>
-        
-        <div class="key-display-box" style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 12px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
-          <span id="dashApiKeyDisplay" style="font-family: monospace; font-size: 13px; color: #34d399; word-break: break-all;">Belum Ada API Key</span>
-          <button id="btnToggleKeyMask" onclick="toggleApiKeyMask()" style="background: transparent; border: none; color: #60a5fa; cursor: pointer; font-size: 12px; font-weight: 600; display: none;">👁️ Show</button>
+      <!-- SECTION 1: RINGKASAN & API KEY -->
+      <section id="section-overview" style="scroll-margin-top: 100px;">
+        <div class="dashboard-hero-card" style="margin-bottom: 30px;">
+          
+          <!-- INFO PROFIL -->
+          <div class="dash-welcome">
+            <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 12px; flex-wrap: wrap;">
+              <img id="dashAvatar" src="" style="width: 52px; height: 52px; border-radius: 50%; border: 2px solid #ec4899; display: none;" alt="User Avatar" />
+              <h2 style="margin-bottom: 0;">Halo, <span id="dashName">User</span>! 👋</h2>
+            </div>
+            <p style="color: #9ca3af; font-size: 14px; margin-bottom: 16px; word-break: break-all;">
+              Email: <span id="dashUserEmail">-</span><br>
+              Status: <strong id="dashAccountStatus" style="color: #f59e0b;">Active (7-Day Free Trial)</strong>
+            </p>
+          </div>
+          
+          <!-- API KEY & WEBHOOK URL -->
+          <div class="dash-key-card">
+            <h3 style="font-size: 15px; color: #9ca3af; margin-bottom: 12px;">🔑 API Key Anda</h3>
+            
+            <div class="key-display-box" style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 12px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+              <span id="dashApiKeyDisplay" style="font-family: monospace; font-size: 13px; color: #34d399; word-break: break-all;">Belum Ada API Key</span>
+              <button id="btnToggleKeyMask" onclick="toggleApiKeyMask()" style="background: transparent; border: none; color: #60a5fa; cursor: pointer; font-size: 12px; font-weight: 600; display: none;">👁️ Show</button>
+            </div>
+
+            <div class="dash-actions-row" style="display: flex; gap: 8px; flex-wrap: wrap;">
+              <button id="btnGenerateApiKey" class="btn-pink" style="font-size: 12px; padding: 8px 16px; flex: 1; min-width: 140px;" onclick="handleGenerateApiKeyClick()">🔑 Generate API Key</button>
+              <button id="btnCopyApiKey" class="btn-secondary" style="font-size: 12px; padding: 8px 16px; display: none;" onclick="copyDashApiKey()">📋 Copy Key</button>
+              <button id="btnDashUpgrade" class="btn-secondary" style="font-size: 12px; padding: 8px 16px; border-color: #ec4899; color: #ec4899; display: none;" onclick="openUpgradePayment()">⭐ Upgrade</button>
+            </div>
+            
+            <h3 style="font-size: 15px; color: #9ca3af; margin-top: 20px; margin-bottom: 12px;">🔗 Webhook Endpoint (n8n Target)</h3>
+            <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 12px; margin-bottom: 12px;">
+              <span id="dashWebhookUrlDisplay" style="font-family: monospace; font-size: 11px; color: #f472b6; word-break: break-all; white-space: normal;">Memuat Webhook URL...</span>
+            </div>
+            <button class="btn-secondary" style="font-size: 12px; padding: 8px 16px; width: 100%;" onclick="copyWebhookUrl()">📋 Copy URL</button>
+          </div>
         </div>
+      </section>
 
-        <div class="dash-actions-row" style="display: flex; gap: 8px; flex-wrap: wrap;">
-          <button id="btnGenerateApiKey" class="btn-pink" style="font-size: 12px; padding: 8px 16px; flex: 1; min-width: 140px;" onclick="handleGenerateApiKeyClick()">🔑 Generate API Key</button>
-          <button id="btnCopyApiKey" class="btn-secondary" style="font-size: 12px; padding: 8px 16px; display: none;" onclick="copyDashApiKey()">📋 Copy Key</button>
-          <button id="btnDashUpgrade" class="btn-secondary" style="font-size: 12px; padding: 8px 16px; border-color: #ec4899; color: #ec4899; display: none;" onclick="openUpgradePayment()">⭐ Upgrade</button>
+      <!-- SECTION 2: INTEGRASI SOSIAL MEDIA -->
+      <section id="section-social" style="scroll-margin-top: 100px;">
+        <div class="dashboard-hero-card" style="margin-bottom: 30px; display: block;">
+          <h3 style="margin-bottom: 8px; font-size: 20px; color: #fff;">🔗 Integrasi Sosial Media</h3>
+          <p style="color: #9ca3af; font-size: 13px; margin-bottom: 24px;">Hubungkan akun sosial media Anda. Akun yang terhubung akan dapat menerima video secara otomatis dari n8n.</p>
+          
+          <div id="socialConnectionsList" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px;">
+            <p style="color: #6b7280; font-size: 13px;">Memuat daftar platform...</p>
+          </div>
         </div>
-        
-        <h3 style="font-size: 15px; color: #9ca3af; margin-top: 20px; margin-bottom: 12px;">🔗 Webhook Endpoint (n8n Target)</h3>
-        <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 12px; margin-bottom: 12px;">
-          <span id="dashWebhookUrlDisplay" style="font-family: monospace; font-size: 11px; color: #f472b6; word-break: break-all; white-space: normal;">Memuat Webhook URL...</span>
+      </section>
+
+      <!-- SECTION 3: LOG AKTIVITAS -->
+      <section id="section-logs" style="scroll-margin-top: 100px;">
+        <div class="dashboard-hero-card" style="display: block; overflow-x: auto;">
+          <h3 style="margin-bottom: 16px; font-size: 20px; color: #fff;">📊 Riwayat Aktivitas Upload Video</h3>
+          <p style="color: #9ca3af; font-size: 13px; margin-bottom: 20px;">Pantau log pengiriman video dari n8n ke sosial media secara real-time.</p>
+          
+          <!-- BARIS FILTER -->
+          <div style="display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;">
+            <input type="text" id="filter-waktu" placeholder="Cari Waktu (ex: 06/08/2026)" style="padding: 10px 14px; border-radius: 8px; background: rgba(255,255,255,0.05); color: #e5e7eb; border: 1px solid rgba(255,255,255,0.15); outline: none; font-size: 12px; flex: 1; min-width: 150px;">
+            <input type="text" id="filter-logid" placeholder="Cari Log ID" style="padding: 10px 14px; border-radius: 8px; background: rgba(255,255,255,0.05); color: #e5e7eb; border: 1px solid rgba(255,255,255,0.15); outline: none; font-size: 12px; flex: 1; min-width: 150px;">
+            
+            <select id="filter-platform" style="padding: 10px 14px; border-radius: 8px; background: rgba(255,255,255,0.05); color: #e5e7eb; border: 1px solid rgba(255,255,255,0.15); outline: none; font-size: 12px; flex: 1; min-width: 120px; cursor: pointer;">
+              <option value="" style="background: #0f1524;">Semua Platform</option>
+              <option value="tiktok" style="background: #0f1524;">TikTok</option>
+              <option value="youtube" style="background: #0f1524;">YouTube</option>
+              <option value="instagram" style="background: #0f1524;">Instagram</option>
+              <option value="facebook" style="background: #0f1524;">Facebook</option>
+              <option value="linkedin" style="background: #0f1524;">LinkedIn</option>
+              <option value="twitter" style="background: #0f1524;">Twitter / X</option>
+              <option value="threads" style="background: #0f1524;">Threads</option>
+            </select>
+            
+            <select id="filter-status" style="padding: 10px 14px; border-radius: 8px; background: rgba(255,255,255,0.05); color: #e5e7eb; border: 1px solid rgba(255,255,255,0.15); outline: none; font-size: 12px; flex: 1; min-width: 120px; cursor: pointer;">
+              <option value="" style="background: #0f1524;">Semua Status</option>
+              <option value="success" style="background: #0f1524;">SUCCESS</option>
+              <option value="failed" style="background: #0f1524;">FAILED</option>
+            </select>
+            
+            <button onclick="applyLogFilters()" style="padding: 10px 20px; background: #6366f1; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 700; font-size: 12px; transition: background 0.2s;" onmouseover="this.style.background='#4f46e5'" onmouseout="this.style.background='#6366f1'">Filter</button>
+            <button onclick="resetLogFilters()" style="padding: 10px 20px; background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 12px; transition: background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.15)'" onmouseout="this.style.background='rgba(255,255,255,0.1)'">Reset</button>
+          </div>
+
+          <div style="overflow-x: auto; background: rgba(0, 0, 0, 0.2); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 12px; padding: 10px; width: 100%;">
+            <table style="width: 100%; min-width: 600px; border-collapse: collapse; text-align: left;">
+              <thead>
+                <tr style="border-bottom: 1px solid rgba(255,255,255,0.1); color: #9ca3af;">
+                  <th style="padding: 12px; font-size: 12px; font-weight: 600;">Waktu</th>
+                  <th style="padding: 12px; font-size: 12px; font-weight: 600;">Log ID</th>
+                  <th style="padding: 12px; font-size: 12px; font-weight: 600;">Platform</th>
+                  <th style="padding: 12px; font-size: 12px; font-weight: 600;">Status</th>
+                  <th style="padding: 12px; font-size: 12px; font-weight: 600;">Details Status</th>
+                </tr>
+              </thead>
+              <tbody id="dashLogsTableBody">
+                <tr>
+                  <td colspan="5" style="padding: 20px; text-align: center; color: #6b7280;">⏳ Memuat log dari server...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
-        <button class="btn-secondary" style="font-size: 12px; padding: 8px 16px; width: 100%;" onclick="copyWebhookUrl()">📋 Copy URL</button>
-      </div>
-    </div>
+      </section>
 
-    <!-- MANAJEMEN SOSIAL MEDIA (BAGIAN BARU) -->
-    <div class="dashboard-hero-card" style="margin-bottom: 30px; display: block;">
-      <h3 style="margin-bottom: 8px; font-size: 20px; color: #fff;">🔗 Integrasi Sosial Media</h3>
-      <p style="color: #9ca3af; font-size: 13px; margin-bottom: 24px;">Hubungkan akun sosial media Anda. Akun yang terhubung akan dapat menerima video secara otomatis dari n8n.</p>
-      
-      <div id="socialConnectionsList" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px;">
-        <!-- Akan di-render secara dinamis via JavaScript berdasarkan status akun -->
-        <p style="color: #6b7280; font-size: 13px;">Memuat daftar platform...</p>
-      </div>
-    </div>
-
-    <!-- LOG AKTIVITAS TABLE -->
-    <div class="dashboard-hero-card" style="display: block; overflow-x: auto;">
-      <h3 style="margin-bottom: 16px; font-size: 20px; color: #fff;">📊 Riwayat Aktivitas Upload Video</h3>
-      <p style="color: #9ca3af; font-size: 13px; margin-bottom: 20px;">Pantau log pengiriman video dari n8n ke sosial media secara real-time.</p>
-      
-      <!-- BARIS FILTER -->
-      <div style="display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;">
-        <input type="text" id="filter-waktu" placeholder="Cari Waktu (ex: 06/08/2026)" style="padding: 10px 14px; border-radius: 8px; background: rgba(255,255,255,0.05); color: #e5e7eb; border: 1px solid rgba(255,255,255,0.15); outline: none; font-size: 12px; flex: 1; min-width: 150px;">
-        <input type="text" id="filter-logid" placeholder="Cari Log ID" style="padding: 10px 14px; border-radius: 8px; background: rgba(255,255,255,0.05); color: #e5e7eb; border: 1px solid rgba(255,255,255,0.15); outline: none; font-size: 12px; flex: 1; min-width: 150px;">
-        
-        <select id="filter-platform" style="padding: 10px 14px; border-radius: 8px; background: rgba(255,255,255,0.05); color: #e5e7eb; border: 1px solid rgba(255,255,255,0.15); outline: none; font-size: 12px; flex: 1; min-width: 120px; cursor: pointer;">
-          <option value="" style="background: #0f1524;">Semua Platform</option>
-          <option value="tiktok" style="background: #0f1524;">TikTok</option>
-          <option value="youtube" style="background: #0f1524;">YouTube</option>
-          <option value="instagram" style="background: #0f1524;">Instagram</option>
-          <option value="facebook" style="background: #0f1524;">Facebook</option>
-          <option value="linkedin" style="background: #0f1524;">LinkedIn</option>
-          <option value="twitter" style="background: #0f1524;">Twitter / X</option>
-          <option value="threads" style="background: #0f1524;">Threads</option>
-        </select>
-        
-        <select id="filter-status" style="padding: 10px 14px; border-radius: 8px; background: rgba(255,255,255,0.05); color: #e5e7eb; border: 1px solid rgba(255,255,255,0.15); outline: none; font-size: 12px; flex: 1; min-width: 120px; cursor: pointer;">
-          <option value="" style="background: #0f1524;">Semua Status</option>
-          <option value="success" style="background: #0f1524;">SUCCESS</option>
-          <option value="failed" style="background: #0f1524;">FAILED</option>
-        </select>
-        
-        <button onclick="applyLogFilters()" style="padding: 10px 20px; background: #6366f1; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 700; font-size: 12px; transition: background 0.2s;" onmouseover="this.style.background='#4f46e5'" onmouseout="this.style.background='#6366f1'">Filter</button>
-        <button onclick="resetLogFilters()" style="padding: 10px 20px; background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 12px; transition: background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.15)'" onmouseout="this.style.background='rgba(255,255,255,0.1)'">Reset</button>
-      </div>
-
-      <div style="overflow-x: auto; background: rgba(0, 0, 0, 0.2); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 12px; padding: 10px; width: 100%;">
-        <table style="width: 100%; min-width: 600px; border-collapse: collapse; text-align: left;">
-          <thead>
-            <tr style="border-bottom: 1px solid rgba(255,255,255,0.1); color: #9ca3af;">
-              <th style="padding: 12px; font-size: 12px; font-weight: 600;">Waktu</th>
-              <th style="padding: 12px; font-size: 12px; font-weight: 600;">Log ID</th>
-              <th style="padding: 12px; font-size: 12px; font-weight: 600;">Platform</th>
-              <th style="padding: 12px; font-size: 12px; font-weight: 600;">Status</th>
-              <th style="padding: 12px; font-size: 12px; font-weight: 600;">Details Status</th>
-            </tr>
-          </thead>
-          <tbody id="dashLogsTableBody">
-            <tr>
-              <td colspan="5" style="padding: 20px; text-align: center; color: #6b7280;">⏳ Memuat log dari server...</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-
+    </main>
   </div>
 
   {% include 'apiKeyModal.html' %}
+
+  <!-- SCRIPT LOGIKA KLIK MENU SIDEBAR (ACTIVE STATE) -->
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const sidebarLinks = document.querySelectorAll('.sidebar-link');
+      
+      sidebarLinks.forEach(link => {
+        link.addEventListener('click', function(e) {
+          // Hapus class 'active' dari semua menu
+          sidebarLinks.forEach(l => l.classList.remove('active'));
+          // Tambahkan class 'active' ke menu yang diklik
+          this.classList.add('active');
+        });
+      });
+    });
+  </script>
 
   <!-- SCRIPTS -->
   <script src="{{ url_for('static', filename='js/ui.js') }}"></script>
