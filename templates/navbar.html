@@ -9,10 +9,13 @@
 
   <!-- NAVBAR -->
   <nav class="navbar">
-    <!-- REVISI: Menampilkan gambar logo berdampingan dengan teks, ukuran diperbesar -->
+    <!-- REVISI: Menampilkan gambar logo berdampingan dengan teks atas-bawah -->
     <div class="logo" style="cursor: pointer; display: flex; align-items: center; gap: 12px;" onclick="showLandingPage()">
       <img src="{{ url_for('static', filename='logo-trendora.png') }}" alt="TRENDORA Logo" style="height: 65px; width: auto; object-fit: contain;" onerror="this.src='logo-trendora.png'">
-      <span>⚡ TRENDORA AUTOMATION</span>
+      <div style="display: flex; flex-direction: column; line-height: 1.1;">
+        <span>⚡ TRENDORA</span>
+        <span>AUTOMATION</span>
+      </div>
     </div>
     
     <!-- LANDING PAGE NAVIGATION LINKS -->
@@ -35,7 +38,6 @@
     <!-- GUEST AUTH BUTTONS -->
     <div class="auth-buttons" id="navGuestGroup">
       <a class="btn-login" style="cursor: pointer;" onclick="openLoginModal()">Log in</a>
-      <button class="btn-pink" onclick="openRegisterModal('Creator Monthly', 'Rp.200.000/mo')">Start free &rarr;</button>
     </div>
 
     <!-- LOGGED IN USER MENU -->
