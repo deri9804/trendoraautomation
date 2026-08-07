@@ -366,7 +366,7 @@ def privacy_page(): return render_template('privacy.html')
 
 @app.route('/data-deletion')
 def data_deletion_page(): 
-    return render_template('data_deletion_page.html')
+    return render_template('data_deletion.html')
 
 
 # ==========================================
@@ -538,7 +538,7 @@ def chat_api():
     pesan_user = data.get('pesan_user', '')
     
     if not HAS_GEMINI or not GEMINI_API_KEY:
-        return jsonify({"balasan": "Maaf, sistem AI sedang offline karena API Key belum dikonfigurasi di server."})
+        return jsonify({"balasan": "Maaf, sistem AI sedang offline karena API Key Gemini belum dikonfigurasi di server (Environment Variables)."})
     
     # Prompt Rahasia (Context) supaya Gemini tau cara bersikap
     system_instruction = """
@@ -758,7 +758,7 @@ def meta_callback():
             print("Meta OAuth Error:", e)
 
     return """
-    <html><body style="background:#0d0a1a;"><h2 style="color:#34d399;text-align:center;margin-top:50px;">Meta (Facebook & IG) Connected!</h2>
+    <html><body style="background:#0d0a1a;"><h2 style="color:#34d399;text-align:center;margin-top:50px;">Meta (Facebook & IG Connected!</h2>
     <script>if(window.opener){window.opener.postMessage({type:'OAUTH_SUCCESS', platform:'Meta'}, '*');window.close();}</script>
     </body></html>
     """
@@ -1702,8 +1702,11 @@ def n8n_webhook():
     sheet = get_logs_sheet()
     if sheet:
         try:
+            # Cari baris kosong di Kolom A
             col_a = sheet.col_values(1)
             next_row = len(col_a) + 1
+            
+            # Gunakan update range spesifik agar tidak terlempar ke kolom AC
             cell_range = f"A{next_row}:J{next_row}"
             sheet.update(values=[row_data], range_name=cell_range)
             

@@ -291,7 +291,6 @@ function sendChatMessage() {
 
   const userEmail = (globalUserData && globalUserData.email) ? globalUserData.email : 'guest@trendora.io';
   
-  // Nembak ke endpoint backend Flask kita sendiri!
   fetch('/api/chat', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
