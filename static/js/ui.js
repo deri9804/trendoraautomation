@@ -194,7 +194,6 @@ function renderLoggedInUI(user, autoNavigateToDashboard = true) {
   if (typeof loadWebhookUrl === 'function') loadWebhookUrl();
   if (typeof loadUserPostLogs === 'function') loadUserPostLogs();
   
-  // MERENDER DAFTAR SOSMED KETIKA LOGIN
   if (typeof renderSocialConnectionsUI === 'function') renderSocialConnectionsUI();
 }
 
@@ -214,6 +213,113 @@ function toggleFaq(element) {
     parentItem.classList.add('active');
     if (icon) icon.innerHTML = '&minus;';
   }
+}
+
+// ==========================================
+// LOGIKA CHAT WIDGET AI (Tembak ke n8n)
+// ==========================================
+function toggleChat() {
+  const chatWindow = document.getElementById('chatWindow');
+  const toggleBtn = document.getElementById('chatToggleBtn');
+  
+  if (chatWindow.style.display === 'none' || chatWindow.style.display === '') {
+    chatWindow.style.display = 'flex';
+    toggleBtn.innerHTML = '<span class="chat-icon" style="font-size:24px;">✖</span>';
+    
+    // Auto-focus ke input
+    setTimeout(() => {
+      document.getElementById('chatInput').focus();
+    }, 100);
+  } else {
+    chatWindow.style.display = 'none';
+    toggleBtn.innerHTML = '<span class="chat-icon">💬</span>';
+  }
+}
+
+function handleChatKeyPress(event) {
+  if (event.key === 'Enter') {
+    sendChatMessage();
+  }
+}
+
+function appendMessage(sender, text) {
+  const chatMessages = document.getElementById('chatMessages');
+  const msgDiv = document.createElement('div');
+  msgDiv.className = `chat-msg ${sender}`;
+  
+  if (sender === 'typing') {
+    msgDiv.id = 'typingIndicator';
+    msgDiv.innerHTML = `
+      <div class="typing-indicator">
+        <div class="typing-dot"></div>
+        <div class="typing-dot"></div>
+        <div class="typing-dot"></div>
+      </div>`;
+  } else {
+    // Render HTML dengan aman (bisa membaca URL dari AI)
+    msgDiv.innerHTML = `<div class="msg-bubble">${text}</div>`;
+  }
+  
+  chatMessages.appendChild(msgDiv);
+  chatMessages.scrollTop = chatMessages.scrollHeight; // Auto-scroll ke bawah
+}
+
+function removeTypingIndicator() {
+  const indicator = document.getElementById('typingIndicator');
+  if (indicator) indicator.remove();
+}
+
+function sendChatMessage() {
+  const input = document.getElementById('chatInput');
+  const message = input.value.trim();
+  
+  if (!message) return;
+  
+  // 1. Tampilkan pesan user di layar
+  appendMessage('user', message);
+  input.value = ''; // Kosongkan input
+  
+  // 2. Tampilkan indikator "Bot sedang mengetik..."
+  appendMessage('typing', '');
+
+  const userEmail = (globalUserData && globalUserData.email) ? globalUserData.email : 'guest@trendora.io';
+  
+  // ========================================================
+  // GANTI URL INI DENGAN WEBHOOK URL DARI WORKFLOW N8N LU!
+  // ========================================================
+  const n8nChatWebhookUrl = 'https://URL_WEBHOOK_N8N_LU_DISINI'; 
+
+  // Simulasi jika belum diganti ke URL asli (biar gak error)
+  if (n8nChatWebhookUrl === 'https://URL_WEBHOOK_N8N_LU_DISINI') {
+     setTimeout(() => {
+        removeTypingIndicator();
+        appendMessage('bot', 'Pesan kamu ("' + message + '") sudah diterima! ⚡<br><br><i>(Catatan Developer: Ganti variabel <b>n8nChatWebhookUrl</b> di file ui.js dengan URL webhook n8n lu biar gue beneran nyambung ke AI ya bro!)</i>');
+     }, 1500);
+     return;
+  }
+
+  // 3. Kirim data ke n8n
+  fetch(n8nChatWebhookUrl, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ 
+      pesan_user: message, 
+      email_user: userEmail,
+      sumber: 'web_chat_widget' 
+    })
+  })
+  .then(res => res.json())
+  .then(data => {
+    removeTypingIndicator();
+    // Asumsi n8n membalas dengan JSON: { "balasan": "Halo, saya AI..." }
+    const botReply = data.balasan || data.response || "Pesan diterima oleh sistem.";
+    appendMessage('bot', botReply);
+  })
+  .catch(err => {
+    removeTypingIndicator();
+    appendMessage('bot', "Waduh, maaf sepertinya koneksi ke server AI kami sedang terputus 😔");
+    console.error("Chat Error:", err);
+  });
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -248,3 +354,8 @@ window.closeApiModal = closeApiModal;
 window.showToast = showToast;
 window.renderLoggedInUI = renderLoggedInUI;
 window.toggleFaq = toggleFaq;
+
+// Global Window Hooks untuk Chat
+window.toggleChat = toggleChat;
+window.handleChatKeyPress = handleChatKeyPress;
+window.sendChatMessage = sendChatMessage;

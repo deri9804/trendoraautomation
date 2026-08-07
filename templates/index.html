@@ -31,6 +31,39 @@
 
   {% include 'apiKeyModal.html' %}
 
+  <!-- WIDGET LIVE CHAT BOT -->
+  <div id="trendora-chat-widget" class="chat-widget-container">
+    <div id="chatWindow" class="chat-window" style="display: none;">
+      <div class="chat-header">
+        <div class="chat-header-info">
+          <span class="chat-bot-icon">🤖</span>
+          <div>
+            <h4>Trendora AI Support</h4>
+            <p>Online</p>
+          </div>
+        </div>
+        <button onclick="toggleChat()" class="close-chat-btn">&times;</button>
+      </div>
+      
+      <div id="chatMessages" class="chat-messages">
+        <div class="chat-msg bot">
+          <div class="msg-bubble">Halo! Saya AI Agent Support Trendora. Ada keluhan atau pertanyaan tentang web automasi ini yang bisa saya bantu? 🚀</div>
+        </div>
+      </div>
+      
+      <div class="chat-input-area">
+        <input type="text" id="chatInput" placeholder="Ketik pesan..." onkeypress="handleChatKeyPress(event)" />
+        <button onclick="sendChatMessage()" class="send-chat-btn">
+          <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+        </button>
+      </div>
+    </div>
+    
+    <button id="chatToggleBtn" onclick="toggleChat()" class="chat-toggle-btn">
+      <span class="chat-icon">💬</span>
+    </button>
+  </div>
+
   <!-- SCRIPT REAL MIDTRANS SNAP -->
   <!-- URL SNAP Production dan Client Key hasil ekstrak gambar -->
   <script src="https://app.midtrans.com/snap/snap.js" data-client-key="Mid-client-cNBEMqcP3nVAyEzI"></script>

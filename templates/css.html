@@ -32,13 +32,13 @@
     background: linear-gradient(90deg, #facc15 0%, #ec4899 50%, #8b5cf6 100%);
     color: #000;
     text-align: center;
-    padding: 6px 16px; /* Padding atas bawah dikecilin */
-    font-size: 12px; /* Ukuran font dikecilin sedikit */
+    padding: 6px 16px; 
+    font-size: 12px; 
     font-weight: 700;
     display: flex;
     justify-content: center;
     align-items: center;
-    gap: 8px; /* Jarak antar elemen dirapatkan */
+    gap: 8px; 
   }
 
   .banner-badge {
@@ -52,24 +52,24 @@
     background: #ec4899;
     color: #fff;
     border: none;
-    padding: 3px 10px; /* Padding tombol dikecilin */
+    padding: 3px 10px; 
     border-radius: 12px;
     font-weight: 600;
     cursor: pointer;
-    font-size: 11px; /* Font tombol dikecilin */
+    font-size: 11px; 
   }
 
   .navbar {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 10px 8%; /* Padding atas bawah navbar dikurangi signifikan */
+    padding: 10px 8%; 
     max-width: 1400px;
     margin: 0 auto;
   }
 
   .logo { font-size: 18px; font-weight: 900; letter-spacing: 1px; color: #fff; display: flex; align-items: center; gap: 12px; }
-  .logo img { height: 55px !important; width: auto; object-fit: contain; } /* LOGO DIPERBESAR */
+  .logo img { height: 55px !important; width: auto; object-fit: contain; } 
   
   .nav-links { display: flex; gap: 24px; list-style: none; }
   .nav-links a { color: #9ca3af; text-decoration: none; font-size: 14px; transition: color 0.3s; }
@@ -865,68 +865,6 @@
     font-size: 12px;
   }
 
-  .generic-auth-wrapper {
-    background: #ffffff;
-    color: #0f172a;
-    padding: 32px 32px 24px 32px;
-  }
-
-  .generic-auth-header {
-    text-align: center;
-    margin-bottom: 24px;
-  }
-
-  .generic-auth-logo {
-    font-size: 32px;
-    margin-bottom: 12px;
-  }
-
-  .generic-auth-title {
-    font-size: 22px;
-    font-weight: 800;
-    color: #0f172a;
-    margin-bottom: 6px;
-  }
-
-  .generic-auth-sub {
-    font-size: 13px;
-    color: #64748b;
-  }
-
-  .generic-form-input {
-    width: 100%;
-    background: #f8fafc;
-    border: 1px solid #cbd5e1;
-    border-radius: 8px;
-    padding: 12px 14px;
-    font-size: 14px;
-    color: #0f172a;
-    margin-bottom: 12px;
-    outline: none;
-  }
-
-  .generic-form-input:focus {
-    border-color: #2563eb;
-  }
-
-  .btn-generic-submit {
-    width: 100%;
-    background: #2563eb;
-    color: #ffffff;
-    border: none;
-    padding: 13px;
-    border-radius: 8px;
-    font-size: 14px;
-    font-weight: 700;
-    cursor: pointer;
-    margin-top: 8px;
-    transition: background 0.2s;
-  }
-
-  .btn-generic-submit:hover {
-    background: #1d4ed8;
-  }
-
   .legal-modal-card {
     max-width: 760px !important;
     max-height: 85vh;
@@ -1008,6 +946,46 @@
     color: #f472b6;
   }
 
+  /* CHAT WIDGET STYLES */
+  .chat-widget-container { position: fixed; bottom: 30px; right: 30px; z-index: 9999; font-family: 'Inter', sans-serif; }
+  
+  .chat-toggle-btn { width: 60px; height: 60px; border-radius: 50%; background: linear-gradient(135deg, #ec4899, #8b5cf6); border: none; color: white; font-size: 28px; cursor: pointer; box-shadow: 0 10px 25px rgba(236, 72, 153, 0.4); transition: transform 0.3s; display: flex; justify-content: center; align-items: center; }
+  .chat-toggle-btn:hover { transform: scale(1.1); }
+  
+  .chat-window { width: 350px; height: 500px; background: #0f1524; border: 1px solid rgba(236, 72, 153, 0.4); border-radius: 20px; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 20px 50px rgba(0,0,0,0.6); position: absolute; bottom: 80px; right: 0; transform-origin: bottom right; animation: chatAppear 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+  @keyframes chatAppear { from { opacity: 0; transform: scale(0.5); } to { opacity: 1; transform: scale(1); } }
+  
+  .chat-header { background: linear-gradient(90deg, #182032, #0d0a1a); padding: 16px; border-bottom: 1px solid rgba(255,255,255,0.08); display: flex; justify-content: space-between; align-items: center; }
+  .chat-header-info { display: flex; align-items: center; gap: 12px; }
+  .chat-bot-icon { font-size: 22px; background: rgba(236, 72, 153, 0.2); width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border-radius: 50%; }
+  .chat-header h4 { color: #fff; font-size: 15px; margin: 0 0 2px 0; font-weight: 700; }
+  .chat-header p { color: #34d399; font-size: 11px; margin: 0; font-weight: 600; }
+  .close-chat-btn { background: transparent; border: none; color: #9ca3af; font-size: 26px; cursor: pointer; transition: color 0.2s; line-height: 1; }
+  .close-chat-btn:hover { color: #fff; }
+  
+  .chat-messages { flex: 1; padding: 16px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
+  .chat-messages::-webkit-scrollbar { width: 6px; }
+  .chat-messages::-webkit-scrollbar-thumb { background: rgba(236, 72, 153, 0.3); border-radius: 4px; }
+  
+  .chat-msg { display: flex; max-width: 85%; }
+  .chat-msg.bot { align-self: flex-start; }
+  .chat-msg.user { align-self: flex-end; }
+  .msg-bubble { padding: 10px 14px; border-radius: 14px; font-size: 13px; line-height: 1.5; word-wrap: break-word; }
+  .chat-msg.bot .msg-bubble { background: #1e293b; color: #e2e8f0; border-bottom-left-radius: 4px; border: 1px solid rgba(255,255,255,0.05); }
+  .chat-msg.user .msg-bubble { background: #ec4899; color: #fff; border-bottom-right-radius: 4px; box-shadow: 0 4px 10px rgba(236, 72, 153, 0.3); }
+  
+  .chat-input-area { padding: 14px; background: #182032; border-top: 1px solid rgba(255,255,255,0.08); display: flex; gap: 10px; }
+  .chat-input-area input { flex: 1; background: #0f1524; border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 10px 14px; color: #fff; font-size: 13px; outline: none; transition: border 0.2s; }
+  .chat-input-area input:focus { border-color: #ec4899; }
+  .send-chat-btn { background: #ec4899; color: #fff; border: none; width: 40px; height: 40px; border-radius: 12px; display: flex; justify-content: center; align-items: center; cursor: pointer; transition: background 0.2s; }
+  .send-chat-btn:hover { background: #d946ef; }
+  
+  .typing-indicator { display: flex; gap: 4px; padding: 12px 14px; background: #1e293b; border-radius: 14px; border-bottom-left-radius: 4px; width: fit-content; align-self: flex-start; }
+  .typing-dot { width: 6px; height: 6px; background: #9ca3af; border-radius: 50%; animation: typing 1.4s infinite ease-in-out both; }
+  .typing-dot:nth-child(1) { animation-delay: -0.32s; }
+  .typing-dot:nth-child(2) { animation-delay: -0.16s; }
+  @keyframes typing { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1); } }
+
   @media (max-width: 900px) {
     .hero { grid-template-columns: 1fr; padding-top: 120px; }
     .nav-links { display: none; }
@@ -1035,11 +1013,11 @@
     .user-profile-badge #navUserName { max-width: 70px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .auth-buttons .btn-secondary { padding: 6px 8px !important; font-size: 10px !important; white-space: nowrap; }
 
-    /* PERBAIKAN 3: KOTAK DASHBOARD & LOG (Lebar disamakan & bebas overlap) */
+    /* PERBAIKAN 3: KOTAK DASHBOARD & LOG */
     .dashboard-hero-card {
       grid-template-columns: 1fr !important;
       padding: 16px !important;
-      margin-top: 10px !important; /* Mencegah tertutup header */
+      margin-top: 10px !important; 
       width: 100% !important;
       box-sizing: border-box !important;
     }
@@ -1048,5 +1026,12 @@
     .dash-welcome h2 { font-size: 22px !important; }
     .dash-key-card { padding: 16px !important; width: 100% !important; box-sizing: border-box !important; }
     .key-display-box { flex-direction: column; align-items: flex-start !important; word-break: break-all; }
+  }
+
+  @media (max-width: 480px) {
+    /* CHAT WIDGET RESPONSIVE MOBILE */
+    .chat-window { width: 320px; height: 450px; bottom: 75px; right: 0; border-radius: 16px; }
+    .chat-toggle-btn { width: 50px; height: 50px; font-size: 24px; }
+    .chat-widget-container { bottom: 20px; right: 20px; }
   }
 </style>
