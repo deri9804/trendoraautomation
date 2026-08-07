@@ -19,6 +19,16 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from flask import Response, stream_with_context, redirect
 
+# TAMBAHAN UNTUK GEMINI API
+try:
+    import google.generativeai as genai
+    HAS_GEMINI = True
+    GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
+    if GEMINI_API_KEY:
+        genai.configure(api_key=GEMINI_API_KEY)
+except ImportError:
+    HAS_GEMINI = False
+
 try:
     import gspread
     from google.oauth2.service_account import Credentials
@@ -28,7 +38,6 @@ except ImportError:
 
 app = Flask(__name__)
 CORS(app) 
-
 
 # ==========================================
 # KONFIGURASI DATABASE GOOGLE SHEETS
@@ -519,6 +528,50 @@ def get_me():
             "connectedPlatforms": connected_platforms
         }
     })
+
+# ==========================================
+# API ENDPOINT UNTUK CHAT GEMINI AI
+# ==========================================
+@app.route('/api/chat', methods=['POST'])
+def chat_api():
+    data = request.json or {}
+    pesan_user = data.get('pesan_user', '')
+    
+    if not HAS_GEMINI or not GEMINI_API_KEY:
+        return jsonify({"balasan": "Maaf, sistem AI sedang offline karena API Key belum dikonfigurasi di server."})
+    
+    # Prompt Rahasia (Context) supaya Gemini tau cara bersikap
+    system_instruction = """
+    Kamu adalah "Trendora AI", Customer Service resmi dari platform TRENDORA AUTOMATION.
+    Trendora adalah web layanan API automasi yang menghubungkan n8n ke berbagai sosial media (TikTok, YouTube, FB, IG, LinkedIn, Twitter, Threads) secara otomatis (Direct Post).
+    Harga paket: 
+    - Starter: Rp 150.000/bulan
+    - Creator: Rp 200.000/bulan (paling laris)
+    - Agency: Rp 250.000/bulan.
+    Ada free trial 7 hari tapi API Key akan terkunci (hanya view-only). Untuk unlock API Key, harus berlangganan.
+    
+    Aturan menjawab:
+    1. Jawab dengan ramah, profesional, tapi santai khas startup Indonesia (gunakan sapaan 'Kak' atau 'Kamu').
+    2. Jika ditanya cara kerja: Jawab bahwa user cukup install 'n8n-nodes-automedia' di n8n, masukkan API key, lalu kirim webhook. Trendora yang urus upload videonya.
+    3. Jika ditanya pertanyaan teknis di luar Trendora, arahkan sopan untuk kembali membahas automasi sosmed.
+    4. Jawablah sesingkat dan sejelas mungkin, jangan terlalu panjang.
+    5. Gunakan format markdown dasar jika perlu (bold, list).
+    """
+    
+    try:
+        # Inisialisasi model dengan instruksi khusus
+        model = genai.GenerativeModel(
+            model_name='gemini-1.5-flash',
+            system_instruction=system_instruction
+        )
+        
+        # Eksekusi prompt
+        response = model.generate_content(pesan_user)
+        
+        return jsonify({"balasan": response.text})
+    except Exception as e:
+        print(f"Error Gemini: {str(e)}")
+        return jsonify({"balasan": "Waduh kak, maaf banget ada gangguan koneksi ke otak AI kami nih. Coba lagi sebentar lagi ya! 🙏"})
 
 
 # ==========================================
@@ -1406,8 +1459,8 @@ def n8n_webhook():
                     if idx == 0: continue
                     if len(row) >= 5 and row[4].strip() == api_key:
                         yt_tokens = {
-                            'access_token': row[11] if len(row) >= 12 else None, # Index 11 = Access Token
-                            'refresh_token': row[12] if len(row) >= 13 else None # Index 12 = Refresh Token
+                            'access_token': row[11] if len(row) >= 12 else None, 
+                            'refresh_token': row[12] if len(row) >= 13 else None 
                         }
             except Exception as e:
                 print(f"GSheet Get YT Tokens Error: {e}")
@@ -1433,9 +1486,9 @@ def n8n_webhook():
                     }
                     body = {
                         "snippet": {
-                            "title": caption[:100], # YouTube Title max 100 char
+                            "title": caption[:100], 
                             "description": caption,
-                            "categoryId": "22" # Kategori People & Blogs
+                            "categoryId": "22" 
                         },
                         "status": {
                             "privacyStatus": "public",
@@ -1463,7 +1516,6 @@ def n8n_webhook():
                         yt_res = json.loads(res_upload.read().decode('utf-8'))
                         return yt_res
                 finally:
-                    # Hapus file sampah video
                     if os.path.exists(temp_file_path):
                         try: os.remove(temp_file_path)
                         except: pass
@@ -1493,7 +1545,6 @@ def n8n_webhook():
                             new_access_token = ref_data.get('access_token')
                             
                             if new_access_token:
-                                # Update token baru ke Google Sheets
                                 if sheet:
                                     all_vals = sheet.get_all_values()
                                     for idx, row in enumerate(all_vals):
@@ -1502,7 +1553,6 @@ def n8n_webhook():
                                             sheet.update_cell(idx + 1, 12, new_access_token)
                                             break
                                 
-                                # 3. COBA UPLOAD ULANG DENGAN TOKEN BARU
                                 yt_result_retry = attempt_youtube_upload(new_access_token)
                                 status = "PUBLISHED (SUCCESS)"
                                 details['yt_status'] = "Sukses dengan Auto-Refresh Token"
@@ -1619,7 +1669,7 @@ def n8n_webhook():
 
 
     # -----------------------------------------------------
-    # LOGGING KE DATABASE DENGAN PENENTUAN RANGE A-J (Mencegah pergeseran cell)
+    # LOGGING KE DATABASE 
     # -----------------------------------------------------
     media_url_val = ""
     caption_val = ""
