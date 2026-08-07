@@ -530,7 +530,7 @@ def get_me():
     })
 
 # ==========================================
-# API ENDPOINT UNTUK CHAT GEMINI AI
+# API ENDPOINT UNTUK CHAT GEMINI AI DENGAN AUTO-FALLBACK
 # ==========================================
 @app.route('/api/chat', methods=['POST'])
 def chat_api():
@@ -559,23 +559,40 @@ def chat_api():
     """
     
     try:
-        # Inisialisasi model dengan instruksi khusus
+        # PERCOBAAN 1: Menggunakan model 1.5 Flash dengan akhiran "-latest"
         model = genai.GenerativeModel(
-            model_name='gemini-1.5-flash',
+            model_name='gemini-1.5-flash-latest',
             system_instruction=system_instruction
         )
-        
-        # Eksekusi prompt
         response = model.generate_content(pesan_user)
-        
         return jsonify({"balasan": response.text})
+        
     except Exception as e:
-        # PENTING: KITA TAMBAHKAN TANGKAPAN ERROR DETAIL KE BALASAN BIAR BISA DI DEBUG
         error_detail = str(e)
-        print(f"Error Gemini: {error_detail}")
-        return jsonify({
-            "balasan": f"Waduh kak, maaf banget ada gangguan koneksi ke otak AI kami nih. \n\n**(DEBUG ERROR DARI GOOGLE: {error_detail})**\n\nCoba lagi sebentar lagi ya! 🙏"
-        })
+        print(f"Error Gemini Utama: {error_detail}")
+        
+        # JIKA ERROR 404 (Model tidak ditemukan), KITA JALANKAN BACKUP PLAN!
+        if "404" in error_detail or "not found" in error_detail.lower():
+            try:
+                # PERCOBAAN 2: Menggunakan model "gemini-pro" klasik yang 100% selalu ada di semua akun API Google
+                model_fallback = genai.GenerativeModel(model_name='gemini-pro')
+                
+                # Karena gemini-pro klasik di versi lama kadang nggak support parameter system_instruction, 
+                # kita akali dengan menggabungkan instruksi langsung ke dalam prompt pengguna.
+                prompt_gabungan = f"INSTRUKSI SISTEM UNTUKMU (PENTING):\n{system_instruction}\n\n---\n\nPERTANYAAN PENGGUNA:\n{pesan_user}"
+                
+                response = model_fallback.generate_content(prompt_gabungan)
+                return jsonify({"balasan": response.text})
+                
+            except Exception as fallback_error:
+                return jsonify({
+                    "balasan": f"Waduh kak, otak AI versi backup juga gagal nih. \n\n**(DEBUG ERROR BACKUP: {str(fallback_error)})**\n\nCoba lagi ya! 🙏"
+                })
+        else:
+            # Jika errornya BUKAN 404 (Misal salah API Key, server Google down, dsb)
+            return jsonify({
+                "balasan": f"Waduh kak, maaf banget ada gangguan koneksi ke otak AI kami nih. \n\n**(DEBUG ERROR GOOGLE: {error_detail})**\n\nCoba lagi sebentar lagi ya! 🙏"
+            })
 
 
 # ==========================================
@@ -1398,7 +1415,7 @@ def n8n_webhook():
                                             }
                                         ]
                                     }
-                                },
+                                }
                                 "visibility": {"com.linkedin.ugc.MemberNetworkVisibility": "PUBLIC"}
                             }
                         else:
