@@ -436,8 +436,20 @@ def reset_2fa_qr():
     if not old_data: return jsonify({"success": False, "message": "Email tidak ditemukan!"})
     
     new_secret = generate_base32_secret()
-    db_save_user(email, new_secret, False, old_data.get('name', ''), old_data.get('api_key', ''), old_data.get('status', ''))
-    return jsonify({"success": True, "message": "Reset berhasil."})
+    
+    # --- REVISI: QR Code Reset tidak ditampilkan di UI, melainkan dikirim ke Email ---
+    issuer = "TRENDORA"
+    totp_uri = f"otpauth://totp/{issuer}:{email}?secret={new_secret}&issuer={issuer}"
+    qr_code_url = f"https://api.qrserver.com/v1/create-qr-code/?size=200x200&data={urllib.parse.quote(totp_uri)}"
+    
+    is_sent = send_email_qr(email, qr_code_url, new_secret)
+    
+    if is_sent:
+        # Set is_linked = True secara otomatis agar form login TIDAK memunculkan container QR Code lagi
+        db_save_user(email, new_secret, True, old_data.get('name', ''), old_data.get('api_key', ''), old_data.get('status', ''))
+        return jsonify({"success": True, "message": "QR Code 2FA baru telah dikirim ke Email Anda! Silakan cek Inbox/Spam."})
+    else:
+        return jsonify({"success": False, "message": "Gagal mengirim email. Pastikan Environment SMTP_PASSWORD sudah diatur di Vercel."})
 
 @app.route('/api/register-trial', methods=['POST'])
 def register_trial():
@@ -1544,14 +1556,14 @@ def n8n_webhook():
 
 
     # -----------------------------------------------------
-    # LOGGING KE DATABASE (TER-ISOLASI PER USER)
+    # LOGGING KE DATABASE DENGAN PAKSAAN RANGE A-J
     # -----------------------------------------------------
     media_url_val = ""
     caption_val = ""
     hashtag_val = ""
     
     if isinstance(details, dict):
-        # Gunakan .pop() untuk mencabut data dari 'details' agar pindah ke kolom baru
+        # Cabut properti agar rapi masuk ke kolom sendiri
         media_url_val = details.pop('media_url', '')
         caption_val = details.pop('caption', '')
         hashtag_val = details.pop('hashtag', '')
@@ -1562,7 +1574,7 @@ def n8n_webhook():
     timestamp = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
     log_id = f"LOG-{uuid.uuid4().hex[:8].upper()}"
     
-    # SUSUNAN DATA VERTICAL (Sesuaikan dengan urutan Kolom Google Sheets Lu)
+    # Kumpulan array ini bakal ditembak dari A sampai J berurutan
     row_data = [
         timestamp,       # Kolom A
         log_id,          # Kolom B
@@ -1570,7 +1582,7 @@ def n8n_webhook():
         platform,        # Kolom D
         status,          # Kolom E
         details_str,     # Kolom F
-        "",              # Kolom G (Keterangan - sengaja dikosongkan)
+        "",              # Kolom G (Keterangan)
         media_url_val,   # Kolom H (Media URL)
         caption_val,     # Kolom I (Caption)
         hashtag_val      # Kolom J (Hashtag)
@@ -1579,11 +1591,11 @@ def n8n_webhook():
     sheet = get_logs_sheet()
     if sheet:
         try:
-            # Hitung baris kosong terakhir berdasarkan Kolom A
+            # Cari baris paling akhir berdasarkan Kolom A saja (agar tidak tertipu kolom lain yang ada spasinya)
             col_a = sheet.col_values(1)
             next_row = len(col_a) + 1
             
-            # Tembak data spesifik ke range A sampai J di baris kosong tersebut
+            # Update secara paksa/tepat sasaran ke baris tersebut
             cell_range = f"A{next_row}:J{next_row}"
             sheet.update(values=[row_data], range_name=cell_range)
             

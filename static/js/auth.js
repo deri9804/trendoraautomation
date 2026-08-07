@@ -346,6 +346,7 @@ function handleVerifyOTP(event) {
   });
 }
 
+/* --- REVISI: Fungsi handleReset2FA diperbarui untuk mengakomodasi QR code hanya via Email --- */
 function handleReset2FA() {
   const emailInput = document.getElementById('loginEmail');
   const email = emailInput ? emailInput.value.trim() : '';
@@ -354,7 +355,7 @@ function handleReset2FA() {
     return;
   }
   
-  showToast("Memproses reset Google Authenticator...", "#f59e0b");
+  showToast("Memproses reset & mengirim email...", "#f59e0b");
   
   fetch('/api/reset-2fa-qr', {
     method: 'POST',
@@ -365,6 +366,13 @@ function handleReset2FA() {
   .then(data => {
     if (data.success) {
       showToast(data.message, "#34d399");
+      
+      // Paksa sembunyikan container QR jika sebelumnya masih nyala
+      const qrContainer = document.getElementById('qrCodeContainer');
+      if (qrContainer) qrContainer.style.display = 'none';
+      
+      // Trigger klik "Kirim OTP" ulang agar state UI ter-update, 
+      // (karena is_linked sudah diset = True oleh backend, dia akan otomatis memunculkan kolom OTP tanpa QR)
       const btnOtp = document.getElementById('btnRequestOTP');
       if (btnOtp) btnOtp.click();
     } else {
