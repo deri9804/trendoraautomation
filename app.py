@@ -29,6 +29,7 @@ except ImportError:
 app = Flask(__name__)
 CORS(app) 
 
+
 # ==========================================
 # KONFIGURASI DATABASE GOOGLE SHEETS
 # ==========================================
@@ -61,6 +62,7 @@ THREADS_CLIENT_SECRET = os.environ.get("THREADS_CLIENT_SECRET")
 # KONFIGURASI TWITTER
 TWITTER_CLIENT_ID = os.environ.get("TWITTER_CLIENT_ID")
 TWITTER_CLIENT_SECRET = os.environ.get("TWITTER_CLIENT_SECRET")
+
 
 def get_gsheet():
     """Koneksi ke Google Sheets (Sheet Utama)."""
@@ -263,6 +265,7 @@ def db_get_twitter_token_by_api_key(api_key):
             print(f"GSheet Get Twitter Token Error: {e}")
     return None
 
+
 # ==========================================
 # KONFIGURASI SMTP EMAIL (GMAIL)
 # ==========================================
@@ -353,6 +356,7 @@ def privacy_page(): return render_template('privacy.html')
 @app.route('/data-deletion')
 def data_deletion_page(): 
     return render_template('data_deletion_page.html')
+
 
 # ==========================================
 # AUTHENTICATION & API KEY ROUTES
@@ -502,6 +506,7 @@ def get_me():
             "connectedPlatforms": connected_platforms
         }
     })
+
 
 # ==========================================
 # REAL TIKTOK OAUTH
@@ -981,6 +986,7 @@ def create_transaction():
 def check_payment():
     return jsonify({"success": True, "isPaid": False})
 
+
 # ==========================================
 # WEBHOOK LISTENER DARI N8N 
 # ==========================================
@@ -1309,7 +1315,7 @@ def n8n_webhook():
             details['linkedin_error'] = "Token LinkedIn tidak valid atau belum terhubung."
 
     # -----------------------------------------------------
-    # LOGIKA 3: POSTING KE YOUTUBE (SHORTS/VIDEO)
+    # LOGIKA 5: POSTING KE YOUTUBE (SHORTS/VIDEO)
     # -----------------------------------------------------
     elif platform == 'youtube' and isinstance(details, dict):
         media_url = details.get('media_url')
@@ -1325,8 +1331,8 @@ def n8n_webhook():
                     if idx == 0: continue
                     if len(row) >= 5 and row[4].strip() == api_key:
                         yt_tokens = {
-                            'access_token': row[10] if len(row) >= 11 else None, # Index 10 = Access Token
-                            'refresh_token': row[11] if len(row) >= 12 else None # Index 11 = Refresh Token
+                            'access_token': row[11] if len(row) >= 12 else None, # Index 11 = Access Token
+                            'refresh_token': row[12] if len(row) >= 13 else None # Index 12 = Refresh Token
                         }
             except Exception as e:
                 print(f"GSheet Get YT Tokens Error: {e}")
@@ -1418,7 +1424,7 @@ def n8n_webhook():
                                     for idx, row in enumerate(all_vals):
                                         if idx == 0: continue
                                         if len(row) >= 5 and row[4].strip() == api_key:
-                                            sheet.update_cell(idx + 1, 11, new_access_token)
+                                            sheet.update_cell(idx + 1, 12, new_access_token)
                                             break
                                 
                                 # 3. COBA UPLOAD ULANG DENGAN TOKEN BARU
@@ -1440,6 +1446,7 @@ def n8n_webhook():
         else:
             status = "FAILED"
             details['yt_error'] = "Token YouTube tidak valid atau belum login."
+            
     # -----------------------------------------------------
     # LOGIKA 6: POSTING KE THREADS
     # -----------------------------------------------------
@@ -1535,6 +1542,7 @@ def n8n_webhook():
             status = "FAILED"
             details['twitter_error'] = "Token Twitter tidak valid."
 
+
     # -----------------------------------------------------
     # LOGGING KE DATABASE (TER-ISOLASI PER USER)
     # -----------------------------------------------------
@@ -1571,7 +1579,14 @@ def n8n_webhook():
     sheet = get_logs_sheet()
     if sheet:
         try:
-            sheet.append_row(row_data)
+            # Hitung baris kosong terakhir berdasarkan Kolom A
+            col_a = sheet.col_values(1)
+            next_row = len(col_a) + 1
+            
+            # Tembak data spesifik ke range A sampai J di baris kosong tersebut
+            cell_range = f"A{next_row}:J{next_row}"
+            sheet.update(values=[row_data], range_name=cell_range)
+            
             return jsonify({"success": True, "message": "Processed & Logged", "log_id": log_id})
         except Exception as e:
             return jsonify({"success": False, "message": str(e)}), 500
