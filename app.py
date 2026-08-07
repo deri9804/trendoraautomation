@@ -19,7 +19,6 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from flask import Response, stream_with_context, redirect
 
-# TAMBAHAN UNTUK GEMINI API
 try:
     import google.generativeai as genai
     HAS_GEMINI = True
@@ -39,9 +38,6 @@ except ImportError:
 app = Flask(__name__)
 CORS(app) 
 
-# ==========================================
-# KONFIGURASI DATABASE GOOGLE SHEETS
-# ==========================================
 GOOGLE_SHEET_ID = "1P0zTEwtMmWfxhHAY6-QbQd5to6Id1rzazgel-PiSJwI" 
 SERVICE_ACCOUNT_FILE = "service_account.json" 
 
@@ -276,9 +272,6 @@ def db_get_twitter_token_by_api_key(api_key):
     return None
 
 
-# ==========================================
-# KONFIGURASI SMTP EMAIL (GMAIL)
-# ==========================================
 SMTP_EMAIL = os.environ.get("SMTP_EMAIL", "trendoraautomation@gmail.com") 
 SMTP_PASSWORD = os.environ.get("SMTP_PASSWORD", "") 
 
@@ -340,9 +333,6 @@ MIDTRANS_API_URL = "https://app.midtrans.com/snap/v1/transactions"
 MIDTRANS_SERVER_KEY = os.environ.get("MIDTRANS_SERVER_KEY", "Mid-server-zF-SefFUBo7r1t-qcRPzdBEr_DUMMY")
 
 
-# ==========================================
-# FLASK ROUTES (Frontend)
-# ==========================================
 @app.route('/')
 def index(): return render_template('index.html')
 
@@ -369,9 +359,6 @@ def data_deletion_page():
     return render_template('data_deletion.html')
 
 
-# ==========================================
-# AUTHENTICATION & API KEY ROUTES
-# ==========================================
 @app.route('/api/request-otp', methods=['POST'])
 def request_otp():
     email = request.json.get('email', '').strip().lower()
@@ -529,16 +516,13 @@ def get_me():
         }
     })
 
-# ==========================================
-# API ENDPOINT UNTUK CHAT GEMINI AI DENGAN AUTO-FALLBACK
-# ==========================================
 @app.route('/api/chat', methods=['POST'])
 def chat_api():
     data = request.json or {}
     pesan_user = data.get('pesan_user', '')
     
     if not HAS_GEMINI or not GEMINI_API_KEY:
-        return jsonify({"balasan": "Maaf, sistem AI sedang offline karena API Key Gemini belum dikonfigurasi di server (Environment Variables)."})
+        return jsonify({"balasan": "Maaf kak, sistem AI sedang offline karena API Key Gemini belum dikonfigurasi di server."})
     
     # Prompt Rahasia (Context) supaya Gemini tau cara bersikap
     system_instruction = """
@@ -559,9 +543,9 @@ def chat_api():
     """
     
     try:
-        # PERCOBAAN 1: Menggunakan model 1.5 Flash dengan akhiran "-latest"
+        # PERCOBAAN 1: Menggunakan model 1.5 Flash
         model = genai.GenerativeModel(
-            model_name='gemini-1.5-flash-latest',
+            model_name='gemini-1.5-flash',
             system_instruction=system_instruction
         )
         response = model.generate_content(pesan_user)
@@ -574,11 +558,10 @@ def chat_api():
         # JIKA ERROR 404 (Model tidak ditemukan), KITA JALANKAN BACKUP PLAN!
         if "404" in error_detail or "not found" in error_detail.lower():
             try:
-                # PERCOBAAN 2: Menggunakan model "gemini-pro" klasik yang 100% selalu ada di semua akun API Google
+                # PERCOBAAN 2: Menggunakan model "gemini-pro" klasik 
                 model_fallback = genai.GenerativeModel(model_name='gemini-pro')
                 
-                # Karena gemini-pro klasik di versi lama kadang nggak support parameter system_instruction, 
-                # kita akali dengan menggabungkan instruksi langsung ke dalam prompt pengguna.
+                # Menggabungkan instruksi langsung ke dalam prompt pengguna
                 prompt_gabungan = f"INSTRUKSI SISTEM UNTUKMU (PENTING):\n{system_instruction}\n\n---\n\nPERTANYAAN PENGGUNA:\n{pesan_user}"
                 
                 response = model_fallback.generate_content(prompt_gabungan)
@@ -589,15 +572,11 @@ def chat_api():
                     "balasan": f"Waduh kak, otak AI versi backup juga gagal nih. \n\n**(DEBUG ERROR BACKUP: {str(fallback_error)})**\n\nCoba lagi ya! 🙏"
                 })
         else:
-            # Jika errornya BUKAN 404 (Misal salah API Key, server Google down, dsb)
             return jsonify({
                 "balasan": f"Waduh kak, maaf banget ada gangguan koneksi ke otak AI kami nih. \n\n**(DEBUG ERROR GOOGLE: {error_detail})**\n\nCoba lagi sebentar lagi ya! 🙏"
             })
 
 
-# ==========================================
-# DISCONNECT SOCIAL MEDIA ROUTE
-# ==========================================
 @app.route('/api/disconnect-social', methods=['POST'])
 def disconnect_social():
     data = request.json or {}
@@ -655,9 +634,6 @@ def disconnect_social():
     return jsonify({"success": False, "message": "Email tidak ditemukan"})
 
 
-# ==========================================
-# REAL TIKTOK OAUTH
-# ==========================================
 @app.route('/api/tiktok-auth-url', methods=['GET'])
 def get_tiktok_auth_url():
     email = request.args.get('email', '').strip()
@@ -721,9 +697,6 @@ def tiktok_callback():
     </body></html>
     """
 
-# ==========================================
-# REAL META (FB & IG) OAUTH
-# ==========================================
 @app.route('/api/meta-auth-url', methods=['GET'])
 def get_meta_auth_url():
     email = request.args.get('email', '').strip()
@@ -830,9 +803,6 @@ def twitter_webhook():
         print("Menerima Event dari Twitter Webhook:", payload)
         return "EVENT_RECEIVED", 200
 
-# ==========================================
-# REAL LINKEDIN OAUTH
-# ==========================================
 @app.route('/api/linkedin-auth-url', methods=['GET'])
 def get_linkedin_auth_url():
     email = request.args.get('email', '').strip()
@@ -891,9 +861,6 @@ def linkedin_callback():
     </body></html>
     """
 
-# ==========================================
-# REAL YOUTUBE (GOOGLE) OAUTH
-# ==========================================
 @app.route('/api/youtube-auth-url', methods=['GET'])
 def get_youtube_auth_url():
     email = request.args.get('email', '').strip()
@@ -957,9 +924,6 @@ def youtube_callback():
     </body></html>
     """
 
-# ==========================================
-# REAL THREADS OAUTH
-# ==========================================
 @app.route('/api/threads-auth-url', methods=['GET'])
 def get_threads_auth_url():
     email = request.args.get('email', '').strip()
@@ -1018,9 +982,6 @@ def threads_callback():
     </body></html>
     """
 
-# ==========================================
-# REAL TWITTER (X) OAUTH 2.0
-# ==========================================
 @app.route('/api/twitter-auth-url', methods=['GET'])
 def get_twitter_auth_url():
     email = request.args.get('email', '').strip()
@@ -1087,9 +1048,6 @@ def twitter_callback():
     """
 
 
-# ==========================================
-# TRANSACTIONS LOGIC (MIDTRANS)
-# ==========================================
 @app.route('/api/create-transaction', methods=['POST'])
 def create_transaction():
     data = request.json or {}
@@ -1136,9 +1094,6 @@ def check_payment():
 
 
 
-# ==========================================
-# WEBHOOK LISTENER DARI N8N 
-# ==========================================
 @app.route('/api/n8n-webhook', methods=['GET', 'POST'], strict_slashes=False)
 def n8n_webhook():
     if request.method == 'GET':
@@ -1415,7 +1370,7 @@ def n8n_webhook():
                                             }
                                         ]
                                     }
-                                }
+                                },
                                 "visibility": {"com.linkedin.ugc.MemberNetworkVisibility": "PUBLIC"}
                             }
                         else:
@@ -1689,9 +1644,6 @@ def n8n_webhook():
             details['twitter_error'] = "Token Twitter tidak valid."
 
 
-    # -----------------------------------------------------
-    # LOGGING KE DATABASE 
-    # -----------------------------------------------------
     media_url_val = ""
     caption_val = ""
     hashtag_val = ""
