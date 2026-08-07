@@ -570,8 +570,12 @@ def chat_api():
         
         return jsonify({"balasan": response.text})
     except Exception as e:
-        print(f"Error Gemini: {str(e)}")
-        return jsonify({"balasan": "Waduh kak, maaf banget ada gangguan koneksi ke otak AI kami nih. Coba lagi sebentar lagi ya! 🙏"})
+        # PENTING: KITA TAMBAHKAN TANGKAPAN ERROR DETAIL KE BALASAN BIAR BISA DI DEBUG
+        error_detail = str(e)
+        print(f"Error Gemini: {error_detail}")
+        return jsonify({
+            "balasan": f"Waduh kak, maaf banget ada gangguan koneksi ke otak AI kami nih. \n\n**(DEBUG ERROR DARI GOOGLE: {error_detail})**\n\nCoba lagi sebentar lagi ya! 🙏"
+        })
 
 
 # ==========================================
