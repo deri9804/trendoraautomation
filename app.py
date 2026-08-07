@@ -180,6 +180,7 @@ def db_save_user(email, secret, is_linked, name="", api_key="", status=""):
         'secret': secret, 'is_linked': is_linked, 'name': name, 'api_key': api_key, 'status': status
     }
 
+
 def db_get_tiktok_tokens_by_api_key(api_key):
     sheet = get_gsheet()
     if sheet:
@@ -329,6 +330,7 @@ def verify_totp(secret, token):
 MIDTRANS_API_URL = "https://app.midtrans.com/snap/v1/transactions"
 MIDTRANS_SERVER_KEY = os.environ.get("MIDTRANS_SERVER_KEY", "Mid-server-zF-SefFUBo7r1t-qcRPzdBEr_DUMMY")
 
+
 # ==========================================
 # FLASK ROUTES (Frontend)
 # ==========================================
@@ -437,7 +439,6 @@ def reset_2fa_qr():
     
     new_secret = generate_base32_secret()
     
-    # --- REVISI: QR Code Reset tidak ditampilkan di UI, melainkan dikirim ke Email ---
     issuer = "TRENDORA"
     totp_uri = f"otpauth://totp/{issuer}:{email}?secret={new_secret}&issuer={issuer}"
     qr_code_url = f"https://api.qrserver.com/v1/create-qr-code/?size=200x200&data={urllib.parse.quote(totp_uri)}"
@@ -518,6 +519,66 @@ def get_me():
             "connectedPlatforms": connected_platforms
         }
     })
+
+
+# ==========================================
+# DISCONNECT SOCIAL MEDIA ROUTE
+# ==========================================
+@app.route('/api/disconnect-social', methods=['POST'])
+def disconnect_social():
+    data = request.json or {}
+    email = data.get('email', '').strip().lower()
+    platform = data.get('platform', '').strip()
+
+    if not email or not platform:
+        return jsonify({"success": False, "message": "Data tidak lengkap"})
+
+    sheet = get_gsheet()
+    if sheet:
+        try:
+            all_values = sheet.get_all_values()
+            found_idx = -1
+            for idx in range(len(all_values)-1, 0, -1):
+                row = all_values[idx]
+                if len(row) > 0 and str(row[0]).strip().lower() == email:
+                    found_idx = idx + 1
+                    break
+
+            if found_idx != -1:
+                p = platform.lower()
+                if p == 'tiktok':
+                    sheet.update_cell(found_idx, 7, "")
+                    sheet.update_cell(found_idx, 8, "")
+                    sheet.update_cell(found_idx, 9, "")
+                elif p == 'facebook' or p == 'instagram':
+                    sheet.update_cell(found_idx, 10, "")
+                elif p == 'linkedin':
+                    sheet.update_cell(found_idx, 11, "")
+                elif p == 'youtube':
+                    sheet.update_cell(found_idx, 12, "")
+                    sheet.update_cell(found_idx, 13, "")
+                elif p == 'threads':
+                    sheet.update_cell(found_idx, 14, "")
+                elif p == 'twitter' or p == 'x':
+                    sheet.update_cell(found_idx, 15, "")
+                
+                return jsonify({"success": True, "message": f"Berhasil menghapus token {platform}"})
+        except Exception as e:
+            print(f"GSheet Disconnect Error: {e}")
+            return jsonify({"success": False, "message": "Gagal update database. " + str(e)})
+    
+    # Fallback to local dict store
+    if email in user_2fa_store:
+        p = platform.lower()
+        if p == 'tiktok': user_2fa_store[email]['tiktok_connected'] = False
+        elif p in ['facebook', 'instagram']: user_2fa_store[email]['meta_connected'] = False
+        elif p == 'linkedin': user_2fa_store[email]['linkedin_connected'] = False
+        elif p == 'youtube': user_2fa_store[email]['youtube_connected'] = False
+        elif p == 'threads': user_2fa_store[email]['threads_connected'] = False
+        elif p in ['twitter', 'x']: user_2fa_store[email]['twitter_connected'] = False
+        return jsonify({"success": True, "message": f"Berhasil (Local) menghapus token {platform}"})
+        
+    return jsonify({"success": False, "message": "Email tidak ditemukan"})
 
 
 # ==========================================
@@ -951,6 +1012,7 @@ def twitter_callback():
     </body></html>
     """
 
+
 # ==========================================
 # TRANSACTIONS LOGIC (MIDTRANS)
 # ==========================================
@@ -997,6 +1059,7 @@ def create_transaction():
 @app.route('/api/check-payment', methods=['POST'])
 def check_payment():
     return jsonify({"success": True, "isPaid": False})
+
 
 
 # ==========================================
@@ -1400,7 +1463,7 @@ def n8n_webhook():
                         yt_res = json.loads(res_upload.read().decode('utf-8'))
                         return yt_res
                 finally:
-                    # Hapus file sampah video biar server Vercel gak penuh
+                    # Hapus file sampah video
                     if os.path.exists(temp_file_path):
                         try: os.remove(temp_file_path)
                         except: pass
@@ -1556,14 +1619,13 @@ def n8n_webhook():
 
 
     # -----------------------------------------------------
-    # LOGGING KE DATABASE DENGAN PAKSAAN RANGE A-J
+    # LOGGING KE DATABASE DENGAN PENENTUAN RANGE A-J (Mencegah pergeseran cell)
     # -----------------------------------------------------
     media_url_val = ""
     caption_val = ""
     hashtag_val = ""
     
     if isinstance(details, dict):
-        # Cabut properti agar rapi masuk ke kolom sendiri
         media_url_val = details.pop('media_url', '')
         caption_val = details.pop('caption', '')
         hashtag_val = details.pop('hashtag', '')
@@ -1574,28 +1636,24 @@ def n8n_webhook():
     timestamp = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
     log_id = f"LOG-{uuid.uuid4().hex[:8].upper()}"
     
-    # Kumpulan array ini bakal ditembak dari A sampai J berurutan
     row_data = [
-        timestamp,       # Kolom A
-        log_id,          # Kolom B
-        api_key,         # Kolom C
-        platform,        # Kolom D
-        status,          # Kolom E
-        details_str,     # Kolom F
-        "",              # Kolom G (Keterangan)
-        media_url_val,   # Kolom H (Media URL)
-        caption_val,     # Kolom I (Caption)
-        hashtag_val      # Kolom J (Hashtag)
+        timestamp,       
+        log_id,          
+        api_key,         
+        platform,        
+        status,          
+        details_str,     
+        "",              
+        media_url_val,   
+        caption_val,     
+        hashtag_val      
     ]
     
     sheet = get_logs_sheet()
     if sheet:
         try:
-            # Cari baris paling akhir berdasarkan Kolom A saja (agar tidak tertipu kolom lain yang ada spasinya)
             col_a = sheet.col_values(1)
             next_row = len(col_a) + 1
-            
-            # Update secara paksa/tepat sasaran ke baris tersebut
             cell_range = f"A{next_row}:J{next_row}"
             sheet.update(values=[row_data], range_name=cell_range)
             

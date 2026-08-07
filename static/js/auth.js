@@ -51,6 +51,7 @@ function checkStoredSession() {
   }
 }
 
+
 window.addEventListener('message', function(event) {
   if (event.data && event.data.type === 'OAUTH_SUCCESS') {
     const platform = event.data.platform || 'Social Account';
@@ -83,6 +84,7 @@ window.addEventListener('message', function(event) {
     }
   }
 });
+
 
 function handleConnectSocialClick() {
   const socialOverlay = document.getElementById('socialConnectOverlay');
@@ -230,18 +232,46 @@ function openFallbackOAuthPopup(platform, userEmail) {
   window.open(authUrl, `OAuth_${platform}`, 'width=600,height=750,scrollbars=yes,status=yes');
 }
 
+
 function handleDisconnectSocial(platform) {
-  if (globalUserData && globalUserData.connectedPlatforms) {
-    globalUserData.connectedPlatforms = globalUserData.connectedPlatforms.filter(p => p !== platform);
-    localStorage.setItem('automedia_user', JSON.stringify(globalUserData));
-    
-    if (typeof renderSocialConnectionsUI === 'function') {
-      renderSocialConnectionsUI();
-    }
-    
-    showToast(`Koneksi ke ${platform} berhasil diputuskan.`, "#f59e0b");
+  if (globalUserData && globalUserData.email) {
+    // Tampilkan toast bahwa sedang memproses pemutusan
+    showToast(`Memutuskan koneksi dari ${platform}...`, "#f59e0b");
+
+    // Hit endpoint backend baru untuk MENGHAPUS token secara nyata di Database
+    fetch('/api/disconnect-social', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: globalUserData.email, platform: platform })
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+        if (globalUserData.connectedPlatforms) {
+          // Jika memutus Meta, pastikan FB & IG terputus karena menggunakan Token yang sama
+          if (platform === 'Facebook' || platform === 'Instagram') {
+              globalUserData.connectedPlatforms = globalUserData.connectedPlatforms.filter(p => p !== 'Facebook' && p !== 'Instagram');
+          } else {
+              globalUserData.connectedPlatforms = globalUserData.connectedPlatforms.filter(p => p !== platform);
+          }
+          localStorage.setItem('automedia_user', JSON.stringify(globalUserData));
+        }
+        
+        if (typeof renderSocialConnectionsUI === 'function') {
+          renderSocialConnectionsUI();
+        }
+        
+        showToast(`Koneksi ke ${platform} berhasil diputuskan secara permanen.`, "#34d399");
+      } else {
+        showToast("Gagal memutuskan koneksi: " + (data.message || ""), "#ef4444");
+      }
+    })
+    .catch(err => {
+      showToast("Server error saat mencoba memutuskan koneksi.", "#ef4444");
+    });
   }
 }
+
 
 function handleRequestOTP(event) {
   event.preventDefault();
@@ -346,7 +376,6 @@ function handleVerifyOTP(event) {
   });
 }
 
-/* --- REVISI: Fungsi handleReset2FA diperbarui untuk mengakomodasi QR code hanya via Email --- */
 function handleReset2FA() {
   const emailInput = document.getElementById('loginEmail');
   const email = emailInput ? emailInput.value.trim() : '';
@@ -367,12 +396,9 @@ function handleReset2FA() {
     if (data.success) {
       showToast(data.message, "#34d399");
       
-      // Paksa sembunyikan container QR jika sebelumnya masih nyala
       const qrContainer = document.getElementById('qrCodeContainer');
       if (qrContainer) qrContainer.style.display = 'none';
       
-      // Trigger klik "Kirim OTP" ulang agar state UI ter-update, 
-      // (karena is_linked sudah diset = True oleh backend, dia akan otomatis memunculkan kolom OTP tanpa QR)
       const btnOtp = document.getElementById('btnRequestOTP');
       if (btnOtp) btnOtp.click();
     } else {
