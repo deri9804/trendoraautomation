@@ -532,40 +532,56 @@ def chat_api():
     """
     
     try:
-        # 1. TANYA LANGSUNG KE GOOGLE MODEL APA SAJA YANG TERSEDIA DI API KEY INI
+        # 1. AMBIL SEMUA LIST MODEL YANG ADA
         valid_models = []
         for m in genai.list_models():
             if 'generateContent' in m.supported_generation_methods:
-                valid_models.append(m.name)
+                clean_name = m.name.replace('models/', '')
+                valid_models.append(clean_name)
         
         if not valid_models:
-            return jsonify({"balasan": "Waduh kak, API Key Google kamu valid, tapi sayangnya Google belum ngasih izin akses model AI apapun ke key ini. (List model kosong)"})
+            return jsonify({"balasan": "Waduh kak, API Key valid tapi sayangnya belum ada model AI yang terbuka di akun ini."})
         
-        # 2. PILIH MODEL TERBAIK YANG TERSEDIA (Prioritaskan 1.5 flash, kalau gak ada ambil aja yang pertama muncul)
-        chosen_model_name = valid_models[0] 
-        for m_name in valid_models:
-            if '1.5-flash' in m_name.lower():
-                chosen_model_name = m_name
-                break
+        # 2. URUTKAN MODEL BERDASARKAN PRIORITAS (Hindari 2.5 karena sering ditolak buat user baru)
+        preferred_order = []
+        for m in valid_models:
+            if '1.5-flash' in m: preferred_order.append(m)
+        for m in valid_models:
+            if '1.5-pro' in m and m not in preferred_order: preferred_order.append(m)
+        for m in valid_models:
+            if '2.5' not in m and m not in preferred_order: preferred_order.append(m)
+        for m in valid_models:
+            if m not in preferred_order: preferred_order.append(m)
         
-        # 3. BERSIHKAN NAMA MODEL (Buang 'models/' di depannya biar nggak double)
-        clean_model_name = chosen_model_name.replace('models/', '')
-        
-        # 4. EKSEKUSI DENGAN MODEL YANG PASTI ADA
-        model = genai.GenerativeModel(model_name=clean_model_name)
-        
-        # Kita gabung prompt dan instruksi supaya kompatibel dengan model lama maupun baru
         prompt_gabungan = f"INSTRUKSI SISTEM UNTUKMU (PENTING):\n{system_instruction}\n\n---\n\nPERTANYAAN PENGGUNA:\n{pesan_user}"
+        last_error = ""
         
-        response = model.generate_content(prompt_gabungan)
-        return jsonify({"balasan": response.text})
+        # 3. COBA SATU-SATU SAMPAI ADA YANG BERHASIL NGEJAWAB
+        for model_name in preferred_order:
+            try:
+                model = genai.GenerativeModel(model_name=model_name)
+                response = model.generate_content(prompt_gabungan)
+                return jsonify({"balasan": response.text})
+            except Exception as e:
+                error_str = str(e)
+                
+                # Kalau errornya soal Jatah/Kuota (429 Rate Limit), langsung kasih tau user
+                if '429' in error_str or 'quota' in error_str.lower():
+                    return jsonify({"balasan": f"Waduh kak, kita kena tilang batas kecepatan Google nih (Quota Exceeded / 429). Tunggu sekitar 30 detik lalu coba lagi ya! 🙏\n\n(Model yang dicoba: {model_name})" })
+                
+                # Simpan error terakhir dan lanjut coba model berikutnya
+                last_error = f"[{model_name} Error: {error_str}]"
+                continue 
+        
+        # 4. JIKA SEMUA MODEL GAGAL (Kena blokir 404 semua)
+        return jsonify({
+            "balasan": f"Waduh kak, AI-nya nyerah nih. Udah dicoba semua model tapi ditolak Google.\n\n**(DEBUG ERROR TERAKHIR: {last_error})**\n\nCoba lagi nanti ya! 🙏"
+        })
         
     except Exception as e:
         error_detail = str(e)
-        print(f"Error Gemini Auto-Detect: {error_detail}")
-        return jsonify({
-            "balasan": f"Waduh kak, AI-nya masih gagal mikir nih.\n\n**(DEBUG ERROR AUTO: {error_detail})**\n\nCoba lagi ya! 🙏"
-        })
+        print(f"Error Sistem Auto-Trial: {error_detail}")
+        return jsonify({"balasan": f"Error Sistem Internal: {error_detail}"})
 
 
 @app.route('/api/disconnect-social', methods=['POST'])
