@@ -231,7 +231,11 @@ function toggleChat() {
     }, 100);
   } else {
     chatWindow.style.display = 'none';
-    toggleBtn.innerHTML = '<span class="chat-icon">💬</span>';
+    toggleBtn.innerHTML = `<span class="chat-icon">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12.0001 2.25C12.0001 7.63477 16.3653 12 21.7501 12C16.3653 12 12.0001 16.3653 12.0001 21.75C12.0001 16.3653 7.63488 12 2.25012 12C7.63488 12 12.0001 7.63477 12.0001 2.25Z" fill="white"/>
+        </svg>
+      </span>`;
   }
 }
 
