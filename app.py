@@ -564,18 +564,12 @@ def chat_api():
                 return jsonify({"balasan": response.text})
             except Exception as e:
                 error_str = str(e)
-                
-                # Kalau errornya soal Jatah/Kuota (429 Rate Limit), langsung kasih tau user
-                if '429' in error_str or 'quota' in error_str.lower():
-                    return jsonify({"balasan": f"Waduh kak, kita kena tilang batas kecepatan Google nih (Quota Exceeded / 429). Tunggu sekitar 30 detik lalu coba lagi ya! 🙏\n\n(Model yang dicoba: {model_name})" })
-                
-                # Simpan error terakhir dan lanjut coba model berikutnya
                 last_error = f"[{model_name} Error: {error_str}]"
-                continue 
+                continue # Kena limit (429) atau 404, cuekin aja lanjut model berikutnya
         
-        # 4. JIKA SEMUA MODEL GAGAL (Kena blokir 404 semua)
+        # 4. JIKA SEMUA MODEL GAGAL (Termasuk Kena Limit 429 Harian)
         return jsonify({
-            "balasan": f"Waduh kak, AI-nya nyerah nih. Udah dicoba semua model tapi ditolak Google.\n\n**(DEBUG ERROR TERAKHIR: {last_error})**\n\nCoba lagi nanti ya! 🙏"
+            "balasan": "Maaf kak, saat ini antrean AI Customer Service kami sedang penuh (Sistem Overload). Mohon tunggu beberapa saat lagi atau tinggalkan pesan melalui halaman **Kontak** ya! 🙏\n\n*(Info Developer: Limit harian API Key Gemini telah habis, silakan ganti API Key di Vercel)*"
         })
         
     except Exception as e:
