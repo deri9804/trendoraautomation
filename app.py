@@ -229,7 +229,6 @@ def db_get_linkedin_token_by_api_key(api_key):
     return None
 
 def db_get_youtube_tokens_by_api_key(api_key):
-    """Ambil Access dan Refresh Token YouTube dari GSheet (Kolom L & M)."""
     sheet = get_gsheet()
     if sheet:
         try:
@@ -398,21 +397,15 @@ def verify_otp_route():
         status_lower = status.lower()
         is_paid_user = any(word in status_lower for word in ["paid", "subscriber", "admin", "lifetime"])
         
-        # CEK KONEKSI PLATFORM
         connected_platforms = []
-        if user_data.get('tiktok_connected'):
-            connected_platforms.append('TikTok')
+        if user_data.get('tiktok_connected'): connected_platforms.append('TikTok')
         if user_data.get('meta_connected'):
             connected_platforms.append('Facebook')
             connected_platforms.append('Instagram')
-        if user_data.get('linkedin_connected'):
-            connected_platforms.append('LinkedIn')
-        if user_data.get('youtube_connected'):
-            connected_platforms.append('YouTube')
-        if user_data.get('threads_connected'):
-            connected_platforms.append('Threads')
-        if user_data.get('twitter_connected'):
-            connected_platforms.append('Twitter')
+        if user_data.get('linkedin_connected'): connected_platforms.append('LinkedIn')
+        if user_data.get('youtube_connected'): connected_platforms.append('YouTube')
+        if user_data.get('threads_connected'): connected_platforms.append('Threads')
+        if user_data.get('twitter_connected'): connected_platforms.append('Twitter')
         
         return jsonify({
             "success": True, 
@@ -442,7 +435,6 @@ def reset_2fa_qr():
     is_sent = send_email_qr(email, qr_code_url, new_secret)
     
     if is_sent:
-        # Set is_linked = True secara otomatis agar form login TIDAK memunculkan container QR Code lagi
         db_save_user(email, new_secret, True, old_data.get('name', ''), old_data.get('api_key', ''), old_data.get('status', ''))
         return jsonify({"success": True, "message": "QR Code 2FA baru telah dikirim ke Email Anda! Silakan cek Inbox/Spam."})
     else:
@@ -487,19 +479,14 @@ def get_me():
     if not user_data: return jsonify({"success": False})
     
     connected_platforms = []
-    if user_data.get('tiktok_connected'):
-        connected_platforms.append('TikTok')
+    if user_data.get('tiktok_connected'): connected_platforms.append('TikTok')
     if user_data.get('meta_connected'):
         connected_platforms.append('Facebook')
         connected_platforms.append('Instagram')
-    if user_data.get('linkedin_connected'):
-        connected_platforms.append('LinkedIn')
-    if user_data.get('youtube_connected'):
-        connected_platforms.append('YouTube')
-    if user_data.get('threads_connected'):
-        connected_platforms.append('Threads')
-    if user_data.get('twitter_connected'):
-        connected_platforms.append('Twitter')
+    if user_data.get('linkedin_connected'): connected_platforms.append('LinkedIn')
+    if user_data.get('youtube_connected'): connected_platforms.append('YouTube')
+    if user_data.get('threads_connected'): connected_platforms.append('Threads')
+    if user_data.get('twitter_connected'): connected_platforms.append('Twitter')
         
     status_lower = user_data.get('status', '').lower()
     is_paid_user = any(word in status_lower for word in ["paid", "subscriber", "admin", "lifetime"])
@@ -516,6 +503,9 @@ def get_me():
         }
     })
 
+# ==========================================
+# LOGIKA CHAT AI (AUTO-DETECT MODEL)
+# ==========================================
 @app.route('/api/chat', methods=['POST'])
 def chat_api():
     data = request.json or {}
@@ -524,7 +514,6 @@ def chat_api():
     if not HAS_GEMINI or not GEMINI_API_KEY:
         return jsonify({"balasan": "Maaf kak, sistem AI sedang offline karena API Key Gemini belum dikonfigurasi di server."})
     
-    # Prompt Rahasia (Context) supaya Gemini tau cara bersikap
     system_instruction = """
     Kamu adalah "Trendora AI", Customer Service resmi dari platform TRENDORA AUTOMATION.
     Trendora adalah web layanan API automasi yang menghubungkan n8n ke berbagai sosial media (TikTok, YouTube, FB, IG, LinkedIn, Twitter, Threads) secara otomatis (Direct Post).
@@ -543,38 +532,40 @@ def chat_api():
     """
     
     try:
-        # PERCOBAAN 1: Menggunakan model 1.5 Flash
-        model = genai.GenerativeModel(
-            model_name='gemini-1.5-flash',
-            system_instruction=system_instruction
-        )
-        response = model.generate_content(pesan_user)
+        # 1. TANYA LANGSUNG KE GOOGLE MODEL APA SAJA YANG TERSEDIA DI API KEY INI
+        valid_models = []
+        for m in genai.list_models():
+            if 'generateContent' in m.supported_generation_methods:
+                valid_models.append(m.name)
+        
+        if not valid_models:
+            return jsonify({"balasan": "Waduh kak, API Key Google kamu valid, tapi sayangnya Google belum ngasih izin akses model AI apapun ke key ini. (List model kosong)"})
+        
+        # 2. PILIH MODEL TERBAIK YANG TERSEDIA (Prioritaskan 1.5 flash, kalau gak ada ambil aja yang pertama muncul)
+        chosen_model_name = valid_models[0] 
+        for m_name in valid_models:
+            if '1.5-flash' in m_name.lower():
+                chosen_model_name = m_name
+                break
+        
+        # 3. BERSIHKAN NAMA MODEL (Buang 'models/' di depannya biar nggak double)
+        clean_model_name = chosen_model_name.replace('models/', '')
+        
+        # 4. EKSEKUSI DENGAN MODEL YANG PASTI ADA
+        model = genai.GenerativeModel(model_name=clean_model_name)
+        
+        # Kita gabung prompt dan instruksi supaya kompatibel dengan model lama maupun baru
+        prompt_gabungan = f"INSTRUKSI SISTEM UNTUKMU (PENTING):\n{system_instruction}\n\n---\n\nPERTANYAAN PENGGUNA:\n{pesan_user}"
+        
+        response = model.generate_content(prompt_gabungan)
         return jsonify({"balasan": response.text})
         
     except Exception as e:
         error_detail = str(e)
-        print(f"Error Gemini Utama: {error_detail}")
-        
-        # JIKA ERROR 404 (Model tidak ditemukan), KITA JALANKAN BACKUP PLAN!
-        if "404" in error_detail or "not found" in error_detail.lower():
-            try:
-                # PERCOBAAN 2: Menggunakan model "gemini-pro" klasik 
-                model_fallback = genai.GenerativeModel(model_name='gemini-pro')
-                
-                # Menggabungkan instruksi langsung ke dalam prompt pengguna
-                prompt_gabungan = f"INSTRUKSI SISTEM UNTUKMU (PENTING):\n{system_instruction}\n\n---\n\nPERTANYAAN PENGGUNA:\n{pesan_user}"
-                
-                response = model_fallback.generate_content(prompt_gabungan)
-                return jsonify({"balasan": response.text})
-                
-            except Exception as fallback_error:
-                return jsonify({
-                    "balasan": f"Waduh kak, otak AI versi backup juga gagal nih. \n\n**(DEBUG ERROR BACKUP: {str(fallback_error)})**\n\nCoba lagi ya! 🙏"
-                })
-        else:
-            return jsonify({
-                "balasan": f"Waduh kak, maaf banget ada gangguan koneksi ke otak AI kami nih. \n\n**(DEBUG ERROR GOOGLE: {error_detail})**\n\nCoba lagi sebentar lagi ya! 🙏"
-            })
+        print(f"Error Gemini Auto-Detect: {error_detail}")
+        return jsonify({
+            "balasan": f"Waduh kak, AI-nya masih gagal mikir nih.\n\n**(DEBUG ERROR AUTO: {error_detail})**\n\nCoba lagi ya! 🙏"
+        })
 
 
 @app.route('/api/disconnect-social', methods=['POST'])
@@ -620,7 +611,6 @@ def disconnect_social():
             print(f"GSheet Disconnect Error: {e}")
             return jsonify({"success": False, "message": "Gagal update database. " + str(e)})
     
-    # Fallback to local dict store
     if email in user_2fa_store:
         p = platform.lower()
         if p == 'tiktok': user_2fa_store[email]['tiktok_connected'] = False
@@ -757,9 +747,6 @@ def meta_callback():
     </body></html>
     """
 
-# ==========================================
-# META WEBHOOK (VERIFIKASI & PENERIMA EVENT)
-# ==========================================
 @app.route('/api/meta-webhook', methods=['GET', 'POST'])
 def meta_webhook():
     if request.method == 'GET':
@@ -779,9 +766,6 @@ def meta_webhook():
         print("Menerima Event dari Meta Webhook:", payload)
         return "EVENT_RECEIVED", 200
 
-# ==========================================
-# TWITTER WEBHOOK (CRC VERIFICATION)
-# ==========================================
 @app.route('/api/twitter-webhook', methods=['GET', 'POST'], strict_slashes=False)
 def twitter_webhook():
     if request.method == 'GET':
@@ -1047,7 +1031,6 @@ def twitter_callback():
     </body></html>
     """
 
-
 @app.route('/api/create-transaction', methods=['POST'])
 def create_transaction():
     data = request.json or {}
@@ -1091,8 +1074,6 @@ def create_transaction():
 @app.route('/api/check-payment', methods=['POST'])
 def check_payment():
     return jsonify({"success": True, "isPaid": False})
-
-
 
 @app.route('/api/n8n-webhook', methods=['GET', 'POST'], strict_slashes=False)
 def n8n_webhook():
@@ -1675,11 +1656,9 @@ def n8n_webhook():
     sheet = get_logs_sheet()
     if sheet:
         try:
-            # Cari baris kosong di Kolom A
             col_a = sheet.col_values(1)
             next_row = len(col_a) + 1
             
-            # Gunakan update range spesifik agar tidak terlempar ke kolom AC
             cell_range = f"A{next_row}:J{next_row}"
             sheet.update(values=[row_data], range_name=cell_range)
             
