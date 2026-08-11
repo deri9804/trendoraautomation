@@ -1,3 +1,4 @@
+/* STREAMING_CHUNK:Configuring VS Code Pylance extraPaths for workspace resolution... */
 {
 "python.analysis.extraPaths": [
 ".",

@@ -2,26 +2,16 @@ import os
 import sys
 
 PARENT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-UTILS_DIR = os.path.join(PARENT_DIR, 'utils')
-for d in [PARENT_DIR, UTILS_DIR]:
-    if d not in sys.path:
-        sys.path.insert(0, d)
+if PARENT_DIR not in sys.path:
+    sys.path.insert(0, PARENT_DIR)
 
 from flask import Blueprint, request, jsonify
 import urllib.parse
 import uuid
 
-try:
-    import config
-    import database as db
-    import security as sec
-except ImportError:
-    try:
-        from utils import config, database as db, security as sec
-    except ImportError:
-        import config
-        import database as db
-        import security as sec
+import config
+from utils import database as db
+from utils import security as sec
 
 auth_bp = Blueprint('auth', __name__)
 

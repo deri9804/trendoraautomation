@@ -20,10 +20,10 @@ def register_routes(app):
 
     @app.errorhandler(404)
     def handle_404(e):
-        return jsonify({"success": False, "message": "Endpoint / Halaman tidak ditemukan (404)."}), 404
+        return jsonify({"success": False, "message": "Endpoint / Halaman tidak ditemukan (404)."}), 200
 
     @app.errorhandler(500)
     def handle_500(e):
-        return jsonify({"success": False, "message": "Terjadi kesalahan internal pada server (500)."}), 500
+        return jsonify({"success": False, "message": "Terjadi kesalahan internal pada server (500)."}), 200
 
     print("[routes] Semua Blueprint dan Global Error Handler berhasil didaftarkan.")
