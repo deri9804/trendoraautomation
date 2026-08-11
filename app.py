@@ -2,8 +2,8 @@
 ===============================================================================
 app.py - Main Application Entrypoint
 ===============================================================================
-File entrypoint utama aplikasi Flask Trendora Automation.
-Seluruh routing dialihkan ke folder /routes menggunakan Blueprint.
+Entrypoint utama Flask Trendora Automation.
+Semua routing dialihkan ke folder /routes menggunakan Blueprint.
 """
 
 from flask import Flask
