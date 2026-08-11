@@ -987,6 +987,37 @@
   .typing-dot:nth-child(2) { animation-delay: -0.16s; }
   @keyframes typing { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1); } }
 
+  /* FLOATING WHATSAPP BUTTON STYLES */
+  .wa-float-btn {
+    position: fixed;
+    bottom: 30px;
+    left: 30px;
+    width: 58px;
+    height: 58px;
+    background-color: #25d366;
+    color: #ffffff;
+    border-radius: 50%;
+    text-align: center;
+    box-shadow: 0 4px 18px rgba(37, 211, 102, 0.45);
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.3s ease;
+    text-decoration: none;
+  }
+
+  .wa-float-btn:hover {
+    transform: scale(1.12);
+    box-shadow: 0 6px 24px rgba(37, 211, 102, 0.7);
+  }
+
+  .wa-float-btn svg {
+    width: 32px;
+    height: 32px;
+    fill: #ffffff;
+  }
+
   @media (max-width: 900px) {
     .hero { grid-template-columns: 1fr; padding-top: 120px; }
     .nav-links { display: none; }
@@ -1030,5 +1061,16 @@
     .chat-window { width: 320px; height: 450px; bottom: 75px; right: 0; border-radius: 16px; }
     .chat-toggle-btn { width: 50px; height: 50px; font-size: 24px; }
     .chat-widget-container { bottom: 20px; right: 20px; }
+
+    .wa-float-btn {
+      bottom: 20px;
+      left: 20px;
+      width: 50px;
+      height: 50px;
+    }
+    .wa-float-btn svg {
+      width: 28px;
+      height: 28px;
+    }
   }
 </style>
