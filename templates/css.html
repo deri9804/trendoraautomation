@@ -1,3 +1,5 @@
+<link rel="icon" type="image/png" href="{{ url_for('static', filename='logo-trendora.png') }}">
+
 <style>
   * {
     box-sizing: border-box;
@@ -946,7 +948,6 @@
     color: #f472b6;
   }
 
-  /* CHAT WIDGET STYLES */
   .chat-widget-container { position: fixed; bottom: 30px; right: 30px; z-index: 9999; font-family: 'Inter', sans-serif; }
   
   .chat-toggle-btn { width: 60px; height: 60px; border-radius: 50%; background: linear-gradient(135deg, #ec4899, #8b5cf6); border: none; color: white; font-size: 28px; cursor: pointer; box-shadow: 0 10px 25px rgba(236, 72, 153, 0.4); transition: transform 0.3s; display: flex; justify-content: center; align-items: center; }
@@ -999,21 +1000,18 @@
     .social-modal-card { padding: 24px 18px; }
     .legal-modal-card { max-width: 95% !important; padding: 20px !important; }
 
-    /* PERBAIKAN 1: HEADER & LOGO DI HP */
     .top-banner { display: none !important; } 
     .navbar { padding: 10px 4% !important; gap: 8px; }
     .logo { gap: 8px !important; overflow: hidden; white-space: nowrap; }
-    .logo img { height: 35px !important; } /* LOGO DI HP DIPERBESAR */
-    .logo span { font-size: 14px !important; } /* Tulisan logo disesuaikan */
+    .logo img { height: 35px !important; }
+    .logo span { font-size: 14px !important; }
 
-    /* PERBAIKAN 2: NAMA USER & TOMBOL KELUAR DI HP */
     .auth-buttons { gap: 6px !important; }
     .user-profile-badge { padding: 4px 8px !important; font-size: 11px !important; }
     .user-profile-badge .user-avatar { display: none; } 
     .user-profile-badge #navUserName { max-width: 70px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .auth-buttons .btn-secondary { padding: 6px 8px !important; font-size: 10px !important; white-space: nowrap; }
 
-    /* PERBAIKAN 3: KOTAK DASHBOARD & LOG */
     .dashboard-hero-card {
       grid-template-columns: 1fr !important;
       padding: 16px !important;
@@ -1029,7 +1027,6 @@
   }
 
   @media (max-width: 480px) {
-    /* CHAT WIDGET RESPONSIVE MOBILE */
     .chat-window { width: 320px; height: 450px; bottom: 75px; right: 0; border-radius: 16px; }
     .chat-toggle-btn { width: 50px; height: 50px; font-size: 24px; }
     .chat-widget-container { bottom: 20px; right: 20px; }

@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Dashboard - TRENDORA</title>
+  <link rel="icon" type="image/png" href="{{ url_for('static', filename='logo-trendora.png') }}">
   {% include 'css.html' %}
   
   <style>
@@ -51,7 +52,6 @@
       transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
-    /* Class yang men-trigger sidebar bersembunyi */
     body.sidebar-hidden .dash-sidebar { transform: translateX(-100%); }
     body.sidebar-hidden .dash-content { margin-left: 0; }
 
@@ -81,7 +81,7 @@
         display: flex; flex-direction: row; align-items: center;
         overflow-x: auto; white-space: nowrap; gap: 8px; 
       }
-      body.sidebar-hidden .dash-sidebar { transform: none; display: none; } /* Hide on mobile if toggled */
+      body.sidebar-hidden .dash-sidebar { transform: none; display: none; }
       .dash-sidebar::-webkit-scrollbar { height: 4px; }
       .dash-sidebar::-webkit-scrollbar-thumb { background: #3f3f46; border-radius: 4px; }
       .sidebar-menu-title { display: none; }
@@ -90,7 +90,7 @@
       .sidebar-menu li a.active { border-bottom: 3px solid #ec4899; }
       .dash-content { margin-left: 0; padding: 20px 4%; }
       .dashboard-hero-card { grid-template-columns: 1fr !important; }
-      .btn-toggle-sidebar { display: none; } /* Sembunyikan toggle button di mobile */
+      .btn-toggle-sidebar { display: none; }
     }
   </style>
 </head>
@@ -117,7 +117,6 @@
     </aside>
 
     <main class="dash-content">
-      <!-- Tombol Toggle Sidebar -->
       <button class="btn-toggle-sidebar" onclick="toggleSidebar()">
         <span id="sidebarIconDash">◀</span> <span>Tutup Menu</span>
       </button>
@@ -251,7 +250,6 @@
     });
   </script>
 
-  <!-- SCRIPTS -->
   <script src="{{ url_for('static', filename='js/ui.js') }}"></script>
   <script src="{{ url_for('static', filename='js/auth.js') }}"></script>
   <script src="{{ url_for('static', filename='js/payment.js') }}"></script>
