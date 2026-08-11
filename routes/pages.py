@@ -5,7 +5,7 @@ PARENT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if PARENT_DIR not in sys.path:
     sys.path.insert(0, PARENT_DIR)
 
-from flask import jsonify
+from flask import jsonify, render_template
 from .pages import pages_bp
 from .auth import auth_bp
 from .oauth_social import oauth_bp
@@ -20,10 +20,18 @@ def register_routes(app):
 
     @app.errorhandler(404)
     def handle_404(e):
-        return jsonify({"success": False, "message": "Endpoint / Halaman tidak ditemukan (404)."}), 200
+        try:
+            return render_template('index.html'), 200
+        except Exception:
+            return jsonify({"success": False, "message": "Endpoint / Halaman tidak ditemukan (404)."}), 200
 
     @app.errorhandler(500)
     def handle_500(e):
         return jsonify({"success": False, "message": "Terjadi kesalahan internal pada server (500)."}), 200
+
+    @app.errorhandler(Exception)
+    def handle_global_exception(e):
+        print(f"[Global Exception Handler]: {e}")
+        return jsonify({"success": False, "message": f"Terjadi kesalahan server: {str(e)}"}), 200
 
     print("[routes] Semua Blueprint dan Global Error Handler berhasil didaftarkan.")
