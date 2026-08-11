@@ -4,12 +4,12 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Login - TRENDORA</title>
+  <link rel="icon" type="image/png" href="{{ url_for('static', filename='logo-trendora.png') }}">
   {% include 'css.html' %}
 </head>
 <body>
   {% include 'navbar.html' %}
 
-  <!-- PAGE WRAPPER UNTUK LOGIN -->
   <div style="display: flex; justify-content: center; align-items: flex-start; min-height: 100vh; padding: 120px 20px 60px;">
     
     <div class="modal-card" id="loginModalCard" style="max-height: none; margin-bottom: 40px;">
@@ -21,7 +21,6 @@
         <p>Masukkan email terdaftar Anda untuk menerima kode OTP (Passwordless Login).</p>
       </div>
 
-      <!-- FORM INPUT EMAIL UNTUK REQUEST OTP -->
       <form id="loginForm" onsubmit="handleRequestOTP(event)">
         <div class="form-group">
           <label for="loginEmail">Alamat Email</label>
@@ -33,13 +32,11 @@
         </button>
       </form>
 
-      <!-- CONTAINER QR CODE GOOGLE AUTHENTICATOR -->
       <div id="qrCodeContainer" style="display: none; text-align: center; margin-top: 16px; background: rgba(255,255,255,0.05); padding: 16px; border-radius: 12px; border: 1px solid rgba(236,72,153,0.3);">
         <p style="font-size: 13px; color: #d1d5db; margin-bottom: 12px;">Scan QR Code ini menggunakan aplikasi <strong style="color:#fff;">Google Authenticator</strong>.</p>
         <img id="qrCodeImage" src="" alt="Google Authenticator QR Code" style="width: 150px; height: 150px; border-radius: 8px; margin: 0 auto; display: block; border: 2px solid #fff;" />
       </div>
 
-      <!-- FORM INPUT OTP -->
       <form id="otpInputGroup" style="display: none; margin-top: 16px;" onsubmit="handleVerifyOTP(event)">
         <div class="form-group">
           <label for="loginOTP">Kode OTP (6 Digit)</label>
@@ -54,7 +51,6 @@
         </div>
       </form>
 
-      <!-- REVISI: Link ToS dan Privacy Policy diubah agar membuka halaman baru (Tab Baru) -->
       <p class="terms-caption" style="margin-top: 16px; text-align: center;">
         Dengan masuk, Anda menyetujui <a href="/tos" target="_blank" style="cursor: pointer; color: #ec4899; text-decoration: underline;">Terms of Service</a> dan <a href="/privacy" target="_blank" style="cursor: pointer; color: #ec4899; text-decoration: underline;">Privacy Policy</a> TRENDORA.
       </p>
@@ -64,10 +60,8 @@
 
   </div>
 
-  <!-- INCLUDE SISA MODAL (Legal & Sosial) -->
   {% include 'apiKeyModal.html' %}
 
-  <!-- SCRIPTS -->
   <script src="{{ url_for('static', filename='js/ui.js') }}"></script>
   <script src="{{ url_for('static', filename='js/auth.js') }}"></script>
 </body>
