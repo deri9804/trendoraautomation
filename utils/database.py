@@ -1,6 +1,10 @@
 import os
 import json
-import config
+
+try:
+    import config
+except ImportError:
+    from utils import config
 
 try:
     import gspread
@@ -65,6 +69,8 @@ def db_get_user(email):
     """Ambil data user dari Google Sheets (scan dari BAWAH agar selalu dapat yg terbaru)."""
     if not email:
         return None
+    
+    clean_email = str(email).strip().lower()
         
     sheet = get_gsheet()
     if sheet:
@@ -73,7 +79,7 @@ def db_get_user(email):
             if len(all_values) > 1:
                 for idx in range(len(all_values)-1, 0, -1):
                     row = all_values[idx]
-                    if len(row) > 0 and str(row[0]).strip().lower() == email.lower():
+                    if len(row) > 0 and str(row[0]).strip().lower() == clean_email:
                         return {
                             'email': str(row[0]).strip().lower(),
                             'secret': str(row[1]).strip() if len(row) > 1 else '',
@@ -94,8 +100,8 @@ def db_get_user(email):
             print(f"GSheet Read Error: {e}")
             return None
             
-    if email in config.user_2fa_store:
-        user_data = config.user_2fa_store[email]
+    if clean_email in config.user_2fa_store:
+        user_data = config.user_2fa_store[clean_email]
         user_data['tiktok_connected'] = user_data.get('tiktok_connected', False)
         return user_data
     return None
@@ -104,6 +110,7 @@ def db_save_user(email, secret, is_linked, name="", api_key="", status=""):
     """Simpan atau perbarui data user."""
     if not email:
         return
+    clean_email = str(email).strip().lower()
     sheet = get_gsheet()
     if sheet:
         try:
@@ -111,7 +118,7 @@ def db_save_user(email, secret, is_linked, name="", api_key="", status=""):
             found_idx = -1
             for idx in range(len(all_values)-1, 0, -1):
                 row = all_values[idx]
-                if len(row) > 0 and str(row[0]).strip().lower() == email.lower():
+                if len(row) > 0 and str(row[0]).strip().lower() == clean_email:
                     found_idx = idx + 1
                     break
                     
@@ -122,12 +129,12 @@ def db_save_user(email, secret, is_linked, name="", api_key="", status=""):
                 if api_key: sheet.update_cell(found_idx, 5, api_key)
                 if status: sheet.update_cell(found_idx, 6, status)
             else:
-                sheet.append_row([email, secret, str(is_linked), name, api_key, status])
+                sheet.append_row([clean_email, secret, str(is_linked), name, api_key, status])
             return
         except Exception as e:
             print(f"GSheet Write Error: {e}")
             
-    config.user_2fa_store[email] = {
+    config.user_2fa_store[clean_email] = {
         'secret': secret, 'is_linked': is_linked, 'name': name, 'api_key': api_key, 'status': status
     }
 

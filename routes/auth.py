@@ -25,17 +25,19 @@ except ImportError:
 
 auth_bp = Blueprint('auth', __name__)
 
-@auth_bp.route('/api/request-otp', methods=['POST'])
+@auth_bp.route('/api/request-otp', methods=['POST', 'OPTIONS'])
 def request_otp():
+    if request.method == 'OPTIONS':
+        return jsonify({"success": True}), 200
     try:
         data = request.get_json(silent=True) or {}
         email = data.get('email', '').strip().lower()
         if not email:
-            return jsonify({"success": False, "message": "Email wajib diisi!"}), 400
+            return jsonify({"success": False, "message": "Email wajib diisi!"}), 200
         
         user_data = db.db_get_user(email)
         if not user_data:
-            return jsonify({"success": False, "message": "Email belum terdaftar!"}), 404
+            return jsonify({"success": False, "message": "Email belum terdaftar!"}), 200
         
         secret = user_data.get('secret')
         if not secret:
@@ -48,29 +50,31 @@ def request_otp():
             issuer = "TRENDORA"
             totp_uri = f"otpauth://totp/{issuer}:{email}?secret={secret}&issuer={issuer}"
             qr_code_url = f"https://api.qrserver.com/v1/create-qr-code/?size=200x200&data={urllib.parse.quote(totp_uri)}"
-            return jsonify({"success": True, "is2faLinked": False, "qrCodeUrl": qr_code_url})
+            return jsonify({"success": True, "is2faLinked": False, "qrCodeUrl": qr_code_url}), 200
         else:
-            return jsonify({"success": True, "is2faLinked": True})
+            return jsonify({"success": True, "is2faLinked": True}), 200
     except Exception as e:
         print(f"[Error /api/request-otp]: {e}")
-        return jsonify({"success": False, "message": f"Terjadi kesalahan server: {str(e)}"}), 500
+        return jsonify({"success": False, "message": f"Terjadi kesalahan server: {str(e)}"}), 200
 
-@auth_bp.route('/api/verify-otp', methods=['POST'])
+@auth_bp.route('/api/verify-otp', methods=['POST', 'OPTIONS'])
 def verify_otp_route():
+    if request.method == 'OPTIONS':
+        return jsonify({"success": True}), 200
     try:
         data = request.get_json(silent=True) or {}
         email = data.get('email', '').strip().lower()
         otp = data.get('otp', '').strip()
         if not email or not otp:
-            return jsonify({"success": False, "message": "Data tidak lengkap!"}), 400
+            return jsonify({"success": False, "message": "Data tidak lengkap!"}), 200
             
         user_data = db.db_get_user(email)
         if not user_data:
-            return jsonify({"success": False, "message": "Email belum terdaftar!"}), 404
+            return jsonify({"success": False, "message": "Email belum terdaftar!"}), 200
             
         secret = user_data.get('secret', '')
         if not secret:
-            return jsonify({"success": False, "message": "Secret 2FA tidak ditemukan pada akun ini!"}), 400
+            return jsonify({"success": False, "message": "Secret 2FA tidak ditemukan pada akun ini!"}), 200
 
         is_valid = sec.verify_totp(secret, otp)
         if is_valid:
@@ -104,23 +108,25 @@ def verify_otp_route():
                     "isPaid": is_paid_user,
                     "connectedPlatforms": connected_platforms
                 }
-            })
-        return jsonify({"success": False, "message": "OTP salah atau kadaluarsa!"}), 400
+            }), 200
+        return jsonify({"success": False, "message": "Kode OTP salah atau sudah kadaluarsa!"}), 200
     except Exception as e:
         print(f"[Error /api/verify-otp]: {e}")
-        return jsonify({"success": False, "message": f"Terjadi kesalahan server: {str(e)}"}), 500
+        return jsonify({"success": False, "message": f"Terjadi kesalahan server: {str(e)}"}), 200
 
-@auth_bp.route('/api/reset-2fa-qr', methods=['POST'])
+@auth_bp.route('/api/reset-2fa-qr', methods=['POST', 'OPTIONS'])
 def reset_2fa_qr():
+    if request.method == 'OPTIONS':
+        return jsonify({"success": True}), 200
     try:
         data = request.get_json(silent=True) or {}
         email = data.get('email', '').strip().lower()
         if not email:
-            return jsonify({"success": False, "message": "Email wajib diisi!"}), 400
+            return jsonify({"success": False, "message": "Email wajib diisi!"}), 200
 
         old_data = db.db_get_user(email)
         if not old_data:
-            return jsonify({"success": False, "message": "Email tidak ditemukan!"}), 404
+            return jsonify({"success": False, "message": "Email tidak ditemukan!"}), 200
         
         new_secret = sec.generate_base32_secret()
         issuer = "TRENDORA"
@@ -131,69 +137,75 @@ def reset_2fa_qr():
         
         if is_sent:
             db.db_save_user(email, new_secret, True, old_data.get('name', ''), old_data.get('api_key', ''), old_data.get('status', ''))
-            return jsonify({"success": True, "message": "QR Code 2FA baru telah dikirim ke Email Anda! Silakan cek Inbox/Spam."})
+            return jsonify({"success": True, "message": "QR Code 2FA baru telah dikirim ke Email Anda! Silakan cek Inbox/Spam."}), 200
         else:
-            return jsonify({"success": False, "message": "Gagal mengirim email. Pastikan Environment SMTP_PASSWORD sudah diatur di Vercel."}), 500
+            return jsonify({"success": False, "message": "Gagal mengirim email. Pastikan Environment SMTP_PASSWORD sudah diatur di Vercel."}), 200
     except Exception as e:
         print(f"[Error /api/reset-2fa-qr]: {e}")
-        return jsonify({"success": False, "message": f"Terjadi kesalahan server: {str(e)}"}), 500
+        return jsonify({"success": False, "message": f"Terjadi kesalahan server: {str(e)}"}), 200
 
-@auth_bp.route('/api/register-trial', methods=['POST'])
+@auth_bp.route('/api/register-trial', methods=['POST', 'OPTIONS'])
 def register_trial():
+    if request.method == 'OPTIONS':
+        return jsonify({"success": True}), 200
     try:
         data = request.get_json(silent=True) or {}
         email = data.get('email', '').strip().lower()
         name = data.get('name', 'User').strip()
         if not email:
-            return jsonify({"success": False, "message": "Email wajib diisi!"}), 400
+            return jsonify({"success": False, "message": "Email wajib diisi!"}), 200
 
         existing_user = db.db_get_user(email)
         if existing_user:
-            return jsonify({"success": False, "message": "Email sudah terdaftar!"}), 400
+            return jsonify({"success": False, "message": "Email sudah terdaftar!"}), 200
         
         new_secret = sec.generate_base32_secret()
         db.db_save_user(email, new_secret, False, name, "-", "Active (7-Day Free Trial - View Only)")
-        return jsonify({"success": True, "message": "Registrasi berhasil", "user": {"name": name, "email": email, "apiKey": "-", "isPaid": False}})
+        return jsonify({"success": True, "message": "Registrasi berhasil", "user": {"name": name, "email": email, "apiKey": "-", "isPaid": False}}), 200
     except Exception as e:
         print(f"[Error /api/register-trial]: {e}")
-        return jsonify({"success": False, "message": f"Terjadi kesalahan server: {str(e)}"}), 500
+        return jsonify({"success": False, "message": f"Terjadi kesalahan server: {str(e)}"}), 200
 
-@auth_bp.route('/api/generate-api-key', methods=['POST'])
+@auth_bp.route('/api/generate-api-key', methods=['POST', 'OPTIONS'])
 def generate_api_key_route():
+    if request.method == 'OPTIONS':
+        return jsonify({"success": True}), 200
     try:
         data = request.get_json(silent=True) or {}
         email = data.get('email', '').strip().lower()
         if not email:
-            return jsonify({"success": False, "message": "Email wajib diisi!"}), 400
+            return jsonify({"success": False, "message": "Email wajib diisi!"}), 200
 
         user_data = db.db_get_user(email)
         if not user_data:
-            return jsonify({"success": False, "message": "User tidak ditemukan!"}), 404
+            return jsonify({"success": False, "message": "User tidak ditemukan!"}), 200
 
         status_lower = user_data.get('status', '').lower()
         is_paid_user = any(word in status_lower for word in ["paid", "subscriber", "admin", "lifetime"])
 
         if not is_paid_user:
-            return jsonify({"success": False, "isPaid": False, "message": "Akun Free Trial, upgrade untuk unlock API Key!"}), 403
+            return jsonify({"success": False, "isPaid": False, "message": "Akun Free Trial, upgrade untuk unlock API Key!"}), 200
 
         new_api_key = "TREND_" + uuid.uuid4().hex[:12].upper()
         db.db_save_user(email, user_data.get('secret', ''), user_data.get('is_linked', False), user_data.get('name', ''), new_api_key, user_data.get('status', ''))
-        return jsonify({"success": True, "isPaid": True, "apiKey": new_api_key})
+        return jsonify({"success": True, "isPaid": True, "apiKey": new_api_key}), 200
     except Exception as e:
         print(f"[Error /api/generate-api-key]: {e}")
-        return jsonify({"success": False, "message": f"Terjadi kesalahan server: {str(e)}"}), 500
+        return jsonify({"success": False, "message": f"Terjadi kesalahan server: {str(e)}"}), 200
 
-@auth_bp.route('/api/me', methods=['POST'])
+@auth_bp.route('/api/me', methods=['POST', 'OPTIONS'])
 def get_me():
+    if request.method == 'OPTIONS':
+        return jsonify({"success": True}), 200
     try:
         data = request.get_json(silent=True) or {}
         email = data.get('email', '').strip().lower()
         if not email:
-            return jsonify({"success": False, "message": "Email wajib diisi!"}), 400
+            return jsonify({"success": False, "message": "Email wajib diisi!"}), 200
         
         user_data = db.db_get_user(email)
         if not user_data:
-            return jsonify({"success": False, "message": "User tidak ditemukan!"}), 404
+            return jsonify({"success": False, "message": "User tidak ditemukan!"}), 200
         
         connected_platforms = []
         if user_data.get('tiktok_connected'): connected_platforms.append('TikTok')
@@ -218,7 +230,7 @@ def get_me():
                 "isPaid": is_paid_user,
                 "connectedPlatforms": connected_platforms
             }
-        })
+        }), 200
     except Exception as e:
         print(f"[Error /api/me]: {e}")
-        return jsonify({"success": False, "message": f"Terjadi kesalahan server: {str(e)}"}), 500
+        return jsonify({"success": False, "message": f"Terjadi kesalahan server: {str(e)}"}), 200

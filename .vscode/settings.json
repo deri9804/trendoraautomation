@@ -1,1 +1,12 @@
-settings.json
+{
+"python.analysis.extraPaths": [
+".",
+"./utils",
+"./routes"
+],
+"python.autoComplete.extraPaths": [
+".",
+"./utils",
+"./routes"
+]
+}
