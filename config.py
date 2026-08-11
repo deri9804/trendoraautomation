@@ -2,6 +2,7 @@ import os
 #konfigurasi gsheet
 GOOGLE_SHEET_ID = "1P0zTEwtMmWfxhHAY6-QbQd5to6Id1rzazgel-PiSJwI" 
 SERVICE_ACCOUNT_FILE = "service_account.json"
+GOOGLE_CREDS_JSON = os.environ.get("GOOGLE_APPLICATION_CREDENTIALS_JSON") # <--- Tambahin yang ini bro
 
 # KONFIGURASI TIKTOK DEVELOPER
 TIKTOK_CLIENT_KEY = os.environ.get("TIKTOK_CLIENT_KEY")
