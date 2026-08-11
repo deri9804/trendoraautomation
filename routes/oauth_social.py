@@ -1,16 +1,11 @@
-"""
-===============================================================================
-routes/oauth_social.py - Social Media OAuth Integration Routes
-===============================================================================
-Blueprint untuk otentikasi & callback platform sosial media:
-- Disconnect Social Account
-- TikTok (Auth URL & Callback)
-- Meta / FB & IG (Auth URL, Callback, Webhook)
-- LinkedIn (Auth URL & Callback)
-- YouTube / Google (Auth URL & Callback)
-- Threads (Auth URL & Callback)
-- Twitter / X (Auth URL, Callback, Webhook CRC)
-"""
+import os
+import sys
+
+PARENT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+UTILS_DIR = os.path.join(PARENT_DIR, 'utils')
+for d in [PARENT_DIR, UTILS_DIR]:
+    if d not in sys.path:
+        sys.path.insert(0, d)
 
 from flask import Blueprint, request, jsonify
 import urllib.request
@@ -20,14 +15,18 @@ import json
 import base64
 import hmac
 import hashlib
-import config
-import database as db
+
+try:
+    import config
+    import database as db
+except ImportError:
+    try:
+        from utils import config, database as db
+    except ImportError:
+        import config
+        import database as db
 
 oauth_bp = Blueprint('oauth_social', __name__)
-
-# =============================================================================
-# ROUTE ENDPOINTS (OAUTH & SOCIAL MEDIA CONNECTORS)
-# =============================================================================
 
 @oauth_bp.route('/api/disconnect-social', methods=['POST'])
 def disconnect_social():
@@ -84,9 +83,6 @@ def disconnect_social():
         
     return jsonify({"success": False, "message": "Email tidak ditemukan"})
 
-# -----------------------------------------------------------------------------
-# TIKTOK OAUTH
-# -----------------------------------------------------------------------------
 @oauth_bp.route('/api/tiktok-auth-url', methods=['GET'])
 def get_tiktok_auth_url():
     email = request.args.get('email', '').strip()
@@ -149,9 +145,6 @@ def tiktok_callback():
     </body></html>
     """
 
-# -----------------------------------------------------------------------------
-# META (FACEBOOK & INSTAGRAM) OAUTH & WEBHOOK
-# -----------------------------------------------------------------------------
 @oauth_bp.route('/api/meta-auth-url', methods=['GET'])
 def get_meta_auth_url():
     email = request.args.get('email', '').strip()
@@ -221,9 +214,6 @@ def meta_webhook():
         print("Event Meta Webhook:", request.json)
         return "EVENT_RECEIVED", 200
 
-# -----------------------------------------------------------------------------
-# TWITTER / X WEBHOOK & OAUTH
-# -----------------------------------------------------------------------------
 @oauth_bp.route('/api/twitter-webhook', methods=['GET', 'POST'], strict_slashes=False)
 def twitter_webhook():
     if request.method == 'GET':
@@ -291,9 +281,6 @@ def twitter_callback():
 
     return """<html><body style="background:#0d0a1a;"><h2 style="color:#1d9bf0;text-align:center;margin-top:50px;">Twitter/X Connected!</h2><script>if(window.opener){window.opener.postMessage({type:'OAUTH_SUCCESS', platform:'Twitter'}, '*');window.close();}</script></body></html>"""
 
-# -----------------------------------------------------------------------------
-# LINKEDIN OAUTH
-# -----------------------------------------------------------------------------
 @oauth_bp.route('/api/linkedin-auth-url', methods=['GET'])
 def get_linkedin_auth_url():
     email = request.args.get('email', '').strip()
@@ -340,9 +327,6 @@ def linkedin_callback():
 
     return """<html><body style="background:#0d0a1a;"><h2 style="color:#34d399;text-align:center;margin-top:50px;">LinkedIn Connected!</h2><script>if(window.opener){window.opener.postMessage({type:'OAUTH_SUCCESS', platform:'LinkedIn'}, '*');window.close();}</script></body></html>"""
 
-# -----------------------------------------------------------------------------
-# YOUTUBE OAUTH
-# -----------------------------------------------------------------------------
 @oauth_bp.route('/api/youtube-auth-url', methods=['GET'])
 def get_youtube_auth_url():
     email = request.args.get('email', '').strip()
@@ -394,9 +378,6 @@ def youtube_callback():
 
     return """<html><body style="background:#0d0a1a;"><h2 style="color:#ff0000;text-align:center;margin-top:50px;">YouTube Connected!</h2><script>if(window.opener){window.opener.postMessage({type:'OAUTH_SUCCESS', platform:'YouTube'}, '*');window.close();}</script></body></html>"""
 
-# -----------------------------------------------------------------------------
-# THREADS OAUTH
-# -----------------------------------------------------------------------------
 @oauth_bp.route('/api/threads-auth-url', methods=['GET'])
 def get_threads_auth_url():
     email = request.args.get('email', '').strip()

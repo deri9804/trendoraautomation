@@ -1,13 +1,11 @@
-"""
-===============================================================================
-routes/webhook_n8n.py - Webhook n8n, AI Chat & Payment Routes
-===============================================================================
-Blueprint untuk pemrosesan automasi backend:
-- Payment Transaction (Midtrans Create & Check)
-- n8n Automation Webhook (Auto Posting TikTok, FB, IG, etc.)
-- Activity Logs Reader
-- AI Customer Service Chat Endpoint
-"""
+import os
+import sys
+
+PARENT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+UTILS_DIR = os.path.join(PARENT_DIR, 'utils')
+for d in [PARENT_DIR, UTILS_DIR]:
+    if d not in sys.path:
+        sys.path.insert(0, d)
 
 from flask import Blueprint, request, jsonify
 import urllib.request
@@ -16,20 +14,26 @@ import urllib.error
 import json
 import uuid
 import re
-import os
+import base64
 import time
 import tempfile
 from datetime import datetime
-import config
-import database as db
-import security as sec
-import ai_helper as ai
+
+try:
+    import config
+    import database as db
+    import security as sec
+    import ai_helper as ai
+except ImportError:
+    try:
+        from utils import config, database as db, security as sec, ai_helper as ai
+    except ImportError:
+        import config
+        import database as db
+        import security as sec
+        import ai_helper as ai
 
 webhook_bp = Blueprint('webhook_n8n', __name__)
-
-# =============================================================================
-# ROUTE ENDPOINTS (MIDTRANS, N8N WEBHOOK, LOGS, AI CHAT)
-# =============================================================================
 
 @webhook_bp.route('/api/chat', methods=['POST'])
 def chat_api():
