@@ -1,37 +1,35 @@
-import os
-import sys
+from flask import Blueprint, render_template
 
-PARENT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-if PARENT_DIR not in sys.path:
-    sys.path.insert(0, PARENT_DIR)
+pages_bp = Blueprint('pages', __name__)
 
-from flask import jsonify, render_template
-from .pages import pages_bp
-from .auth import auth_bp
-from .oauth_social import oauth_bp
-from .webhook_n8n import webhook_bp
+@pages_bp.route('/')
+def index():
+    return render_template('index.html')
 
-def register_routes(app):
-    """Mendaftarkan seluruh blueprint ke instance Flask app dan memasang Global Error Handler."""
-    app.register_blueprint(pages_bp)
-    app.register_blueprint(auth_bp)
-    app.register_blueprint(oauth_bp)
-    app.register_blueprint(webhook_bp)
+@pages_bp.route('/login')
+def login_page():
+    return render_template('login.html')
 
-    @app.errorhandler(404)
-    def handle_404(e):
-        try:
-            return render_template('index.html'), 200
-        except Exception:
-            return jsonify({"success": False, "message": "Endpoint / Halaman tidak ditemukan (404)."}), 200
+@pages_bp.route('/checkout')
+def checkout_page():
+    return render_template('checkout.html')
 
-    @app.errorhandler(500)
-    def handle_500(e):
-        return jsonify({"success": False, "message": "Terjadi kesalahan internal pada server (500)."}), 200
+@pages_bp.route('/dashboard')
+def dashboard_page():
+    return render_template('dashboard.html')
 
-    @app.errorhandler(Exception)
-    def handle_global_exception(e):
-        print(f"[Global Exception Handler]: {e}")
-        return jsonify({"success": False, "message": f"Terjadi kesalahan server: {str(e)}"}), 200
+@pages_bp.route('/webhook')
+def webhook_page():
+    return render_template('webhook.html')
 
-    print("[routes] Semua Blueprint dan Global Error Handler berhasil didaftarkan.")
+@pages_bp.route('/tos')
+def tos_page():
+    return render_template('tos.html')
+
+@pages_bp.route('/privacy')
+def privacy_page():
+    return render_template('privacy.html')
+
+@pages_bp.route('/data-deletion')
+def data_deletion_page():
+    return render_template('data_deletion.html')
