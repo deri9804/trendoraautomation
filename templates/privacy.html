@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Privacy Policy - TRENDORA AUTOMATION</title>
+  <link rel="icon" type="image/png" href="{{ url_for('static', filename='logo-trendora.png') }}">
   {% include 'css.html' %}
 </head>
 <body>
@@ -12,6 +13,12 @@
   <!-- PAGE WRAPPER UNTUK PRIVACY POLICY -->
   <div style="padding: 120px 5% 80px 5%; max-width: 900px; margin: 0 auto; min-height: 85vh; color: #cbd5e1; line-height: 1.8;">
     
+    <!-- HEADER BRANDING LOGO (REVISI REVIEW) -->
+    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 20px;">
+        <img src="{{ url_for('static', filename='logo-trendora.png') }}" alt="TRENDORA Logo" style="width: 48px; height: 48px; object-fit: contain;" onerror="this.src='/static/logo-trendora.png'">
+        <span style="color: #fff; font-size: 20px; font-weight: 800; letter-spacing: 0.5px;">TRENDORA AUTOMATION</span>
+    </div>
+
     <div style="border-bottom: 1px solid rgba(255,255,255,0.1); margin-bottom: 30px; padding-bottom: 20px;">
         <span style="display: inline-block; background: rgba(56, 189, 248, 0.15); color: #38bdf8; padding: 4px 12px; border-radius: 12px; font-size: 11px; font-weight: 700; margin-bottom: 12px;">KEBIJAKAN PRIVASI</span>
         <h1 style="color: #fff; font-size: 32px; font-weight: 800; margin-bottom: 8px;">Privacy Policy</h1>
