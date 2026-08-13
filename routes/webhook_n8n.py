@@ -102,34 +102,85 @@ def n8n_webhook():
             if access_token:
                 temp_file_path = None
                 try:
-                    headers = {"Authorization": f"Bearer {access_token}", "Content-Type": "application/json; charset=utf-8"}
+                    # 1. Unduh video dari media_url dengan Browser User-Agent agar tidak terblokir 403 oleh CDN
+                    temp_dir = tempfile.gettempdir()
+                    temp_file_path = os.path.join(temp_dir, f"tk_{uuid.uuid4().hex[:6]}.mp4")
+                    
+                    req_download = urllib.request.Request(
+                        media_url, 
+                        headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'}
+                    )
+                    with urllib.request.urlopen(req_download) as res_dl, open(temp_file_path, 'wb') as out_file:
+                        out_file.write(res_dl.read())
+
+                    file_size = os.path.getsize(temp_file_path)
+
+                    headers = {
+                        "Authorization": f"Bearer {access_token}", 
+                        "Content-Type": "application/json; charset=utf-8"
+                    }
+
+                    # Optional Query Check
                     try:
-                        urllib.request.urlopen(urllib.request.Request("https://open.tiktokapis.com/v2/post/publish/creator_info/query/", data=b"{}", headers=headers, method='POST'))
+                        req_query = urllib.request.Request(
+                            "https://open.tiktokapis.com/v2/post/publish/creator_info/query/", 
+                            data=b"{}", 
+                            headers=headers, 
+                            method='POST'
+                        )
+                        urllib.request.urlopen(req_query)
                     except Exception:
                         pass
 
-                    temp_dir = tempfile.gettempdir()
-                    temp_file_path = os.path.join(temp_dir, f"tk_{uuid.uuid4().hex[:6]}.mp4")
-                    urllib.request.urlretrieve(media_url, temp_file_path)
-                    file_size = os.path.getsize(temp_file_path)
-
+                    # 2. Inisialisasi Upload Video TikTok
                     payload = {
-                        "post_info": {"title": caption, "privacy_level": "PUBLIC_TO_EVERYONE", "disable_duet": False, "disable_comment": False, "disable_stitch": False},
-                        "source_info": {"source": "FILE_UPLOAD", "video_size": file_size, "chunk_size": file_size, "total_chunk_count": 1}
+                        "post_info": {
+                            "title": caption, 
+                            "privacy_level": "PUBLIC_TO_EVERYONE", 
+                            "disable_duet": False, 
+                            "disable_comment": False, 
+                            "disable_stitch": False
+                        },
+                        "source_info": {
+                            "source": "FILE_UPLOAD", 
+                            "video_size": file_size, 
+                            "chunk_size": file_size, 
+                            "total_chunk_count": 1
+                        }
                     }
-                    req_init = urllib.request.Request("https://open.tiktokapis.com/v2/post/publish/video/init/", data=json.dumps(payload).encode('utf-8'), headers=headers, method='POST')
+                    req_init = urllib.request.Request(
+                        "https://open.tiktokapis.com/v2/post/publish/video/init/", 
+                        data=json.dumps(payload).encode('utf-8'), 
+                        headers=headers, 
+                        method='POST'
+                    )
+                    
                     with urllib.request.urlopen(req_init) as response:
                         tiktok_res = json.loads(response.read().decode('utf-8'))
                         upload_url = tiktok_res.get('data', {}).get('upload_url')
                         if upload_url:
                             with open(temp_file_path, 'rb') as f:
                                 video_data = f.read()
-                            put_headers = {'Content-Type': 'video/mp4', 'Content-Range': f'bytes 0-{file_size-1}/{file_size}'}
-                            urllib.request.urlopen(urllib.request.Request(upload_url, data=video_data, headers=put_headers, method='PUT'))
+                            put_headers = {
+                                'Content-Type': 'video/mp4', 
+                                'Content-Range': f'bytes 0-{file_size-1}/{file_size}'
+                            }
+                            req_put = urllib.request.Request(upload_url, data=video_data, headers=put_headers, method='PUT')
+                            urllib.request.urlopen(req_put)
                             status = "PUBLISHED (SUCCESS)"
                             details['upload_status'] = f"Success TikTok Upload ({file_size} bytes)."
                         else:
                             status = "FAILED"
+                            details['tiktok_error'] = tiktok_res.get('error', {}).get('message', 'Gagal mendapatkan Upload URL dari TikTok')
+
+                except urllib.error.HTTPError as http_err:
+                    status = "FAILED"
+                    err_body = ""
+                    try:
+                        err_body = http_err.read().decode('utf-8')
+                    except Exception:
+                        pass
+                    details['tiktok_error'] = f"HTTP {http_err.code}: {http_err.reason}. Details: {err_body[:200]}"
                 except Exception as e:
                     details['tiktok_error'] = str(e)
                     status = "FAILED"
@@ -140,7 +191,7 @@ def n8n_webhook():
                         except Exception:
                             pass
             else:
-                details['error'] = "Akun TikTok belum terhubung."
+                details['error'] = "Akun TikTok belum terhubung atau Access Token kosong."
                 status = "FAILED"
 
     elif platform == 'facebook' and isinstance(details, dict):
