@@ -102,7 +102,7 @@ def n8n_webhook():
             if access_token:
                 temp_file_path = None
                 try:
-                    # 1. Unduh video dari media_url dengan Browser User-Agent agar tidak terblokir 403 oleh CDN
+                    # 1. Unduh video dari media_url dengan Browser User-Agent
                     temp_dir = tempfile.gettempdir()
                     temp_file_path = os.path.join(temp_dir, f"tk_{uuid.uuid4().hex[:6]}.mp4")
                     
@@ -115,7 +115,7 @@ def n8n_webhook():
                             out_file.write(res_dl.read())
                     except urllib.error.HTTPError as dl_err:
                         status = "FAILED"
-                        details['tiktok_error'] = f"[Media Download 403] Gagal unduh file dari media_url. HTTP {dl_err.code}: {dl_err.reason}."
+                        details['tiktok_error'] = f"[Google Storage Download 403] URL video tidak bisa diunduh/private. HTTP {dl_err.code}: {dl_err.reason}."
                         raise Exception(f"Media URL Download Failed: {dl_err}")
 
                     file_size = os.path.getsize(temp_file_path)
@@ -125,25 +125,8 @@ def n8n_webhook():
                         "Content-Type": "application/json; charset=utf-8"
                     }
 
-                    # 2. Query Creator Info untuk menentukan Privacy Level yang diizinkan (Sandbox = SELF_ONLY)
-                    privacy_level = "SELF_ONLY"  # Paksa SELF_ONLY agar diterima oleh TikTok Sandbox
-                    try:
-                        req_query = urllib.request.Request(
-                            "https://open.tiktokapis.com/v2/post/publish/creator_info/query/", 
-                            data=b"{}", 
-                            headers=headers, 
-                            method='POST'
-                        )
-                        with urllib.request.urlopen(req_query) as res_q:
-                            q_data = json.loads(res_q.read().decode('utf-8'))
-                            allowed_levels = q_data.get('data', {}).get('privacy_level_options', [])
-                            # Kunci ke SELF_ONLY untuk aplikasi berstatus Sandbox / Unaudited
-                            if "SELF_ONLY" in allowed_levels:
-                                privacy_level = "SELF_ONLY"
-                            elif allowed_levels:
-                                privacy_level = allowed_levels[0]
-                    except Exception as q_err:
-                        print(f"Creator query check info: {q_err}")
+                    # 2. Paksa SELF_ONLY untuk TikTok Sandbox / Unaudited App
+                    privacy_level = "SELF_ONLY"
 
                     # 3. Inisialisasi Upload Video TikTok
                     payload = {
@@ -206,7 +189,7 @@ def n8n_webhook():
                         except Exception:
                             pass
             else:
-                details['error'] = "Akun TikTok belum terhubung atau Access Token kosong."
+                details['tiktok_error'] = "Akun TikTok belum terhubung atau Access Token kosong."
                 status = "FAILED"
 
     elif platform == 'facebook' and isinstance(details, dict):
@@ -287,9 +270,8 @@ def n8n_webhook():
             col_a = sheet.col_values(1)
             next_row = len(col_a) + 1
             sheet.update(values=[row_data], range_name=f"A{next_row}:J{next_row}")
-            return jsonify({"success": True, "message": "Processed & Logged", "log_id": log_id})
         except Exception as e:
-            return jsonify({"success": False, "message": str(e)}), 500
+            print(f"Log sheet update error: {e}")
     else:
         if 'logs' not in config.user_2fa_store:
             config.user_2fa_store['logs'] = []
@@ -298,7 +280,15 @@ def n8n_webhook():
             "Status": status, "Details": details_str, "Keterangan": "", "MediaURL": media_url_val, 
             "Caption": caption_val, "Hashtag": hashtag_val
         })
-        return jsonify({"success": True, "log_id": log_id})
+        
+    is_upload_success = "SUCCESS" in status or status == "PUBLISHED"
+    return jsonify({
+        "success": is_upload_success, 
+        "status": status,
+        "message": "Processed & Logged" if is_upload_success else "Upload Gagal / Tertunda", 
+        "log_id": log_id,
+        "details": details
+    })
 
 @webhook_bp.route('/api/get-logs', methods=['POST', 'GET'])
 def get_logs():
