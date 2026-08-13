@@ -106,12 +106,17 @@ def n8n_webhook():
                     temp_dir = tempfile.gettempdir()
                     temp_file_path = os.path.join(temp_dir, f"tk_{uuid.uuid4().hex[:6]}.mp4")
                     
-                    req_download = urllib.request.Request(
-                        media_url, 
-                        headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'}
-                    )
-                    with urllib.request.urlopen(req_download) as res_dl, open(temp_file_path, 'wb') as out_file:
-                        out_file.write(res_dl.read())
+                    try:
+                        req_download = urllib.request.Request(
+                            media_url, 
+                            headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'}
+                        )
+                        with urllib.request.urlopen(req_download) as res_dl, open(temp_file_path, 'wb') as out_file:
+                            out_file.write(res_dl.read())
+                    except urllib.error.HTTPError as dl_err:
+                        status = "FAILED"
+                        details['tiktok_error'] = f"[Media Download 403] Gagal unduh file dari media_url. HTTP {dl_err.code}: {dl_err.reason}."
+                        raise Exception(f"Media URL Download Failed: {dl_err}")
 
                     file_size = os.path.getsize(temp_file_path)
 
@@ -120,7 +125,8 @@ def n8n_webhook():
                         "Content-Type": "application/json; charset=utf-8"
                     }
 
-                    # Optional Query Check
+                    # 2. Query Creator Info untuk menentukan Privacy Level yang diizinkan (Sandbox = SELF_ONLY)
+                    privacy_level = "SELF_ONLY"  # Default aman untuk Mode Sandbox
                     try:
                         req_query = urllib.request.Request(
                             "https://open.tiktokapis.com/v2/post/publish/creator_info/query/", 
@@ -128,15 +134,21 @@ def n8n_webhook():
                             headers=headers, 
                             method='POST'
                         )
-                        urllib.request.urlopen(req_query)
-                    except Exception:
-                        pass
+                        with urllib.request.urlopen(req_query) as res_q:
+                            q_data = json.loads(res_q.read().decode('utf-8'))
+                            allowed_levels = q_data.get('data', {}).get('privacy_level_options', [])
+                            if "PUBLIC_TO_EVERYONE" in allowed_levels:
+                                privacy_level = "PUBLIC_TO_EVERYONE"
+                            elif allowed_levels:
+                                privacy_level = allowed_levels[0]
+                    except Exception as q_err:
+                        print(f"Creator query check info: {q_err}")
 
-                    # 2. Inisialisasi Upload Video TikTok
+                    # 3. Inisialisasi Upload Video TikTok
                     payload = {
                         "post_info": {
                             "title": caption, 
-                            "privacy_level": "PUBLIC_TO_EVERYONE", 
+                            "privacy_level": privacy_level, 
                             "disable_duet": False, 
                             "disable_comment": False, 
                             "disable_stitch": False
@@ -168,22 +180,24 @@ def n8n_webhook():
                             req_put = urllib.request.Request(upload_url, data=video_data, headers=put_headers, method='PUT')
                             urllib.request.urlopen(req_put)
                             status = "PUBLISHED (SUCCESS)"
-                            details['upload_status'] = f"Success TikTok Upload ({file_size} bytes)."
+                            details['upload_status'] = f"Success TikTok Upload ({file_size} bytes) - Mode: {privacy_level}."
                         else:
                             status = "FAILED"
                             details['tiktok_error'] = tiktok_res.get('error', {}).get('message', 'Gagal mendapatkan Upload URL dari TikTok')
 
                 except urllib.error.HTTPError as http_err:
-                    status = "FAILED"
-                    err_body = ""
-                    try:
-                        err_body = http_err.read().decode('utf-8')
-                    except Exception:
-                        pass
-                    details['tiktok_error'] = f"HTTP {http_err.code}: {http_err.reason}. Details: {err_body[:200]}"
+                    if 'tiktok_error' not in details:
+                        status = "FAILED"
+                        err_body = ""
+                        try:
+                            err_body = http_err.read().decode('utf-8')
+                        except Exception:
+                            pass
+                        details['tiktok_error'] = f"[TikTok API 403/Forbidden] HTTP {http_err.code}: {http_err.reason}. Details: {err_body[:200]}"
                 except Exception as e:
-                    details['tiktok_error'] = str(e)
-                    status = "FAILED"
+                    if 'tiktok_error' not in details:
+                        details['tiktok_error'] = str(e)
+                        status = "FAILED"
                 finally:
                     if temp_file_path and os.path.exists(temp_file_path):
                         try:
