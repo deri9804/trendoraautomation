@@ -126,7 +126,7 @@ def n8n_webhook():
                     }
 
                     # 2. Query Creator Info untuk menentukan Privacy Level yang diizinkan (Sandbox = SELF_ONLY)
-                    privacy_level = "SELF_ONLY"  # Default aman untuk Mode Sandbox
+                    privacy_level = "SELF_ONLY"  # Paksa SELF_ONLY agar diterima oleh TikTok Sandbox
                     try:
                         req_query = urllib.request.Request(
                             "https://open.tiktokapis.com/v2/post/publish/creator_info/query/", 
@@ -137,8 +137,9 @@ def n8n_webhook():
                         with urllib.request.urlopen(req_query) as res_q:
                             q_data = json.loads(res_q.read().decode('utf-8'))
                             allowed_levels = q_data.get('data', {}).get('privacy_level_options', [])
-                            if "PUBLIC_TO_EVERYONE" in allowed_levels:
-                                privacy_level = "PUBLIC_TO_EVERYONE"
+                            # Kunci ke SELF_ONLY untuk aplikasi berstatus Sandbox / Unaudited
+                            if "SELF_ONLY" in allowed_levels:
+                                privacy_level = "SELF_ONLY"
                             elif allowed_levels:
                                 privacy_level = allowed_levels[0]
                     except Exception as q_err:
