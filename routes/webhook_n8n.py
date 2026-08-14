@@ -110,23 +110,24 @@ def n8n_webhook():
     if not api_key:
         return jsonify({"success": False, "message": "API Key is required in Header"}), 400
 
-    # 1. VERIFIKASI BATAS TRIAL & KUOTA POSTING HARI INI
+    # 1. VERIFIKASI USER BERDASARKAN API KEY DI SHEET UTAMA
     user_data = None
-    sheet = db.get_gsheet()
-    if sheet:
+    sheet_users = db.get_gsheet()
+    if sheet_users:
         try:
-            all_vals = sheet.get_all_values()
+            all_vals = sheet_users.get_all_values()
             for r in all_vals[1:]:
                 if len(r) >= 5 and str(r[4]).strip() == api_key:
                     user_data = db.db_get_user(r[0])
                     break
-        except Exception:
-            pass
+        except Exception as e:
+            print(f"Error finding user by API key: {e}")
 
+    # 2. VERIFIKASI TRIAL & KUOTA POSTING
     if user_data:
         trial_info = check_user_trial_status(user_data)
         
-        # Jika Trial sudah EXPIRED (> 7 hari) -> Blokir posting
+        # Jika Trial EXPIRED (> 7 hari) -> Blokir posting
         if trial_info["is_expired"] and not trial_info["is_paid"]:
             return jsonify({
                 "success": False,
@@ -182,6 +183,7 @@ def n8n_webhook():
                         "Content-Type": "application/json; charset=utf-8"
                     }
 
+                    # Mode Sandbox dikunci ke SELF_ONLY untuk mematuhi aturan TikTok API
                     privacy_level = "SELF_ONLY"
 
                     payload = {
@@ -319,11 +321,13 @@ def n8n_webhook():
     log_id = f"LOG-{uuid.uuid4().hex[:8].upper()}"
     row_data = [timestamp, log_id, api_key, platform, status, details_str, "", media_url_val, caption_val, hashtag_val]
     
-    if sheet:
+    # KETAT: Memastikan log hanya ditulis ke tab 'Logs' (bukan Sheet Utama)
+    sheet_logs = db.get_logs_sheet()
+    if sheet_logs:
         try:
-            col_a = sheet.col_values(1)
+            col_a = sheet_logs.col_values(1)
             next_row = len(col_a) + 1
-            sheet.update(values=[row_data], range_name=f"A{next_row}:J{next_row}")
+            sheet_logs.update(values=[row_data], range_name=f"A{next_row}:J{next_row}")
         except Exception as e:
             print(f"Log sheet update error: {e}")
     else:
@@ -348,11 +352,11 @@ def n8n_webhook():
 def get_logs():
     api_key = request.headers.get('X-API-Key', '').strip() or (request.json or {}).get('api_key', '').strip()
     logs = []
-    sheet = db.get_logs_sheet()
+    sheet_logs = db.get_logs_sheet()
     
-    if sheet:
+    if sheet_logs:
         try:
-            all_values = sheet.get_all_values()
+            all_values = sheet_logs.get_all_values()
             if len(all_values) > 1:
                 for row in all_values[1:]:
                     if len(row) >= 3:
