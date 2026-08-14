@@ -21,8 +21,30 @@ import config
 from utils import database as db
 from utils import security as sec
 from utils import ai_helper as ai
+from routes.auth import check_user_trial_status
 
 webhook_bp = Blueprint('webhook_n8n', __name__)
+
+def count_today_posts_for_key(api_key):
+    """Menghitung jumlah postingan sukses yang sudah dilakukan API Key hari ini."""
+    today_str = datetime.now().strftime("%d/%m/%Y")
+    sheet = db.get_logs_sheet()
+    count = 0
+    if sheet:
+        try:
+            all_values = sheet.get_all_values()
+            if len(all_values) > 1:
+                for row in all_values[1:]:
+                    if len(row) >= 5:
+                        row_date = str(row[0]).split()[0] if len(row) > 0 else ""
+                        row_key = str(row[2]).strip() if len(row) > 2 else ""
+                        row_status = str(row[4]).upper() if len(row) > 4 else ""
+                        
+                        if row_key == api_key and today_str in row_date and ("SUCCESS" in row_status or "PUBLISHED" in row_status):
+                            count += 1
+        except Exception as e:
+            print(f"Error checking daily post count: {e}")
+    return count
 
 @webhook_bp.route('/api/chat', methods=['POST'])
 def chat_api():
@@ -88,6 +110,42 @@ def n8n_webhook():
     if not api_key:
         return jsonify({"success": False, "message": "API Key is required in Header"}), 400
 
+    # 1. VERIFIKASI BATAS TRIAL & KUOTA POSTING HARI INI
+    user_data = None
+    sheet = db.get_gsheet()
+    if sheet:
+        try:
+            all_vals = sheet.get_all_values()
+            for r in all_vals[1:]:
+                if len(r) >= 5 and str(r[4]).strip() == api_key:
+                    user_data = db.db_get_user(r[0])
+                    break
+        except Exception:
+            pass
+
+    if user_data:
+        trial_info = check_user_trial_status(user_data)
+        
+        # Jika Trial sudah EXPIRED (> 7 hari) -> Blokir posting
+        if trial_info["is_expired"] and not trial_info["is_paid"]:
+            return jsonify({
+                "success": False,
+                "status": "FAILED",
+                "message": "Masa Free Trial 1 Minggu Anda telah habis! Silakan upgrade akun ke berbayar di Dashboard TRENDORA.",
+                "details": {"error": "Free Trial Expired (> 7 hari). Silakan upgrade ke akun berbayar."}
+            }), 400
+            
+        # Jika Trial masih aktif (<= 7 hari) -> Cek batas 1 video per hari
+        if trial_info["is_trial"] and not trial_info["is_paid"]:
+            today_posts = count_today_posts_for_key(api_key)
+            if today_posts >= 1:
+                return jsonify({
+                    "success": False,
+                    "status": "FAILED",
+                    "message": "Batas Free Trial tercapai! Akun Free Trial hanya diperbolehkan posting maksimal 1 video per hari. Silakan upgrade ke akun berbayar.",
+                    "details": {"error": "Maksimal 1 video per hari untuk akun Free Trial."}
+                }), 400
+
     data = request.json or {}
     platform = data.get('platform', 'unknown').lower()
     status = data.get('status', 'RECEIVED')
@@ -102,7 +160,6 @@ def n8n_webhook():
             if access_token:
                 temp_file_path = None
                 try:
-                    # 1. Unduh video dari media_url dengan Browser User-Agent
                     temp_dir = tempfile.gettempdir()
                     temp_file_path = os.path.join(temp_dir, f"tk_{uuid.uuid4().hex[:6]}.mp4")
                     
@@ -115,7 +172,7 @@ def n8n_webhook():
                             out_file.write(res_dl.read())
                     except urllib.error.HTTPError as dl_err:
                         status = "FAILED"
-                        details['tiktok_error'] = f"[Google Storage Download 403] URL video tidak bisa diunduh/private. HTTP {dl_err.code}: {dl_err.reason}."
+                        details['tiktok_error'] = f"[Google Storage Download Error] URL video tidak bisa diunduh/private. HTTP {dl_err.code}: {dl_err.reason}."
                         raise Exception(f"Media URL Download Failed: {dl_err}")
 
                     file_size = os.path.getsize(temp_file_path)
@@ -125,10 +182,8 @@ def n8n_webhook():
                         "Content-Type": "application/json; charset=utf-8"
                     }
 
-                    # 2. Paksa SELF_ONLY untuk TikTok Sandbox / Unaudited App
                     privacy_level = "SELF_ONLY"
 
-                    # 3. Inisialisasi Upload Video TikTok
                     payload = {
                         "post_info": {
                             "title": caption, 
@@ -264,7 +319,6 @@ def n8n_webhook():
     log_id = f"LOG-{uuid.uuid4().hex[:8].upper()}"
     row_data = [timestamp, log_id, api_key, platform, status, details_str, "", media_url_val, caption_val, hashtag_val]
     
-    sheet = db.get_logs_sheet()
     if sheet:
         try:
             col_a = sheet.col_values(1)

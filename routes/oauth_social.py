@@ -16,8 +16,45 @@ import hashlib
 
 import config
 from utils import database as db
+from routes.auth import check_user_trial_status
 
 oauth_bp = Blueprint('oauth_social', __name__)
+
+def check_trial_social_limit(email):
+    """
+    Memeriksa apakah akun trial sudah melebihi batas 2 sosial media atau sudah expired.
+    Return (can_connect: bool, error_message: str)
+    """
+    if not email:
+        return False, "Email pengguna tidak valid."
+        
+    user_data = db.db_get_user(email)
+    if not user_data:
+        return False, "User tidak ditemukan."
+        
+    trial_info = check_user_trial_status(user_data)
+    
+    # Jika user berbayar, bebas hubungkan berapa saja
+    if trial_info["is_paid"]:
+        return True, ""
+        
+    # Jika trial sudah expired
+    if trial_info["is_expired"]:
+        return False, "Masa Free Trial 1 Minggu Anda telah habis. Silakan upgrade ke akun berbayar untuk menautkan sosial media."
+        
+    # Hitung jumlah sosial media terhubung
+    connected_count = 0
+    if user_data.get('tiktok_connected'): connected_count += 1
+    if user_data.get('meta_connected'): connected_count += 1
+    if user_data.get('linkedin_connected'): connected_count += 1
+    if user_data.get('youtube_connected'): connected_count += 1
+    if user_data.get('threads_connected'): connected_count += 1
+    if user_data.get('twitter_connected'): connected_count += 1
+    
+    if connected_count >= 2:
+        return False, "Batas Free Trial tercapai! Akun Free Trial hanya diperbolehkan menautkan maksimal 2 akun sosial media. Silakan upgrade ke akun berbayar."
+        
+    return True, ""
 
 @oauth_bp.route('/api/disconnect-social', methods=['POST'])
 def disconnect_social():
@@ -77,6 +114,10 @@ def disconnect_social():
 @oauth_bp.route('/api/tiktok-auth-url', methods=['GET'])
 def get_tiktok_auth_url():
     email = request.args.get('email', '').strip()
+    can_connect, err_msg = check_trial_social_limit(email)
+    if not can_connect:
+        return jsonify({"success": False, "message": err_msg}), 400
+
     redirect_uri = "https://trendoraautomation.my.id/auth/tiktok/callback"
     state = f"{uuid.uuid4().hex[:8]}|{email}"
     
@@ -139,6 +180,10 @@ def tiktok_callback():
 @oauth_bp.route('/api/meta-auth-url', methods=['GET'])
 def get_meta_auth_url():
     email = request.args.get('email', '').strip()
+    can_connect, err_msg = check_trial_social_limit(email)
+    if not can_connect:
+        return jsonify({"success": False, "message": err_msg}), 400
+
     redirect_uri = "https://trendoraautomation.my.id/auth/meta/callback"
     state = f"{uuid.uuid4().hex[:8]}|{email}"
     scopes = "pages_show_list,pages_read_engagement,pages_manage_posts,instagram_basic,instagram_content_publish"
@@ -222,6 +267,10 @@ def twitter_webhook():
 @oauth_bp.route('/api/twitter-auth-url', methods=['GET'])
 def get_twitter_auth_url():
     email = request.args.get('email', '').strip()
+    can_connect, err_msg = check_trial_social_limit(email)
+    if not can_connect:
+        return jsonify({"success": False, "message": err_msg}), 400
+
     state = f"{uuid.uuid4().hex[:8]}|{email}"
     params = {
         "response_type": "code",
@@ -275,6 +324,10 @@ def twitter_callback():
 @oauth_bp.route('/api/linkedin-auth-url', methods=['GET'])
 def get_linkedin_auth_url():
     email = request.args.get('email', '').strip()
+    can_connect, err_msg = check_trial_social_limit(email)
+    if not can_connect:
+        return jsonify({"success": False, "message": err_msg}), 400
+
     redirect_uri = "https://trendoraautomation.my.id/auth/linkedin/callback"
     state = f"{uuid.uuid4().hex[:8]}|{email}"
     params = {
@@ -321,6 +374,10 @@ def linkedin_callback():
 @oauth_bp.route('/api/youtube-auth-url', methods=['GET'])
 def get_youtube_auth_url():
     email = request.args.get('email', '').strip()
+    can_connect, err_msg = check_trial_social_limit(email)
+    if not can_connect:
+        return jsonify({"success": False, "message": err_msg}), 400
+
     state = f"{uuid.uuid4().hex[:8]}|{email}"
     params = {
         "client_id": config.GOOGLE_CLIENT_ID or "DUMMY_ID",
@@ -372,6 +429,10 @@ def youtube_callback():
 @oauth_bp.route('/api/threads-auth-url', methods=['GET'])
 def get_threads_auth_url():
     email = request.args.get('email', '').strip()
+    can_connect, err_msg = check_trial_social_limit(email)
+    if not can_connect:
+        return jsonify({"success": False, "message": err_msg}), 400
+
     state = f"{uuid.uuid4().hex[:8]}|{email}"
     params = {
         "client_id": config.THREADS_CLIENT_ID or "DUMMY_ID",

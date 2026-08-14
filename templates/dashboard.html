@@ -73,6 +73,37 @@
     
     .btn-toggle-sidebar:hover { background: rgba(255,255,255,0.1); color: #fff; }
 
+    /* BANNER PERINGATAN TRIAL EXPIRED */
+    .expired-banner-box {
+      background: linear-gradient(135deg, rgba(239, 68, 68, 0.2) 0%, rgba(185, 28, 28, 0.3) 100%);
+      border: 1px solid #ef4444;
+      border-radius: 16px;
+      padding: 20px 24px;
+      margin-bottom: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+      box-shadow: 0 0 25px rgba(239, 68, 68, 0.2);
+    }
+
+    .expired-banner-text h3 {
+      color: #fca5a5;
+      font-size: 18px;
+      font-weight: 800;
+      margin-bottom: 4px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .expired-banner-text p {
+      color: #e5e7eb;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
     @media (max-width: 900px) {
       .dash-layout { flex-direction: column; }
       .dash-sidebar { 
@@ -122,6 +153,17 @@
         <span id="sidebarIconDash">◀</span> <span>Tutup Menu</span>
       </button>
       
+      <!-- BANNER PERINGATAN TRIAL EXPIRED -->
+      <div id="trialExpiredAlertBanner" class="expired-banner-box" style="display: none;">
+        <div class="expired-banner-text">
+          <h3>🔒 Masa Free Trial 1 Minggu Anda Telah Habis!</h3>
+          <p>Fitur API Key, posting otomatis n8n (1 video/hari), dan penautan sosial media saat ini <strong>terkunci/hangus</strong>. Silakan upgrade ke akun berbayar untuk membuka kembali seluruh fitur tanpa batas.</p>
+        </div>
+        <button class="btn-pink" onclick="openUpgradePayment()" style="padding: 12px 24px; font-size: 13px; font-weight: 800; white-space: nowrap;">
+          ⭐ Upgrade Akun Berbayar &rarr;
+        </button>
+      </div>
+
       <section id="section-overview" style="scroll-margin-top: 100px;">
         <div class="dashboard-hero-card" style="margin-bottom: 30px;">
           
@@ -134,6 +176,13 @@
               Email: <span id="dashUserEmail">-</span><br>
               Status: <strong id="dashAccountStatus" style="color: #f59e0b;">Active (7-Day Free Trial)</strong>
             </p>
+
+            <div id="trialPerksNotice" style="background: rgba(255,255,255,0.03); border-left: 3px solid #60a5fa; padding: 12px; border-radius: 0 8px 8px 0; font-size: 12px; color: #9ca3af; margin-top: 10px;">
+              ⚡ <strong>Fitur Free Trial Anda:</strong><br>
+              &bull; Posting maksimal 1 video per hari via n8n/Make.<br>
+              &bull; Maksimal menautkan 2 akun sosial media.<br>
+              &bull; Berlaku selama 7 hari sejak pendaftaran.
+            </div>
           </div>
           
           <div class="dash-key-card">
@@ -162,7 +211,7 @@
       <section id="section-social" style="scroll-margin-top: 100px;">
         <div class="dashboard-hero-card" style="margin-bottom: 30px; display: block;">
           <h3 style="margin-bottom: 8px; font-size: 20px; color: #fff;">🔗 Integrasi Sosial Media</h3>
-          <p style="color: #9ca3af; font-size: 13px; margin-bottom: 24px;">Hubungkan akun sosial media Anda. Akun yang terhubung akan dapat menerima video secara otomatis dari n8n.</p>
+          <p style="color: #9ca3af; font-size: 13px; margin-bottom: 24px;">Hubungkan akun sosial media Anda (Maksimal 2 platform untuk Free Trial). Akun terhubung akan otomatis menerima postingan dari n8n.</p>
           
           <div id="socialConnectionsList" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px;">
             <p style="color: #6b7280; font-size: 13px;">Memuat daftar platform...</p>

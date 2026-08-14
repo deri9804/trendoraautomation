@@ -1,5 +1,7 @@
 import os
 import sys
+import re
+from datetime import datetime, timedelta
 
 PARENT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if PARENT_DIR not in sys.path:
@@ -14,6 +16,62 @@ from utils import database as db
 from utils import security as sec
 
 auth_bp = Blueprint('auth', __name__)
+
+def check_user_trial_status(user_data):
+    """
+    Menghitung status Free Trial user:
+    - Paid user: Tidak terbatas.
+    - Trial user (<= 7 hari): Aktif dengan fitur terbatas (1 video/hari, max 2 sosmed, bisa generate API Key).
+    - Expired trial (> 7 hari): Terkunci/Hangus.
+    """
+    if not user_data:
+        return {"is_paid": False, "is_trial": False, "is_expired": True, "days_left": 0, "status_text": "Expired"}
+    
+    status_str = user_data.get('status', '')
+    status_lower = status_str.lower()
+    
+    # Check if paid user
+    if any(word in status_lower for word in ["paid", "subscriber", "admin", "lifetime"]):
+        return {"is_paid": True, "is_trial": False, "is_expired": False, "days_left": 999, "status_text": "Active (Paid Subscriber)"}
+    
+    # Parse registration timestamp or date from status
+    match = re.search(r'\d{4}-\d{2}-\d{2}(?:\s+\d{2}:\d{2}:\d{2})?', status_str)
+    if match:
+        date_str = match.group(0)
+        try:
+            if " " in date_str:
+                reg_date = datetime.strptime(date_str, "%Y-%m-%d %H:%M:%S")
+            else:
+                reg_date = datetime.strptime(date_str, "%Y-%m-%d")
+        except Exception:
+            reg_date = datetime.now()
+    else:
+        # Fallback for old status string
+        reg_date = datetime.now()
+        
+    expiry_date = reg_date + timedelta(days=7)
+    now = datetime.now()
+    
+    if now >= expiry_date:
+        return {
+            "is_paid": False, 
+            "is_trial": True, 
+            "is_expired": True, 
+            "days_left": 0, 
+            "status_text": "Free Trial Expired (Masa Uji Coba Habis)",
+            "reg_date": reg_date.strftime("%d/%m/%Y")
+        }
+    else:
+        time_diff = expiry_date - now
+        days_left = max(1, time_diff.days + (1 if time_diff.seconds > 0 else 0))
+        return {
+            "is_paid": False, 
+            "is_trial": True, 
+            "is_expired": False, 
+            "days_left": days_left, 
+            "status_text": f"Active (7-Day Free Trial - Sisa {days_left} Hari)",
+            "reg_date": reg_date.strftime("%d/%m/%Y")
+        }
 
 @auth_bp.route('/api/request-otp', methods=['POST', 'OPTIONS'])
 def request_otp():
@@ -70,13 +128,11 @@ def verify_otp_route():
         if is_valid:
             name = user_data.get('name') or email.split('@')[0].capitalize()
             api_key = user_data.get('api_key') or "-"
-            status = user_data.get('status') or "Active"
             
             if not user_data.get('is_linked'):
-                db.db_save_user(email, secret, True, name, api_key, status)
+                db.db_save_user(email, secret, True, name, api_key, user_data.get('status', ''))
                 
-            status_lower = status.lower()
-            is_paid_user = any(word in status_lower for word in ["paid", "subscriber", "admin", "lifetime"])
+            trial_info = check_user_trial_status(user_data)
             
             connected_platforms = []
             if user_data.get('tiktok_connected'): connected_platforms.append('TikTok')
@@ -94,44 +150,17 @@ def verify_otp_route():
                     "name": name, 
                     "email": email, 
                     "apiKey": api_key, 
-                    "status": status, 
-                    "isPaid": is_paid_user,
+                    "status": trial_info["status_text"], 
+                    "isPaid": trial_info["is_paid"],
+                    "isTrial": trial_info["is_trial"],
+                    "isExpired": trial_info["is_expired"],
+                    "daysLeft": trial_info["days_left"],
                     "connectedPlatforms": connected_platforms
                 }
             }), 200
         return jsonify({"success": False, "message": "Kode OTP salah atau sudah kadaluarsa!"}), 200
     except Exception as e:
         print(f"[Error /api/verify-otp]: {e}")
-        return jsonify({"success": False, "message": f"Terjadi kesalahan server: {str(e)}"}), 200
-
-@auth_bp.route('/api/reset-2fa-qr', methods=['POST', 'OPTIONS'])
-def reset_2fa_qr():
-    if request.method == 'OPTIONS':
-        return jsonify({"success": True}), 200
-    try:
-        data = request.get_json(silent=True) or {}
-        email = data.get('email', '').strip().lower()
-        if not email:
-            return jsonify({"success": False, "message": "Email wajib diisi!"}), 200
-
-        old_data = db.db_get_user(email)
-        if not old_data:
-            return jsonify({"success": False, "message": "Email tidak ditemukan!"}), 200
-        
-        new_secret = sec.generate_base32_secret()
-        issuer = "TRENDORA"
-        totp_uri = f"otpauth://totp/{issuer}:{email}?secret={new_secret}&issuer={issuer}"
-        qr_code_url = f"https://api.qrserver.com/v1/create-qr-code/?size=200x200&data={urllib.parse.quote(totp_uri)}"
-        
-        is_sent = sec.send_email_qr(email, qr_code_url, new_secret)
-        
-        if is_sent:
-            db.db_save_user(email, new_secret, True, old_data.get('name', ''), old_data.get('api_key', ''), old_data.get('status', ''))
-            return jsonify({"success": True, "message": "QR Code 2FA baru telah dikirim ke Email Anda! Silakan cek Inbox/Spam."}), 200
-        else:
-            return jsonify({"success": False, "message": "Gagal mengirim email. Pastikan Environment SMTP_PASSWORD sudah diatur di Vercel."}), 200
-    except Exception as e:
-        print(f"[Error /api/reset-2fa-qr]: {e}")
         return jsonify({"success": False, "message": f"Terjadi kesalahan server: {str(e)}"}), 200
 
 @auth_bp.route('/api/register-trial', methods=['POST', 'OPTIONS'])
@@ -150,8 +179,26 @@ def register_trial():
             return jsonify({"success": False, "message": "Email sudah terdaftar!"}), 200
         
         new_secret = sec.generate_base32_secret()
-        db.db_save_user(email, new_secret, False, name, "-", "Active (7-Day Free Trial - View Only)")
-        return jsonify({"success": True, "message": "Registrasi berhasil", "user": {"name": name, "email": email, "apiKey": "-", "isPaid": False}}), 200
+        now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        status_trial = f"Free Trial ({now_str})"
+        
+        # User trial otomatis diberi API Key awal agar bisa langsung pakai
+        initial_api_key = "TREND_" + uuid.uuid4().hex[:12].upper()
+        
+        db.db_save_user(email, new_secret, False, name, initial_api_key, status_trial)
+        return jsonify({
+            "success": True, 
+            "message": "Registrasi Free Trial 1 Minggu berhasil!", 
+            "user": {
+                "name": name, 
+                "email": email, 
+                "apiKey": initial_api_key, 
+                "isPaid": False,
+                "isTrial": True,
+                "isExpired": False,
+                "daysLeft": 7
+            }
+        }), 200
     except Exception as e:
         print(f"[Error /api/register-trial]: {e}")
         return jsonify({"success": False, "message": f"Terjadi kesalahan server: {str(e)}"}), 200
@@ -170,15 +217,25 @@ def generate_api_key_route():
         if not user_data:
             return jsonify({"success": False, "message": "User tidak ditemukan!"}), 200
 
-        status_lower = user_data.get('status', '').lower()
-        is_paid_user = any(word in status_lower for word in ["paid", "subscriber", "admin", "lifetime"])
+        trial_info = check_user_trial_status(user_data)
 
-        if not is_paid_user:
-            return jsonify({"success": False, "isPaid": False, "message": "Akun Free Trial, upgrade untuk unlock API Key!"}), 200
+        # Jika Free Trial sudah expired/hangus (> 7 hari) dan belum bayar, kunci pembuatan API Key
+        if trial_info["is_expired"] and not trial_info["is_paid"]:
+            return jsonify({
+                "success": False, 
+                "isPaid": False, 
+                "isExpired": True,
+                "message": "Masa Free Trial 1 Minggu Anda sudah habis! Silakan upgrade akun ke berbayar untuk membuat API Key baru."
+            }), 200
 
         new_api_key = "TREND_" + uuid.uuid4().hex[:12].upper()
         db.db_save_user(email, user_data.get('secret', ''), user_data.get('is_linked', False), user_data.get('name', ''), new_api_key, user_data.get('status', ''))
-        return jsonify({"success": True, "isPaid": True, "apiKey": new_api_key}), 200
+        return jsonify({
+            "success": True, 
+            "isPaid": trial_info["is_paid"], 
+            "isExpired": False,
+            "apiKey": new_api_key
+        }), 200
     except Exception as e:
         print(f"[Error /api/generate-api-key]: {e}")
         return jsonify({"success": False, "message": f"Terjadi kesalahan server: {str(e)}"}), 200
@@ -197,6 +254,8 @@ def get_me():
         if not user_data:
             return jsonify({"success": False, "message": "User tidak ditemukan!"}), 200
         
+        trial_info = check_user_trial_status(user_data)
+        
         connected_platforms = []
         if user_data.get('tiktok_connected'): connected_platforms.append('TikTok')
         if user_data.get('meta_connected'):
@@ -206,9 +265,6 @@ def get_me():
         if user_data.get('youtube_connected'): connected_platforms.append('YouTube')
         if user_data.get('threads_connected'): connected_platforms.append('Threads')
         if user_data.get('twitter_connected'): connected_platforms.append('Twitter')
-            
-        status_lower = user_data.get('status', '').lower()
-        is_paid_user = any(word in status_lower for word in ["paid", "subscriber", "admin", "lifetime"])
         
         return jsonify({
             "success": True,
@@ -216,8 +272,11 @@ def get_me():
                 "name": user_data.get('name', ''),
                 "email": email,
                 "apiKey": user_data.get('api_key', '-'),
-                "status": user_data.get('status', ''),
-                "isPaid": is_paid_user,
+                "status": trial_info["status_text"],
+                "isPaid": trial_info["is_paid"],
+                "isTrial": trial_info["is_trial"],
+                "isExpired": trial_info["is_expired"],
+                "daysLeft": trial_info["days_left"],
                 "connectedPlatforms": connected_platforms
             }
         }), 200
