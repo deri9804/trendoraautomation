@@ -17,6 +17,12 @@ from utils import security as sec
 
 auth_bp = Blueprint('auth', __name__)
 
+def generate_50char_api_key():
+    """Generates a formatted API Key with prefix TRD- and exact total length of 50 characters."""
+    raw = (uuid.uuid4().hex + uuid.uuid4().hex).upper()
+    # Format: TRD- (4) + 7 blocks of 5 chars with hyphens (42) + 4 chars (4) = 50 characters
+    return f"TRD-{raw[:5]}-{raw[5:10]}-{raw[10:15]}-{raw[15:20]}-{raw[20:25]}-{raw[25:30]}-{raw[30:35]}-{raw[35:39]}"
+
 def check_user_trial_status(user_data):
     """
     Menghitung status Free Trial user:
@@ -46,7 +52,6 @@ def check_user_trial_status(user_data):
         except Exception:
             reg_date = datetime.now()
     else:
-        # Fallback for old status string
         reg_date = datetime.now()
         
     expiry_date = reg_date + timedelta(days=7)
@@ -182,8 +187,8 @@ def register_trial():
         now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         status_trial = f"Free Trial ({now_str})"
         
-        # User trial otomatis diberi API Key awal agar bisa langsung pakai
-        initial_api_key = "TREND_" + uuid.uuid4().hex[:12].upper()
+        # User trial diberi 50-character API Key
+        initial_api_key = generate_50char_api_key()
         
         db.db_save_user(email, new_secret, False, name, initial_api_key, status_trial)
         return jsonify({
@@ -228,7 +233,7 @@ def generate_api_key_route():
                 "message": "Masa Free Trial 1 Minggu Anda sudah habis! Silakan upgrade akun ke berbayar untuk membuat API Key baru."
             }), 200
 
-        new_api_key = "TREND_" + uuid.uuid4().hex[:12].upper()
+        new_api_key = generate_50char_api_key()
         db.db_save_user(email, user_data.get('secret', ''), user_data.get('is_linked', False), user_data.get('name', ''), new_api_key, user_data.get('status', ''))
         return jsonify({
             "success": True, 
