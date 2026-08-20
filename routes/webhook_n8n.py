@@ -235,7 +235,11 @@ def n8n_webhook():
                             err_body = http_err.read().decode('utf-8')
                         except Exception:
                             pass
-                        details['tiktok_error'] = f"[TikTok API 403/Forbidden] HTTP {http_err.code}: {http_err.reason}. Details: {err_body[:200]}"
+                        
+                        if "unaudited_client_can_only_post_to_private_accounts" in err_body:
+                            details['tiktok_error'] = "[TikTok Unaudited Error] Token TikTok Anda dibuat sebelum aplikasi di-ACC/Audit. Silakan lakukan DISCONNECT dan CONNECT ulang akun TikTok Anda di Dashboard TRENDORA untuk memperbarui token, serta pastikan Mode App di TikTok Console sudah LIVE/Production."
+                        else:
+                            details['tiktok_error'] = f"[TikTok API 403/Forbidden] HTTP {http_err.code}: {http_err.reason}. Details: {err_body[:200]}"
                 except Exception as e:
                     if 'tiktok_error' not in details:
                         details['tiktok_error'] = str(e)
