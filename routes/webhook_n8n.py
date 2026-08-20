@@ -183,33 +183,9 @@ def n8n_webhook():
                         "Content-Type": "application/json; charset=utf-8"
                     }
 
-                    # Mode Production (Audited / Approved): Bisa posting Publik (PUBLIC_TO_EVERYONE)
+                    # Mode Production (Audited / Approved): Default Publik (PUBLIC_TO_EVERYONE)
                     # Bisa juga di-override via n8n payload: "privacy_level": "SELF_ONLY" / "PUBLIC_TO_EVERYONE"
                     privacy_level = details.get('privacy_level', 'PUBLIC_TO_EVERYONE')
-
-                    payload = {
-                        "post_info": {
-                            "title": caption, 
-                            "privacy_level": privacy_level, 
-                            "disable_duet": False, 
-                            "disable_comment": False, 
-                            "disable_stitch": False
-                        },
-                        "source_info": {
-                            "source": "FILE_UPLOAD", 
-                            "video_size": file_size, 
-                            "chunk_size": file_size, 
-                            "total_chunk_count": 1
-                        }
-                    }
-                    req_init = urllib.request.Request(
-                        "https://open.tiktokapis.com/v2/post/publish/video/init/", 
-                        data=json.dumps(payload).encode('utf-8'), 
-                        headers=headers, 
-                        method='POST'
-                    )
-
-                    privacy_level = "SELF_ONLY"
 
                     payload = {
                         "post_info": {
