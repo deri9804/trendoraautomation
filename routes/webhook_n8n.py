@@ -183,8 +183,7 @@ def n8n_webhook():
                         "Content-Type": "application/json; charset=utf-8"
                     }
 
-                    # Mode Production (Audited / Approved): Default Publik (PUBLIC_TO_EVERYONE)
-                    # Bisa juga di-override via n8n payload: "privacy_level": "SELF_ONLY" / "PUBLIC_TO_EVERYONE"
+                    # Privasi default dari n8n payload, atau default PUBLIC_TO_EVERYONE
                     privacy_level = details.get('privacy_level', 'PUBLIC_TO_EVERYONE')
 
                     payload = {
@@ -209,37 +208,61 @@ def n8n_webhook():
                         method='POST'
                     )
                     
-                    with urllib.request.urlopen(req_init) as response:
-                        tiktok_res = json.loads(response.read().decode('utf-8'))
-                        upload_url = tiktok_res.get('data', {}).get('upload_url')
-                        if upload_url:
-                            with open(temp_file_path, 'rb') as f:
-                                video_data = f.read()
-                            put_headers = {
-                                'Content-Type': 'video/mp4', 
-                                'Content-Range': f'bytes 0-{file_size-1}/{file_size}'
-                            }
-                            req_put = urllib.request.Request(upload_url, data=video_data, headers=put_headers, method='PUT')
-                            urllib.request.urlopen(req_put)
-                            status = "PUBLISHED (SUCCESS)"
-                            details['upload_status'] = f"Success TikTok Upload ({file_size} bytes) - Mode: {privacy_level}."
+                    upload_url = None
+                    tiktok_res = {}
+
+                    try:
+                        with urllib.request.urlopen(req_init) as response:
+                            tiktok_res = json.loads(response.read().decode('utf-8'))
+                            upload_url = tiktok_res.get('data', {}).get('upload_url')
+                    except urllib.error.HTTPError as http_init_err:
+                        err_body = ""
+                        try:
+                            err_body = http_init_err.read().decode('utf-8')
+                        except Exception:
+                            pass
+
+                        # JIKA TIKTOK MENOLAK POSTING PUBLIK KARENA AKUN/APP MASIH BASIC ACCESS
+                        if "unaudited_client_can_only_post_to_private_accounts" in err_body:
+                            # AUTOMATIC FALLBACK KE SELF_ONLY (PRIVATE)
+                            privacy_level = "SELF_ONLY"
+                            payload["post_info"]["privacy_level"] = "SELF_ONLY"
+                            req_init_retry = urllib.request.Request(
+                                "https://open.tiktokapis.com/v2/post/publish/video/init/", 
+                                data=json.dumps(payload).encode('utf-8'), 
+                                headers=headers, 
+                                method='POST'
+                            )
+                            try:
+                                with urllib.request.urlopen(req_init_retry) as res_retry:
+                                    tiktok_res = json.loads(res_retry.read().decode('utf-8'))
+                                    upload_url = tiktok_res.get('data', {}).get('upload_url')
+                                    details['privacy_notice'] = "TikTok Console Anda memerlukan izin 'Advanced Access' untuk posting Publik. Video otomatis diunggah sebagai Private (SELF_ONLY)."
+                            except Exception as retry_err:
+                                status = "FAILED"
+                                details['tiktok_error'] = f"[TikTok Fallback Error] {retry_err}"
+                                raise retry_err
                         else:
+                            status = "FAILED"
+                            details['tiktok_error'] = f"[TikTok API Init Error] HTTP {http_init_err.code}: {err_body[:200]}"
+                            raise http_init_err
+
+                    if upload_url:
+                        with open(temp_file_path, 'rb') as f:
+                            video_data = f.read()
+                        put_headers = {
+                            'Content-Type': 'video/mp4', 
+                            'Content-Range': f'bytes 0-{file_size-1}/{file_size}'
+                        }
+                        req_put = urllib.request.Request(upload_url, data=video_data, headers=put_headers, method='PUT')
+                        urllib.request.urlopen(req_put)
+                        status = "PUBLISHED (SUCCESS)"
+                        details['upload_status'] = f"Success TikTok Upload ({file_size} bytes) - Mode: {privacy_level}."
+                    else:
+                        if 'tiktok_error' not in details:
                             status = "FAILED"
                             details['tiktok_error'] = tiktok_res.get('error', {}).get('message', 'Gagal mendapatkan Upload URL dari TikTok')
 
-                except urllib.error.HTTPError as http_err:
-                    if 'tiktok_error' not in details:
-                        status = "FAILED"
-                        err_body = ""
-                        try:
-                            err_body = http_err.read().decode('utf-8')
-                        except Exception:
-                            pass
-                        
-                        if "unaudited_client_can_only_post_to_private_accounts" in err_body:
-                            details['tiktok_error'] = "[TikTok Unaudited Error] Token TikTok Anda dibuat sebelum aplikasi di-ACC/Audit. Silakan lakukan DISCONNECT dan CONNECT ulang akun TikTok Anda di Dashboard TRENDORA untuk memperbarui token, serta pastikan Mode App di TikTok Console sudah LIVE/Production."
-                        else:
-                            details['tiktok_error'] = f"[TikTok API 403/Forbidden] HTTP {http_err.code}: {http_err.reason}. Details: {err_body[:200]}"
                 except Exception as e:
                     if 'tiktok_error' not in details:
                         details['tiktok_error'] = str(e)
