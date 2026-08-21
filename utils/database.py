@@ -161,6 +161,8 @@ def db_save_user(email, secret, is_linked, name="", api_key="", status=""):
         try:
             all_values = sheet.get_all_values()
             found_idx = -1
+            
+            # Cari apakah email user sudah terdaftar di sheet
             for idx in range(len(all_values)-1, 0, -1):
                 row = all_values[idx]
                 if len(row) > 0 and str(row[0]).strip().lower() == clean_email:
@@ -168,14 +170,31 @@ def db_save_user(email, secret, is_linked, name="", api_key="", status=""):
                     break
                     
             if found_idx != -1:
+                # Update data user yang sudah ada (Kolom A s/d F)
+                sheet.update_cell(found_idx, 1, clean_email)
                 sheet.update_cell(found_idx, 2, secret)
                 sheet.update_cell(found_idx, 3, str(is_linked))
                 if name: sheet.update_cell(found_idx, 4, name)
                 if api_key: sheet.update_cell(found_idx, 5, api_key)
                 if status: sheet.update_cell(found_idx, 6, status)
             else:
-                sheet.append_row([clean_email, secret, str(is_linked), name, api_key, status])
-            print(f"[GSheet Write Success]: Data user {clean_email} berhasil disimpan ke Google Sheets!")
+                # Cari baris kosong nyata pertama (Mulai dari Baris 2)
+                target_row = None
+                if len(all_values) > 1:
+                    for idx in range(1, len(all_values)):
+                        row = all_values[idx]
+                        if not row or len(row) == 0 or not str(row[0]).strip():
+                            target_row = idx + 1 # 1-based index di Google Sheets
+                            break
+                            
+                if not target_row:
+                    target_row = len(all_values) + 1 if len(all_values) > 0 else 2
+
+                row_data = [clean_email, secret, str(is_linked), name, api_key, status]
+                # CRITICAL FIX: Tulis tepat dari Kolom A ke F pada target_row
+                sheet.update(f"A{target_row}:F{target_row}", [row_data])
+                
+            print(f"[GSheet Write Success]: Data user {clean_email} berhasil disimpan di Baris {target_row if found_idx == -1 else found_idx} Kolom A!")
             return True
         except Exception as e:
             print(f"[GSheet Write Error]: {e}")
