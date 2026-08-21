@@ -46,6 +46,33 @@ def count_today_posts_for_key(api_key):
             print(f"Error checking daily post count: {e}")
     return count
 
+def send_tiktok_init_request(payload, access_token):
+    """
+    Mengirim request POST ke TikTok init API dan mengekstrak isi teks JSON mentah 
+    secara penuh jika terjadi HTTP Error (termasuk 403 Forbidden).
+    """
+    url = "https://open.tiktokapis.com/v2/post/publish/video/init/"
+    headers = {
+        "Authorization": f"Bearer {access_token}", 
+        "Content-Type": "application/json; charset=utf-8"
+    }
+    data_bytes = json.dumps(payload).encode('utf-8')
+    req = urllib.request.Request(url, data=data_bytes, headers=headers, method='POST')
+
+    try:
+        with urllib.request.urlopen(req) as response:
+            res_text = response.read().decode('utf-8')
+            return True, json.loads(res_text), 200
+    except urllib.error.HTTPError as http_err:
+        err_body = ""
+        try:
+            err_body = http_err.read().decode('utf-8')
+        except Exception:
+            err_body = str(http_err.reason)
+        return False, f"[TikTok HTTP {http_err.code}] {err_body if err_body else http_err.reason}", http_err.code
+    except Exception as general_err:
+        return False, f"[TikTok Request Error] {str(general_err)}", 500
+
 @webhook_bp.route('/api/chat', methods=['POST'])
 def chat_api():
     data = request.json or {}
@@ -177,12 +204,6 @@ def n8n_webhook():
                         raise Exception(f"Media URL Download Failed: {dl_err}")
 
                     file_size = os.path.getsize(temp_file_path)
-
-                    headers = {
-                        "Authorization": f"Bearer {access_token}", 
-                        "Content-Type": "application/json; charset=utf-8"
-                    }
-
                     privacy_level = details.get('privacy_level', 'PUBLIC_TO_EVERYONE')
 
                     payload = {
@@ -200,61 +221,34 @@ def n8n_webhook():
                             "total_chunk_count": 1
                         }
                     }
-                    req_init = urllib.request.Request(
-                        "https://open.tiktokapis.com/v2/post/publish/video/init/", 
-                        data=json.dumps(payload).encode('utf-8'), 
-                        headers=headers, 
-                        method='POST'
-                    )
-                    
-                    upload_url = None
-                    tiktok_res = {}
 
-                    try:
-                        with urllib.request.urlopen(req_init) as response:
-                            tiktok_res = json.loads(response.read().decode('utf-8'))
-                            upload_url = tiktok_res.get('data', {}).get('upload_url')
-                    except urllib.error.HTTPError as http_init_err:
-                        err_body = ""
-                        try:
-                            err_body = http_init_err.read().decode('utf-8')
-                        except Exception:
-                            pass
+                    # Eksekusi request ke TikTok API dengan pembacaan error detail
+                    is_ok, res_payload, http_code = send_tiktok_init_request(payload, access_token)
 
-                        # JIKA TIKTOK MENOLAK POSTING PUBLIK KARENA AKUN/APP MASIH BASIC ACCESS
-                        if "unaudited_client_can_only_post_to_private_accounts" in err_body:
+                    if not is_ok:
+                        err_str = str(res_payload)
+                        # Jika TikTok menolak posting Publik karena akun/App masih Basic Access (Unaudited)
+                        if "unaudited_client_can_only_post_to_private_accounts" in err_str:
                             # AUTOMATIC FALLBACK KE SELF_ONLY (PRIVATE)
                             privacy_level = "SELF_ONLY"
                             payload["post_info"]["privacy_level"] = "SELF_ONLY"
-                            req_init_retry = urllib.request.Request(
-                                "https://open.tiktokapis.com/v2/post/publish/video/init/", 
-                                data=json.dumps(payload).encode('utf-8'), 
-                                headers=headers, 
-                                method='POST'
-                            )
-                            try:
-                                with urllib.request.urlopen(req_init_retry) as res_retry:
-                                    tiktok_res = json.loads(res_retry.read().decode('utf-8'))
-                                    upload_url = tiktok_res.get('data', {}).get('upload_url')
-                                    details['privacy_notice'] = "TikTok Console Anda memerlukan izin 'Advanced Access' untuk posting Publik. Video otomatis diunggah sebagai Private (SELF_ONLY)."
-                            except urllib.error.HTTPError as retry_http_err:
-                                retry_body = ""
-                                try:
-                                    retry_body = retry_http_err.read().decode('utf-8')
-                                except Exception:
-                                    pass
+                            is_retry_ok, retry_res, retry_code = send_tiktok_init_request(payload, access_token)
+                            
+                            if is_retry_ok:
+                                upload_url = retry_res.get('data', {}).get('upload_url')
+                                details['privacy_notice'] = "TikTok Console Anda memerlukan izin 'Advanced Access' untuk posting Publik. Video otomatis diunggah sebagai Private (SELF_ONLY)."
+                            else:
                                 status = "FAILED"
-                                details['tiktok_error'] = f"[TikTok Fallback HTTP Error {retry_http_err.code}] {retry_body if retry_body else retry_http_err.reason}"
-                                raise retry_http_err
-                            except Exception as retry_err:
-                                status = "FAILED"
-                                details['tiktok_error'] = f"[TikTok Fallback Error] {retry_err}"
-                                raise retry_err
+                                details['tiktok_error'] = f"[TikTok Fallback Error] {retry_res}"
+                                upload_url = None
                         else:
                             status = "FAILED"
-                            details['tiktok_error'] = f"[TikTok API Init Error HTTP {http_init_err.code}] {err_body if err_body else http_init_err.reason}"
-                            raise http_init_err
+                            details['tiktok_error'] = err_str
+                            upload_url = None
+                    else:
+                        upload_url = res_payload.get('data', {}).get('upload_url')
 
+                    # Jika upload URL berhasil didapatkan, lakukan pengunggahan file video (PUT)
                     if upload_url:
                         with open(temp_file_path, 'rb') as f:
                             video_data = f.read()
@@ -269,7 +263,7 @@ def n8n_webhook():
                     else:
                         if 'tiktok_error' not in details:
                             status = "FAILED"
-                            details['tiktok_error'] = tiktok_res.get('error', {}).get('message', 'Gagal mendapatkan Upload URL dari TikTok')
+                            details['tiktok_error'] = "Gagal mendapatkan Upload URL dari TikTok"
 
                 except Exception as e:
                     if 'tiktok_error' not in details:
