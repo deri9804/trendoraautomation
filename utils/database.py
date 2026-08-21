@@ -18,20 +18,45 @@ except ImportError:
 def get_gsheet():
     """Koneksi ke Google Sheets (Sheet Utama)."""
     if not HAS_GSPREAD:
+        print("[GSheets Error]: Library 'gspread' atau 'google-auth' belum terinstall.")
         return None
     try:
         scopes = ["https://www.googleapis.com/auth/spreadsheets"]
         env_creds = config.GOOGLE_CREDS_JSON
+        
         if env_creds:
-            creds_dict = json.loads(env_creds)
+            if isinstance(env_creds, str):
+                # Bersihkan string JSON dari kemungkinan quotation berlebih atau escaped newlines
+                clean_env = env_creds.strip()
+                if clean_env.startswith("'") and clean_env.endswith("'"):
+                    clean_env = clean_env[1:-1]
+                if clean_env.startswith('"') and clean_env.endswith('"'):
+                    clean_env = clean_env[1:-1]
+                
+                try:
+                    creds_dict = json.loads(clean_env)
+                except json.JSONDecodeError:
+                    clean_env = clean_env.replace('\\n', '\n')
+                    creds_dict = json.loads(clean_env)
+            else:
+                creds_dict = env_creds
+            
+            # CRITICAL FIX: Perbaiki format private_key agar newline \n terbaca dengan benar di Vercel
+            if isinstance(creds_dict, dict) and "private_key" in creds_dict:
+                creds_dict["private_key"] = creds_dict["private_key"].replace("\\n", "\n")
+
             creds = Credentials.from_service_account_info(creds_dict, scopes=scopes)
         else:
+            if not os.path.exists(config.SERVICE_ACCOUNT_FILE):
+                print(f"[GSheets Error]: File {config.SERVICE_ACCOUNT_FILE} tidak ditemukan dan GOOGLE_APPLICATION_CREDENTIALS_JSON di Vercel belum diisi!")
+                return None
             creds = Credentials.from_service_account_file(config.SERVICE_ACCOUNT_FILE, scopes=scopes)
+            
         client = gspread.authorize(creds)
         sheet = client.open_by_key(config.GOOGLE_SHEET_ID).sheet1
         return sheet
     except Exception as e:
-        print(f"GSheets Connection Error: {e} (Menggunakan fallback memori)")
+        print(f"[GSheets Connection Error]: {e}")
         return None
 
 def get_logs_sheet():
@@ -41,11 +66,29 @@ def get_logs_sheet():
     try:
         scopes = ["https://www.googleapis.com/auth/spreadsheets"]
         env_creds = config.GOOGLE_CREDS_JSON
+        
         if env_creds:
-            creds_dict = json.loads(env_creds)
+            if isinstance(env_creds, str):
+                clean_env = env_creds.strip()
+                if clean_env.startswith("'") and clean_env.endswith("'"): clean_env = clean_env[1:-1]
+                if clean_env.startswith('"') and clean_env.endswith('"'): clean_env = clean_env[1:-1]
+                try:
+                    creds_dict = json.loads(clean_env)
+                except json.JSONDecodeError:
+                    clean_env = clean_env.replace('\\n', '\n')
+                    creds_dict = json.loads(clean_env)
+            else:
+                creds_dict = env_creds
+
+            if isinstance(creds_dict, dict) and "private_key" in creds_dict:
+                creds_dict["private_key"] = creds_dict["private_key"].replace("\\n", "\n")
+
             creds = Credentials.from_service_account_info(creds_dict, scopes=scopes)
         else:
+            if not os.path.exists(config.SERVICE_ACCOUNT_FILE):
+                return None
             creds = Credentials.from_service_account_file(config.SERVICE_ACCOUNT_FILE, scopes=scopes)
+
         client = gspread.authorize(creds)
         doc = client.open_by_key(config.GOOGLE_SHEET_ID)
         
@@ -64,7 +107,7 @@ def get_logs_sheet():
             
         return sheet
     except Exception as e:
-        print(f"GSheets Logs Connection Error: {e}")
+        print(f"[GSheets Logs Connection Error]: {e}")
         return None
 
 def db_get_user(email):
@@ -99,7 +142,7 @@ def db_get_user(email):
                         }
             return None
         except Exception as e:
-            print(f"GSheet Read Error: {e}")
+            print(f"[GSheet Read Error]: {e}")
             return None
             
     if clean_email in config.user_2fa_store:
@@ -109,9 +152,9 @@ def db_get_user(email):
     return None
 
 def db_save_user(email, secret, is_linked, name="", api_key="", status=""):
-    """Simpan atau perbarui data user."""
+    """Simpan atau perbarui data user ke Google Sheets."""
     if not email:
-        return
+        return False
     clean_email = str(email).strip().lower()
     sheet = get_gsheet()
     if sheet:
@@ -132,13 +175,17 @@ def db_save_user(email, secret, is_linked, name="", api_key="", status=""):
                 if status: sheet.update_cell(found_idx, 6, status)
             else:
                 sheet.append_row([clean_email, secret, str(is_linked), name, api_key, status])
-            return
+            print(f"[GSheet Write Success]: Data user {clean_email} berhasil disimpan ke Google Sheets!")
+            return True
         except Exception as e:
-            print(f"GSheet Write Error: {e}")
+            print(f"[GSheet Write Error]: {e}")
+            return False
             
+    print(f"[GSheet Write Fallback]: Gagal terhubung ke GSheets, menyimpan sementara ke RAM untuk {clean_email}")
     config.user_2fa_store[clean_email] = {
         'secret': secret, 'is_linked': is_linked, 'name': name, 'api_key': api_key, 'status': status
     }
+    return False
 
 def db_get_tiktok_tokens_by_api_key(api_key):
     sheet = get_gsheet()
@@ -153,7 +200,7 @@ def db_get_tiktok_tokens_by_api_key(api_key):
                         'open_id': row[7] if len(row) >= 8 else None
                     }
         except Exception as e:
-            print(f"GSheet Get Tokens Error: {e}")
+            print(f"[GSheet Get Tokens Error]: {e}")
     return {}
 
 def db_get_meta_token_by_api_key(api_key):
@@ -166,7 +213,7 @@ def db_get_meta_token_by_api_key(api_key):
                 if len(row) >= 5 and row[4].strip() == api_key:
                     return row[9] if len(row) >= 10 else None
         except Exception as e:
-            print(f"GSheet Get Meta Token Error: {e}")
+            print(f"[GSheet Get Meta Token Error]: {e}")
     return None
 
 def db_get_linkedin_token_by_api_key(api_key):
@@ -179,7 +226,7 @@ def db_get_linkedin_token_by_api_key(api_key):
                 if len(row) >= 5 and row[4].strip() == api_key:
                     return row[10] if len(row) >= 11 else None
         except Exception as e:
-            print(f"GSheet Get LinkedIn Token Error: {e}")
+            print(f"[GSheet Get LinkedIn Token Error]: {e}")
     return None
 
 def db_get_youtube_tokens_by_api_key(api_key):
@@ -195,7 +242,7 @@ def db_get_youtube_tokens_by_api_key(api_key):
                         'refresh_token': row[12] if len(row) >= 13 else None
                     }
         except Exception as e:
-            print(f"GSheet Get YouTube Token Error: {e}")
+            print(f"[GSheet Get YouTube Token Error]: {e}")
     return {}
 
 def db_get_threads_token_by_api_key(api_key):
@@ -208,7 +255,7 @@ def db_get_threads_token_by_api_key(api_key):
                 if len(row) >= 5 and row[4].strip() == api_key:
                     return row[13] if len(row) >= 14 else None
         except Exception as e:
-            print(f"GSheet Get Threads Token Error: {e}")
+            print(f"[GSheet Get Threads Token Error]: {e}")
     return None
 
 def db_get_twitter_token_by_api_key(api_key):
@@ -221,5 +268,5 @@ def db_get_twitter_token_by_api_key(api_key):
                 if len(row) >= 5 and row[4].strip() == api_key:
                     return row[14] if len(row) >= 15 else None
         except Exception as e:
-            print(f"GSheet Get Twitter Token Error: {e}")
+            print(f"[GSheet Get Twitter Token Error]: {e}")
     return None

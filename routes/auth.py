@@ -20,27 +20,18 @@ auth_bp = Blueprint('auth', __name__)
 def generate_50char_api_key():
     """Generates a formatted API Key with prefix TRD- and exact total length of 50 characters."""
     raw = (uuid.uuid4().hex + uuid.uuid4().hex).upper()
-    # Format: TRD- (4) + 7 blocks of 5 chars with hyphens (42) + 4 chars (4) = 50 characters
     return f"TRD-{raw[:5]}-{raw[5:10]}-{raw[10:15]}-{raw[15:20]}-{raw[20:25]}-{raw[25:30]}-{raw[30:35]}-{raw[35:39]}"
 
 def check_user_trial_status(user_data):
-    """
-    Menghitung status Free Trial user:
-    - Paid user: Tidak terbatas.
-    - Trial user (<= 7 hari): Aktif dengan fitur terbatas (1 video/hari, max 2 sosmed, bisa generate API Key).
-    - Expired trial (> 7 hari): Terkunci/Hangus.
-    """
     if not user_data:
         return {"is_paid": False, "is_trial": False, "is_expired": True, "days_left": 0, "status_text": "Expired"}
     
     status_str = user_data.get('status', '')
     status_lower = status_str.lower()
     
-    # Check if paid user
     if any(word in status_lower for word in ["paid", "subscriber", "admin", "lifetime"]):
         return {"is_paid": True, "is_trial": False, "is_expired": False, "days_left": 999, "status_text": "Active (Paid Subscriber)"}
     
-    # Parse registration timestamp or date from status
     match = re.search(r'\d{4}-\d{2}-\d{2}(?:\s+\d{2}:\d{2}:\d{2})?', status_str)
     if match:
         date_str = match.group(0)
@@ -186,11 +177,17 @@ def register_trial():
         new_secret = sec.generate_base32_secret()
         now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         status_trial = f"Free Trial ({now_str})"
-        
-        # User trial diberi 50-character API Key
         initial_api_key = generate_50char_api_key()
         
-        db.db_save_user(email, new_secret, False, name, initial_api_key, status_trial)
+        # Simpan ke Google Sheets
+        is_saved = db.db_save_user(email, new_secret, False, name, initial_api_key, status_trial)
+        
+        if not is_saved:
+            return jsonify({
+                "success": False, 
+                "message": "Gagal menyimpan data ke Google Sheets! Harap periksa variabel GOOGLE_APPLICATION_CREDENTIALS_JSON di Vercel."
+            }), 500
+
         return jsonify({
             "success": True, 
             "message": "Registrasi Free Trial 1 Minggu berhasil!", 
@@ -224,7 +221,6 @@ def generate_api_key_route():
 
         trial_info = check_user_trial_status(user_data)
 
-        # Jika Free Trial sudah expired/hangus (> 7 hari) dan belum bayar, kunci pembuatan API Key
         if trial_info["is_expired"] and not trial_info["is_paid"]:
             return jsonify({
                 "success": False, 
