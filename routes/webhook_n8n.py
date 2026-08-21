@@ -183,7 +183,6 @@ def n8n_webhook():
                         "Content-Type": "application/json; charset=utf-8"
                     }
 
-                    # Privasi default dari n8n payload, atau default PUBLIC_TO_EVERYONE
                     privacy_level = details.get('privacy_level', 'PUBLIC_TO_EVERYONE')
 
                     payload = {
@@ -238,13 +237,22 @@ def n8n_webhook():
                                     tiktok_res = json.loads(res_retry.read().decode('utf-8'))
                                     upload_url = tiktok_res.get('data', {}).get('upload_url')
                                     details['privacy_notice'] = "TikTok Console Anda memerlukan izin 'Advanced Access' untuk posting Publik. Video otomatis diunggah sebagai Private (SELF_ONLY)."
+                            except urllib.error.HTTPError as retry_http_err:
+                                retry_body = ""
+                                try:
+                                    retry_body = retry_http_err.read().decode('utf-8')
+                                except Exception:
+                                    pass
+                                status = "FAILED"
+                                details['tiktok_error'] = f"[TikTok Fallback HTTP Error {retry_http_err.code}] {retry_body if retry_body else retry_http_err.reason}"
+                                raise retry_http_err
                             except Exception as retry_err:
                                 status = "FAILED"
                                 details['tiktok_error'] = f"[TikTok Fallback Error] {retry_err}"
                                 raise retry_err
                         else:
                             status = "FAILED"
-                            details['tiktok_error'] = f"[TikTok API Init Error] HTTP {http_init_err.code}: {err_body[:200]}"
+                            details['tiktok_error'] = f"[TikTok API Init Error HTTP {http_init_err.code}] {err_body if err_body else http_init_err.reason}"
                             raise http_init_err
 
                     if upload_url:
@@ -349,7 +357,6 @@ def n8n_webhook():
     log_id = f"LOG-{uuid.uuid4().hex[:8].upper()}"
     row_data = [timestamp, log_id, api_key, platform, status, details_str, "", media_url_val, caption_val, hashtag_val]
     
-    # KETAT: Memastikan log hanya ditulis ke tab 'Logs' (bukan Sheet Utama)
     sheet_logs = db.get_logs_sheet()
     if sheet_logs:
         try:
