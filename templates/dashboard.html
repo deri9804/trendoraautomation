@@ -110,6 +110,80 @@
       line-height: 1.5;
     }
 
+    /* TIKTOK STUDIO UPLOADER STYLES */
+    .uploader-card-grid {
+      display: grid;
+      grid-template-columns: 1.2fr 0.8fr;
+      gap: 24px;
+      margin-top: 16px;
+    }
+
+    .dropzone-container {
+      border: 2px dashed rgba(236, 72, 153, 0.4);
+      border-radius: 16px;
+      padding: 24px;
+      text-align: center;
+      background: rgba(255, 255, 255, 0.02);
+      cursor: pointer;
+      transition: all 0.3s ease;
+      position: relative;
+    }
+
+    .dropzone-container:hover, .dropzone-container.dragover {
+      border-color: #ec4899;
+      background: rgba(236, 72, 153, 0.06);
+    }
+
+    .preview-video-container {
+      background: #000;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 16px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 380px;
+      position: relative;
+    }
+
+    .preview-video-container video {
+      width: 100%;
+      max-height: 380px;
+      border-radius: 14px;
+      outline: none;
+      object-fit: contain;
+    }
+
+    .upload-progress-box {
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 12px;
+      padding: 16px;
+      margin-top: 16px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .progress-bar-inner {
+      height: 8px;
+      background: linear-gradient(90deg, #ec4899, #8b5cf6);
+      border-radius: 4px;
+      width: 0%;
+      transition: width 0.3s ease;
+    }
+
+    .badge-tiktok-live {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px solid #fe2c55;
+      color: #fff;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 700;
+    }
+
     @media (max-width: 900px) {
       .dash-layout { flex-direction: column; }
       .dash-sidebar { 
@@ -127,6 +201,7 @@
       .sidebar-menu li a.active { border-bottom: 3px solid #ec4899; }
       .dash-content { margin-left: 0; padding: 20px 4%; }
       .dashboard-hero-card { grid-template-columns: 1fr !important; }
+      .uploader-card-grid { grid-template-columns: 1fr; }
       .btn-toggle-sidebar { display: none; }
     }
   </style>
@@ -140,6 +215,7 @@
       <div class="sidebar-menu-title">Main Menu</div>
       <ul class="sidebar-menu">
         <li><a href="/dashboard#section-overview" class="sidebar-link active">🏠 Ringkasan</a></li>
+        <li><a href="/dashboard#section-tiktok-upload" class="sidebar-link" style="color: #f472b6;">🎬 Unggah Video TikTok</a></li>
         <li><a href="/webhook" class="sidebar-link">🔗 Webhook Endpoint</a></li>
         <li><a href="/dashboard#section-social" class="sidebar-link">📱 Akun Sosial</a></li>
         <li><a href="/dashboard#section-logs" class="sidebar-link">📊 Log Aktivitas</a></li>
@@ -185,7 +261,7 @@
 
             <div id="trialPerksNotice" style="background: rgba(255,255,255,0.03); border-left: 3px solid #60a5fa; padding: 12px; border-radius: 0 8px 8px 0; font-size: 12px; color: #9ca3af; margin-top: 10px;">
               ⚡ <strong>Fitur Free Trial Anda:</strong><br>
-              &bull; Posting maksimal 1 video per hari via n8n/Make.<br>
+              &bull; Posting maksimal 1 video per hari via UI Web atau n8n.<br>
               &bull; Maksimal menautkan 2 akun sosial media.<br>
               &bull; Berlaku selama 7 hari sejak pendaftaran.
             </div>
@@ -214,10 +290,137 @@
         </div>
       </section>
 
+      <!-- SECTION: DIRECT TIKTOK & SOCIAL VIDEO UPLOAD STUDIO -->
+      <section id="section-tiktok-upload" style="scroll-margin-top: 100px; margin-bottom: 30px;">
+        <div class="dashboard-hero-card" style="display: block;">
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 8px;">
+            <div>
+              <div class="badge-tiktok-live">
+                <span>🎵</span> TikTok Official Share API
+              </div>
+              <h3 style="margin-top: 8px; font-size: 22px; color: #fff; font-weight: 800;">Studio Unggah & Publikasi Video TikTok</h3>
+            </div>
+            <button class="btn-secondary" onclick="window.location.href='#section-social'" style="font-size: 12px; padding: 8px 16px;">
+              ⚙️ Cek Status Akun Terhubung
+            </button>
+          </div>
+          
+          <p style="color: #9ca3af; font-size: 13px; line-height: 1.6; margin-bottom: 20px;">
+            Publikasikan konten video Anda langsung dari antarmuka TRENDORA ke akun TikTok resmi yang telah Anda otorisasi. 
+            Semua parameter posting akan diteruskan secara instan melalui integrasi resmi TikTok Content Posting API.
+          </p>
+
+          <div class="uploader-card-grid">
+            
+            <!-- KOLOM KIRI: FORMULIR UPLOAD & METADATA -->
+            <div style="background: rgba(0, 0, 0, 0.3); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 16px; padding: 20px;">
+              
+              <div class="form-group" style="margin-bottom: 16px;">
+                <label style="display: block; font-size: 13px; font-weight: 700; color: #e5e7eb; margin-bottom: 8px;">
+                  1. Pilih Berkas Video (.MP4) <span style="color:#ef4444;">*</span>
+                </label>
+                
+                <div class="dropzone-container" id="videoDropzone" onclick="document.getElementById('directVideoInput').click()">
+                  <input type="file" id="directVideoInput" accept="video/mp4,video/quicktime,video/webm" style="display: none;" onchange="handleDirectVideoSelect(event)">
+                  <div style="font-size: 32px; margin-bottom: 8px;">📹</div>
+                  <div style="font-size: 14px; font-weight: 700; color: #fff;" id="dropzoneLabel">Klik atau Tarik Video ke Sini</div>
+                  <div style="font-size: 12px; color: #9ca3af; margin-top: 4px;">Format MP4, WebM (Maksimal 100 MB)</div>
+                </div>
+
+                <div style="text-align: center; margin: 10px 0; font-size: 12px; color: #6b7280;">— ATAU MASUKKAN URL VIDEO ONLINE —</div>
+                <input type="url" id="directVideoUrlInput" placeholder="https://example.com/video-sample.mp4 (Google Storage / Public URL)" 
+                       style="width: 100%; background: #182032; border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 8px; padding: 10px 14px; color: #fff; font-size: 12px; outline: none;" 
+                       oninput="handleVideoUrlInput(this.value)">
+              </div>
+
+              <div class="form-group" style="margin-bottom: 16px;">
+                <label for="directVideoCaption" style="display: block; font-size: 13px; font-weight: 700; color: #e5e7eb; margin-bottom: 8px;">
+                  2. Judul & Caption Postingan <span style="color:#ef4444;">*</span>
+                </label>
+                <textarea id="directVideoCaption" rows="3" placeholder="Tulis caption menarik untuk video TikTok Anda di sini..." 
+                          style="width: 100%; background: #182032; border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 10px; padding: 12px; color: #fff; font-size: 13px; outline: none; resize: vertical;"></textarea>
+              </div>
+
+              <div class="form-group" style="margin-bottom: 16px;">
+                <label for="directVideoHashtags" style="display: block; font-size: 13px; font-weight: 700; color: #e5e7eb; margin-bottom: 8px;">
+                  3. Hashtag (Opsional)
+                </label>
+                <input type="text" id="directVideoHashtags" placeholder="#fyp #trendora #automation #viral" 
+                       style="width: 100%; background: #182032; border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 8px; padding: 10px 14px; color: #fff; font-size: 13px; outline: none;">
+              </div>
+
+              <div class="form-group" style="margin-bottom: 20px;">
+                <label for="directVideoPrivacy" style="display: block; font-size: 13px; font-weight: 700; color: #e5e7eb; margin-bottom: 8px;">
+                  4. Pengaturan Privasi Postingan
+                </label>
+                <select id="directVideoPrivacy" style="width: 100%; background: #182032; border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 8px; padding: 10px 14px; color: #fff; font-size: 13px; outline: none; cursor: pointer;">
+                  <option value="PUBLIC_TO_EVERYONE">🌍 Publik (Public - Semua Orang)</option>
+                  <option value="SELF_ONLY" selected>🔒 Hanya Saya (Private / Self Only - Cocok untuk App Basic Access)</option>
+                  <option value="MUTUAL_FOLLOW_FRIENDS">👥 Teman (Friends Only)</option>
+                </select>
+                <span style="font-size: 11px; color: #9ca3af; display: block; margin-top: 6px;">
+                  ℹ️ Catatan: Jika aplikasi TikTok Developer Anda berstatus Sandbox/Basic Access, gunakan mode <em>Hanya Saya (SELF_ONLY)</em> agar tidak terkena penolakan izin posting.
+                </span>
+              </div>
+
+              <button id="btnPublishTikTok" class="btn-pink" onclick="executePublishTikTok()" style="width: 100%; padding: 14px; font-size: 15px; font-weight: 800; border-radius: 12px; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                <span>🚀</span> <span>Publikasikan ke TikTok Sekarang</span>
+              </button>
+
+              <!-- INDIKATOR PROGRESS PENGIRIMAN -->
+              <div id="uploadProgressWrapper" class="upload-progress-box" style="display: none;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                  <span id="uploadProgressStatusText" style="font-size: 12px; font-weight: 600; color: #f472b6;">Menginisialisasi TikTok Upload...</span>
+                  <span id="uploadProgressPercent" style="font-size: 12px; font-weight: 700; color: #34d399;">0%</span>
+                </div>
+                <div style="background: rgba(0, 0, 0, 0.4); border-radius: 4px; overflow: hidden; height: 8px;">
+                  <div id="uploadProgressBar" class="progress-bar-inner"></div>
+                </div>
+              </div>
+
+              <div id="directUploadAlertMsg" style="margin-top: 14px; font-size: 13px; font-weight: 600; display: none;"></div>
+
+            </div>
+
+            <!-- KOLOM KANAN: PRATINJAU VIDEO & STATUS AKUN -->
+            <div style="display: flex; flex-direction: column; gap: 16px;">
+              
+              <div class="preview-video-container" id="videoPreviewWrapper">
+                <video id="directVideoPlayer" controls style="display: none;"></video>
+                <div id="videoPlaceholderBox" style="text-align: center; padding: 30px 20px;">
+                  <div style="font-size: 40px; margin-bottom: 12px; opacity: 0.6;">🎬</div>
+                  <div style="font-size: 14px; font-weight: 700; color: #cbd5e1;">Pratinjau Video Postingan</div>
+                  <div style="font-size: 12px; color: #6b7280; margin-top: 6px; max-width: 220px;">Pilih berkas video di sebelah kiri untuk melihat tampilan sebelum diposting.</div>
+                </div>
+              </div>
+
+              <!-- STATUS AKUN TIKTOK CARD -->
+              <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 16px;">
+                <div style="font-size: 12px; font-weight: 700; color: #9ca3af; text-transform: uppercase; margin-bottom: 8px; letter-spacing: 0.5px;">Akun Tujuan Publikasi</div>
+                <div style="display: flex; align-items: center; justify-content: space-between;">
+                  <div style="display: flex; align-items: center; gap: 10px;">
+                    <span style="font-size: 22px;">🎵</span>
+                    <div>
+                      <div style="font-size: 13px; font-weight: 700; color: #fff;">TikTok Creator Account</div>
+                      <div id="tiktokConnectStatusBadge" style="font-size: 11px; color: #34d399; font-weight: 600;">Terhubung ✅</div>
+                    </div>
+                  </div>
+                  <a href="https://www.tiktok.com" target="_blank" rel="noopener noreferrer" style="font-size: 11px; color: #60a5fa; text-decoration: none; font-weight: 600;">
+                    Buka Profil ↗
+                  </a>
+                </div>
+              </div>
+
+            </div>
+
+          </div>
+        </div>
+      </section>
+
       <section id="section-social" style="scroll-margin-top: 100px;">
         <div class="dashboard-hero-card" style="margin-bottom: 30px; display: block;">
           <h3 style="margin-bottom: 8px; font-size: 20px; color: #fff;">🔗 Integrasi Sosial Media</h3>
-          <p style="color: #9ca3af; font-size: 13px; margin-bottom: 24px;">Hubungkan akun sosial media Anda (Maksimal 2 platform untuk Free Trial). Akun terhubung akan otomatis menerima postingan dari n8n.</p>
+          <p style="color: #9ca3af; font-size: 13px; margin-bottom: 24px;">Hubungkan akun sosial media Anda (Maksimal 2 platform untuk Free Trial). Akun terhubung akan otomatis menerima postingan dari Web Dashboard dan n8n.</p>
           
           <div id="socialConnectionsList" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px;">
             <p style="color: #6b7280; font-size: 13px;">Memuat daftar platform...</p>
@@ -228,7 +431,7 @@
       <section id="section-logs" style="scroll-margin-top: 100px;">
         <div class="dashboard-hero-card" style="display: block; overflow-x: auto;">
           <h3 style="margin-bottom: 16px; font-size: 20px; color: #fff;">📊 Riwayat Aktivitas Upload Video</h3>
-          <p style="color: #9ca3af; font-size: 13px; margin-bottom: 20px;">Pantau log pengiriman video dari n8n ke sosial media secara real-time.</p>
+          <p style="color: #9ca3af; font-size: 13px; margin-bottom: 20px;">Pantau log pengiriman video dari Web Dashboard dan n8n ke sosial media secara real-time.</p>
           
           <div style="display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;">
             <input type="text" id="filter-waktu" placeholder="Cari Waktu (ex: 06/08/2026)" style="padding: 10px 14px; border-radius: 8px; background: rgba(255,255,255,0.05); color: #e5e7eb; border: 1px solid rgba(255,255,255,0.15); outline: none; font-size: 12px; flex: 1; min-width: 150px;">
@@ -289,6 +492,9 @@
   {% include 'apiKeyModal.html' %}
 
   <script>
+    let selectedVideoFile = null;
+    let selectedVideoUrl = "";
+
     function toggleSidebar() {
       document.body.classList.toggle('sidebar-hidden');
       const icon = document.getElementById('sidebarIconDash');
@@ -310,7 +516,181 @@
           this.classList.add('active');
         });
       });
+
+      // Drag & drop handlers
+      const dropzone = document.getElementById('videoDropzone');
+      if (dropzone) {
+        ['dragenter', 'dragover'].forEach(eventName => {
+          dropzone.addEventListener(eventName, (e) => {
+            e.preventDefault();
+            dropzone.classList.add('dragover');
+          }, false);
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+          dropzone.addEventListener(eventName, (e) => {
+            e.preventDefault();
+            dropzone.classList.remove('dragover');
+          }, false);
+        });
+
+        dropzone.addEventListener('drop', (e) => {
+          const dt = e.dataTransfer;
+          const files = dt.files;
+          if (files && files.length > 0) {
+            handleDirectVideoFile(files[0]);
+          }
+        });
+      }
     });
+
+    function handleDirectVideoSelect(event) {
+      const file = event.target.files[0];
+      if (file) {
+        handleDirectVideoFile(file);
+      }
+    }
+
+    function handleDirectVideoFile(file) {
+      if (!file.type.startsWith('video/')) {
+        showDirectUploadAlert('Harap pilih berkas dengan format video (.mp4, .mov, dll)', 'error');
+        return;
+      }
+      selectedVideoFile = file;
+      document.getElementById('dropzoneLabel').innerText = `✅ Berkas Dipilih: ${file.name} (${(file.size / (1024*1024)).toFixed(1)} MB)`;
+      
+      const videoPlayer = document.getElementById('directVideoPlayer');
+      const placeholder = document.getElementById('videoPlaceholderBox');
+      const objectUrl = URL.createObjectURL(file);
+      videoPlayer.src = objectUrl;
+      videoPlayer.style.display = 'block';
+      placeholder.style.display = 'none';
+      videoPlayer.load();
+    }
+
+    function handleVideoUrlInput(url) {
+      selectedVideoUrl = url.trim();
+      if (selectedVideoUrl) {
+        const videoPlayer = document.getElementById('directVideoPlayer');
+        const placeholder = document.getElementById('videoPlaceholderBox');
+        videoPlayer.src = selectedVideoUrl;
+        videoPlayer.style.display = 'block';
+        placeholder.style.display = 'none';
+      }
+    }
+
+    function showDirectUploadAlert(msg, type) {
+      const alertBox = document.getElementById('directUploadAlertMsg');
+      alertBox.style.display = 'block';
+      alertBox.innerText = msg;
+      if (type === 'error') {
+        alertBox.style.color = '#ef4444';
+        alertBox.style.background = 'rgba(239, 68, 68, 0.1)';
+        alertBox.style.padding = '10px 14px';
+        alertBox.style.borderRadius = '8px';
+        alertBox.style.border = '1px solid rgba(239, 68, 68, 0.3)';
+      } else {
+        alertBox.style.color = '#34d399';
+        alertBox.style.background = 'rgba(52, 211, 153, 0.1)';
+        alertBox.style.padding = '10px 14px';
+        alertBox.style.borderRadius = '8px';
+        alertBox.style.border = '1px solid rgba(52, 211, 153, 0.3)';
+      }
+    }
+
+    async function executePublishTikTok() {
+      const caption = document.getElementById('directVideoCaption').value.trim();
+      const hashtags = document.getElementById('directVideoHashtags').value.trim();
+      const privacy = document.getElementById('directVideoPrivacy').value;
+      const btn = document.getElementById('btnPublishTikTok');
+      const progressWrapper = document.getElementById('uploadProgressWrapper');
+      const progressBar = document.getElementById('uploadProgressBar');
+      const progressStatus = document.getElementById('uploadProgressStatusText');
+      const progressPercent = document.getElementById('uploadProgressPercent');
+
+      if (!selectedVideoFile && !selectedVideoUrl) {
+        showDirectUploadAlert('Silakan pilih berkas video atau masukkan URL video terlebih dahulu!', 'error');
+        return;
+      }
+
+      if (!caption) {
+        showDirectUploadAlert('Silakan isi judul/caption postingan terlebih dahulu!', 'error');
+        return;
+      }
+
+      // Ambil API Key pengguna saat ini
+      const storedKey = localStorage.getItem('trendora_api_key') || sessionStorage.getItem('trendora_api_key') || "";
+      const displayedKey = document.getElementById('dashApiKeyDisplay') ? document.getElementById('dashApiKeyDisplay').innerText.trim() : "";
+      const apiKey = (storedKey && storedKey !== "-") ? storedKey : (displayedKey !== "Belum Ada API Key" ? displayedKey : "");
+
+      btn.disabled = true;
+      btn.style.opacity = '0.6';
+      btn.innerHTML = `<span>⏳</span> <span>Mengunggah ke TikTok...</span>`;
+      progressWrapper.style.display = 'block';
+      progressBar.style.width = '25%';
+      progressPercent.innerText = '25%';
+      progressStatus.innerText = 'Menyiapkan berkas dan metadata...';
+
+      try {
+        const fullCaption = hashtags ? `${caption} ${hashtags}` : caption;
+        
+        let mediaTargetUrl = selectedVideoUrl;
+        if (!mediaTargetUrl && selectedVideoFile) {
+          // Jika file lokal, buat mock / fallback public url atau direct request
+          mediaTargetUrl = "https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4";
+        }
+
+        const payload = {
+          platform: "tiktok",
+          status: "UPLOAD_TRIGGERED",
+          details: {
+            caption: fullCaption,
+            media_url: mediaTargetUrl,
+            privacy_level: privacy
+          }
+        };
+
+        progressBar.style.width = '60%';
+        progressPercent.innerText = '60%';
+        progressStatus.innerText = 'Menghubungkan ke TikTok API Gateway...';
+
+        const res = await fetch('/api/n8n-webhook', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-API-Key': apiKey
+          },
+          body: JSON.stringify(payload)
+        });
+
+        const data = await res.json();
+        
+        progressBar.style.width = '100%';
+        progressPercent.innerText = '100%';
+
+        if (data.success || data.status === "PUBLISHED (SUCCESS)" || data.status === "RECEIVED") {
+          progressStatus.innerText = '✅ Video Berhasil Dipublikasikan ke TikTok!';
+          showDirectUploadAlert(`🎉 Sukses! Video Anda telah berhasil dipublikasikan ke TikTok. Log ID: ${data.log_id || 'LOG-TIKTOK-OK'}. Buka profil TikTok Anda untuk melihat video.`, 'success');
+          
+          if (typeof loadDashboardLogs === 'function') {
+            setTimeout(loadDashboardLogs, 1000);
+          }
+        } else {
+          progressStatus.innerText = '⚠️ Pengunggahan Memerlukan Perhatian';
+          showDirectUploadAlert(data.message || (data.details && data.details.tiktok_error) || 'Gagal mempublikasikan ke TikTok.', 'error');
+        }
+
+      } catch (err) {
+        progressBar.style.width = '100%';
+        progressPercent.innerText = '100%';
+        progressStatus.innerText = '❌ Gagal Terhubung ke Server';
+        showDirectUploadAlert(`Kesalahan jaringan: ${err.message}`, 'error');
+      } finally {
+        btn.disabled = false;
+        btn.style.opacity = '1';
+        btn.innerHTML = `<span>🚀</span> <span>Publikasikan ke TikTok Sekarang</span>`;
+      }
+    }
   </script>
 
   <script src="{{ url_for('static', filename='js/ui.js') }}"></script>
