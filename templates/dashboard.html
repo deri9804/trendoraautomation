@@ -618,10 +618,27 @@
         return;
       }
 
-      // Ambil API Key pengguna saat ini
-      const storedKey = localStorage.getItem('trendora_api_key') || sessionStorage.getItem('trendora_api_key') || "";
-      const displayedKey = document.getElementById('dashApiKeyDisplay') ? document.getElementById('dashApiKeyDisplay').innerText.trim() : "";
-      const apiKey = (storedKey && storedKey !== "-") ? storedKey : (displayedKey !== "Belum Ada API Key" ? displayedKey : "");
+      // Ambil API Key asli pengguna dari storage sesi JSON agar tidak mengambil karakter sensor (•)
+      let apiKey = "";
+      try {
+        const storedUser = localStorage.getItem('trendora_user') || sessionStorage.getItem('trendora_user');
+        if (storedUser) {
+          const parsed = JSON.parse(storedUser);
+          apiKey = parsed.apiKey || parsed.api_key || "";
+        }
+      } catch (e) {}
+
+      if (!apiKey) {
+        apiKey = localStorage.getItem('trendora_api_key') || sessionStorage.getItem('trendora_api_key') || "";
+      }
+
+      // Bersihkan seluruh karakter non-ASCII (simbol sensor bullet, emoji, spasi ganda)
+      apiKey = apiKey.replace(/[^\x00-\x7F]/g, "").trim();
+
+      if (!apiKey || apiKey === "-") {
+        showDirectUploadAlert('API Key tidak valid atau belum di-generate. Silakan klik tombol "🔑 Generate API Key" di Ringkasan Dashboard terlebih dahulu!', 'error');
+        return;
+      }
 
       btn.disabled = true;
       btn.style.opacity = '0.6';
@@ -636,7 +653,7 @@
         
         let mediaTargetUrl = selectedVideoUrl;
         if (!mediaTargetUrl && selectedVideoFile) {
-          // Jika file lokal, buat mock / fallback public url atau direct request
+          // Fallback public video target jika mengunggah file lokal
           mediaTargetUrl = "https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4";
         }
 
