@@ -48,7 +48,7 @@ def count_today_posts_for_key(api_key):
 
 def send_tiktok_init_request(payload, access_token):
     """
-    Mengirim request POST ke TikTok init API dan mengekstrak isi teks JSON mentah 
+    Mengirim request POST ke TikTok init API dan mengekstrak isi respons JSON mentah 
     secara penuh jika terjadi HTTP Error (termasuk 403 Forbidden).
     """
     url = "https://open.tiktokapis.com/v2/post/publish/video/init/"
@@ -366,6 +366,7 @@ def n8n_webhook():
                     page_data = json.loads(response.read().decode('utf-8'))
                 if page_data.get('data') and len(page_data['data']) > 0:
                     page_id = page_data['data'][0]['id']
+                    page_token = page_data['data'][0]['access_token']
                     ig_info_url = f"https://graph.facebook.com/v18.0/{page_id}?fields=instagram_business_account&access_token={meta_token}"
                     with urllib.request.urlopen(urllib.request.Request(ig_info_url)) as res_ig:
                         ig_data = json.loads(res_ig.read().decode('utf-8'))
