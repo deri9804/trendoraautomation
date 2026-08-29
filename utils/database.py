@@ -206,20 +206,44 @@ def db_save_user(email, secret, is_linked, name="", api_key="", status=""):
     }
     return False
 
-def db_get_tiktok_tokens_by_api_key(api_key):
+def db_get_tiktok_tokens_by_api_key(api_key, email=None):
+    """Mencari TikTok tokens dari baris data terbaru dengan prioritas API Key dan fallback ke Email."""
     sheet = get_gsheet()
     if sheet:
         try:
             all_values = sheet.get_all_values()
-            for idx, row in enumerate(all_values):
-                if idx == 0: continue
-                if len(row) >= 5 and row[4].strip() == api_key:
-                    return {
-                        'access_token': row[6] if len(row) >= 7 else None,
-                        'open_id': row[7] if len(row) >= 8 else None
-                    }
+            # 1. Cari berdasarkan API Key (dari baris paling bawah/terbaru)
+            if api_key:
+                for idx in range(len(all_values)-1, 0, -1):
+                    row = all_values[idx]
+                    if len(row) >= 5 and str(row[4]).strip() == api_key:
+                        token = str(row[6]).strip() if len(row) >= 7 and str(row[6]).strip() else None
+                        if token:
+                            return {
+                                'access_token': token,
+                                'open_id': str(row[7]).strip() if len(row) >= 8 else None,
+                                'refresh_token': str(row[8]).strip() if len(row) >= 9 else None,
+                                'email': str(row[0]).strip() if len(row) >= 1 else None,
+                                'row_idx': idx + 1
+                            }
+
+            # 2. Fallback: Cari berdasarkan Email jika token di baris API Key belum terisi
+            if email:
+                clean_email = str(email).strip().lower()
+                for idx in range(len(all_values)-1, 0, -1):
+                    row = all_values[idx]
+                    if len(row) >= 1 and str(row[0]).strip().lower() == clean_email:
+                        token = str(row[6]).strip() if len(row) >= 7 and str(row[6]).strip() else None
+                        if token:
+                            return {
+                                'access_token': token,
+                                'open_id': str(row[7]).strip() if len(row) >= 8 else None,
+                                'refresh_token': str(row[8]).strip() if len(row) >= 9 else None,
+                                'email': str(row[0]).strip() if len(row) >= 1 else None,
+                                'row_idx': idx + 1
+                            }
         except Exception as e:
-            print(f"[GSheet Get Tokens Error]: {e}")
+            print(f"[GSheet Get TikTok Tokens Error]: {e}")
     return {}
 
 def db_get_meta_token_by_api_key(api_key):

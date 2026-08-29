@@ -697,17 +697,27 @@
       btn.style.opacity = '0.6';
       btn.innerHTML = `<span>⏳</span> <span>Mengunggah ke TikTok...</span>`;
       progressWrapper.style.display = 'block';
-      progressBar.style.width = '25%';
-      progressPercent.innerText = '25%';
-      progressStatus.innerText = 'Menyiapkan berkas dan metadata...';
+      progressBar.style.width = '20%';
+      progressPercent.innerText = '20%';
+      progressStatus.innerText = 'Menyiapkan data berkas video...';
 
       try {
         const fullCaption = hashtags ? `${caption} ${hashtags}` : caption;
         
-        let mediaTargetUrl = selectedVideoUrl;
-        if (!mediaTargetUrl && selectedVideoFile) {
-          // Fallback public video target jika mengunggah file lokal
-          mediaTargetUrl = "https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4";
+        // Baca data berkas video asli jika dipilih dari komputer
+        let videoBase64Data = "";
+        if (selectedVideoFile) {
+          try {
+            progressStatus.innerText = 'Membaca berkas video lokal...';
+            videoBase64Data = await new Promise((resolve, reject) => {
+              const reader = new FileReader();
+              reader.onload = () => resolve(reader.result.split(',')[1]);
+              reader.onerror = error => reject(error);
+              reader.readAsDataURL(selectedVideoFile);
+            });
+          } catch (readErr) {
+            console.warn("Fallback reading base64:", readErr);
+          }
         }
 
         const payload = {
@@ -715,7 +725,8 @@
           status: "UPLOAD_TRIGGERED",
           details: {
             caption: fullCaption,
-            media_url: mediaTargetUrl,
+            media_url: selectedVideoUrl || "",
+            video_base64: videoBase64Data,
             privacy_level: privacy
           }
         };
@@ -747,7 +758,9 @@
           }
         } else {
           progressStatus.innerText = '⚠️ Pengunggahan Memerlukan Perhatian';
-          showDirectUploadAlert(data.message || (data.details && data.details.tiktok_error) || 'Gagal mempublikasikan ke TikTok.', 'error');
+          // Tampilkan pesan error spesifik dari TikTok jika ada
+          const specificError = (data.details && (data.details.tiktok_error || data.details.error)) || data.message || 'Gagal mempublikasikan ke TikTok.';
+          showDirectUploadAlert(specificError, 'error');
         }
 
       } catch (err) {

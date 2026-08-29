@@ -73,7 +73,35 @@ def send_tiktok_init_request(payload, access_token):
     except Exception as general_err:
         return False, f"[TikTok Request Error] {str(general_err)}", 500
 
-@webhook_bp.route('/api/chat', methods=['POST'])
+def refresh_tiktok_token(refresh_token, row_idx=None):
+    """Me-refresh TikTok access token yang expired secara otomatis."""
+    if not refresh_token:
+        return None
+    try:
+        url = "https://open.tiktokapis.com/v2/oauth/token/"
+        payload = {
+            "client_key": config.TIKTOK_CLIENT_KEY,
+            "client_secret": config.TIKTOK_CLIENT_SECRET,
+            "grant_type": "refresh_token",
+            "refresh_token": refresh_token
+        }
+        data = urllib.parse.urlencode(payload).encode('utf-8')
+        req = urllib.request.Request(url, data=data, headers={"Content-Type": "application/x-www-form-urlencoded"})
+        with urllib.request.urlopen(req) as res:
+            res_data = json.loads(res.read().decode('utf-8'))
+            new_access_token = res_data.get('access_token')
+            new_refresh_token = res_data.get('refresh_token')
+            if new_access_token and row_idx:
+                sheet = db.get_gsheet()
+                if sheet:
+                    sheet.update_cell(row_idx, 7, new_access_token)
+                    if new_refresh_token:
+                        sheet.update_cell(row_idx, 9, new_refresh_token)
+            return new_access_token
+    except Exception as e:
+        print(f"[TikTok Refresh Token Error]: {e}")
+        return None
+
 def chat_api():
     data = request.json or {}
     pesan_user = data.get('pesan_user', '')
@@ -181,25 +209,122 @@ def n8n_webhook():
     
     if platform == 'tiktok' and isinstance(details, dict):
         media_url = details.get('media_url')
-        caption = details.get('caption', 'Diposting otomatis via n8n & TRENDORA! 🚀')
-        if media_url:
-            user_tokens = db.db_get_tiktok_tokens_by_api_key(api_key)
+        video_base64 = details.get('video_base64')
+        caption = details.get('caption', 'Diposting otomatis via TRENDORA Automation! 🚀')
+        
+        if media_url or video_base64:
+            user_tokens = db.db_get_tiktok_tokens_by_api_key(
+                api_key, 
+                email=user_data.get('email') if user_data else None
+            )
             access_token = user_tokens.get('access_token')
+            refresh_tok = user_tokens.get('refresh_token')
+            row_idx = user_tokens.get('row_idx')
+
             if access_token:
                 temp_file_path = None
                 try:
                     temp_dir = tempfile.gettempdir()
                     temp_file_path = os.path.join(temp_dir, f"tk_{uuid.uuid4().hex[:6]}.mp4")
                     
-                    try:
-                        req_download = urllib.request.Request(
-                            media_url, 
-                            headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'}
-                        )
-                        with urllib.request.urlopen(req_download) as res_dl, open(temp_file_path, 'wb') as out_file:
-                            out_file.write(res_dl.read())
-                    except urllib.error.HTTPError as dl_err:
+                    if video_base64:
+                        # Decode berkas video langsung dari upload browser
+                        with open(temp_file_path, 'wb') as vf:
+                            vf.write(base64.b64decode(video_base64))
+                    elif media_url:
+                        try:
+                            req_download = urllib.request.Request(
+                                media_url, 
+                                headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'}
+                            )
+                            with urllib.request.urlopen(req_download) as res_dl, open(temp_file_path, 'wb') as out_file:
+                                out_file.write(res_dl.read())
+                        except urllib.error.HTTPError as dl_err:
+                            status = "FAILED"
+                            details['tiktok_error'] = f"[Download Error] URL video tidak dapat diunduh. HTTP {dl_err.code}: {dl_err.reason}."
+                            raise Exception(f"Media URL Download Failed: {dl_err}")
+
+                    file_size = os.path.getsize(temp_file_path)
+                    privacy_level = details.get('privacy_level', 'SELF_ONLY')
+
+                    payload = {
+                        "post_info": {
+                            "title": caption, 
+                            "privacy_level": privacy_level, 
+                            "disable_duet": False, 
+                            "disable_comment": False, 
+                            "disable_stitch": False
+                        },
+                        "source_info": {
+                            "source": "FILE_UPLOAD", 
+                            "video_size": file_size, 
+                            "chunk_size": file_size, 
+                            "total_chunk_count": 1
+                        }
+                    }
+
+                    # 1. Eksekusi request ke TikTok API
+                    is_ok, res_payload, http_code = send_tiktok_init_request(payload, access_token)
+
+                    # 2. Jika Access Token kadaluarsa -> Coba auto-refresh token
+                    if not is_ok and (http_code in [400, 401] or "access_token_invalid" in str(res_payload) or "token_expired" in str(res_payload)):
+                        new_token = refresh_tiktok_token(refresh_tok, row_idx)
+                        if new_token:
+                            access_token = new_token
+                            is_ok, res_payload, http_code = send_tiktok_init_request(payload, access_token)
+
+                    if not is_ok:
+                        err_str = str(res_payload)
+                        # Jika ditolak karena Sandbox/Basic Access (Unaudited)
+                        if "unaudited_client_can_only_post_to_private_accounts" in err_str:
+                            privacy_level = "SELF_ONLY"
+                            payload["post_info"]["privacy_level"] = "SELF_ONLY"
+                            is_retry_ok, retry_res, retry_code = send_tiktok_init_request(payload, access_token)
+                            
+                            if is_retry_ok:
+                                upload_url = retry_res.get('data', {}).get('upload_url')
+                                details['privacy_notice'] = "Video berhasil dipublikasikan dengan mode Private (SELF_ONLY) sesuai status Basic Access TikTok Developer."
+                            else:
+                                status = "FAILED"
+                                details['tiktok_error'] = f"[TikTok Fallback Error] {retry_res}"
+                                upload_url = None
+                        else:
+                            status = "FAILED"
+                            details['tiktok_error'] = err_str
+                            upload_url = None
+                    else:
+                        upload_url = res_payload.get('data', {}).get('upload_url')
+
+                    # 3. Lakukan pengunggahan data video (PUT) ke upload_url
+                    if upload_url:
+                        with open(temp_file_path, 'rb') as f:
+                            video_data = f.read()
+                        put_headers = {
+                            'Content-Type': 'video/mp4', 
+                            'Content-Range': f'bytes 0-{file_size-1}/{file_size}'
+                        }
+                        req_put = urllib.request.Request(upload_url, data=video_data, headers=put_headers, method='PUT')
+                        urllib.request.urlopen(req_put)
+                        status = "PUBLISHED (SUCCESS)"
+                        details['upload_status'] = f"Success TikTok Upload ({file_size} bytes) - Mode: {privacy_level}."
+                    else:
+                        if 'tiktok_error' not in details:
+                            status = "FAILED"
+                            details['tiktok_error'] = "Gagal mendapatkan Upload URL dari TikTok Gateway."
+
+                except Exception as e:
+                    if 'tiktok_error' not in details:
+                        details['tiktok_error'] = str(e)
                         status = "FAILED"
+                finally:
+                    if temp_file_path and os.path.exists(temp_file_path):
+                        try:
+                            os.remove(temp_file_path)
+                        except Exception:
+                            pass
+            else:
+                details['tiktok_error'] = "Akun TikTok belum terhubung atau Token Otorisasi kosong. Silakan buka menu 'Akun Sosial' dan sambungkan akun TikTok Anda."
+                status = "FAILED"
                         details['tiktok_error'] = f"[Google Storage Download Error] URL video tidak bisa diunduh/private. HTTP {dl_err.code}: {dl_err.reason}."
                         raise Exception(f"Media URL Download Failed: {dl_err}")
 
