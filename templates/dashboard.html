@@ -618,24 +618,77 @@
         return;
       }
 
-      // Ambil API Key asli pengguna dari storage sesi JSON agar tidak mengambil karakter sensor (•)
+      // Ambil API Key dari berbagai sumber (DOM, Global State, Storage)
       let apiKey = "";
-      try {
-        const storedUser = localStorage.getItem('trendora_user') || sessionStorage.getItem('trendora_user');
-        if (storedUser) {
-          const parsed = JSON.parse(storedUser);
-          apiKey = parsed.apiKey || parsed.api_key || "";
+
+      // 1. Ambil langsung dari tampilan layar Ringkasan jika ada
+      const displayElem = document.getElementById('dashApiKeyDisplay');
+      if (displayElem) {
+        const textKey = (displayElem.innerText || displayElem.textContent || '').trim();
+        if (textKey.startsWith('TRD-') && !textKey.includes('•') && !textKey.includes('Belum Ada')) {
+          apiKey = textKey;
+        } else if (displayElem.dataset && displayElem.dataset.rawKey) {
+          apiKey = displayElem.dataset.rawKey;
         }
-      } catch (e) {}
+      }
+
+      // 2. Cek variabel global window / state
+      if (!apiKey && typeof window.currentApiKey === 'string' && window.currentApiKey.startsWith('TRD-')) {
+        apiKey = window.currentApiKey;
+      }
+      if (!apiKey && window.currentUser && (window.currentUser.apiKey || window.currentUser.api_key)) {
+        apiKey = window.currentUser.apiKey || window.currentUser.api_key;
+      }
+
+      // 3. Cek localStorage dan sessionStorage
+      if (!apiKey) {
+        try {
+          const storedUser = localStorage.getItem('trendora_user') || sessionStorage.getItem('trendora_user');
+          if (storedUser) {
+            const parsed = JSON.parse(storedUser);
+            apiKey = parsed.apiKey || parsed.api_key || parsed.key || "";
+          }
+        } catch (e) {}
+      }
 
       if (!apiKey) {
-        apiKey = localStorage.getItem('trendora_api_key') || sessionStorage.getItem('trendora_api_key') || "";
+        apiKey = localStorage.getItem('trendora_api_key') || sessionStorage.getItem('trendora_api_key') || localStorage.getItem('api_key') || "";
       }
 
       // Bersihkan seluruh karakter non-ASCII (simbol sensor bullet, emoji, spasi ganda)
-      apiKey = apiKey.replace(/[^\x00-\x7F]/g, "").trim();
+      apiKey = (apiKey || "").replace(/[^\x00-\x7F]/g, "").trim();
 
-      if (!apiKey || apiKey === "-") {
+      // Jika masih belum dapat, coba sinkronisasi cepat via /api/me menggunakan email tersimpan
+      if (!apiKey || apiKey === "-" || apiKey.includes("•")) {
+        try {
+          let userEmail = "";
+          const storedUser = localStorage.getItem('trendora_user') || sessionStorage.getItem('trendora_user');
+          if (storedUser) {
+            userEmail = JSON.parse(storedUser).email || "";
+          }
+          if (!userEmail) {
+            const emailSpan = document.getElementById('dashUserEmail');
+            if (emailSpan && emailSpan.innerText && emailSpan.innerText.includes('@')) {
+              userEmail = emailSpan.innerText.trim();
+            }
+          }
+          if (userEmail) {
+            const meRes = await fetch('/api/me', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ email: userEmail })
+            });
+            const meData = await meRes.json();
+            if (meData.success && meData.user && meData.user.apiKey && meData.user.apiKey.startsWith('TRD-')) {
+              apiKey = meData.user.apiKey.replace(/[^\x00-\x7F]/g, "").trim();
+            }
+          }
+        } catch (syncErr) {
+          console.error("Gagal sinkronisasi API Key:", syncErr);
+        }
+      }
+
+      if (!apiKey || apiKey === "-" || apiKey.includes("•")) {
         showDirectUploadAlert('API Key tidak valid atau belum di-generate. Silakan klik tombol "🔑 Generate API Key" di Ringkasan Dashboard terlebih dahulu!', 'error');
         return;
       }
@@ -685,7 +738,7 @@
         progressBar.style.width = '100%';
         progressPercent.innerText = '100%';
 
-        if (data.success || data.status === "PUBLISHED (SUCCESS)" || data.status === "RECEIVED") {
+        if (data.success || data.status === "PUBLISHED (SUCCESS)" || data.status === "RECEIVED" || data.status === "SUCCESS") {
           progressStatus.innerText = '✅ Video Berhasil Dipublikasikan ke TikTok!';
           showDirectUploadAlert(`🎉 Sukses! Video Anda telah berhasil dipublikasikan ke TikTok. Log ID: ${data.log_id || 'LOG-TIKTOK-OK'}. Buka profil TikTok Anda untuk melihat video.`, 'success');
           
