@@ -102,6 +102,7 @@ def refresh_tiktok_token(refresh_token, row_idx=None):
         print(f"[TikTok Refresh Token Error]: {e}")
         return None
 
+@webhook_bp.route('/api/chat', methods=['POST'])
 def chat_api():
     data = request.json or {}
     pesan_user = data.get('pesan_user', '')
