@@ -325,84 +325,9 @@ def n8n_webhook():
             else:
                 details['tiktok_error'] = "Akun TikTok belum terhubung atau Token Otorisasi kosong. Silakan buka menu 'Akun Sosial' dan sambungkan akun TikTok Anda."
                 status = "FAILED"
-                        details['tiktok_error'] = f"[Google Storage Download Error] URL video tidak bisa diunduh/private. HTTP {dl_err.code}: {dl_err.reason}."
-                        raise Exception(f"Media URL Download Failed: {dl_err}")
-
-                    file_size = os.path.getsize(temp_file_path)
-                    privacy_level = details.get('privacy_level', 'PUBLIC_TO_EVERYONE')
-
-                    payload = {
-                        "post_info": {
-                            "title": caption, 
-                            "privacy_level": privacy_level, 
-                            "disable_duet": False, 
-                            "disable_comment": False, 
-                            "disable_stitch": False
-                        },
-                        "source_info": {
-                            "source": "FILE_UPLOAD", 
-                            "video_size": file_size, 
-                            "chunk_size": file_size, 
-                            "total_chunk_count": 1
-                        }
-                    }
-
-                    # Eksekusi request ke TikTok API dengan pembacaan error detail
-                    is_ok, res_payload, http_code = send_tiktok_init_request(payload, access_token)
-
-                    if not is_ok:
-                        err_str = str(res_payload)
-                        # Jika TikTok menolak posting Publik karena akun/App masih Basic Access (Unaudited)
-                        if "unaudited_client_can_only_post_to_private_accounts" in err_str:
-                            # AUTOMATIC FALLBACK KE SELF_ONLY (PRIVATE)
-                            privacy_level = "SELF_ONLY"
-                            payload["post_info"]["privacy_level"] = "SELF_ONLY"
-                            is_retry_ok, retry_res, retry_code = send_tiktok_init_request(payload, access_token)
-                            
-                            if is_retry_ok:
-                                upload_url = retry_res.get('data', {}).get('upload_url')
-                                details['privacy_notice'] = "TikTok Console Anda memerlukan izin 'Advanced Access' untuk posting Publik. Video otomatis diunggah sebagai Private (SELF_ONLY)."
-                            else:
-                                status = "FAILED"
-                                details['tiktok_error'] = f"[TikTok Fallback Error] {retry_res}"
-                                upload_url = None
-                        else:
-                            status = "FAILED"
-                            details['tiktok_error'] = err_str
-                            upload_url = None
-                    else:
-                        upload_url = res_payload.get('data', {}).get('upload_url')
-
-                    # Jika upload URL berhasil didapatkan, lakukan pengunggahan file video (PUT)
-                    if upload_url:
-                        with open(temp_file_path, 'rb') as f:
-                            video_data = f.read()
-                        put_headers = {
-                            'Content-Type': 'video/mp4', 
-                            'Content-Range': f'bytes 0-{file_size-1}/{file_size}'
-                        }
-                        req_put = urllib.request.Request(upload_url, data=video_data, headers=put_headers, method='PUT')
-                        urllib.request.urlopen(req_put)
-                        status = "PUBLISHED (SUCCESS)"
-                        details['upload_status'] = f"Success TikTok Upload ({file_size} bytes) - Mode: {privacy_level}."
-                    else:
-                        if 'tiktok_error' not in details:
-                            status = "FAILED"
-                            details['tiktok_error'] = "Gagal mendapatkan Upload URL dari TikTok"
-
-                except Exception as e:
-                    if 'tiktok_error' not in details:
-                        details['tiktok_error'] = str(e)
-                        status = "FAILED"
-                finally:
-                    if temp_file_path and os.path.exists(temp_file_path):
-                        try:
-                            os.remove(temp_file_path)
-                        except Exception:
-                            pass
-            else:
-                details['tiktok_error'] = "Akun TikTok belum terhubung atau Access Token kosong."
-                status = "FAILED"
+        else:
+            details['tiktok_error'] = "Tidak ada berkas video atau URL media yang diberikan."
+            status = "FAILED"
 
     elif platform == 'facebook' and isinstance(details, dict):
         media_url = details.get('media_url')
