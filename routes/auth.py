@@ -7,7 +7,7 @@ PARENT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if PARENT_DIR not in sys.path:
     sys.path.insert(0, PARENT_DIR)
 
-from flask import Blueprint, request, jsonify, session
+from flask import Blueprint, request, jsonify, session, current_app
 import urllib.parse
 import uuid
 import smtplib
@@ -20,13 +20,25 @@ from utils import security as sec
 
 auth_bp = Blueprint('auth', __name__)
 
+def ensure_app_secret_key():
+    """Memastikan Flask app memiliki secret_key aktif untuk mencegah session runtime error."""
+    try:
+        if not current_app.secret_key:
+            current_app.secret_key = getattr(
+                config, 
+                'SECRET_KEY', 
+                os.environ.get("SECRET_KEY", "trendora_secure_session_key_2026_x89a")
+            )
+    except Exception as e:
+        print(f"[Session Warning]: {e}")
+
 def send_2fa_reset_email(to_email, secret, qr_code_url, user_name="User"):
     """Mengirimkan email instruksi reset 2FA berisi QR Code dan Setup Key via SMTP."""
     smtp_user = getattr(config, 'SMTP_EMAIL', os.environ.get('SMTP_EMAIL', 'trendoraautomation@gmail.com'))
     smtp_pass = getattr(config, 'SMTP_PASSWORD', os.environ.get('SMTP_PASSWORD', ''))
     
     if not smtp_user or not smtp_pass:
-        print("[SMTP Warning]: SMTP_EMAIL atau SMTP_PASSWORD belum dikonfigurasi di environment Vercel!")
+        print("[SMTP Warning]: SMTP_EMAIL atau SMTP_PASSWORD belum dikonfigurasi di environment variables!")
         return False, "Kredensial SMTP server (SMTP_EMAIL / SMTP_PASSWORD) belum diisi di environment variables."
 
     try:
@@ -79,7 +91,6 @@ def send_2fa_reset_email(to_email, secret, qr_code_url, user_name="User"):
 
         msg.attach(MIMEText(html_content, 'html'))
 
-        # Kirim melalui Gmail SMTP SSL (Port 465) dengan fallback TLS (Port 587)
         try:
             with smtplib.SMTP_SSL('smtp.gmail.com', 465, timeout=12) as server:
                 server.login(smtp_user, smtp_pass)
@@ -97,20 +108,23 @@ def send_2fa_reset_email(to_email, secret, qr_code_url, user_name="User"):
         return False, str(e)
 
 def generate_50char_api_key():
-    """Generates a formatted API Key with prefix TRD- and exact total length of 50 characters."""
+    """Menghasilkan API Key dengan prefix TRD- dan panjang total terstandarisasi 50 karakter."""
     raw = (uuid.uuid4().hex + uuid.uuid4().hex).upper()
     return f"TRD-{raw[:5]}-{raw[5:10]}-{raw[10:15]}-{raw[15:20]}-{raw[20:25]}-{raw[25:30]}-{raw[30:35]}-{raw[35:39]}"
 
 def check_user_trial_status(user_data):
+    """Memeriksa apakah akun berstatus Paid, Trial Aktif (1-7 Hari), atau Trial Expired."""
     if not user_data:
         return {"is_paid": False, "is_trial": False, "is_expired": True, "days_left": 0, "status_text": "Expired"}
     
     status_str = user_data.get('status', '')
     status_lower = status_str.lower()
     
+    # Pengguna berbayar atau admin
     if any(word in status_lower for word in ["paid", "subscriber", "admin", "lifetime"]):
         return {"is_paid": True, "is_trial": False, "is_expired": False, "days_left": 999, "status_text": "Active (Paid Subscriber)"}
     
+    # Menghitung masa 7 hari dari tanggal registrasi
     match = re.search(r'\d{4}-\d{2}-\d{2}(?:\s+\d{2}:\d{2}:\d{2})?', status_str)
     if match:
         date_str = match.group(0)
@@ -165,7 +179,14 @@ def request_otp():
         secret = user_data.get('secret')
         if not secret:
             secret = sec.generate_base32_secret()
-            db.db_save_user(email, secret, user_data.get('is_linked', False), user_data.get('name', ''), user_data.get('api_key', ''), user_data.get('status', ''))
+            db.db_save_user(
+                email, 
+                secret, 
+                user_data.get('is_linked', False), 
+                user_data.get('name', ''), 
+                user_data.get('api_key', ''), 
+                user_data.get('status', '')
+            )
 
         is_linked = user_data.get('is_linked', False)
         
@@ -182,6 +203,7 @@ def request_otp():
 
 @auth_bp.route('/api/verify-otp', methods=['POST', 'OPTIONS'])
 def verify_otp_route():
+    ensure_app_secret_key()
     if request.method == 'OPTIONS':
         return jsonify({"success": True}), 200
     try:
@@ -209,6 +231,7 @@ def verify_otp_route():
                 
             trial_info = check_user_trial_status(user_data)
             
+            # Mendeteksi platform yang sudah terhubung
             connected_platforms = []
             if user_data.get('tiktok_connected'): connected_platforms.append('TikTok')
             if user_data.get('meta_connected'):
@@ -219,7 +242,6 @@ def verify_otp_route():
             if user_data.get('threads_connected'): connected_platforms.append('Threads')
             if user_data.get('twitter_connected'): connected_platforms.append('Twitter')
             
-            # Buat sesi terisolasi di server
             session_token = uuid.uuid4().hex
             session['user_email'] = email
             session['session_token'] = session_token
@@ -250,9 +272,9 @@ def verify_otp_route():
 def reset_2fa():
     """
     Endpoint untuk mereset secret 2FA pengguna jika kehilangan akses Google Authenticator.
-    Mendukung pemanggilan rute /api/reset-2fa dan /api/reset-2fa-qr.
     Menghasilkan Secret Key baru, menyimpannya di Google Sheets, dan MENGIRIMKANNYA KE EMAIL PENGGUNA.
     """
+    ensure_app_secret_key()
     if request.method == 'OPTIONS':
         return jsonify({"success": True}), 200
     try:
@@ -268,7 +290,6 @@ def reset_2fa():
         if not user_data:
             return jsonify({"success": False, "message": "Email tidak terdaftar di sistem!"}), 200
 
-        # Buat Secret Key baru dan ubah is_linked kembali ke False
         new_secret = sec.generate_base32_secret()
         name = user_data.get('name', 'User')
         api_key = user_data.get('api_key', '')
@@ -302,6 +323,7 @@ def reset_2fa():
 
 @auth_bp.route('/api/register-trial', methods=['POST', 'OPTIONS'])
 def register_trial():
+    ensure_app_secret_key()
     if request.method == 'OPTIONS':
         return jsonify({"success": True}), 200
     try:
@@ -355,6 +377,7 @@ def register_trial():
 
 @auth_bp.route('/api/generate-api-key', methods=['POST', 'OPTIONS'])
 def generate_api_key_route():
+    ensure_app_secret_key()
     if request.method == 'OPTIONS':
         return jsonify({"success": True}), 200
     try:
@@ -383,7 +406,14 @@ def generate_api_key_route():
             }), 200
 
         new_api_key = generate_50char_api_key()
-        db.db_save_user(email, user_data.get('secret', ''), user_data.get('is_linked', False), user_data.get('name', ''), new_api_key, user_data.get('status', ''))
+        db.db_save_user(
+            email, 
+            user_data.get('secret', ''), 
+            user_data.get('is_linked', False), 
+            user_data.get('name', ''), 
+            new_api_key, 
+            user_data.get('status', '')
+        )
         return jsonify({
             "success": True, 
             "isPaid": trial_info["is_paid"], 
@@ -396,6 +426,7 @@ def generate_api_key_route():
 
 @auth_bp.route('/api/me', methods=['POST', 'GET', 'OPTIONS'])
 def get_me():
+    ensure_app_secret_key()
     if request.method == 'OPTIONS':
         return jsonify({"success": True}), 200
     try:
@@ -436,7 +467,7 @@ def get_me():
         if user_data.get('threads_connected'): connected_platforms.append('Threads')
         if user_data.get('twitter_connected'): connected_platforms.append('Twitter')
         
-        # Perbarui sesi server
+        # Perbarui sesi server aktif
         session['user_email'] = email
         
         return jsonify({
@@ -460,5 +491,6 @@ def get_me():
 
 @auth_bp.route('/api/logout', methods=['POST', 'GET'])
 def logout_route():
+    ensure_app_secret_key()
     session.clear()
     return jsonify({"success": True, "message": "Sesi berhasil dihapus dan ditutup secara aman."}), 200

@@ -146,6 +146,32 @@
       box-shadow: 0 0 25px rgba(239, 68, 68, 0.2);
     }
 
+    .trial-active-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(52, 211, 153, 0.15);
+      color: #34d399;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 700;
+      border: 1px solid rgba(52, 211, 153, 0.3);
+    }
+
+    .trial-expired-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(239, 68, 68, 0.15);
+      color: #f87171;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 700;
+      border: 1px solid rgba(239, 68, 68, 0.3);
+    }
+
     .status-badge {
       display: inline-block;
       padding: 4px 10px;
@@ -201,6 +227,22 @@
     .social-card-item:hover {
       border-color: rgba(236, 72, 153, 0.4);
       transform: translateY(-2px);
+    }
+
+    .key-box-locked {
+      background: rgba(239, 68, 68, 0.08) !important;
+      border: 1px dashed rgba(239, 68, 68, 0.4) !important;
+      cursor: pointer;
+    }
+
+    .pulse-upgrade-btn {
+      animation: pulseBtn 2s infinite;
+    }
+
+    @keyframes pulseBtn {
+      0% { box-shadow: 0 0 0 0 rgba(236, 72, 153, 0.7); }
+      70% { box-shadow: 0 0 0 10px rgba(236, 72, 153, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(236, 72, 153, 0); }
     }
 
     @media (max-width: 900px) {
@@ -259,7 +301,7 @@
       
       <div class="sidebar-menu-title">Pengaturan Akun</div>
       <ul class="sidebar-menu">
-        <li><a href="#" onclick="openUpgradePayment()">💳 Langganan (Upgrade)</a></li>
+        <li><a href="#" onclick="redirectToPricingOrUpgrade()">💳 Langganan (Upgrade)</a></li>
         <li><a href="/#n8n-docs">📚 Dokumentasi API</a></li>
         <li><a href="https://wa.me/6289635602758?text=Halo%20Admin%20TRENDORA%2C%20saya%20butuh%20bantuan%20dashboard" target="_blank" style="color: #25d366;">💬 Bantuan WhatsApp</a></li>
         <li><a href="#" onclick="handleSecureLogout()" style="color: #ef4444;">🚪 Keluar Akun</a></li>
@@ -272,13 +314,13 @@
         <span id="sidebarIconDash">◀</span> <span>Tutup Menu</span>
       </button>
       
-      <!-- ALERT FREE TRIAL HABIS -->
+      <!-- ALERT FREE TRIAL HABIS (7 HARI LEWAT) -->
       <div id="trialExpiredAlertBanner" class="expired-banner-box" style="display: none;">
         <div class="expired-banner-text">
-          <h3 style="color: #fca5a5; font-size: 18px; font-weight: 800; margin-bottom: 4px;">🔒 Masa Free Trial 1 Minggu Anda Telah Habis!</h3>
-          <p style="color: #e5e7eb; font-size: 13px;">Fitur API Key, posting otomatis n8n, dan penautan sosial media saat ini <strong>terkunci</strong>. Silakan upgrade ke akun berbayar untuk membuka kembali seluruh fitur tanpa batas.</p>
+          <h3 style="color: #fca5a5; font-size: 18px; font-weight: 800; margin-bottom: 4px;">🔒 Masa Free Trial 7 Hari Anda Telah Habis!</h3>
+          <p style="color: #e5e7eb; font-size: 13px;">API Key dan akses posting otomatis Anda saat ini <strong>terkunci</strong>. Silakan upgrade ke paket berbayar untuk membuka kembali seluruh fitur tanpa batas.</p>
         </div>
-        <button class="btn-pink" onclick="openUpgradePayment()" style="padding: 12px 24px; font-size: 13px; font-weight: 800; white-space: nowrap;">
+        <button class="btn-pink pulse-upgrade-btn" onclick="redirectToPricingOrUpgrade()" style="padding: 12px 24px; font-size: 13px; font-weight: 800; white-space: nowrap;">
           ⭐ Upgrade Akun Berbayar &rarr;
         </button>
       </div>
@@ -296,34 +338,43 @@
             </div>
             <p style="color: #9ca3af; font-size: 14px; margin-bottom: 16px; word-break: break-all;">
               Email: <span id="dashUserEmail">-</span><br>
-              Status: <strong id="dashAccountStatus" style="color: #f59e0b;">Memeriksa status sesi...</strong>
+              Status: <span id="dashAccountStatusBadge" class="trial-active-badge">Memeriksa status...</span>
             </p>
 
             <div id="trialPerksNotice" style="background: rgba(255,255,255,0.03); border-left: 3px solid #60a5fa; padding: 14px; border-radius: 0 8px 8px 0; font-size: 12px; color: #9ca3af; margin-top: 14px; line-height: 1.6;">
-              ⚡ <strong>Fitur Akun Anda:</strong><br>
-              &bull; Publikasi otomatis multi-platform via Webhook n8n & Make.<br>
-              &bull; Pemantauan log pengiriman real-time di tabel aktivitas terisolasi.<br>
-              &bull; Integrasi langsung TikTok, Facebook, Instagram, LinkedIn, dan YouTube.
+              ⚡ <strong>Status Akses Akun:</strong><br>
+              <span id="trialNoticeDetails">&bull; Masa Free Trial 7 Hari: Anda dapat membuka dan menyalin API Key untuk integrasi n8n & Make.</span>
             </div>
           </div>
           
           <div class="dash-key-card">
-            <h3 style="font-size: 15px; color: #9ca3af; margin-bottom: 12px;">🔑 API Key Anda</h3>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+              <h3 style="font-size: 15px; color: #9ca3af; margin: 0;">🔑 API Key Anda</h3>
+              <span id="keyStatusPill" style="font-size: 11px; font-weight: 700; color: #34d399; background: rgba(52,211,153,0.1); padding: 2px 8px; border-radius: 6px;">Aktif (Trial 7 Hari)</span>
+            </div>
             
-            <div class="key-display-box" style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 12px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+            <div id="keyDisplayBoxWrapper" class="key-display-box" style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 12px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
               <span id="dashApiKeyDisplay" style="font-family: monospace; font-size: 13px; color: #34d399; word-break: break-all;">Memuat API Key...</span>
-              <button id="btnToggleKeyMask" onclick="toggleApiKeyMask()" style="background: transparent; border: none; color: #60a5fa; cursor: pointer; font-size: 12px; font-weight: 600; display: none;">👁️ Show</button>
+              <button id="btnToggleKeyMask" type="button" onclick="toggleApiKeyMask()" style="background: transparent; border: none; color: #60a5fa; cursor: pointer; font-size: 12px; font-weight: 600;">👁️ Sembunyikan</button>
             </div>
 
             <div class="dash-actions-row" style="display: flex; gap: 8px; flex-wrap: wrap;">
-              <button id="btnGenerateApiKey" class="btn-pink" style="font-size: 12px; padding: 8px 16px; flex: 1; min-width: 140px;" onclick="handleGenerateApiKeyClick()">🔑 Generate API Key</button>
-              <button id="btnCopyApiKey" class="btn-secondary" style="font-size: 12px; padding: 8px 16px; display: none;" onclick="copyDashApiKey()">📋 Copy Key</button>
-              <button id="btnDashUpgrade" class="btn-secondary" style="font-size: 12px; padding: 8px 16px; border-color: #ec4899; color: #ec4899; display: none;" onclick="openUpgradePayment()">⭐ Upgrade</button>
+              <button id="btnCopyApiKey" type="button" class="btn-pink" style="font-size: 12px; padding: 10px 18px; flex: 1; min-width: 130px; font-weight: 700;" onclick="copyDashApiKey()">
+                📋 Copy API Key
+              </button>
+              <button id="btnGenerateApiKey" type="button" class="btn-secondary" style="font-size: 12px; padding: 10px 16px;" onclick="handleGenerateApiKeyClick()">
+                🔄 Generate Key Baru
+              </button>
+              <button id="btnDashUpgrade" type="button" class="btn-secondary" style="font-size: 12px; padding: 10px 16px; border-color: #ec4899; color: #ec4899; display: none;" onclick="redirectToPricingOrUpgrade()">
+                ⭐ Upgrade
+              </button>
             </div>
 
-            <div style="margin-top: 24px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.08); display: flex; gap: 10px;">
-              <button class="btn-secondary" style="flex: 1; font-size: 12px; padding: 10px;" onclick="switchDashboardTab('webhook')">🔗 Buka Webhook</button>
-              <button class="btn-secondary" style="flex: 1; font-size: 12px; padding: 10px;" onclick="switchDashboardTab('social')">📱 Hubungkan Medsos</button>
+            <div id="keyActionAlert" style="margin-top: 10px; font-size: 12px; min-height: 16px; font-weight: 600; text-align: center;"></div>
+
+            <div style="margin-top: 20px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.08); display: flex; gap: 10px;">
+              <button type="button" class="btn-secondary" style="flex: 1; font-size: 12px; padding: 10px;" onclick="switchDashboardTab('webhook')">🔗 Buka Webhook</button>
+              <button type="button" class="btn-secondary" style="flex: 1; font-size: 12px; padding: 10px;" onclick="switchDashboardTab('social')">📱 Hubungkan Medsos</button>
             </div>
           </div>
         </div>
@@ -344,7 +395,7 @@
             <div style="font-size: 12px; color: #9ca3af; margin-bottom: 8px; font-weight: 600;">Target POST URL:</div>
             <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap;">
               <span id="dashWebhookUrlDisplay" style="font-family: monospace; font-size: 13px; color: #f472b6; word-break: break-all;">https://trendoraautomation.my.id/api/n8n-webhook</span>
-              <button class="btn-pink" style="font-size: 12px; padding: 8px 18px;" onclick="copyWebhookUrl()">📋 Salin URL</button>
+              <button type="button" class="btn-pink" style="font-size: 12px; padding: 8px 18px;" onclick="copyWebhookUrl()">📋 Salin URL</button>
             </div>
           </div>
 
@@ -352,7 +403,7 @@
             <div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; padding: 16px;">
               <div style="color: #60a5fa; font-weight: 700; font-size: 13px; margin-bottom: 6px;">1. Headers Wajib</div>
               <pre style="background: #090d16; padding: 10px; border-radius: 8px; font-size: 11px; color: #cbd5e1; overflow-x: auto;"><code>Content-Type: application/json
-X-API-Key: <span style="color:#34d399;">[API_KEY_ANDA]</span></code></pre>
+X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_ANDA]</span></code></pre>
             </div>
 
             <div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; padding: 16px;">
@@ -387,7 +438,7 @@ X-API-Key: <span style="color:#34d399;">[API_KEY_ANDA]</span></code></pre>
           </div>
           
           <div id="socialConnectionsList" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px;">
-            <p style="color: #6b7280; font-size: 13px;">Memuat daftar platform...</p>
+            <p style="color: #6b7280; font-size: 13px;">Memuat status koneksi sosial media...</p>
           </div>
         </div>
       </section>
@@ -403,7 +454,7 @@ X-API-Key: <span style="color:#34d399;">[API_KEY_ANDA]</span></code></pre>
               <h3 style="margin-bottom: 4px; font-size: 22px; color: #fff;">📊 Riwayat Aktivitas Upload Video (Terisolasi)</h3>
               <p style="color: #9ca3af; font-size: 13px;">Pantau log pengiriman video khusus akun Anda dari n8n dan automasi secara real-time.</p>
             </div>
-            <button onclick="fetchAndRenderDashboardLogs(true)" style="padding: 10px 18px; background: rgba(236,72,153,0.15); border: 1px solid rgba(236,72,153,0.4); color: #f472b6; border-radius: 10px; cursor: pointer; font-size: 13px; font-weight: 700; display: flex; align-items: center; gap: 8px; transition: all 0.2s;">
+            <button type="button" onclick="fetchAndRenderDashboardLogs(true)" style="padding: 10px 18px; background: rgba(236,72,153,0.15); border: 1px solid rgba(236,72,153,0.4); color: #f472b6; border-radius: 10px; cursor: pointer; font-size: 13px; font-weight: 700; display: flex; align-items: center; gap: 8px; transition: all 0.2s;">
               🔄 Muat Ulang Log
             </button>
           </div>
@@ -430,8 +481,8 @@ X-API-Key: <span style="color:#34d399;">[API_KEY_ANDA]</span></code></pre>
               <option value="failed" style="background: #0f1524;">FAILED (Gagal)</option>
             </select>
             
-            <button onclick="applyLogFilters()" style="padding: 10px 20px; background: #6366f1; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 700; font-size: 12px; transition: background 0.2s;">Filter</button>
-            <button onclick="resetLogFilters()" style="padding: 10px 20px; background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 12px; transition: background 0.2s;">Reset</button>
+            <button type="button" onclick="applyLogFilters()" style="padding: 10px 20px; background: #6366f1; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 700; font-size: 12px; transition: background 0.2s;">Filter</button>
+            <button type="button" onclick="resetLogFilters()" style="padding: 10px 20px; background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 12px; transition: background 0.2s;">Reset</button>
           </div>
 
           <!-- TABEL LOG -->
@@ -463,24 +514,23 @@ X-API-Key: <span style="color:#34d399;">[API_KEY_ANDA]</span></code></pre>
 
   <script>
     window.cachedDashboardLogs = [];
+    window.currentUserData = null;
+    window.isApiKeyMasked = false; // Default: Terbuka untuk Free Trial aktif & Paid
 
     // FUNGSI GANTI TAB SESUAI SIDEBAR
     function switchDashboardTab(tabKey) {
       const allowedTabs = ['overview', 'webhook', 'social', 'logs'];
       if (!allowedTabs.includes(tabKey)) tabKey = 'overview';
 
-      // 1. Sembunyikan semua tab section & hilangkan class active-tab
       document.querySelectorAll('.dash-tab-section').forEach(sec => {
         sec.classList.remove('active-tab');
       });
 
-      // 2. Munculkan hanya tab section yang dipilih
       const targetSec = document.getElementById(`tab-${tabKey}`);
       if (targetSec) {
         targetSec.classList.add('active-tab');
       }
 
-      // 3. Update status active pada tombol sidebar
       document.querySelectorAll('.sidebar-tab-btn').forEach(btn => {
         if (btn.getAttribute('data-tab') === tabKey) {
           btn.classList.add('active');
@@ -489,10 +539,8 @@ X-API-Key: <span style="color:#34d399;">[API_KEY_ANDA]</span></code></pre>
         }
       });
 
-      // 4. Perbarui Hash URL browser tanpa reload
       history.replaceState(null, null, `#tab-${tabKey}`);
 
-      // 5. Muat ulang log otomatis jika tab yang dibuka adalah Log Aktivitas
       if (tabKey === 'logs') {
         fetchAndRenderDashboardLogs(false);
       }
@@ -511,6 +559,16 @@ X-API-Key: <span style="color:#34d399;">[API_KEY_ANDA]</span></code></pre>
       }
     }
 
+    function redirectToPricingOrUpgrade() {
+      // Jika modal checkout pembayaran tersedia di halaman
+      if (typeof window.openUpgradePayment === 'function') {
+        window.openUpgradePayment();
+      } else {
+        // Arahkan langsung ke bagian pricing di landing page
+        window.location.href = '/#pricing';
+      }
+    }
+
     function getValidUserCredentials() {
       let email = "";
       let apiKey = "";
@@ -524,13 +582,9 @@ X-API-Key: <span style="color:#34d399;">[API_KEY_ANDA]</span></code></pre>
         }
       } catch (e) {}
 
-      if (!apiKey && window.currentUser) {
-        apiKey = (window.currentUser.apiKey || window.currentUser.api_key || "").trim();
-        if (!email) email = (window.currentUser.email || "").toLowerCase().trim();
-      }
-
-      if (!apiKey && typeof window.currentApiKey === 'string') {
-        apiKey = window.currentApiKey.trim();
+      if (!apiKey && window.currentUserData) {
+        apiKey = (window.currentUserData.apiKey || window.currentUserData.api_key || "").trim();
+        if (!email) email = (window.currentUserData.email || "").toLowerCase().trim();
       }
 
       if (apiKey.includes('•') || apiKey === "-" || apiKey.includes('Belum Ada')) {
@@ -538,6 +592,241 @@ X-API-Key: <span style="color:#34d399;">[API_KEY_ANDA]</span></code></pre>
       }
 
       return { email, apiKey };
+    }
+
+    function renderApiKeyDisplay() {
+      const displayElem = document.getElementById('dashApiKeyDisplay');
+      const toggleBtn = document.getElementById('btnToggleKeyMask');
+      const copyBtn = document.getElementById('btnCopyApiKey');
+      const keyBoxWrapper = document.getElementById('keyDisplayBoxWrapper');
+      const keyStatusPill = document.getElementById('keyStatusPill');
+
+      if (!window.currentUserData) return;
+
+      const isExpired = window.currentUserData.isExpired === true;
+      const isPaid = window.currentUserData.isPaid === true;
+      const rawKey = window.currentUserData.apiKey || "-";
+
+      if (isExpired && !isPaid) {
+        // 🔒 JIKA TRIAL EXPIRED: Kunci API Key & Ubah Tombol
+        displayElem.innerText = "TRD-••••••••••••••••••••••••••••••••••••• [TERKUNCI]";
+        displayElem.style.color = "#f87171";
+        if (toggleBtn) toggleBtn.style.display = 'none';
+        
+        if (copyBtn) {
+          copyBtn.innerText = "🔒 Salin Key (Terkunci)";
+          copyBtn.className = "btn-secondary";
+          copyBtn.style.borderColor = "#ef4444";
+          copyBtn.style.color = "#f87171";
+        }
+
+        if (keyBoxWrapper) {
+          keyBoxWrapper.classList.add('key-box-locked');
+          keyBoxWrapper.title = "Masa Free Trial 7 Hari telah habis. Klik untuk upgrade!";
+          keyBoxWrapper.onclick = () => redirectToPricingOrUpgrade();
+        }
+
+        if (keyStatusPill) {
+          keyStatusPill.innerText = "Terkunci (Trial Habis)";
+          keyStatusPill.style.color = "#f87171";
+          keyStatusPill.style.background = "rgba(239, 68, 68, 0.15)";
+        }
+      } else {
+        // 🟢 JIKA TRIAL AKTIF (< 7 HARI) ATAU BERBAYAR: Berikan akses buka & copy
+        if (toggleBtn) toggleBtn.style.display = 'inline-block';
+        if (keyBoxWrapper) {
+          keyBoxWrapper.classList.remove('key-box-locked');
+          keyBoxWrapper.onclick = null;
+        }
+
+        if (window.isApiKeyMasked) {
+          displayElem.innerText = rawKey.substring(0, 8) + "••••••••••••••••••••••••••••••";
+          displayElem.style.color = "#9ca3af";
+          if (toggleBtn) toggleBtn.innerText = "👁️ Tampilkan";
+        } else {
+          displayElem.innerText = rawKey;
+          displayElem.style.color = "#34d399";
+          if (toggleBtn) toggleBtn.innerText = "👁️ Sembunyikan";
+        }
+
+        if (copyBtn) {
+          copyBtn.innerText = "📋 Copy API Key";
+          copyBtn.className = "btn-pink";
+          copyBtn.style.borderColor = "";
+          copyBtn.style.color = "#ffffff";
+        }
+
+        if (keyStatusPill) {
+          if (isPaid) {
+            keyStatusPill.innerText = "Active (Subscriber)";
+            keyStatusPill.style.color = "#34d399";
+            keyStatusPill.style.background = "rgba(52,211,153,0.1)";
+          } else {
+            const daysLeft = window.currentUserData.daysLeft || 7;
+            keyStatusPill.innerText = `Aktif (Trial Sisa ${daysLeft} Hari)`;
+            keyStatusPill.style.color = "#38bdf8";
+            keyStatusPill.style.background = "rgba(56, 189, 248, 0.1)";
+          }
+        }
+      }
+
+      // Update contoh header di tab webhook
+      const headerExample = document.getElementById('webhookHeaderKeyExample');
+      if (headerExample) {
+        headerExample.innerText = isExpired ? "[API_KEY_TERKUNCI_UPGRADE_AKUN]" : rawKey;
+      }
+    }
+
+    function toggleApiKeyMask() {
+      if (window.currentUserData && window.currentUserData.isExpired && !window.currentUserData.isPaid) {
+        redirectToPricingOrUpgrade();
+        return;
+      }
+      window.isApiKeyMasked = !window.isApiKeyMasked;
+      renderApiKeyDisplay();
+    }
+
+    function copyDashApiKey() {
+      const alertBox = document.getElementById('keyActionAlert');
+
+      // Jika Trial sudah Expired, tolak copy dan arahkan ke Pricing
+      if (window.currentUserData && window.currentUserData.isExpired && !window.currentUserData.isPaid) {
+        if (alertBox) {
+          alertBox.style.color = "#f87171";
+          alertBox.innerText = "⚠️ Masa Free Trial 7 Hari Anda telah habis! Mengalihkan ke pilihan paket langganan...";
+        }
+        setTimeout(() => {
+          redirectToPricingOrUpgrade();
+        }, 1200);
+        return;
+      }
+
+      const rawKey = (window.currentUserData && window.currentUserData.apiKey) ? window.currentUserData.apiKey : "";
+      if (!rawKey || rawKey === "-" || rawKey.includes("•")) {
+        if (alertBox) {
+          alertBox.style.color = "#fbbf24";
+          alertBox.innerText = "⚠️ API Key belum dibuat atau sedang dimuat. Klik tombol 'Generate Key Baru'.";
+        }
+        return;
+      }
+
+      // Gunakan textarea fallback untuk menyalin ke clipboard secara kompatibel
+      const dummy = document.createElement("textarea");
+      dummy.value = rawKey;
+      dummy.style.position = "fixed";
+      dummy.style.opacity = "0";
+      document.body.appendChild(dummy);
+      dummy.focus();
+      dummy.select();
+      
+      try {
+        const success = document.execCommand('copy');
+        document.body.removeChild(dummy);
+        if (success) {
+          if (alertBox) {
+            alertBox.style.color = "#34d399";
+            alertBox.innerText = "✅ API Key berhasil disalin ke clipboard!";
+            setTimeout(() => { alertBox.innerText = ""; }, 4000);
+          }
+        } else {
+          throw new Error("execCommand failed");
+        }
+      } catch (err) {
+        document.body.removeChild(dummy);
+        if (alertBox) {
+          alertBox.style.color = "#34d399";
+          alertBox.innerText = `✅ API Key: ${rawKey}`;
+        }
+      }
+    }
+
+    async function handleGenerateApiKeyClick() {
+      const alertBox = document.getElementById('keyActionAlert');
+
+      // Jika Trial sudah Expired, tolak generate dan arahkan ke Pricing
+      if (window.currentUserData && window.currentUserData.isExpired && !window.currentUserData.isPaid) {
+        if (alertBox) {
+          alertBox.style.color = "#f87171";
+          alertBox.innerText = "⚠️ Masa Free Trial 7 Hari telah habis. Silakan upgrade untuk membuat API Key baru!";
+        }
+        setTimeout(() => {
+          redirectToPricingOrUpgrade();
+        }, 1200);
+        return;
+      }
+
+      if (alertBox) {
+        alertBox.style.color = "#60a5fa";
+        alertBox.innerText = "⏳ Sedang membuat API Key baru...";
+      }
+
+      const { email } = getValidUserCredentials();
+
+      try {
+        const res = await fetch('/api/generate-api-key', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: email })
+        });
+
+        const data = await res.json();
+        if (data.success && data.apiKey) {
+          if (window.currentUserData) {
+            window.currentUserData.apiKey = data.apiKey;
+          }
+          // Update local storage
+          try {
+            const stored = JSON.parse(localStorage.getItem('trendora_user') || '{}');
+            stored.apiKey = data.apiKey;
+            localStorage.setItem('trendora_user', JSON.stringify(stored));
+          } catch(e) {}
+
+          window.isApiKeyMasked = false; // Langsung tampilkan
+          renderApiKeyDisplay();
+
+          if (alertBox) {
+            alertBox.style.color = "#34d399";
+            alertBox.innerText = "✅ API Key baru berhasil dibuat dan siap digunakan!";
+            setTimeout(() => { alertBox.innerText = ""; }, 4000);
+          }
+        } else {
+          if (data.isExpired) {
+            if (alertBox) {
+              alertBox.style.color = "#f87171";
+              alertBox.innerText = "⚠️ " + (data.message || "Trial telah habis.");
+            }
+            setTimeout(() => { redirectToPricingOrUpgrade(); }, 1500);
+          } else {
+            if (alertBox) {
+              alertBox.style.color = "#ef4444";
+              alertBox.innerText = "⚠️ " + (data.message || "Gagal membuat API Key.");
+            }
+          }
+        }
+      } catch (err) {
+        console.error("Generate API Key Error:", err);
+        if (alertBox) {
+          alertBox.style.color = "#ef4444";
+          alertBox.innerText = "⚠️ Terjadi kendala saat menghubungi server.";
+        }
+      }
+    }
+
+    function copyWebhookUrl() {
+      const url = document.getElementById('dashWebhookUrlDisplay').innerText;
+      const dummy = document.createElement("textarea");
+      dummy.value = url;
+      document.body.appendChild(dummy);
+      dummy.select();
+      document.execCommand('copy');
+      document.body.removeChild(dummy);
+      
+      const alertBox = document.getElementById('keyActionAlert');
+      if (alertBox) {
+        alertBox.style.color = "#34d399";
+        alertBox.innerText = "✅ Target Webhook URL berhasil disalin!";
+        setTimeout(() => { alertBox.innerText = ""; }, 3000);
+      }
     }
 
     async function verifyUserSession() {
@@ -561,10 +850,54 @@ X-API-Key: <span style="color:#34d399;">[API_KEY_ANDA]</span></code></pre>
 
         const data = await res.json();
         if (data.success && data.user) {
-          window.currentUser = data.user;
+          window.currentUserData = data.user;
           document.getElementById('dashName').innerText = data.user.name || 'User';
           document.getElementById('dashUserEmail').innerText = data.user.email || '-';
-          document.getElementById('dashAccountStatus').innerText = data.user.status || 'Active';
+          
+          const statusBadge = document.getElementById('dashAccountStatusBadge');
+          const trialNotice = document.getElementById('trialNoticeDetails');
+          const banner = document.getElementById('trialExpiredAlertBanner');
+          const btnUpgrade = document.getElementById('btnDashUpgrade');
+
+          if (data.user.isExpired && !data.user.isPaid) {
+            // EXPIRED STATE
+            if (banner) banner.style.display = 'flex';
+            if (btnUpgrade) btnUpgrade.style.display = 'inline-block';
+            if (statusBadge) {
+              statusBadge.className = "trial-expired-badge";
+              statusBadge.innerText = "🔒 Free Trial Expired (Habis)";
+            }
+            if (trialNotice) {
+              trialNotice.innerHTML = `&bull; <strong>Masa Free Trial 7 Hari Habis:</strong> Fitur API Key dan otomatisasi terkunci. Silakan upgrade ke paket Creator/Agency untuk melanjutkan.`;
+            }
+          } else if (data.user.isPaid) {
+            // PAID STATE
+            if (banner) banner.style.display = 'none';
+            if (statusBadge) {
+              statusBadge.className = "trial-active-badge";
+              statusBadge.innerText = "⭐ Active (Paid Subscriber)";
+            }
+            if (trialNotice) {
+              trialNotice.innerHTML = `&bull; <strong>Akun Berbayar Aktif:</strong> Akses penuh tanpa batas waktu ke seluruh fitur Webhook n8n, Make, dan Multi-Social Publishing.`;
+            }
+          } else {
+            // ACTIVE TRIAL STATE (HARI 1 - 7)
+            if (banner) banner.style.display = 'none';
+            const daysLeft = data.user.daysLeft || 7;
+            if (statusBadge) {
+              statusBadge.className = "trial-active-badge";
+              statusBadge.innerText = `⚡ Active (Free Trial - Sisa ${daysLeft} Hari)`;
+            }
+            if (trialNotice) {
+              trialNotice.innerHTML = `&bull; <strong>Masa Free Trial 7 Hari (Sisa ${daysLeft} Hari):</strong> Anda dapat menyalin dan menggunakan API Key secara penuh. Upgrade kapan saja untuk kuota tanpa batas.`;
+            }
+          }
+
+          // Render status API key card
+          renderApiKeyDisplay();
+
+          // Render platform medsos terhubung
+          renderSocialChannels(data.user.connectedPlatforms || []);
           return true;
         }
       } catch (err) {
@@ -573,13 +906,95 @@ X-API-Key: <span style="color:#34d399;">[API_KEY_ANDA]</span></code></pre>
       return true;
     }
 
+    function renderSocialChannels(platforms) {
+      const container = document.getElementById('socialConnectionsList');
+      if (!container) return;
+
+      const channels = [
+        { key: 'tiktok', name: 'TikTok', icon: '🎵', authUrl: '/api/tiktok-auth-url' },
+        { key: 'facebook', name: 'Facebook Page', icon: '📘', authUrl: '/api/meta-auth-url' },
+        { key: 'instagram', name: 'Instagram Reels', icon: '📷', authUrl: '/api/meta-auth-url' },
+        { key: 'linkedin', name: 'LinkedIn', icon: '💼', authUrl: '/api/linkedin-auth-url' },
+        { key: 'youtube', name: 'YouTube Shorts', icon: '▶️', authUrl: '/api/youtube-auth-url' },
+        { key: 'twitter', name: 'Twitter / X', icon: '🐦', authUrl: '/api/twitter-auth-url' },
+        { key: 'threads', name: 'Threads', icon: '🧵', authUrl: '/api/threads-auth-url' }
+      ];
+
+      const isExpired = window.currentUserData && window.currentUserData.isExpired && !window.currentUserData.isPaid;
+
+      container.innerHTML = channels.map(ch => {
+        const isConnected = platforms.some(p => p.toLowerCase().includes(ch.key) || (ch.key === 'facebook' && p.toLowerCase().includes('meta')) || (ch.key === 'instagram' && p.toLowerCase().includes('meta')));
+
+        return `
+          <div class="social-card-item">
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <span style="font-size: 24px;">${ch.icon}</span>
+              <div>
+                <h4 style="font-size: 14px; color: #fff; margin-bottom: 2px;">${ch.name}</h4>
+                <span style="font-size: 11px; font-weight: 700; color: ${isConnected ? '#34d399' : '#9ca3af'};">
+                  ${isConnected ? '● Terhubung' : '○ Belum Terhubung'}
+                </span>
+              </div>
+            </div>
+            <div>
+              ${isConnected 
+                ? `<button type="button" class="btn-secondary" style="font-size: 11px; padding: 6px 12px; color: #f87171; border-color: rgba(239,68,68,0.3);" onclick="handleDisconnectSocial('${ch.key}')">Putuskan</button>`
+                : `<button type="button" class="btn-pink" style="font-size: 11px; padding: 6px 14px;" onclick="${isExpired ? 'redirectToPricingOrUpgrade()' : `handleConnectSocial('${ch.key}', '${ch.authUrl}')`}">${isExpired ? '🔒 Upgrade' : 'Hubungkan'}</button>`
+              }
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    async function handleConnectSocial(platform, authEndpoint) {
+      if (window.currentUserData && window.currentUserData.isExpired && !window.currentUserData.isPaid) {
+        redirectToPricingOrUpgrade();
+        return;
+      }
+
+      const { email } = getValidUserCredentials();
+      try {
+        const res = await fetch(`${authEndpoint}?email=${encodeURIComponent(email)}`);
+        const data = await res.json();
+        if (data.success && data.url) {
+          const width = 600, height = 700;
+          const left = (window.innerWidth - width) / 2;
+          const top = (window.innerHeight - height) / 2;
+          window.open(data.url, 'SocialAuthWindow', `width=${width},height=${height},top=${top},left=${left}`);
+        } else {
+          alert(data.message || "Gagal membuka otorisasi sosial media.");
+        }
+      } catch (e) {
+        console.error("Connect Social Error:", e);
+      }
+    }
+
+    async function handleDisconnectSocial(platform) {
+      if (!confirm(`Apakah Anda yakin ingin memutuskan tautan akun ${platform}?`)) return;
+      const { email } = getValidUserCredentials();
+      try {
+        const res = await fetch('/api/disconnect-social', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: email, platform: platform })
+        });
+        const data = await res.json();
+        if (data.success) {
+          verifyUserSession();
+        } else {
+          alert(data.message || "Gagal memutuskan tautan akun.");
+        }
+      } catch (e) {}
+    }
+
     async function handleSecureLogout() {
       try {
         await fetch('/api/logout', { method: 'POST' });
       } catch (e) {}
       localStorage.removeItem('trendora_user');
       sessionStorage.clear();
-      window.currentUser = null;
+      window.currentUserData = null;
       window.location.href = '/login';
     }
 
@@ -705,8 +1120,13 @@ X-API-Key: <span style="color:#34d399;">[API_KEY_ANDA]</span></code></pre>
       renderLogsToTable(window.cachedDashboardLogs);
     }
 
+    window.addEventListener('message', (event) => {
+      if (event.data && event.data.type === 'OAUTH_SUCCESS') {
+        verifyUserSession();
+      }
+    });
+
     document.addEventListener('DOMContentLoaded', async () => {
-      // 1. Periksa hash pada URL (misal: #tab-logs, #tab-social, #tab-webhook)
       const currentHash = window.location.hash.replace('#tab-', '').replace('#section-', '').replace('#', '');
       if (['overview', 'webhook', 'social', 'logs'].includes(currentHash)) {
         switchDashboardTab(currentHash);
@@ -714,13 +1134,9 @@ X-API-Key: <span style="color:#34d399;">[API_KEY_ANDA]</span></code></pre>
         switchDashboardTab('overview');
       }
 
-      // 2. Verifikasi Sesi
       await verifyUserSession();
-      
-      // 3. Tarik data log pertama kali
       fetchAndRenderDashboardLogs();
       
-      // 4. Auto Refresh Log tiap 30 detik
       setInterval(() => {
         const activeLogTab = document.querySelector('#tab-logs.active-tab');
         if (activeLogTab) {
