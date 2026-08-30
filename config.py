@@ -1,5 +1,8 @@
 import os
 
+# CONFIGURATION SECRET KEY FOR SESSIONS
+SECRET_KEY = os.environ.get("SECRET_KEY", "trendora_session_isolated_secret_key_2026_x89a")
+
 # CONFIGURATION GOOGLE SHEETS
 GOOGLE_SHEET_ID = os.environ.get("GOOGLE_SHEET_ID", "1P0zTEwtMmWfxhHAY6-QbQd5to6Id1rzazgel-PiSJwI") 
 SERVICE_ACCOUNT_FILE = os.environ.get("SERVICE_ACCOUNT_FILE", "service_account.json")

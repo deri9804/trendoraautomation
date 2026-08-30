@@ -7,7 +7,7 @@ PARENT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if PARENT_DIR not in sys.path:
     sys.path.insert(0, PARENT_DIR)
 
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, session
 import urllib.parse
 import uuid
 
@@ -140,8 +140,15 @@ def verify_otp_route():
             if user_data.get('threads_connected'): connected_platforms.append('Threads')
             if user_data.get('twitter_connected'): connected_platforms.append('Twitter')
             
+            # Buat sesi terisolasi di server
+            session_token = uuid.uuid4().hex
+            session['user_email'] = email
+            session['session_token'] = session_token
+            session.permanent = True
+            
             return jsonify({
                 "success": True, 
+                "sessionToken": session_token,
                 "user": {
                     "name": name, 
                     "email": email, 
@@ -185,11 +192,18 @@ def register_trial():
         if not is_saved:
             return jsonify({
                 "success": False, 
-                "message": "Gagal menyimpan data ke Google Sheets! Harap periksa variabel GOOGLE_APPLICATION_CREDENTIALS_JSON di Vercel."
+                "message": "Gagal menyimpan data ke Google Sheets! Harap periksa variabel kredensial."
             }), 500
+
+        # Simpan sesi pengguna baru
+        session_token = uuid.uuid4().hex
+        session['user_email'] = email
+        session['session_token'] = session_token
+        session.permanent = True
 
         return jsonify({
             "success": True, 
+            "sessionToken": session_token,
             "message": "Registrasi Free Trial 1 Minggu berhasil!", 
             "user": {
                 "name": name, 
@@ -212,8 +226,13 @@ def generate_api_key_route():
     try:
         data = request.get_json(silent=True) or {}
         email = data.get('email', '').strip().lower()
+        
+        # Validasi sesi aktif
         if not email:
-            return jsonify({"success": False, "message": "Email wajib diisi!"}), 200
+            email = session.get('user_email', '').strip().lower()
+
+        if not email:
+            return jsonify({"success": False, "message": "Sesi tidak valid atau email tidak ditemukan!"}), 401
 
         user_data = db.db_get_user(email)
         if not user_data:
@@ -241,19 +260,35 @@ def generate_api_key_route():
         print(f"[Error /api/generate-api-key]: {e}")
         return jsonify({"success": False, "message": f"Terjadi kesalahan server: {str(e)}"}), 200
 
-@auth_bp.route('/api/me', methods=['POST', 'OPTIONS'])
+@auth_bp.route('/api/me', methods=['POST', 'GET', 'OPTIONS'])
 def get_me():
     if request.method == 'OPTIONS':
         return jsonify({"success": True}), 200
     try:
-        data = request.get_json(silent=True) or {}
-        email = data.get('email', '').strip().lower()
+        email = session.get('user_email', '').strip().lower()
+        
+        if not email and request.is_json:
+            data = request.get_json(silent=True) or {}
+            email = data.get('email', '').strip().lower()
+            
         if not email:
-            return jsonify({"success": False, "message": "Email wajib diisi!"}), 200
+            email = request.headers.get('X-User-Email', '').strip().lower()
+            
+        if not email:
+            return jsonify({
+                "success": False, 
+                "authenticated": False,
+                "message": "Sesi belum login atau telah berakhir."
+            }), 401
         
         user_data = db.db_get_user(email)
         if not user_data:
-            return jsonify({"success": False, "message": "User tidak ditemukan!"}), 200
+            session.clear()
+            return jsonify({
+                "success": False, 
+                "authenticated": False,
+                "message": "User tidak ditemukan di database."
+            }), 401
         
         trial_info = check_user_trial_status(user_data)
         
@@ -267,8 +302,12 @@ def get_me():
         if user_data.get('threads_connected'): connected_platforms.append('Threads')
         if user_data.get('twitter_connected'): connected_platforms.append('Twitter')
         
+        # Perbarui sesi server
+        session['user_email'] = email
+        
         return jsonify({
             "success": True,
+            "authenticated": True,
             "user": {
                 "name": user_data.get('name', ''),
                 "email": email,
@@ -284,3 +323,8 @@ def get_me():
     except Exception as e:
         print(f"[Error /api/me]: {e}")
         return jsonify({"success": False, "message": f"Terjadi kesalahan server: {str(e)}"}), 200
+
+@auth_bp.route('/api/logout', methods=['POST', 'GET'])
+def logout_route():
+    session.clear()
+    return jsonify({"success": True, "message": "Sesi berhasil dihapus dan ditutup secara aman."}), 200

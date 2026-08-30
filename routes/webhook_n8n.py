@@ -5,7 +5,7 @@ PARENT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if PARENT_DIR not in sys.path:
     sys.path.insert(0, PARENT_DIR)
 
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, session
 import urllib.request
 import urllib.parse
 import urllib.error
@@ -47,10 +47,6 @@ def count_today_posts_for_key(api_key):
     return count
 
 def send_tiktok_init_request(payload, access_token):
-    """
-    Mengirim request POST ke TikTok init API dan mengekstrak isi respons JSON mentah 
-    secara penuh jika terjadi HTTP Error (termasuk 403 Forbidden).
-    """
     url = "https://open.tiktokapis.com/v2/post/publish/video/init/"
     headers = {
         "Authorization": f"Bearer {access_token}", 
@@ -74,7 +70,6 @@ def send_tiktok_init_request(payload, access_token):
         return False, f"[TikTok Request Error] {str(general_err)}", 500
 
 def refresh_tiktok_token(refresh_token, row_idx=None):
-    """Me-refresh TikTok access token yang expired secara otomatis."""
     if not refresh_token:
         return None
     try:
@@ -103,7 +98,6 @@ def refresh_tiktok_token(refresh_token, row_idx=None):
         return None
 
 def refresh_youtube_token(refresh_token, row_idx=None):
-    """Me-refresh Google / YouTube Access Token yang expired."""
     if not refresh_token:
         return None
     try:
@@ -129,9 +123,7 @@ def refresh_youtube_token(refresh_token, row_idx=None):
         return None
 
 def upload_video_to_linkedin(access_token, media_url, caption):
-    """Mengunggah video ke LinkedIn menggunakan LinkedIn v2 Assets & UGC API."""
     try:
-        # 1. Dapatkan Profil ID Pengguna (sub)
         profile_req = urllib.request.Request(
             "https://api.linkedin.com/v2/userinfo",
             headers={"Authorization": f"Bearer {access_token}"}
@@ -143,7 +135,6 @@ def upload_video_to_linkedin(access_token, media_url, caption):
                 return False, {"linkedin_error": "Gagal mendapatkan ID Profil LinkedIn dari token."}
             person_urn = f"urn:li:person:{sub_id}"
 
-        # 2. Register Video Upload Request
         reg_url = "https://api.linkedin.com/v2/assets?action=registerUpload"
         reg_payload = {
             "registerUploadRequest": {
@@ -177,7 +168,6 @@ def upload_video_to_linkedin(access_token, media_url, caption):
         if not upload_url or not asset_urn:
             return False, {"linkedin_error": "Gagal mendapatkan Upload URL dari LinkedIn."}
 
-        # 3. Unduh video dari media_url & Upload binary ke upload_url
         req_video = urllib.request.Request(media_url, headers={'User-Agent': 'TRENDORA-Automation/1.0'})
         with urllib.request.urlopen(req_video) as video_resp:
             video_bytes = video_resp.read()
@@ -196,7 +186,6 @@ def upload_video_to_linkedin(access_token, media_url, caption):
 
         time.sleep(3)
 
-        # 4. Buat UGC Post
         post_url = "https://api.linkedin.com/v2/ugcPosts"
         post_payload = {
             "author": person_urn,
@@ -246,7 +235,6 @@ def upload_video_to_linkedin(access_token, media_url, caption):
         return False, {"linkedin_error": f"[LinkedIn Error] {str(e)}"}
 
 def upload_video_to_youtube(access_token, refresh_token, media_url, caption, row_idx=None):
-    """Mengunggah video ke YouTube via YouTube Data API v3 Resumable Upload."""
     if not access_token and refresh_token:
         access_token = refresh_youtube_token(refresh_token, row_idx)
     if not access_token:
@@ -322,12 +310,6 @@ def upload_video_to_youtube(access_token, refresh_token, media_url, caption, row
     except Exception as e:
         return False, {"youtube_error": f"[YouTube Error] {str(e)}"}
 
-def chat_api():
-    data = request.json or {}
-    pesan_user = data.get('pesan_user', '')
-    balasan = ai.get_ai_chat_response(pesan_user)
-    return jsonify({"balasan": balasan})
-
 @webhook_bp.route('/api/create-transaction', methods=['POST'])
 def create_transaction():
     data = request.json or {}
@@ -371,123 +353,6 @@ def create_transaction():
 def check_payment():
     return jsonify({"success": True, "isPaid": False})
 
-@webhook_bp.route('/api/tiktok-init-upload', methods=['POST'])
-def tiktok_init_upload():
-    """
-    Endpoint inisialisasi TikTok Direct Upload untuk file lokal berukuran besar.
-    Mengembalikan Upload URL resmi TikTok ke browser agar diunggah langsung (Bypass Vercel 4.5MB limit).
-    """
-    api_key = request.headers.get('X-API-Key', '').strip()
-    if not api_key:
-        auth_header = request.headers.get('Authorization', '').strip()
-        if auth_header.startswith('Bearer '):
-            api_key = auth_header.replace('Bearer ', '')
-
-    if not api_key:
-        return jsonify({"success": False, "message": "API Key is required in Header"}), 400
-
-    user_data = None
-    sheet_users = db.get_gsheet()
-    if sheet_users:
-        try:
-            all_vals = sheet_users.get_all_values()
-            for r in all_vals[1:]:
-                if len(r) >= 5 and str(r[4]).strip() == api_key:
-                    user_data = db.db_get_user(r[0])
-                    break
-        except Exception as e:
-            print(f"Error finding user by API key: {e}")
-
-    if user_data:
-        trial_info = check_user_trial_status(user_data)
-        if trial_info["is_expired"] and not trial_info["is_paid"]:
-            return jsonify({
-                "success": False,
-                "message": "Masa Free Trial 1 Minggu Anda telah habis! Silakan upgrade akun ke berbayar di Dashboard TRENDORA."
-            }), 400
-        if trial_info["is_trial"] and not trial_info["is_paid"]:
-            today_posts = count_today_posts_for_key(api_key)
-            if today_posts >= 1:
-                return jsonify({
-                    "success": False,
-                    "message": "Batas Free Trial tercapai! Akun Free Trial hanya diperbolehkan posting maksimal 1 video per hari."
-                }), 400
-
-    data = request.json or {}
-    caption = data.get('caption', 'Diposting otomatis via TRENDORA Automation! 🚀')
-    privacy_level = data.get('privacy_level', 'SELF_ONLY')
-    file_size = int(data.get('file_size', 0))
-
-    if file_size <= 0:
-        return jsonify({"success": False, "message": "Ukuran file video tidak valid."}), 400
-
-    user_tokens = db.db_get_tiktok_tokens_by_api_key(api_key, email=user_data.get('email') if user_data else None)
-    access_token = user_tokens.get('access_token')
-    refresh_tok = user_tokens.get('refresh_token')
-    row_idx = user_tokens.get('row_idx')
-
-    if not access_token:
-        return jsonify({
-            "success": False, 
-            "message": "Akun TikTok belum terhubung atau Token Otorisasi kosong. Silakan sambungkan akun TikTok Anda di menu 'Akun Sosial'."
-        }), 400
-
-    payload = {
-        "post_info": {
-            "title": caption, 
-            "privacy_level": privacy_level, 
-            "disable_duet": False, 
-            "disable_comment": False, 
-            "disable_stitch": False
-        },
-        "source_info": {
-            "source": "FILE_UPLOAD", 
-            "video_size": file_size, 
-            "chunk_size": file_size, 
-            "total_chunk_count": 1
-        }
-    }
-
-    is_ok, res_payload, http_code = send_tiktok_init_request(payload, access_token)
-
-    # Auto refresh token jika token kadaluarsa
-    if not is_ok and (http_code in [400, 401] or "access_token_invalid" in str(res_payload) or "token_expired" in str(res_payload)):
-        new_token = refresh_tiktok_token(refresh_tok, row_idx)
-        if new_token:
-            access_token = new_token
-            is_ok, res_payload, http_code = send_tiktok_init_request(payload, access_token)
-
-    if not is_ok:
-        err_str = str(res_payload)
-        if "unaudited_client_can_only_post_to_private_accounts" in err_str:
-            privacy_level = "SELF_ONLY"
-            payload["post_info"]["privacy_level"] = "SELF_ONLY"
-            is_retry_ok, retry_res, retry_code = send_tiktok_init_request(payload, access_token)
-            if is_retry_ok:
-                upload_url = retry_res.get('data', {}).get('upload_url')
-                publish_id = retry_res.get('data', {}).get('publish_id')
-                return jsonify({
-                    "success": True, 
-                    "upload_url": upload_url, 
-                    "publish_id": publish_id,
-                    "privacy_level": "SELF_ONLY",
-                    "notice": "Video dialihkan ke Private (SELF_ONLY) sesuai status Basic Access TikTok."
-                })
-        return jsonify({"success": False, "message": f"[TikTok Init Error] {res_payload}"}), 400
-
-    upload_url = res_payload.get('data', {}).get('upload_url')
-    publish_id = res_payload.get('data', {}).get('publish_id')
-    
-    if not upload_url:
-        return jsonify({"success": False, "message": "Gagal mendapatkan upload_url dari TikTok."}), 400
-
-    return jsonify({
-        "success": True, 
-        "upload_url": upload_url, 
-        "publish_id": publish_id,
-        "privacy_level": privacy_level
-    })
-
 @webhook_bp.route('/api/n8n-webhook', methods=['GET', 'POST'], strict_slashes=False)
 def n8n_webhook():
     if request.method == 'GET':
@@ -519,7 +384,6 @@ def n8n_webhook():
     if user_data:
         trial_info = check_user_trial_status(user_data)
         
-        # Jika Trial EXPIRED (> 7 hari) -> Blokir posting
         if trial_info["is_expired"] and not trial_info["is_paid"]:
             return jsonify({
                 "success": False,
@@ -528,7 +392,6 @@ def n8n_webhook():
                 "details": {"error": "Free Trial Expired (> 7 hari). Silakan upgrade ke akun berbayar."}
             }), 400
             
-        # Jika Trial masih aktif (<= 7 hari) -> Cek batas 1 video per hari
         if trial_info["is_trial"] and not trial_info["is_paid"]:
             today_posts = count_today_posts_for_key(api_key)
             if today_posts >= 1:
@@ -559,7 +422,6 @@ def n8n_webhook():
             row_idx = user_tokens.get('row_idx')
 
             if access_token:
-                # Direct Pull URL method for online media URL
                 payload = {
                     "post_info": {
                         "title": caption, 
@@ -704,7 +566,6 @@ def n8n_webhook():
     caption_val = details.pop('caption', '') if isinstance(details, dict) else ''
     hashtag_val = details.pop('hashtag', '') if isinstance(details, dict) else ''
     
-    # Menjamin kolom details tidak pernah tersimpan sebagai objek kosong {}
     if isinstance(details, dict) and len(details) == 0:
         if "SUCCESS" in status or status == "PUBLISHED":
             details = {"message": f"Video sukses dipublikasikan ke {platform.capitalize()}"}
@@ -746,36 +607,56 @@ def n8n_webhook():
 @webhook_bp.route('/api/get-logs', methods=['POST', 'GET'])
 def get_logs():
     """
-    Mengambil riwayat log aktivitas dari Google Sheets (Tab 'Logs')
-    Mendukung pencarian via API Key, Email, maupun query header.
+    Mengambil riwayat log aktivitas yang TERISOLASI KETAT per pengguna.
+    Hanya mengembalikan log milik API Key pengguna aktif.
     """
-    api_key = request.headers.get('X-API-Key', '').strip()
-    email = request.headers.get('X-User-Email', '').strip().lower()
+    # 1. Identifikasi Pengguna dari Sesi Server / Headers / Request Body
+    active_email = session.get('user_email', '').strip().lower()
+    
+    if not active_email:
+        active_email = request.headers.get('X-User-Email', '').strip().lower()
 
-    # Ekstrak dari JSON body jika method POST
+    api_key = request.headers.get('X-API-Key', '').strip()
+
     if request.is_json:
         body = request.get_json(silent=True) or {}
+        if not active_email:
+            active_email = body.get('email', '').strip().lower()
         if not api_key:
             api_key = body.get('api_key', '').strip()
-        if not email:
-            email = body.get('email', '').strip().lower()
 
-    # Ekstrak dari query parameter jika ada
+    if not active_email:
+        active_email = request.args.get('email', '').strip().lower()
     if not api_key:
         api_key = request.args.get('api_key', '').strip()
-    if not email:
-        email = request.args.get('email', '').strip().lower()
 
-    # Jika API key berstatus masked, kosongkan agar tidak memblokir pencarian
+    # Bersihkan jika API key berstatus sensor
     if api_key and ('•' in api_key or api_key == '-'):
         api_key = ''
 
-    # Jika email ada tetapi api_key kosong, ambil api_key dari profil user di Sheet
-    if email and not api_key:
-        user_info = db.db_get_user(email)
-        if user_info and user_info.get('api_key'):
+    # 2. Resolusi API Key Pengguna Aktif
+    user_info = None
+    if active_email:
+        user_info = db.db_get_user(active_email)
+        if user_info and user_info.get('api_key') and user_info.get('api_key') != '-':
             api_key = user_info.get('api_key').strip()
 
+    # 3. KETAT: Jika Pengguna Belum Terverifikasi atau Tidak Memiliki API Key, Kembalikan Array Kosong
+    if not active_email and not api_key:
+        return jsonify({
+            "success": False, 
+            "message": "Autentikasi diperlukan. Sesi tidak ditemukan.", 
+            "logs": []
+        }), 401
+
+    if not api_key or api_key == '-' or '•' in api_key:
+        return jsonify({
+            "success": True, 
+            "logs": [], 
+            "notice": "Akun ini belum memiliki API Key aktif atau belum melakukan postingan."
+        }), 200
+
+    # 4. Kueri Log di Google Sheets khusus untuk API Key Pengguna Aktif
     logs = []
     sheet_logs = db.get_logs_sheet()
     
@@ -783,37 +664,31 @@ def get_logs():
         try:
             all_values = sheet_logs.get_all_values()
             if len(all_values) > 1:
-                # Loop dari baris paling baru ke baris lama
                 for row in all_values[1:]:
-                    if len(row) >= 2:
-                        row_key = str(row[2]).strip() if len(row) > 2 else ""
+                    if len(row) >= 3:
+                        row_key = str(row[2]).strip()
                         
-                        # Filter berdasarkan API Key jika user mengirimkan API Key
-                        if api_key and row_key and api_key != row_key and not (api_key in row_key or row_key in api_key):
-                            continue
-                            
-                        logs.append({
-                            "Timestamp": str(row[0]).strip() if len(row) > 0 else "-", 
-                            "LogID": str(row[1]).strip() if len(row) > 1 else "-",
-                            "APIKey": row_key,
-                            "Platform": str(row[3]).strip() if len(row) > 3 else "-", 
-                            "Status": str(row[4]).strip() if len(row) > 4 else "-",
-                            "Details": str(row[5]).strip() if len(row) > 5 else "-"
-                        })
+                        # FILTER KETAT: Hanya ambil baris yang tepat sesuai API Key pengguna aktif
+                        if row_key == api_key:
+                            logs.append({
+                                "Timestamp": str(row[0]).strip() if len(row) > 0 else "-", 
+                                "LogID": str(row[1]).strip() if len(row) > 1 else "-",
+                                "APIKey": row_key,
+                                "Platform": str(row[3]).strip() if len(row) > 3 else "-", 
+                                "Status": str(row[4]).strip() if len(row) > 4 else "-",
+                                "Details": str(row[5]).strip() if len(row) > 5 else "-"
+                            })
             
             logs.reverse()
             return jsonify({"success": True, "logs": logs[:100]})
         except Exception as e: 
-            print(f"[Get Logs Error]: {e}")
-            return jsonify({"success": False, "message": f"Kesalahan membaca sheet: {str(e)}"})
+            print(f"[Get Logs Isolated Error]: {e}")
+            return jsonify({"success": False, "message": f"Kesalahan membaca sheet: {str(e)}", "logs": []})
     
-    # Fallback jika Sheet belum terhubung (Memory Store)
+    # Fallback jika Sheet dalam mode memori
     if 'logs' in config.user_2fa_store:
         all_mem = config.user_2fa_store['logs']
-        if api_key:
-            logs = [log for log in all_mem if log.get('APIKey') == api_key]
-        else:
-            logs = all_mem
+        logs = [log for log in all_mem if log.get('APIKey') == api_key]
         logs.reverse()
         return jsonify({"success": True, "logs": logs[:100]})
         

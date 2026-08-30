@@ -10,7 +10,6 @@
   <style>
     body { background-color: #0d0a1a; overflow-x: hidden; }
     
-    /* KHUSUS DASHBOARD: Sembunyikan menu navigasi tengah & tombol auth di header navbar */
     .navbar .nav-links,
     .navbar .auth-buttons {
       display: none !important;
@@ -79,7 +78,6 @@
     
     .btn-toggle-sidebar:hover { background: rgba(255,255,255,0.1); color: #fff; }
 
-    /* BANNER PERINGATAN TRIAL EXPIRED */
     .expired-banner-box {
       background: linear-gradient(135deg, rgba(239, 68, 68, 0.2) 0%, rgba(185, 28, 28, 0.3) 100%);
       border: 1px solid #ef4444;
@@ -94,23 +92,6 @@
       box-shadow: 0 0 25px rgba(239, 68, 68, 0.2);
     }
 
-    .expired-banner-text h3 {
-      color: #fca5a5;
-      font-size: 18px;
-      font-weight: 800;
-      margin-bottom: 4px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .expired-banner-text p {
-      color: #e5e7eb;
-      font-size: 13px;
-      line-height: 1.5;
-    }
-
-    /* BADGE STATUS LOG */
     .status-badge {
       display: inline-block;
       padding: 4px 10px;
@@ -192,7 +173,7 @@
         <li><a href="#" onclick="openUpgradePayment()">💳 Langganan (Upgrade)</a></li>
         <li><a href="/#n8n-docs">📚 Dokumentasi API</a></li>
         <li><a href="https://wa.me/6289635602758?text=Halo%20Admin%20TRENDORA%2C%20saya%20butuh%20bantuan%20dashboard" target="_blank" style="color: #25d366;">💬 Bantuan WhatsApp</a></li>
-        <li><a href="#" onclick="handleLogout()" style="color: #ef4444;">🚪 Keluar Akun</a></li>
+        <li><a href="#" onclick="handleSecureLogout()" style="color: #ef4444;">🚪 Keluar Akun</a></li>
       </ul>
     </aside>
 
@@ -201,11 +182,10 @@
         <span id="sidebarIconDash">◀</span> <span>Tutup Menu</span>
       </button>
       
-      <!-- BANNER PERINGATAN TRIAL EXPIRED -->
       <div id="trialExpiredAlertBanner" class="expired-banner-box" style="display: none;">
         <div class="expired-banner-text">
-          <h3>🔒 Masa Free Trial 1 Minggu Anda Telah Habis!</h3>
-          <p>Fitur API Key, posting otomatis n8n, dan penautan sosial media saat ini <strong>terkunci</strong>. Silakan upgrade ke akun berbayar untuk membuka kembali seluruh fitur tanpa batas.</p>
+          <h3 style="color: #fca5a5; font-size: 18px; font-weight: 800; margin-bottom: 4px;">🔒 Masa Free Trial 1 Minggu Anda Telah Habis!</h3>
+          <p style="color: #e5e7eb; font-size: 13px;">Fitur API Key, posting otomatis n8n, dan penautan sosial media saat ini <strong>terkunci</strong>. Silakan upgrade ke akun berbayar untuk membuka kembali seluruh fitur tanpa batas.</p>
         </div>
         <button class="btn-pink" onclick="openUpgradePayment()" style="padding: 12px 24px; font-size: 13px; font-weight: 800; white-space: nowrap;">
           ⭐ Upgrade Akun Berbayar &rarr;
@@ -222,7 +202,7 @@
             </div>
             <p style="color: #9ca3af; font-size: 14px; margin-bottom: 16px; word-break: break-all;">
               Email: <span id="dashUserEmail">-</span><br>
-              Status: <strong id="dashAccountStatus" style="color: #f59e0b;">Active (7-Day Free Trial)</strong>
+              Status: <strong id="dashAccountStatus" style="color: #f59e0b;">Memeriksa status sesi...</strong>
             </p>
 
             <div id="trialPerksNotice" style="background: rgba(255,255,255,0.03); border-left: 3px solid #60a5fa; padding: 12px; border-radius: 0 8px 8px 0; font-size: 12px; color: #9ca3af; margin-top: 10px;">
@@ -258,7 +238,7 @@
 
       <section id="section-social" style="scroll-margin-top: 100px;">
         <div class="dashboard-hero-card" style="margin-bottom: 30px; display: block;">
-          <h3 style="margin-bottom: 8px; font-size: 20px; color: #fff;">🔗 Integrasi Sosial Media</h3>
+          <h3 style="margin-bottom: 8px; font-size: 20px; color: #fff;">📱 Integrasi Sosial Media</h3>
           <p style="color: #9ca3af; font-size: 13px; margin-bottom: 24px;">Hubungkan akun sosial media Anda. Akun yang terhubung akan otomatis menerima postingan dari Webhook n8n Anda.</p>
           
           <div id="socialConnectionsList" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px;">
@@ -271,8 +251,8 @@
         <div class="dashboard-hero-card" style="display: block; overflow-x: auto;">
           <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 16px;">
             <div>
-              <h3 style="margin-bottom: 4px; font-size: 20px; color: #fff;">📊 Riwayat Aktivitas Upload Video</h3>
-              <p style="color: #9ca3af; font-size: 13px;">Pantau log pengiriman video dari n8n dan automasi ke sosial media secara real-time.</p>
+              <h3 style="margin-bottom: 4px; font-size: 20px; color: #fff;">📊 Riwayat Aktivitas Upload Video (Terisolasi)</h3>
+              <p style="color: #9ca3af; font-size: 13px;">Pantau log pengiriman video khusus akun Anda dari n8n dan automasi secara real-time.</p>
             </div>
             <button onclick="fetchAndRenderDashboardLogs(true)" style="padding: 8px 16px; background: rgba(236,72,153,0.15); border: 1px solid rgba(236,72,153,0.4); color: #f472b6; border-radius: 8px; cursor: pointer; font-size: 12px; font-weight: 700; display: flex; align-items: center; gap: 6px;">
               🔄 Muat Ulang Log
@@ -300,8 +280,8 @@
               <option value="failed" style="background: #0f1524;">FAILED (Gagal)</option>
             </select>
             
-            <button onclick="applyLogFilters()" style="padding: 10px 20px; background: #6366f1; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 700; font-size: 12px; transition: background 0.2s;" onmouseover="this.style.background='#4f46e5'" onmouseout="this.style.background='#6366f1'">Filter</button>
-            <button onclick="resetLogFilters()" style="padding: 10px 20px; background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 12px; transition: background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.15)'" onmouseout="this.style.background='rgba(255,255,255,0.1)'">Reset</button>
+            <button onclick="applyLogFilters()" style="padding: 10px 20px; background: #6366f1; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 700; font-size: 12px; transition: background 0.2s;">Filter</button>
+            <button onclick="resetLogFilters()" style="padding: 10px 20px; background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 12px; transition: background 0.2s;">Reset</button>
           </div>
 
           <div style="overflow-x: auto; background: rgba(0, 0, 0, 0.2); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 12px; padding: 10px; width: 100%;">
@@ -317,7 +297,7 @@
               </thead>
               <tbody id="dashLogsTableBody">
                 <tr>
-                  <td colspan="5" style="padding: 24px; text-align: center; color: #6b7280;">⏳ Memuat log dari server...</td>
+                  <td colspan="5" style="padding: 24px; text-align: center; color: #6b7280;">⏳ Memuat log khusus akun Anda...</td>
                 </tr>
               </tbody>
             </table>
@@ -327,13 +307,6 @@
 
     </main>
   </div>
-
-  <!-- FLOATING WHATSAPP BUTTON -->
-  <a href="https://wa.me/6289635602758?text=Halo%20Admin%20TRENDORA%2C%20saya%20butuh%20bantuan%20dashboard" target="_blank" rel="noopener noreferrer" class="wa-float-btn" title="Hubungi Kami via WhatsApp" aria-label="WhatsApp Support">
-    <svg viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
-      <path d="M16 2a13.94 13.94 0 0 0-12 21L2 30l7.2-1.9A13.94 13.94 0 1 0 16 2zm0 25.5a11.5 11.5 0 0 1-5.9-1.6l-.4-.2-4.4 1.1 1.2-4.3-.3-.5a11.5 11.5 0 1 1 9.4 5.5zm6.3-8.6c-.3-.2-2-.1-2.3 0s-.6.4-.8.7-.5.6-.8.5a10.2 10.2 0 0 1-3.2-2 11.3 11.3 0 0 1-2.2-2.7c-.2-.4 0-.6.1-.8l.5-.7c.1-.2.2-.4.1-.6s-.9-2.2-1.2-2.9c-.3-.7-.7-.6-1-.6h-.8c-.3 0-.9.1-1.4.6a5.7 5.7 0 0 0-1.8 4.2 10 10 0 0 0 2.1 5.3 22.8 22.8 0 0 0 8.8 7.8c.8.4 1.5.7 2 .8a4.9 4.9 0 0 0 2.3.1 3.8 3.8 0 0 0 2.5-1.8 3.1 3.1 0 0 0 .2-1.8c-.2-.2-.5-.3-.8-.5z"/>
-    </svg>
-  </a>
 
   {% include 'apiKeyModal.html' %}
 
@@ -353,7 +326,7 @@
       }
     }
 
-    // Mendapatkan raw API Key & Email pengguna yang valid
+    // Mendapatkan kredensial sesi lokal aktif
     function getValidUserCredentials() {
       let email = "";
       let apiKey = "";
@@ -376,7 +349,6 @@
         apiKey = window.currentApiKey.trim();
       }
 
-      // Bersihkan jika key dalam kondisi masked
       if (apiKey.includes('•') || apiKey === "-" || apiKey.includes('Belum Ada')) {
         apiKey = "";
       }
@@ -384,13 +356,58 @@
       return { email, apiKey };
     }
 
-    // Fungsi utama mengambil log dari backend
+    // Verifikasi Sesi Terisolasi ke Server
+    async function verifyUserSession() {
+      const { email } = getValidUserCredentials();
+      try {
+        const res = await fetch('/api/me', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-User-Email': email || ''
+          },
+          body: JSON.stringify({ email: email || '' })
+        });
+
+        if (res.status === 401) {
+          localStorage.removeItem('trendora_user');
+          sessionStorage.clear();
+          window.location.href = '/login';
+          return false;
+        }
+
+        const data = await res.json();
+        if (data.success && data.user) {
+          window.currentUser = data.user;
+          document.getElementById('dashName').innerText = data.user.name || 'User';
+          document.getElementById('dashUserEmail').innerText = data.user.email || '-';
+          document.getElementById('dashAccountStatus').innerText = data.user.status || 'Active';
+          return true;
+        }
+      } catch (err) {
+        console.error("Session verification error:", err);
+      }
+      return true;
+    }
+
+    // Logout Aman & Hapus Sesi Terisolasi
+    async function handleSecureLogout() {
+      try {
+        await fetch('/api/logout', { method: 'POST' });
+      } catch (e) {}
+      localStorage.removeItem('trendora_user');
+      sessionStorage.clear();
+      window.currentUser = null;
+      window.location.href = '/login';
+    }
+
+    // Pengambilan Log Terisolasi
     async function fetchAndRenderDashboardLogs(isManualRefresh = false) {
       const tbody = document.getElementById('dashLogsTableBody');
       if (!tbody) return;
 
       if (isManualRefresh) {
-        tbody.innerHTML = `<tr><td colspan="5" style="padding: 24px; text-align: center; color: #60a5fa;">🔄 Menyegarkan data log terbaru...</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="5" style="padding: 24px; text-align: center; color: #60a5fa;">🔄 Menyegarkan log khusus akun Anda...</td></tr>`;
       }
 
       const { email, apiKey } = getValidUserCredentials();
@@ -409,12 +426,17 @@
           })
         });
 
+        if (res.status === 401) {
+          tbody.innerHTML = `<tr><td colspan="5" style="padding: 24px; text-align: center; color: #f87171;">⚠️ Sesi tidak valid. Silakan login kembali.</td></tr>`;
+          return;
+        }
+
         const data = await res.json();
         if (data.success && Array.isArray(data.logs)) {
           window.cachedDashboardLogs = data.logs;
           renderLogsToTable(data.logs);
         } else {
-          tbody.innerHTML = `<tr><td colspan="5" style="padding: 24px; text-align: center; color: #f87171;">⚠️ ${data.message || 'Gagal memuat log aktivitas.'}</td></tr>`;
+          tbody.innerHTML = `<tr><td colspan="5" style="padding: 24px; text-align: center; color: #9ca3af;">📭 ${data.notice || 'Belum ada riwayat aktivitas log.'}</td></tr>`;
         }
       } catch (err) {
         console.error("Gagal mengambil log:", err);
@@ -422,13 +444,12 @@
       }
     }
 
-    // Render baris log ke dalam tabel DOM
     function renderLogsToTable(logs) {
       const tbody = document.getElementById('dashLogsTableBody');
       if (!tbody) return;
 
       if (!logs || logs.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="5" style="padding: 24px; text-align: center; color: #9ca3af;">📭 Belum ada riwayat aktivitas log. Postingan dari n8n akan otomatis muncul di sini.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="5" style="padding: 24px; text-align: center; color: #9ca3af;">📭 Belum ada riwayat aktivitas log untuk akun Anda. Postingan dari n8n akan muncul di sini.</td></tr>`;
         return;
       }
 
@@ -469,7 +490,6 @@
       }).join('');
     }
 
-    // Filter log berdasarkan input
     function applyLogFilters() {
       const waktuVal = (document.getElementById('filter-waktu').value || '').trim().toLowerCase();
       const logIdVal = (document.getElementById('filter-logid').value || '').trim().toLowerCase();
@@ -504,11 +524,9 @@
       renderLogsToTable(window.cachedDashboardLogs);
     }
 
-    // Auto-load saat halaman siap
-    document.addEventListener('DOMContentLoaded', () => {
+    document.addEventListener('DOMContentLoaded', async () => {
+      await verifyUserSession();
       fetchAndRenderDashboardLogs();
-      
-      // Auto refresh log setiap 30 detik secara berkala
       setInterval(() => {
         fetchAndRenderDashboardLogs(false);
       }, 30000);
