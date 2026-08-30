@@ -22,12 +22,12 @@ auth_bp = Blueprint('auth', __name__)
 
 def send_2fa_reset_email(to_email, secret, qr_code_url, user_name="User"):
     """Mengirimkan email instruksi reset 2FA berisi QR Code dan Setup Key via SMTP."""
-    smtp_user = getattr(config, 'SMTP_EMAIL', '')
-    smtp_pass = getattr(config, 'SMTP_PASSWORD', '')
+    smtp_user = getattr(config, 'SMTP_EMAIL', os.environ.get('SMTP_EMAIL', 'trendoraautomation@gmail.com'))
+    smtp_pass = getattr(config, 'SMTP_PASSWORD', os.environ.get('SMTP_PASSWORD', ''))
     
     if not smtp_user or not smtp_pass:
-        print("[SMTP Warning]: SMTP_EMAIL atau SMTP_PASSWORD belum dikonfigurasi di environment!")
-        return False, "Kredensial SMTP server belum diisi di konfigurasi environment."
+        print("[SMTP Warning]: SMTP_EMAIL atau SMTP_PASSWORD belum dikonfigurasi di environment Vercel!")
+        return False, "Kredensial SMTP server (SMTP_EMAIL / SMTP_PASSWORD) belum diisi di environment variables."
 
     try:
         msg = MIMEMultipart('alternative')
@@ -81,15 +81,16 @@ def send_2fa_reset_email(to_email, secret, qr_code_url, user_name="User"):
 
         # Kirim melalui Gmail SMTP SSL (Port 465) dengan fallback TLS (Port 587)
         try:
-            with smtplib.SMTP_SSL('smtp.gmail.com', 465, timeout=15) as server:
+            with smtplib.SMTP_SSL('smtp.gmail.com', 465, timeout=12) as server:
                 server.login(smtp_user, smtp_pass)
                 server.sendmail(smtp_user, to_email, msg.as_string())
         except Exception:
-            with smtplib.SMTP('smtp.gmail.com', 587, timeout=15) as server:
+            with smtplib.SMTP('smtp.gmail.com', 587, timeout=12) as server:
                 server.starttls()
                 server.login(smtp_user, smtp_pass)
                 server.sendmail(smtp_user, to_email, msg.as_string())
 
+        print(f"[SMTP Success]: QR Code 2FA berhasil dikirim ke email {to_email}")
         return True, "Email berhasil dikirim."
     except Exception as e:
         print(f"[SMTP Send Error]: {e}")
@@ -245,17 +246,21 @@ def verify_otp_route():
         return jsonify({"success": False, "message": f"Terjadi kesalahan server: {str(e)}"}), 200
 
 @auth_bp.route('/api/reset-2fa', methods=['POST', 'OPTIONS'])
+@auth_bp.route('/api/reset-2fa-qr', methods=['POST', 'OPTIONS'])
 def reset_2fa():
     """
     Endpoint untuk mereset secret 2FA pengguna jika kehilangan akses Google Authenticator.
-    Menghasilkan Secret Key baru & QR Code baru, menyimpannya di Google Sheets,
-    dan MENGIRIMKANNYA LANGSUNG KE EMAIL PENGGUNA VIA SMTP.
+    Mendukung pemanggilan rute /api/reset-2fa dan /api/reset-2fa-qr.
+    Menghasilkan Secret Key baru, menyimpannya di Google Sheets, dan MENGIRIMKANNYA KE EMAIL PENGGUNA.
     """
     if request.method == 'OPTIONS':
         return jsonify({"success": True}), 200
     try:
         data = request.get_json(silent=True) or {}
         email = data.get('email', '').strip().lower()
+        if not email:
+            email = session.get('user_email', '').strip().lower()
+            
         if not email:
             return jsonify({"success": False, "message": "Email wajib diisi untuk mereset 2FA!"}), 200
             
@@ -283,12 +288,12 @@ def reset_2fa():
         if email_sent:
             return jsonify({
                 "success": True, 
-                "message": f"QR Code 2FA baru telah dikirim ke email {email}. Silakan buka inbox/spam email Anda, scan di Google Authenticator, lalu masukkan 6 digit OTP di bawah!"
+                "message": f"QR Code 2FA baru telah dikirim ke email {email}. Silakan buka kotak masuk/spam email Anda, scan di Google Authenticator, lalu masukkan 6 digit OTP di form login!"
             }), 200
         else:
             return jsonify({
                 "success": False, 
-                "message": f"Kunci 2FA berhasil dibuat, namun email gagal dikirim: {email_err}. Pastikan SMTP_PASSWORD terisi di konfigurasi."
+                "message": f"Kunci 2FA berhasil dibuat di database, namun email gagal dikirim: {email_err}. Pastikan variabel SMTP_PASSWORD (App Password Gmail) sudah disetel di Vercel."
             }), 200
 
     except Exception as e:
