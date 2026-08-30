@@ -25,6 +25,7 @@ from routes.auth import check_user_trial_status
 
 webhook_bp = Blueprint('webhook_n8n', __name__)
 
+
 def count_today_posts_for_key(api_key):
     """Menghitung jumlah postingan sukses yang sudah dilakukan API Key hari ini."""
     today_str = datetime.now().strftime("%d/%m/%Y")
@@ -45,29 +46,6 @@ def count_today_posts_for_key(api_key):
         except Exception as e:
             print(f"Error checking daily post count: {e}")
     return count
-
-def send_tiktok_init_request(payload, access_token):
-    url = "https://open.tiktokapis.com/v2/post/publish/video/init/"
-    headers = {
-        "Authorization": f"Bearer {access_token}", 
-        "Content-Type": "application/json; charset=utf-8"
-    }
-    data_bytes = json.dumps(payload).encode('utf-8')
-    req = urllib.request.Request(url, data=data_bytes, headers=headers, method='POST')
-
-    try:
-        with urllib.request.urlopen(req) as response:
-            res_text = response.read().decode('utf-8')
-            return True, json.loads(res_text), 200
-    except urllib.error.HTTPError as http_err:
-        err_body = ""
-        try:
-            err_body = http_err.read().decode('utf-8')
-        except Exception:
-            err_body = str(http_err.reason)
-        return False, f"[TikTok HTTP {http_err.code}] {err_body if err_body else http_err.reason}", http_err.code
-    except Exception as general_err:
-        return False, f"[TikTok Request Error] {str(general_err)}", 500
 
 def refresh_tiktok_token(refresh_token, row_idx=None):
     if not refresh_token:
@@ -96,6 +74,122 @@ def refresh_tiktok_token(refresh_token, row_idx=None):
     except Exception as e:
         print(f"[TikTok Refresh Token Error]: {e}")
         return None
+
+
+def upload_video_to_tiktok(access_token, refresh_token, media_url, caption, privacy_level="SELF_ONLY", row_idx=None):
+    """
+    Mengunggah video ke TikTok menggunakan metode FILE_UPLOAD (Direct Chunk Binary Upload).
+    Metode ini TIDAK memerlukan verifikasi domain Google Storage / DNS URL Ownership.
+    """
+    if not access_token and refresh_token:
+        access_token = refresh_tiktok_token(refresh_token, row_idx)
+    if not access_token:
+        return False, {"tiktok_error": "Akun TikTok belum terhubung atau Access Token kosong."}
+
+    def _exec_tiktok_upload(tok):
+        # 1. Download berkas video dari media_url untuk mendapatkan ukuran binary bytes
+        req_v = urllib.request.Request(
+            media_url, 
+            headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'}
+        )
+        try:
+            with urllib.request.urlopen(req_v, timeout=60) as v_res:
+                video_bytes = v_res.read()
+        except Exception as e_dl:
+            return False, {"tiktok_error": f"Gagal mengunduh file video dari Google Storage: {str(e_dl)}"}
+
+        video_size = len(video_bytes)
+        if video_size == 0:
+            return False, {"tiktok_error": "File video dari media_url berukuran 0 bytes (kosong)."}
+
+        # 2. Inisialisasi upload ke TikTok dengan metode FILE_UPLOAD
+        init_url = "https://open.tiktokapis.com/v2/post/publish/video/init/"
+        init_payload = {
+            "post_info": {
+                "title": caption[:2200] if caption else "Video otomatis via TRENDORA 🚀",
+                "privacy_level": privacy_level or "SELF_ONLY",
+                "disable_duet": False,
+                "disable_comment": False,
+                "disable_stitch": False
+            },
+            "source_info": {
+                "source": "FILE_UPLOAD",
+                "video_size": video_size,
+                "chunk_size": video_size,
+                "total_chunk_count": 1
+            }
+        }
+
+        headers = {
+            "Authorization": f"Bearer {tok}",
+            "Content-Type": "application/json; charset=utf-8"
+        }
+
+        req_init = urllib.request.Request(
+            init_url, 
+            data=json.dumps(init_payload).encode('utf-8'), 
+            headers=headers, 
+            method='POST'
+        )
+
+        try:
+            with urllib.request.urlopen(req_init, timeout=25) as resp_init:
+                init_data = json.loads(resp_init.read().decode('utf-8'))
+        except urllib.error.HTTPError as he:
+            err_body = he.read().decode('utf-8', errors='ignore')
+            return False, {"tiktok_error": f"[TikTok Init HTTP {he.code}] {err_body}"}
+        except Exception as ge:
+            return False, {"tiktok_error": f"[TikTok Init Error] {str(ge)}"}
+
+        tiktok_data = init_data.get('data', {})
+        publish_id = tiktok_data.get('publish_id')
+        upload_url = tiktok_data.get('upload_url')
+
+        if not upload_url:
+            err_info = init_data.get('error', {})
+            return False, {"tiktok_error": f"Gagal mendapatkan upload_url dari TikTok: {err_info.get('message', str(init_data))}"}
+
+        # 3. Kirim data byte video langsung ke upload_url TikTok menggunakan PUT
+        put_headers = {
+            "Content-Type": "video/mp4",
+            "Content-Length": str(video_size),
+            "Content-Range": f"bytes 0-{video_size - 1}/{video_size}"
+        }
+
+        put_req = urllib.request.Request(
+            upload_url, 
+            data=video_bytes, 
+            headers=put_headers, 
+            method='PUT'
+        )
+        
+        try:
+            with urllib.request.urlopen(put_req, timeout=90):
+                pass
+        except urllib.error.HTTPError as put_he:
+            err_body = put_he.read().decode('utf-8', errors='ignore')
+            return False, {"tiktok_error": f"[TikTok Binary Upload HTTP {put_he.code}] {err_body}"}
+        except Exception as put_ge:
+            return False, {"tiktok_error": f"[TikTok Binary Upload Error] {str(put_ge)}"}
+
+        return True, {
+            "tiktok_status": "Video sukses diunggah ke TikTok via FILE_UPLOAD!",
+            "publish_id": publish_id,
+            "video_size_mb": round(video_size / (1024 * 1024), 2)
+        }
+
+    try:
+        is_ok, res = _exec_tiktok_upload(access_token)
+        if not is_ok and refresh_token:
+            err_str = str(res.get('tiktok_error', ''))
+            if "401" in err_str or "token" in err_str.lower() or "expired" in err_str.lower():
+                new_tok = refresh_tiktok_token(refresh_token, row_idx)
+                if new_tok:
+                    return _exec_tiktok_upload(new_tok)
+        return is_ok, res
+    except Exception as e:
+        return False, {"tiktok_error": f"[TikTok Handler Error] {str(e)}"}
+
 
 def refresh_youtube_token(refresh_token, row_idx=None):
     if not refresh_token:
@@ -310,6 +404,7 @@ def upload_video_to_youtube(access_token, refresh_token, media_url, caption, row
     except Exception as e:
         return False, {"youtube_error": f"[YouTube Error] {str(e)}"}
 
+
 @webhook_bp.route('/api/create-transaction', methods=['POST'])
 def create_transaction():
     data = request.json or {}
@@ -352,6 +447,7 @@ def create_transaction():
 @webhook_bp.route('/api/check-payment', methods=['POST'])
 def check_payment():
     return jsonify({"success": True, "isPaid": False})
+
 
 @webhook_bp.route('/api/n8n-webhook', methods=['GET', 'POST'], strict_slashes=False)
 def n8n_webhook():
@@ -407,6 +503,7 @@ def n8n_webhook():
     status = data.get('status', 'RECEIVED')
     details = data.get('details', {})
     
+    # 3. TIKTOK AUTO UPLOAD HANDLER (Menggunakan FILE_UPLOAD, Bebas dari batasan Domain Verification)
     if platform == 'tiktok' and isinstance(details, dict) and status != "PUBLISHED (SUCCESS)":
         media_url = details.get('media_url')
         caption = details.get('caption', 'Diposting otomatis via TRENDORA Automation! 🚀')
@@ -421,44 +518,29 @@ def n8n_webhook():
             refresh_tok = user_tokens.get('refresh_token')
             row_idx = user_tokens.get('row_idx')
 
-            if access_token:
-                payload = {
-                    "post_info": {
-                        "title": caption, 
-                        "privacy_level": privacy_level, 
-                        "disable_duet": False, 
-                        "disable_comment": False, 
-                        "disable_stitch": False
-                    },
-                    "source_info": {
-                        "source": "PULL_FROM_URL", 
-                        "video_url": media_url
-                    }
-                }
-
-                is_ok, res_payload, http_code = send_tiktok_init_request(payload, access_token)
-
-                if not is_ok and (http_code in [400, 401] or "access_token_invalid" in str(res_payload) or "token_expired" in str(res_payload)):
-                    new_token = refresh_tiktok_token(refresh_tok, row_idx)
-                    if new_token:
-                        access_token = new_token
-                        is_ok, res_payload, http_code = send_tiktok_init_request(payload, access_token)
-
-                if is_ok:
-                    status = "PUBLISHED (SUCCESS)"
-                    details['publish_id'] = res_payload.get('data', {}).get('publish_id')
-                    details['tiktok_status'] = "Sukses dikirim ke TikTok via Direct Pull URL."
-                else:
-                    status = "FAILED"
-                    details['tiktok_error'] = str(res_payload)
+            is_ok, res_dict = upload_video_to_tiktok(
+                access_token, 
+                refresh_tok, 
+                media_url, 
+                caption, 
+                privacy_level=privacy_level, 
+                row_idx=row_idx
+            )
+            if is_ok:
+                status = "PUBLISHED (SUCCESS)"
+                details.update(res_dict)
             else:
-                details['tiktok_error'] = "Akun TikTok belum terhubung atau Token Otorisasi kosong."
                 status = "FAILED"
+                details.update(res_dict)
+        else:
+            status = "FAILED"
+            details['tiktok_error'] = "Media URL video tidak ditemukan pada payload."
 
+    # 4. META (FACEBOOK PAGE) HANDLER
     elif platform == 'facebook' and isinstance(details, dict):
         media_url = details.get('media_url')
         caption = details.get('caption', 'Auto-post by TRENDORA ⚡')
-        meta_token = db.db_get_meta_token_by_api_key(api_key)
+        meta_token = db.db_get_meta_token_by_api_key(api_key, email=user_data.get('email') if user_data else None)
         if meta_token and media_url:
             try:
                 page_url = f"https://graph.facebook.com/v18.0/me/accounts?access_token={meta_token}"
@@ -476,15 +558,16 @@ def n8n_webhook():
                         details['fb_video_id'] = fb_res.get('id')
                 else:
                     status = "FAILED"
-                    details['meta_error'] = "Tidak menemukan Facebook Page."
+                    details['meta_error'] = "Tidak menemukan Facebook Page pada akun Meta yang terhubung."
             except Exception as e:
                 status = "FAILED"
                 details['meta_error'] = str(e)
 
+    # 5. META (INSTAGRAM REELS) HANDLER
     elif platform == 'instagram' and isinstance(details, dict):
         media_url = details.get('media_url')
         caption = details.get('caption', 'Auto-post Reels by TRENDORA ⚡')
-        meta_token = db.db_get_meta_token_by_api_key(api_key)
+        meta_token = db.db_get_meta_token_by_api_key(api_key, email=user_data.get('email') if user_data else None)
         if meta_token and media_url:
             try:
                 page_url = f"https://graph.facebook.com/v18.0/me/accounts?access_token={meta_token}"
@@ -519,6 +602,7 @@ def n8n_webhook():
                 status = "FAILED"
                 details['meta_error'] = str(e)
 
+    # 6. LINKEDIN UGC VIDEO HANDLER
     elif platform == 'linkedin' and isinstance(details, dict):
         media_url = details.get('media_url')
         caption = details.get('caption', 'Diposting otomatis via TRENDORA Automation ⚡')
@@ -539,6 +623,7 @@ def n8n_webhook():
             elif not media_url:
                 details['linkedin_error'] = "Media URL video tidak ditemukan pada payload."
 
+    # 7. YOUTUBE SHORTS / VIDEO HANDLER
     elif platform == 'youtube' and isinstance(details, dict):
         media_url = details.get('media_url')
         caption = details.get('caption', 'Diposting otomatis via TRENDORA Automation ⚡')
@@ -561,6 +646,7 @@ def n8n_webhook():
                 details['youtube_error'] = "Akun YouTube belum terhubung atau Token Otorisasi kosong."
             elif not media_url:
                 details['youtube_error'] = "Media URL video tidak ditemukan pada payload."
+
 
     media_url_val = details.pop('media_url', '') if isinstance(details, dict) else ''
     caption_val = details.pop('caption', '') if isinstance(details, dict) else ''
@@ -604,6 +690,7 @@ def n8n_webhook():
         "details": details
     })
 
+
 @webhook_bp.route('/api/get-logs', methods=['POST', 'GET'])
 def get_logs():
     """
@@ -630,7 +717,6 @@ def get_logs():
     if not api_key:
         api_key = request.args.get('api_key', '').strip()
 
-    # Bersihkan jika API key berstatus sensor
     if api_key and ('•' in api_key or api_key == '-'):
         api_key = ''
 
