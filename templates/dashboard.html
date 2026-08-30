@@ -8,7 +8,10 @@
   {% include 'css.html' %}
   
   <style>
-    body { background-color: #0d0a1a; overflow-x: hidden; }
+    body { 
+      background-color: #0d0a1a; 
+      overflow-x: hidden; 
+    }
     
     .navbar .nav-links,
     .navbar .auth-buttons {
@@ -44,10 +47,46 @@
       text-transform: uppercase; 
     }
     
-    .sidebar-menu { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 6px; }
-    .sidebar-menu li a { display: flex; align-items: center; gap: 12px; padding: 12px 16px; color: #9ca3af; text-decoration: none; border-radius: 12px; font-size: 14px; font-weight: 600; transition: all 0.2s ease; }
-    .sidebar-menu li a:hover { background: rgba(255, 255, 255, 0.05); color: #e5e7eb; }
-    .sidebar-menu li a.active { background: rgba(236, 72, 153, 0.15); color: #ec4899; border-left: 3px solid #ec4899; }
+    .sidebar-menu { 
+      list-style: none; 
+      padding: 0; 
+      margin: 0; 
+      display: flex; 
+      flex-direction: column; 
+      gap: 6px; 
+    }
+    
+    .sidebar-menu li button,
+    .sidebar-menu li a { 
+      display: flex; 
+      align-items: center; 
+      gap: 12px; 
+      padding: 12px 16px; 
+      color: #9ca3af; 
+      text-decoration: none; 
+      border-radius: 12px; 
+      font-size: 14px; 
+      font-weight: 600; 
+      transition: all 0.2s ease; 
+      background: transparent;
+      border: none;
+      width: 100%;
+      text-align: left;
+      cursor: pointer;
+    }
+    
+    .sidebar-menu li button:hover,
+    .sidebar-menu li a:hover { 
+      background: rgba(255, 255, 255, 0.05); 
+      color: #e5e7eb; 
+    }
+    
+    .sidebar-menu li button.active,
+    .sidebar-menu li a.active { 
+      background: rgba(236, 72, 153, 0.15) !important; 
+      color: #ec4899 !important; 
+      border-left: 3px solid #ec4899 !important; 
+    }
     
     .dash-content { 
       flex: 1; 
@@ -77,6 +116,21 @@
     }
     
     .btn-toggle-sidebar:hover { background: rgba(255,255,255,0.1); color: #fff; }
+
+    /* TAB SECTIONS ISOLATION */
+    .dash-tab-section {
+      display: none;
+      animation: fadeInTab 0.3s ease-in-out forwards;
+    }
+
+    .dash-tab-section.active-tab {
+      display: block;
+    }
+
+    @keyframes fadeInTab {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
 
     .expired-banner-box {
       background: linear-gradient(135deg, rgba(239, 68, 68, 0.2) 0%, rgba(185, 28, 28, 0.3) 100%);
@@ -133,6 +187,22 @@
       border: 1px solid rgba(255, 255, 255, 0.1);
     }
 
+    .social-card-item {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 14px;
+      padding: 18px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      transition: border 0.2s, transform 0.2s;
+    }
+
+    .social-card-item:hover {
+      border-color: rgba(236, 72, 153, 0.4);
+      transform: translateY(-2px);
+    }
+
     @media (max-width: 900px) {
       .dash-layout { flex-direction: column; }
       .dash-sidebar { 
@@ -146,8 +216,10 @@
       .dash-sidebar::-webkit-scrollbar-thumb { background: #3f3f46; border-radius: 4px; }
       .sidebar-menu-title { display: none; }
       .sidebar-menu { flex-direction: row; gap: 8px; }
+      .sidebar-menu li button,
       .sidebar-menu li a { padding: 10px 16px; font-size: 13px; border-left: none; }
-      .sidebar-menu li a.active { border-bottom: 3px solid #ec4899; }
+      .sidebar-menu li button.active,
+      .sidebar-menu li a.active { border-bottom: 3px solid #ec4899 !important; border-left: none !important; }
       .dash-content { margin-left: 0; padding: 20px 4%; }
       .dashboard-hero-card { grid-template-columns: 1fr !important; }
       .btn-toggle-sidebar { display: none; }
@@ -159,13 +231,30 @@
 
   <div class="dash-layout">
     
+    <!-- SIDEBAR NAVIGASI -->
     <aside class="dash-sidebar">
       <div class="sidebar-menu-title">Main Menu</div>
       <ul class="sidebar-menu">
-        <li><a href="/dashboard#section-overview" class="sidebar-link active">🏠 Ringkasan</a></li>
-        <li><a href="/webhook" class="sidebar-link">🔗 Webhook Endpoint</a></li>
-        <li><a href="/dashboard#section-social" class="sidebar-link">📱 Akun Sosial</a></li>
-        <li><a href="/dashboard#section-logs" class="sidebar-link">📊 Log Aktivitas</a></li>
+        <li>
+          <button type="button" class="sidebar-tab-btn active" data-tab="overview" onclick="switchDashboardTab('overview')">
+            🏠 Ringkasan
+          </button>
+        </li>
+        <li>
+          <button type="button" class="sidebar-tab-btn" data-tab="webhook" onclick="switchDashboardTab('webhook')">
+            🔗 Webhook Endpoint
+          </button>
+        </li>
+        <li>
+          <button type="button" class="sidebar-tab-btn" data-tab="social" onclick="switchDashboardTab('social')">
+            📱 Akun Sosial
+          </button>
+        </li>
+        <li>
+          <button type="button" class="sidebar-tab-btn" data-tab="logs" onclick="switchDashboardTab('logs')">
+            📊 Log Aktivitas
+          </button>
+        </li>
       </ul>
       
       <div class="sidebar-menu-title">Pengaturan Akun</div>
@@ -177,11 +266,13 @@
       </ul>
     </aside>
 
+    <!-- KONTEN UTAMA DASHBOARD -->
     <main class="dash-content">
       <button class="btn-toggle-sidebar" onclick="toggleSidebar()">
         <span id="sidebarIconDash">◀</span> <span>Tutup Menu</span>
       </button>
       
+      <!-- ALERT FREE TRIAL HABIS -->
       <div id="trialExpiredAlertBanner" class="expired-banner-box" style="display: none;">
         <div class="expired-banner-text">
           <h3 style="color: #fca5a5; font-size: 18px; font-weight: 800; margin-bottom: 4px;">🔒 Masa Free Trial 1 Minggu Anda Telah Habis!</h3>
@@ -192,7 +283,10 @@
         </button>
       </div>
 
-      <section id="section-overview" style="scroll-margin-top: 100px;">
+      <!-- ============================================== -->
+      <!-- TAB 1: RINGKASAN & API KEY SAJA                -->
+      <!-- ============================================== -->
+      <section id="tab-overview" class="dash-tab-section active-tab">
         <div class="dashboard-hero-card" style="margin-bottom: 30px;">
           
           <div class="dash-welcome">
@@ -205,11 +299,11 @@
               Status: <strong id="dashAccountStatus" style="color: #f59e0b;">Memeriksa status sesi...</strong>
             </p>
 
-            <div id="trialPerksNotice" style="background: rgba(255,255,255,0.03); border-left: 3px solid #60a5fa; padding: 12px; border-radius: 0 8px 8px 0; font-size: 12px; color: #9ca3af; margin-top: 10px;">
+            <div id="trialPerksNotice" style="background: rgba(255,255,255,0.03); border-left: 3px solid #60a5fa; padding: 14px; border-radius: 0 8px 8px 0; font-size: 12px; color: #9ca3af; margin-top: 14px; line-height: 1.6;">
               ⚡ <strong>Fitur Akun Anda:</strong><br>
               &bull; Publikasi otomatis multi-platform via Webhook n8n & Make.<br>
-              &bull; Pemantauan log pengiriman real-time di tabel aktivitas.<br>
-              &bull; Dukungan integrasi TikTok, Meta, LinkedIn, dan YouTube.
+              &bull; Pemantauan log pengiriman real-time di tabel aktivitas terisolasi.<br>
+              &bull; Integrasi langsung TikTok, Facebook, Instagram, LinkedIn, dan YouTube.
             </div>
           </div>
           
@@ -226,20 +320,71 @@
               <button id="btnCopyApiKey" class="btn-secondary" style="font-size: 12px; padding: 8px 16px; display: none;" onclick="copyDashApiKey()">📋 Copy Key</button>
               <button id="btnDashUpgrade" class="btn-secondary" style="font-size: 12px; padding: 8px 16px; border-color: #ec4899; color: #ec4899; display: none;" onclick="openUpgradePayment()">⭐ Upgrade</button>
             </div>
-            
-            <h3 style="font-size: 15px; color: #9ca3af; margin-top: 20px; margin-bottom: 12px;">🔗 Webhook Endpoint (n8n Target)</h3>
-            <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 12px; margin-bottom: 12px;">
-              <span id="dashWebhookUrlDisplay" style="font-family: monospace; font-size: 11px; color: #f472b6; word-break: break-all; white-space: normal;">https://trendoraautomation.my.id/api/n8n-webhook</span>
+
+            <div style="margin-top: 24px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.08); display: flex; gap: 10px;">
+              <button class="btn-secondary" style="flex: 1; font-size: 12px; padding: 10px;" onclick="switchDashboardTab('webhook')">🔗 Buka Webhook</button>
+              <button class="btn-secondary" style="flex: 1; font-size: 12px; padding: 10px;" onclick="switchDashboardTab('social')">📱 Hubungkan Medsos</button>
             </div>
-            <button class="btn-secondary" style="font-size: 12px; padding: 8px 16px; width: 100%;" onclick="copyWebhookUrl()">📋 Copy URL</button>
           </div>
         </div>
       </section>
 
-      <section id="section-social" style="scroll-margin-top: 100px;">
+      <!-- ============================================== -->
+      <!-- TAB 2: WEBHOOK ENDPOINT (N8N TARGET)           -->
+      <!-- ============================================== -->
+      <section id="tab-webhook" class="dash-tab-section">
+        <div class="dashboard-hero-card" style="display: block; margin-bottom: 30px;">
+          <div style="margin-bottom: 20px;">
+            <span style="display: inline-block; background: rgba(236,72,153,0.15); color: #ec4899; padding: 4px 12px; border-radius: 12px; font-size: 11px; font-weight: 800; margin-bottom: 8px;">INTEGRATION ENGINE</span>
+            <h3 style="font-size: 22px; color: #fff; margin-bottom: 6px;">🔗 Webhook Endpoint Target (n8n / Make / cURL)</h3>
+            <p style="color: #9ca3af; font-size: 13px;">Gunakan URL endpoint ini pada HTTP Request Node di n8n untuk mempublikasikan video ke media sosial yang terhubung.</p>
+          </div>
+
+          <div style="background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 18px; margin-bottom: 20px;">
+            <div style="font-size: 12px; color: #9ca3af; margin-bottom: 8px; font-weight: 600;">Target POST URL:</div>
+            <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap;">
+              <span id="dashWebhookUrlDisplay" style="font-family: monospace; font-size: 13px; color: #f472b6; word-break: break-all;">https://trendoraautomation.my.id/api/n8n-webhook</span>
+              <button class="btn-pink" style="font-size: 12px; padding: 8px 18px;" onclick="copyWebhookUrl()">📋 Salin URL</button>
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px;">
+            <div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; padding: 16px;">
+              <div style="color: #60a5fa; font-weight: 700; font-size: 13px; margin-bottom: 6px;">1. Headers Wajib</div>
+              <pre style="background: #090d16; padding: 10px; border-radius: 8px; font-size: 11px; color: #cbd5e1; overflow-x: auto;"><code>Content-Type: application/json
+X-API-Key: <span style="color:#34d399;">[API_KEY_ANDA]</span></code></pre>
+            </div>
+
+            <div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; padding: 16px;">
+              <div style="color: #34d399; font-weight: 700; font-size: 13px; margin-bottom: 6px;">2. Contoh Payload JSON</div>
+              <pre style="background: #090d16; padding: 10px; border-radius: 8px; font-size: 11px; color: #cbd5e1; overflow-x: auto;"><code>{
+  "platform": "tiktok",
+  "details": {
+    "media_url": "https://domain.com/video.mp4",
+    "caption": "Video otomatis via TRENDORA 🚀"
+  }
+}</code></pre>
+            </div>
+          </div>
+
+          <div style="margin-top: 24px;">
+            <a href="/webhook" class="btn-secondary" style="display: inline-block; font-size: 12px; padding: 10px 20px; text-decoration: none;">
+              📖 Buka Halaman Dokumentasi Lengkap &rarr;
+            </a>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================================== -->
+      <!-- TAB 3: AKUN SOSIAL SAJA                        -->
+      <!-- ============================================== -->
+      <section id="tab-social" class="dash-tab-section">
         <div class="dashboard-hero-card" style="margin-bottom: 30px; display: block;">
-          <h3 style="margin-bottom: 8px; font-size: 20px; color: #fff;">📱 Integrasi Sosial Media</h3>
-          <p style="color: #9ca3af; font-size: 13px; margin-bottom: 24px;">Hubungkan akun sosial media Anda. Akun yang terhubung akan otomatis menerima postingan dari Webhook n8n Anda.</p>
+          <div style="margin-bottom: 20px;">
+            <span style="display: inline-block; background: rgba(56,189,248,0.15); color: #38bdf8; padding: 4px 12px; border-radius: 12px; font-size: 11px; font-weight: 800; margin-bottom: 8px;">CONNECTED CHANNELS</span>
+            <h3 style="margin-bottom: 6px; font-size: 22px; color: #fff;">📱 Integrasi Sosial Media</h3>
+            <p style="color: #9ca3af; font-size: 13px;">Hubungkan akun sosial media Anda. Akun yang terhubung akan otomatis menerima postingan dari Webhook n8n Anda.</p>
+          </div>
           
           <div id="socialConnectionsList" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px;">
             <p style="color: #6b7280; font-size: 13px;">Memuat daftar platform...</p>
@@ -247,18 +392,23 @@
         </div>
       </section>
 
-      <section id="section-logs" style="scroll-margin-top: 100px;">
+      <!-- ============================================== -->
+      <!-- TAB 4: LOG AKTIVITAS SAJA                      -->
+      <!-- ============================================== -->
+      <section id="tab-logs" class="dash-tab-section">
         <div class="dashboard-hero-card" style="display: block; overflow-x: auto;">
-          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 16px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 20px;">
             <div>
-              <h3 style="margin-bottom: 4px; font-size: 20px; color: #fff;">📊 Riwayat Aktivitas Upload Video (Terisolasi)</h3>
+              <span style="display: inline-block; background: rgba(52,211,153,0.15); color: #34d399; padding: 4px 12px; border-radius: 12px; font-size: 11px; font-weight: 800; margin-bottom: 8px;">AUDIT TRAILS</span>
+              <h3 style="margin-bottom: 4px; font-size: 22px; color: #fff;">📊 Riwayat Aktivitas Upload Video (Terisolasi)</h3>
               <p style="color: #9ca3af; font-size: 13px;">Pantau log pengiriman video khusus akun Anda dari n8n dan automasi secara real-time.</p>
             </div>
-            <button onclick="fetchAndRenderDashboardLogs(true)" style="padding: 8px 16px; background: rgba(236,72,153,0.15); border: 1px solid rgba(236,72,153,0.4); color: #f472b6; border-radius: 8px; cursor: pointer; font-size: 12px; font-weight: 700; display: flex; align-items: center; gap: 6px;">
+            <button onclick="fetchAndRenderDashboardLogs(true)" style="padding: 10px 18px; background: rgba(236,72,153,0.15); border: 1px solid rgba(236,72,153,0.4); color: #f472b6; border-radius: 10px; cursor: pointer; font-size: 13px; font-weight: 700; display: flex; align-items: center; gap: 8px; transition: all 0.2s;">
               🔄 Muat Ulang Log
             </button>
           </div>
           
+          <!-- FILTER FORM -->
           <div style="display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;">
             <input type="text" id="filter-waktu" placeholder="Cari Waktu (ex: 30/08/2026)" style="padding: 10px 14px; border-radius: 8px; background: rgba(255,255,255,0.05); color: #e5e7eb; border: 1px solid rgba(255,255,255,0.15); outline: none; font-size: 12px; flex: 1; min-width: 150px;">
             <input type="text" id="filter-logid" placeholder="Cari Log ID (ex: LOG-123)" style="padding: 10px 14px; border-radius: 8px; background: rgba(255,255,255,0.05); color: #e5e7eb; border: 1px solid rgba(255,255,255,0.15); outline: none; font-size: 12px; flex: 1; min-width: 150px;">
@@ -284,6 +434,7 @@
             <button onclick="resetLogFilters()" style="padding: 10px 20px; background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 12px; transition: background 0.2s;">Reset</button>
           </div>
 
+          <!-- TABEL LOG -->
           <div style="overflow-x: auto; background: rgba(0, 0, 0, 0.2); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 12px; padding: 10px; width: 100%;">
             <table style="width: 100%; min-width: 700px; border-collapse: collapse; text-align: left;">
               <thead>
@@ -313,6 +464,40 @@
   <script>
     window.cachedDashboardLogs = [];
 
+    // FUNGSI GANTI TAB SESUAI SIDEBAR
+    function switchDashboardTab(tabKey) {
+      const allowedTabs = ['overview', 'webhook', 'social', 'logs'];
+      if (!allowedTabs.includes(tabKey)) tabKey = 'overview';
+
+      // 1. Sembunyikan semua tab section & hilangkan class active-tab
+      document.querySelectorAll('.dash-tab-section').forEach(sec => {
+        sec.classList.remove('active-tab');
+      });
+
+      // 2. Munculkan hanya tab section yang dipilih
+      const targetSec = document.getElementById(`tab-${tabKey}`);
+      if (targetSec) {
+        targetSec.classList.add('active-tab');
+      }
+
+      // 3. Update status active pada tombol sidebar
+      document.querySelectorAll('.sidebar-tab-btn').forEach(btn => {
+        if (btn.getAttribute('data-tab') === tabKey) {
+          btn.classList.add('active');
+        } else {
+          btn.classList.remove('active');
+        }
+      });
+
+      // 4. Perbarui Hash URL browser tanpa reload
+      history.replaceState(null, null, `#tab-${tabKey}`);
+
+      // 5. Muat ulang log otomatis jika tab yang dibuka adalah Log Aktivitas
+      if (tabKey === 'logs') {
+        fetchAndRenderDashboardLogs(false);
+      }
+    }
+
     function toggleSidebar() {
       document.body.classList.toggle('sidebar-hidden');
       const icon = document.getElementById('sidebarIconDash');
@@ -326,7 +511,6 @@
       }
     }
 
-    // Mendapatkan kredensial sesi lokal aktif
     function getValidUserCredentials() {
       let email = "";
       let apiKey = "";
@@ -356,7 +540,6 @@
       return { email, apiKey };
     }
 
-    // Verifikasi Sesi Terisolasi ke Server
     async function verifyUserSession() {
       const { email } = getValidUserCredentials();
       try {
@@ -390,7 +573,6 @@
       return true;
     }
 
-    // Logout Aman & Hapus Sesi Terisolasi
     async function handleSecureLogout() {
       try {
         await fetch('/api/logout', { method: 'POST' });
@@ -401,7 +583,6 @@
       window.location.href = '/login';
     }
 
-    // Pengambilan Log Terisolasi
     async function fetchAndRenderDashboardLogs(isManualRefresh = false) {
       const tbody = document.getElementById('dashLogsTableBody');
       if (!tbody) return;
@@ -525,10 +706,26 @@
     }
 
     document.addEventListener('DOMContentLoaded', async () => {
+      // 1. Periksa hash pada URL (misal: #tab-logs, #tab-social, #tab-webhook)
+      const currentHash = window.location.hash.replace('#tab-', '').replace('#section-', '').replace('#', '');
+      if (['overview', 'webhook', 'social', 'logs'].includes(currentHash)) {
+        switchDashboardTab(currentHash);
+      } else {
+        switchDashboardTab('overview');
+      }
+
+      // 2. Verifikasi Sesi
       await verifyUserSession();
+      
+      // 3. Tarik data log pertama kali
       fetchAndRenderDashboardLogs();
+      
+      // 4. Auto Refresh Log tiap 30 detik
       setInterval(() => {
-        fetchAndRenderDashboardLogs(false);
+        const activeLogTab = document.querySelector('#tab-logs.active-tab');
+        if (activeLogTab) {
+          fetchAndRenderDashboardLogs(false);
+        }
       }, 30000);
     });
   </script>
