@@ -246,70 +246,120 @@ def db_get_tiktok_tokens_by_api_key(api_key, email=None):
             print(f"[GSheet Get TikTok Tokens Error]: {e}")
     return {}
 
-def db_get_meta_token_by_api_key(api_key):
+def db_get_meta_token_by_api_key(api_key, email=None):
     sheet = get_gsheet()
     if sheet:
         try:
             all_values = sheet.get_all_values()
-            for idx, row in enumerate(all_values):
-                if idx == 0: continue
-                if len(row) >= 5 and row[4].strip() == api_key:
-                    return row[9] if len(row) >= 10 else None
+            if api_key:
+                for idx in range(len(all_values)-1, 0, -1):
+                    row = all_values[idx]
+                    if len(row) >= 5 and str(row[4]).strip() == api_key:
+                        token = str(row[9]).strip() if len(row) >= 10 and str(row[9]).strip() else None
+                        if token: return token
+            if email:
+                clean_email = str(email).strip().lower()
+                for idx in range(len(all_values)-1, 0, -1):
+                    row = all_values[idx]
+                    if len(row) >= 1 and str(row[0]).strip().lower() == clean_email:
+                        token = str(row[9]).strip() if len(row) >= 10 and str(row[9]).strip() else None
+                        if token: return token
         except Exception as e:
             print(f"[GSheet Get Meta Token Error]: {e}")
     return None
 
-def db_get_linkedin_token_by_api_key(api_key):
+def db_get_linkedin_token_by_api_key(api_key, email=None):
     sheet = get_gsheet()
     if sheet:
         try:
             all_values = sheet.get_all_values()
-            for idx, row in enumerate(all_values):
-                if idx == 0: continue
-                if len(row) >= 5 and row[4].strip() == api_key:
-                    return row[10] if len(row) >= 11 else None
+            if api_key:
+                for idx in range(len(all_values)-1, 0, -1):
+                    row = all_values[idx]
+                    if len(row) >= 5 and str(row[4]).strip() == api_key:
+                        token = str(row[10]).strip() if len(row) >= 11 and str(row[10]).strip() else None
+                        if token: return token
+            if email:
+                clean_email = str(email).strip().lower()
+                for idx in range(len(all_values)-1, 0, -1):
+                    row = all_values[idx]
+                    if len(row) >= 1 and str(row[0]).strip().lower() == clean_email:
+                        token = str(row[10]).strip() if len(row) >= 11 and str(row[10]).strip() else None
+                        if token: return token
         except Exception as e:
             print(f"[GSheet Get LinkedIn Token Error]: {e}")
     return None
 
-def db_get_youtube_tokens_by_api_key(api_key):
+def db_get_youtube_tokens_by_api_key(api_key, email=None):
     sheet = get_gsheet()
     if sheet:
         try:
             all_values = sheet.get_all_values()
-            for idx, row in enumerate(all_values):
-                if idx == 0: continue
-                if len(row) >= 5 and row[4].strip() == api_key:
-                    return {
-                        'access_token': row[11] if len(row) >= 12 else None,
-                        'refresh_token': row[12] if len(row) >= 13 else None
-                    }
+            if api_key:
+                for idx in range(len(all_values)-1, 0, -1):
+                    row = all_values[idx]
+                    if len(row) >= 5 and str(row[4]).strip() == api_key:
+                        access_token = str(row[11]).strip() if len(row) >= 12 and str(row[11]).strip() else None
+                        refresh_token = str(row[12]).strip() if len(row) >= 13 and str(row[12]).strip() else None
+                        if access_token or refresh_token:
+                            return {
+                                'access_token': access_token,
+                                'refresh_token': refresh_token,
+                                'row_idx': idx + 1
+                            }
+            if email:
+                clean_email = str(email).strip().lower()
+                for idx in range(len(all_values)-1, 0, -1):
+                    row = all_values[idx]
+                    if len(row) >= 1 and str(row[0]).strip().lower() == clean_email:
+                        access_token = str(row[11]).strip() if len(row) >= 12 and str(row[11]).strip() else None
+                        refresh_token = str(row[12]).strip() if len(row) >= 13 and str(row[12]).strip() else None
+                        if access_token or refresh_token:
+                            return {
+                                'access_token': access_token,
+                                'refresh_token': refresh_token,
+                                'row_idx': idx + 1
+                            }
         except Exception as e:
             print(f"[GSheet Get YouTube Token Error]: {e}")
     return {}
 
-def db_get_threads_token_by_api_key(api_key):
+def db_get_threads_token_by_api_key(api_key, email=None):
     sheet = get_gsheet()
     if sheet:
         try:
             all_values = sheet.get_all_values()
-            for idx, row in enumerate(all_values):
-                if idx == 0: continue
-                if len(row) >= 5 and row[4].strip() == api_key:
-                    return row[13] if len(row) >= 14 else None
+            if api_key:
+                for idx in range(len(all_values)-1, 0, -1):
+                    row = all_values[idx]
+                    if len(row) >= 5 and str(row[4]).strip() == api_key:
+                        return row[13] if len(row) >= 14 and row[13].strip() else None
+            if email:
+                clean_email = str(email).strip().lower()
+                for idx in range(len(all_values)-1, 0, -1):
+                    row = all_values[idx]
+                    if len(row) >= 1 and str(row[0]).strip().lower() == clean_email:
+                        return row[13] if len(row) >= 14 and row[13].strip() else None
         except Exception as e:
             print(f"[GSheet Get Threads Token Error]: {e}")
     return None
 
-def db_get_twitter_token_by_api_key(api_key):
+def db_get_twitter_token_by_api_key(api_key, email=None):
     sheet = get_gsheet()
     if sheet:
         try:
             all_values = sheet.get_all_values()
-            for idx, row in enumerate(all_values):
-                if idx == 0: continue
-                if len(row) >= 5 and row[4].strip() == api_key:
-                    return row[14] if len(row) >= 15 else None
+            if api_key:
+                for idx in range(len(all_values)-1, 0, -1):
+                    row = all_values[idx]
+                    if len(row) >= 5 and str(row[4]).strip() == api_key:
+                        return row[14] if len(row) >= 15 and row[14].strip() else None
+            if email:
+                clean_email = str(email).strip().lower()
+                for idx in range(len(all_values)-1, 0, -1):
+                    row = all_values[idx]
+                    if len(row) >= 1 and str(row[0]).strip().lower() == clean_email:
+                        return row[14] if len(row) >= 15 and row[14].strip() else None
         except Exception as e:
             print(f"[GSheet Get Twitter Token Error]: {e}")
     return None

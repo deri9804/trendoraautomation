@@ -102,7 +102,226 @@ def refresh_tiktok_token(refresh_token, row_idx=None):
         print(f"[TikTok Refresh Token Error]: {e}")
         return None
 
-@webhook_bp.route('/api/chat', methods=['POST'])
+def refresh_youtube_token(refresh_token, row_idx=None):
+    """Me-refresh Google / YouTube Access Token yang expired."""
+    if not refresh_token:
+        return None
+    try:
+        url = "https://oauth2.googleapis.com/token"
+        payload = {
+            "client_id": config.GOOGLE_CLIENT_ID,
+            "client_secret": config.GOOGLE_CLIENT_SECRET,
+            "refresh_token": refresh_token,
+            "grant_type": "refresh_token"
+        }
+        data = urllib.parse.urlencode(payload).encode('utf-8')
+        req = urllib.request.Request(url, data=data, headers={"Content-Type": "application/x-www-form-urlencoded"})
+        with urllib.request.urlopen(req) as res:
+            res_data = json.loads(res.read().decode('utf-8'))
+            new_access_token = res_data.get('access_token')
+            if new_access_token and row_idx:
+                sheet = db.get_gsheet()
+                if sheet:
+                    sheet.update_cell(row_idx, 12, new_access_token)
+            return new_access_token
+    except Exception as e:
+        print(f"[YouTube Refresh Token Error]: {e}")
+        return None
+
+def upload_video_to_linkedin(access_token, media_url, caption):
+    """Mengunggah video ke LinkedIn menggunakan LinkedIn v2 Assets & UGC API."""
+    try:
+        # 1. Dapatkan Profil ID Pengguna (sub)
+        profile_req = urllib.request.Request(
+            "https://api.linkedin.com/v2/userinfo",
+            headers={"Authorization": f"Bearer {access_token}"}
+        )
+        with urllib.request.urlopen(profile_req) as p_res:
+            user_info = json.loads(p_res.read().decode('utf-8'))
+            sub_id = user_info.get('sub')
+            if not sub_id:
+                return False, {"linkedin_error": "Gagal mendapatkan ID Profil LinkedIn dari token."}
+            person_urn = f"urn:li:person:{sub_id}"
+
+        # 2. Register Video Upload Request
+        reg_url = "https://api.linkedin.com/v2/assets?action=registerUpload"
+        reg_payload = {
+            "registerUploadRequest": {
+                "recipes": ["urn:li:digitalmediaRecipe:feedshare-video"],
+                "owner": person_urn,
+                "serviceRelationships": [
+                    {
+                        "relationshipType": "OWNER",
+                        "identifier": "urn:li:userGeneratedContent"
+                    }
+                ]
+            }
+        }
+        reg_req = urllib.request.Request(
+            reg_url,
+            data=json.dumps(reg_payload).encode('utf-8'),
+            headers={
+                "Authorization": f"Bearer {access_token}",
+                "Content-Type": "application/json",
+                "X-Restli-Protocol-Version": "2.0.0"
+            },
+            method='POST'
+        )
+        with urllib.request.urlopen(reg_req) as r_res:
+            reg_data = json.loads(r_res.read().decode('utf-8'))
+            upload_mechanism = reg_data.get('value', {}).get('uploadMechanism', {})
+            media_upload_http = upload_mechanism.get('com.linkedin.digitalmedia.uploading.MediaUploadHttpRequest', {})
+            upload_url = media_upload_http.get('uploadUrl')
+            asset_urn = reg_data.get('value', {}).get('asset')
+
+        if not upload_url or not asset_urn:
+            return False, {"linkedin_error": "Gagal mendapatkan Upload URL dari LinkedIn."}
+
+        # 3. Unduh video dari media_url & Upload binary ke upload_url
+        req_video = urllib.request.Request(media_url, headers={'User-Agent': 'TRENDORA-Automation/1.0'})
+        with urllib.request.urlopen(req_video) as video_resp:
+            video_bytes = video_resp.read()
+
+        upload_req = urllib.request.Request(
+            upload_url,
+            data=video_bytes,
+            headers={
+                "Authorization": f"Bearer {access_token}",
+                "Content-Type": "application/octet-stream"
+            },
+            method='PUT'
+        )
+        with urllib.request.urlopen(upload_req):
+            pass
+
+        time.sleep(3)
+
+        # 4. Buat UGC Post
+        post_url = "https://api.linkedin.com/v2/ugcPosts"
+        post_payload = {
+            "author": person_urn,
+            "lifecycleState": "PUBLISHED",
+            "specificContent": {
+                "com.linkedin.ugc.ShareContent": {
+                    "shareCommentary": {"text": caption},
+                    "shareMediaCategory": "VIDEO",
+                    "media": [
+                        {
+                            "status": "READY",
+                            "description": {"text": caption[:200]},
+                            "media": asset_urn,
+                            "title": {"text": caption[:60] if caption else "Video by TRENDORA"}
+                        }
+                    ]
+                }
+            },
+            "visibility": {"com.linkedin.ugc.MemberNetworkVisibility": "PUBLIC"}
+        }
+        post_req = urllib.request.Request(
+            post_url,
+            data=json.dumps(post_payload).encode('utf-8'),
+            headers={
+                "Authorization": f"Bearer {access_token}",
+                "Content-Type": "application/json",
+                "X-Restli-Protocol-Version": "2.0.0"
+            },
+            method='POST'
+        )
+        with urllib.request.urlopen(post_req) as post_res:
+            post_data = json.loads(post_res.read().decode('utf-8'))
+            post_id = post_data.get('id', '')
+            return True, {
+                "linkedin_status": "Video sukses diposting ke LinkedIn Feed!",
+                "linkedin_post_id": post_id
+            }
+
+    except urllib.error.HTTPError as http_err:
+        err_body = ""
+        try:
+            err_body = http_err.read().decode('utf-8')
+        except Exception:
+            err_body = str(http_err.reason)
+        return False, {"linkedin_error": f"[LinkedIn HTTP {http_err.code}] {err_body}"}
+    except Exception as e:
+        return False, {"linkedin_error": f"[LinkedIn Error] {str(e)}"}
+
+def upload_video_to_youtube(access_token, refresh_token, media_url, caption, row_idx=None):
+    """Mengunggah video ke YouTube via YouTube Data API v3 Resumable Upload."""
+    if not access_token and refresh_token:
+        access_token = refresh_youtube_token(refresh_token, row_idx)
+    if not access_token:
+        return False, {"youtube_error": "Akun YouTube belum terhubung atau Access Token kosong."}
+
+    def _exec_youtube_upload(tok):
+        init_url = "https://www.googleapis.com/upload/youtube/v3/videos?uploadType=resumable&part=snippet,status"
+        title = caption.split('\n')[0][:95] if caption else "TRENDORA Video Auto Post"
+        metadata = {
+            "snippet": {
+                "title": title,
+                "description": f"{caption}\n\nDiposting otomatis via TRENDORA Automation ⚡",
+                "categoryId": "22"
+            },
+            "status": {
+                "privacyStatus": "public",
+                "selfDeclaredMadeForKids": False
+            }
+        }
+        init_req = urllib.request.Request(
+            init_url,
+            data=json.dumps(metadata).encode('utf-8'),
+            headers={
+                "Authorization": f"Bearer {tok}",
+                "Content-Type": "application/json; charset=UTF-8",
+                "X-Upload-Content-Type": "video/*"
+            },
+            method='POST'
+        )
+        with urllib.request.urlopen(init_req) as init_resp:
+            upload_session_url = init_resp.headers.get('Location')
+
+        if not upload_session_url:
+            return False, {"youtube_error": "Gagal mendapatkan upload session URL dari YouTube API."}
+
+        req_video = urllib.request.Request(media_url, headers={'User-Agent': 'TRENDORA-Automation/1.0'})
+        with urllib.request.urlopen(req_video) as v_resp:
+            video_bytes = v_resp.read()
+
+        up_req = urllib.request.Request(
+            upload_session_url,
+            data=video_bytes,
+            headers={
+                "Authorization": f"Bearer {tok}",
+                "Content-Type": "video/mp4",
+                "Content-Length": str(len(video_bytes))
+            },
+            method='PUT'
+        )
+        with urllib.request.urlopen(up_req) as up_res:
+            res_json = json.loads(up_res.read().decode('utf-8'))
+            video_id = res_json.get('id')
+            return True, {
+                "youtube_status": "Video sukses diunggah ke YouTube!",
+                "youtube_video_id": video_id,
+                "video_url": f"https://youtu.be/{video_id}"
+            }
+
+    try:
+        return _exec_youtube_upload(access_token)
+    except urllib.error.HTTPError as err:
+        if err.code in [401, 403] and refresh_token:
+            new_tok = refresh_youtube_token(refresh_token, row_idx)
+            if new_tok:
+                try:
+                    return _exec_youtube_upload(new_tok)
+                except Exception as e2:
+                    return False, {"youtube_error": f"[YouTube Retry Error] {str(e2)}"}
+        err_body = ""
+        try: err_body = err.read().decode('utf-8')
+        except Exception: err_body = str(err.reason)
+        return False, {"youtube_error": f"[YouTube HTTP {err.code}] {err_body}"}
+    except Exception as e:
+        return False, {"youtube_error": f"[YouTube Error] {str(e)}"}
+
 def chat_api():
     data = request.json or {}
     pesan_user = data.get('pesan_user', '')
@@ -438,9 +657,60 @@ def n8n_webhook():
                 status = "FAILED"
                 details['meta_error'] = str(e)
 
+    elif platform == 'linkedin' and isinstance(details, dict):
+        media_url = details.get('media_url')
+        caption = details.get('caption', 'Diposting otomatis via TRENDORA Automation ⚡')
+        linkedin_token = db.db_get_linkedin_token_by_api_key(api_key, email=user_data.get('email') if user_data else None)
+        
+        if linkedin_token and media_url:
+            is_ok, res_dict = upload_video_to_linkedin(linkedin_token, media_url, caption)
+            if is_ok:
+                status = "PUBLISHED (SUCCESS)"
+                details.update(res_dict)
+            else:
+                status = "FAILED"
+                details.update(res_dict)
+        else:
+            status = "FAILED"
+            if not linkedin_token:
+                details['linkedin_error'] = "Akun LinkedIn belum terhubung atau Token Otorisasi kosong."
+            elif not media_url:
+                details['linkedin_error'] = "Media URL video tidak ditemukan pada payload."
+
+    elif platform == 'youtube' and isinstance(details, dict):
+        media_url = details.get('media_url')
+        caption = details.get('caption', 'Diposting otomatis via TRENDORA Automation ⚡')
+        yt_tokens = db.db_get_youtube_tokens_by_api_key(api_key, email=user_data.get('email') if user_data else None)
+        yt_access = yt_tokens.get('access_token')
+        yt_refresh = yt_tokens.get('refresh_token')
+        yt_row = yt_tokens.get('row_idx')
+
+        if (yt_access or yt_refresh) and media_url:
+            is_ok, res_dict = upload_video_to_youtube(yt_access, yt_refresh, media_url, caption, row_idx=yt_row)
+            if is_ok:
+                status = "PUBLISHED (SUCCESS)"
+                details.update(res_dict)
+            else:
+                status = "FAILED"
+                details.update(res_dict)
+        else:
+            status = "FAILED"
+            if not yt_access and not yt_refresh:
+                details['youtube_error'] = "Akun YouTube belum terhubung atau Token Otorisasi kosong."
+            elif not media_url:
+                details['youtube_error'] = "Media URL video tidak ditemukan pada payload."
+
     media_url_val = details.pop('media_url', '') if isinstance(details, dict) else ''
     caption_val = details.pop('caption', '') if isinstance(details, dict) else ''
     hashtag_val = details.pop('hashtag', '') if isinstance(details, dict) else ''
+    
+    # Menjamin kolom details tidak pernah tersimpan sebagai objek kosong {}
+    if isinstance(details, dict) and len(details) == 0:
+        if "SUCCESS" in status or status == "PUBLISHED":
+            details = {"message": f"Video sukses dipublikasikan ke {platform.capitalize()}"}
+        else:
+            details = {"message": f"Log status: {status}"}
+
     details_str = json.dumps(details) if isinstance(details, dict) else str(details)
         
     timestamp = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
