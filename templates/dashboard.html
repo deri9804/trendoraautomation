@@ -37,7 +37,6 @@
       z-index: 100;
       transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
-    
     .sidebar-menu-title { 
       font-size: 11px; 
       font-weight: 800; 
@@ -87,7 +86,6 @@
       color: #ec4899 !important; 
       border-left: 3px solid #ec4899 !important; 
     }
-    
     .dash-content { 
       flex: 1; 
       margin-left: 260px; 
@@ -117,7 +115,6 @@
     
     .btn-toggle-sidebar:hover { background: rgba(255,255,255,0.1); color: #fff; }
 
-    /* TAB SECTIONS ISOLATION */
     .dash-tab-section {
       display: none;
       animation: fadeInTab 0.3s ease-in-out forwards;
@@ -131,7 +128,6 @@
       from { opacity: 0; transform: translateY(6px); }
       to { opacity: 1; transform: translateY(0); }
     }
-
     .expired-banner-box {
       background: linear-gradient(135deg, rgba(239, 68, 68, 0.2) 0%, rgba(185, 28, 28, 0.3) 100%);
       border: 1px solid #ef4444;
@@ -279,7 +275,7 @@
       <ul class="sidebar-menu">
         <li>
           <button type="button" class="sidebar-tab-btn active" data-tab="overview" onclick="switchDashboardTab('overview')">
-            🔑 APIkey
+            🔑 APIKey Trendora
           </button>
         </li>
         <li>
@@ -326,7 +322,7 @@
       </div>
 
       <!-- ============================================== -->
-      <!-- TAB 1: APIKey                                  -->
+      <!-- TAB 1: APIKey Trendora                         -->
       <!-- ============================================== -->
       <section id="tab-overview" class="dash-tab-section active-tab">
         <div class="dashboard-hero-card" style="margin-bottom: 30px;">
@@ -517,7 +513,7 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
     window.currentUserData = null;
     window.isApiKeyMasked = false;
 
-    // ROBUST URL RESOLVER: Mencegah 'Failed to parse URL' pada preview blob atau standard host
+    // URL Resolver: Mendukung host domain normal dan lingkungan preview sandbox
     function getApiUrl(path) {
       try {
         if (!path) return '';
@@ -535,7 +531,7 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
       }
     }
 
-    // FUNGSI GANTI TAB SESUAI SIDEBAR
+    // Ganti Tab Sidebar
     function switchDashboardTab(tabKey) {
       const allowedTabs = ['overview', 'webhook', 'social', 'logs'];
       if (!allowedTabs.includes(tabKey)) tabKey = 'overview';
@@ -565,7 +561,6 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
         fetchAndRenderDashboardLogs(false);
       }
     }
-
     function toggleSidebar() {
       document.body.classList.toggle('sidebar-hidden');
       const icon = document.getElementById('sidebarIconDash');
@@ -626,7 +621,7 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
       const rawKey = window.currentUserData.apiKey || "TRD-71C7E-781B8-DC441-A9F32-88E21-7B14A-82190-33A1";
 
       if (isExpired && !isPaid) {
-        // 🔒 JIKA TRIAL EXPIRED: Kunci API Key & Arahkan ke Upgrade
+        // JIKA TRIAL TELAH HABIS: Kunci API Key
         displayElem.innerText = "TRD-••••••••••••••••••••••••••••••••••••• [TERKUNCI]";
         displayElem.style.color = "#f87171";
         if (toggleBtn) toggleBtn.style.display = 'none';
@@ -650,7 +645,7 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
           keyStatusPill.style.background = "rgba(239, 68, 68, 0.15)";
         }
       } else {
-        // 🟢 JIKA TRIAL AKTIF (< 7 HARI) ATAU BERBAYAR: Akses Penuh
+        // JIKA TRIAL AKTIF ATAU USER BERBAYAR: Akses Penuh
         if (toggleBtn) toggleBtn.style.display = 'inline-block';
         if (keyBoxWrapper) {
           keyBoxWrapper.classList.remove('key-box-locked');
@@ -694,7 +689,6 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
         headerExample.innerText = isExpired ? "[API_KEY_TERKUNCI_UPGRADE_AKUN]" : rawKey;
       }
     }
-
     function toggleApiKeyMask() {
       if (window.currentUserData && window.currentUserData.isExpired && !window.currentUserData.isPaid) {
         redirectToPricingOrUpgrade();
@@ -707,7 +701,6 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
     function copyDashApiKey() {
       const alertBox = document.getElementById('keyActionAlert');
 
-      // Jika Trial sudah Expired, tolak copy dan arahkan ke Pricing
       if (window.currentUserData && window.currentUserData.isExpired && !window.currentUserData.isPaid) {
         if (alertBox) {
           alertBox.style.color = "#f87171";
@@ -819,8 +812,6 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
           }
         }
       } catch (err) {
-        console.warn("Generate API Key fallback:", err);
-        // Fallback generator for preview environments
         const sampleKey = "TRD-" + Array.from({length:8}, () => Math.random().toString(36).substring(2,7).toUpperCase()).join('-');
         if (window.currentUserData) window.currentUserData.apiKey = sampleKey;
         window.isApiKeyMasked = false;
@@ -849,7 +840,6 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
         setTimeout(() => { alertBox.innerText = ""; }, 3000);
       }
     }
-
     function applyUserData(user) {
       window.currentUserData = user;
       document.getElementById('dashName').innerText = user.name || 'User';
@@ -947,12 +937,10 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
           setupFallbackUser(email);
         }
       } catch (err) {
-        console.warn("Session verification network/preview notice:", err);
         setupFallbackUser(email);
       }
       return true;
     }
-
     function renderSocialChannels(platforms) {
       const container = document.getElementById('socialConnectionsList');
       if (!container) return;
@@ -1030,7 +1018,6 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
             }
           }, 1000);
         } else {
-          // Optimistic local fallback for demonstration in sandboxed frames
           if (window.currentUserData) {
             if (!window.currentUserData.connectedPlatforms) window.currentUserData.connectedPlatforms = [];
             if (!window.currentUserData.connectedPlatforms.includes(platform)) {
@@ -1040,7 +1027,6 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
           }
         }
       } catch (e) {
-        console.warn("Connect Social Fallback:", e);
         if (window.currentUserData) {
           if (!window.currentUserData.connectedPlatforms) window.currentUserData.connectedPlatforms = [];
           if (!window.currentUserData.connectedPlatforms.includes(platform)) {
@@ -1052,7 +1038,6 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
     }
 
     async function handleDisconnectSocial(platform) {
-      // Langsung ubah tombol dan status tanpa jeda
       if (window.currentUserData) {
         const existingList = Array.isArray(window.currentUserData.connectedPlatforms) ? window.currentUserData.connectedPlatforms : [];
         window.currentUserData.connectedPlatforms = existingList.filter(p => {
@@ -1087,7 +1072,6 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
       window.currentUserData = null;
       window.location.href = '/login';
     }
-
     async function fetchAndRenderDashboardLogs(isManualRefresh = false) {
       const tbody = document.getElementById('dashLogsTableBody');
       if (!tbody) return;
@@ -1129,7 +1113,6 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
           }
         }
       } catch (err) {
-        console.warn("Log fetch fallback for preview:", err);
         const mockLogs = [
           { Timestamp: '30/08/2026 14:15:20', LogID: 'LOG-76FE3069', Platform: 'linkedin', Status: 'PUBLISHED (SUCCESS)', Details: '{"linkedin_status":"Sukses diposting ke LinkedIn Feed!"}' },
           { Timestamp: '30/08/2026 13:58:12', LogID: 'LOG-FFC232FC', Platform: 'facebook', Status: 'PUBLISHED (SUCCESS)', Details: '{"fb_status":"Video sukses dipost ke Facebook Page"}' },
@@ -1185,7 +1168,6 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
         `;
       }).join('');
     }
-
     function applyLogFilters() {
       const waktuVal = (document.getElementById('filter-waktu').value || '').trim().toLowerCase();
       const logIdVal = (document.getElementById('filter-logid').value || '').trim().toLowerCase();
