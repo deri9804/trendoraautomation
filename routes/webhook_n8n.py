@@ -475,7 +475,37 @@ def n8n_webhook():
 
 @webhook_bp.route('/api/get-logs', methods=['POST', 'GET'])
 def get_logs():
-    api_key = request.headers.get('X-API-Key', '').strip() or (request.json or {}).get('api_key', '').strip()
+    """
+    Mengambil riwayat log aktivitas dari Google Sheets (Tab 'Logs')
+    Mendukung pencarian via API Key, Email, maupun query header.
+    """
+    api_key = request.headers.get('X-API-Key', '').strip()
+    email = request.headers.get('X-User-Email', '').strip().lower()
+
+    # Ekstrak dari JSON body jika method POST
+    if request.is_json:
+        body = request.get_json(silent=True) or {}
+        if not api_key:
+            api_key = body.get('api_key', '').strip()
+        if not email:
+            email = body.get('email', '').strip().lower()
+
+    # Ekstrak dari query parameter jika ada
+    if not api_key:
+        api_key = request.args.get('api_key', '').strip()
+    if not email:
+        email = request.args.get('email', '').strip().lower()
+
+    # Jika API key berstatus masked, kosongkan agar tidak memblokir pencarian
+    if api_key and ('•' in api_key or api_key == '-'):
+        api_key = ''
+
+    # Jika email ada tetapi api_key kosong, ambil api_key dari profil user di Sheet
+    if email and not api_key:
+        user_info = db.db_get_user(email)
+        if user_info and user_info.get('api_key'):
+            api_key = user_info.get('api_key').strip()
+
     logs = []
     sheet_logs = db.get_logs_sheet()
     
@@ -483,26 +513,38 @@ def get_logs():
         try:
             all_values = sheet_logs.get_all_values()
             if len(all_values) > 1:
+                # Loop dari baris paling baru ke baris lama
                 for row in all_values[1:]:
-                    if len(row) >= 3:
-                        if api_key and str(row[2]).strip() != api_key:
+                    if len(row) >= 2:
+                        row_key = str(row[2]).strip() if len(row) > 2 else ""
+                        
+                        # Filter berdasarkan API Key jika user mengirimkan API Key
+                        if api_key and row_key and api_key != row_key and not (api_key in row_key or row_key in api_key):
                             continue
+                            
                         logs.append({
                             "Timestamp": str(row[0]).strip() if len(row) > 0 else "-", 
                             "LogID": str(row[1]).strip() if len(row) > 1 else "-",
+                            "APIKey": row_key,
                             "Platform": str(row[3]).strip() if len(row) > 3 else "-", 
                             "Status": str(row[4]).strip() if len(row) > 4 else "-",
                             "Details": str(row[5]).strip() if len(row) > 5 else "-"
                         })
+            
             logs.reverse()
-            return jsonify({"success": True, "logs": logs[:50]})
+            return jsonify({"success": True, "logs": logs[:100]})
         except Exception as e: 
-            return jsonify({"success": False, "message": str(e)})
+            print(f"[Get Logs Error]: {e}")
+            return jsonify({"success": False, "message": f"Kesalahan membaca sheet: {str(e)}"})
     
+    # Fallback jika Sheet belum terhubung (Memory Store)
     if 'logs' in config.user_2fa_store:
         all_mem = config.user_2fa_store['logs']
-        logs = [log for log in all_mem if log.get('APIKey') == api_key] if api_key else all_mem
+        if api_key:
+            logs = [log for log in all_mem if log.get('APIKey') == api_key]
+        else:
+            logs = all_mem
         logs.reverse()
-        return jsonify({"success": True, "logs": logs[:50]})
+        return jsonify({"success": True, "logs": logs[:100]})
         
     return jsonify({"success": True, "logs": []})

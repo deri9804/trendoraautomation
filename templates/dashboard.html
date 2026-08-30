@@ -110,78 +110,46 @@
       line-height: 1.5;
     }
 
-    /* TIKTOK STUDIO UPLOADER STYLES */
-    .uploader-card-grid {
-      display: grid;
-      grid-template-columns: 1.2fr 0.8fr;
-      gap: 24px;
-      margin-top: 16px;
+    /* BADGE STATUS LOG */
+    .status-badge {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
     }
 
-    .dropzone-container {
-      border: 2px dashed rgba(236, 72, 153, 0.4);
-      border-radius: 16px;
-      padding: 24px;
-      text-align: center;
-      background: rgba(255, 255, 255, 0.02);
-      cursor: pointer;
-      transition: all 0.3s ease;
-      position: relative;
+    .status-badge.success {
+      background: rgba(52, 211, 153, 0.15);
+      color: #34d399;
+      border: 1px solid rgba(52, 211, 153, 0.3);
     }
 
-    .dropzone-container:hover, .dropzone-container.dragover {
-      border-color: #ec4899;
-      background: rgba(236, 72, 153, 0.06);
+    .status-badge.failed {
+      background: rgba(239, 68, 68, 0.15);
+      color: #f87171;
+      border: 1px solid rgba(239, 68, 68, 0.3);
     }
 
-    .preview-video-container {
-      background: #000;
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      border-radius: 16px;
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      min-height: 380px;
-      position: relative;
+    .status-badge.pending {
+      background: rgba(245, 158, 11, 0.15);
+      color: #fbbf24;
+      border: 1px solid rgba(245, 158, 11, 0.3);
     }
 
-    .preview-video-container video {
-      width: 100%;
-      max-height: 380px;
-      border-radius: 14px;
-      outline: none;
-      object-fit: contain;
-    }
-
-    .upload-progress-box {
-      background: rgba(255, 255, 255, 0.05);
-      border-radius: 12px;
-      padding: 16px;
-      margin-top: 16px;
-      border: 1px solid rgba(255, 255, 255, 0.1);
-    }
-
-    .progress-bar-inner {
-      height: 8px;
-      background: linear-gradient(90deg, #ec4899, #8b5cf6);
-      border-radius: 4px;
-      width: 0%;
-      transition: width 0.3s ease;
-    }
-
-    .badge-tiktok-live {
+    .platform-badge {
       display: inline-flex;
       align-items: center;
       gap: 6px;
-      background: rgba(0, 0, 0, 0.4);
-      border: 1px solid #fe2c55;
-      color: #fff;
-      padding: 4px 12px;
-      border-radius: 20px;
-      font-size: 11px;
-      font-weight: 700;
+      background: rgba(255, 255, 255, 0.06);
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      color: #e2e8f0;
+      border: 1px solid rgba(255, 255, 255, 0.1);
     }
 
     @media (max-width: 900px) {
@@ -201,7 +169,6 @@
       .sidebar-menu li a.active { border-bottom: 3px solid #ec4899; }
       .dash-content { margin-left: 0; padding: 20px 4%; }
       .dashboard-hero-card { grid-template-columns: 1fr !important; }
-      .uploader-card-grid { grid-template-columns: 1fr; }
       .btn-toggle-sidebar { display: none; }
     }
   </style>
@@ -215,7 +182,6 @@
       <div class="sidebar-menu-title">Main Menu</div>
       <ul class="sidebar-menu">
         <li><a href="/dashboard#section-overview" class="sidebar-link active">🏠 Ringkasan</a></li>
-        <li><a href="/dashboard#section-tiktok-upload" class="sidebar-link" style="color: #f472b6;">🎬 Unggah Video TikTok</a></li>
         <li><a href="/webhook" class="sidebar-link">🔗 Webhook Endpoint</a></li>
         <li><a href="/dashboard#section-social" class="sidebar-link">📱 Akun Sosial</a></li>
         <li><a href="/dashboard#section-logs" class="sidebar-link">📊 Log Aktivitas</a></li>
@@ -239,7 +205,7 @@
       <div id="trialExpiredAlertBanner" class="expired-banner-box" style="display: none;">
         <div class="expired-banner-text">
           <h3>🔒 Masa Free Trial 1 Minggu Anda Telah Habis!</h3>
-          <p>Fitur API Key, posting otomatis n8n (1 video/hari), dan penautan sosial media saat ini <strong>terkunci/hangus</strong>. Silakan upgrade ke akun berbayar untuk membuka kembali seluruh fitur tanpa batas.</p>
+          <p>Fitur API Key, posting otomatis n8n, dan penautan sosial media saat ini <strong>terkunci</strong>. Silakan upgrade ke akun berbayar untuk membuka kembali seluruh fitur tanpa batas.</p>
         </div>
         <button class="btn-pink" onclick="openUpgradePayment()" style="padding: 12px 24px; font-size: 13px; font-weight: 800; white-space: nowrap;">
           ⭐ Upgrade Akun Berbayar &rarr;
@@ -260,10 +226,10 @@
             </p>
 
             <div id="trialPerksNotice" style="background: rgba(255,255,255,0.03); border-left: 3px solid #60a5fa; padding: 12px; border-radius: 0 8px 8px 0; font-size: 12px; color: #9ca3af; margin-top: 10px;">
-              ⚡ <strong>Fitur Free Trial Anda:</strong><br>
-              &bull; Posting maksimal 1 video per hari via UI Web atau n8n.<br>
-              &bull; Maksimal menautkan 2 akun sosial media.<br>
-              &bull; Berlaku selama 7 hari sejak pendaftaran.
+              ⚡ <strong>Fitur Akun Anda:</strong><br>
+              &bull; Publikasi otomatis multi-platform via Webhook n8n & Make.<br>
+              &bull; Pemantauan log pengiriman real-time di tabel aktivitas.<br>
+              &bull; Dukungan integrasi TikTok, Meta, LinkedIn, dan YouTube.
             </div>
           </div>
           
@@ -271,7 +237,7 @@
             <h3 style="font-size: 15px; color: #9ca3af; margin-bottom: 12px;">🔑 API Key Anda</h3>
             
             <div class="key-display-box" style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 12px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
-              <span id="dashApiKeyDisplay" style="font-family: monospace; font-size: 13px; color: #34d399; word-break: break-all;">Belum Ada API Key</span>
+              <span id="dashApiKeyDisplay" style="font-family: monospace; font-size: 13px; color: #34d399; word-break: break-all;">Memuat API Key...</span>
               <button id="btnToggleKeyMask" onclick="toggleApiKeyMask()" style="background: transparent; border: none; color: #60a5fa; cursor: pointer; font-size: 12px; font-weight: 600; display: none;">👁️ Show</button>
             </div>
 
@@ -283,7 +249,7 @@
             
             <h3 style="font-size: 15px; color: #9ca3af; margin-top: 20px; margin-bottom: 12px;">🔗 Webhook Endpoint (n8n Target)</h3>
             <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 12px; margin-bottom: 12px;">
-              <span id="dashWebhookUrlDisplay" style="font-family: monospace; font-size: 11px; color: #f472b6; word-break: break-all; white-space: normal;">Memuat Webhook URL...</span>
+              <span id="dashWebhookUrlDisplay" style="font-family: monospace; font-size: 11px; color: #f472b6; word-break: break-all; white-space: normal;">https://trendoraautomation.my.id/api/n8n-webhook</span>
             </div>
             <button class="btn-secondary" style="font-size: 12px; padding: 8px 16px; width: 100%;" onclick="copyWebhookUrl()">📋 Copy URL</button>
           </div>
@@ -293,7 +259,7 @@
       <section id="section-social" style="scroll-margin-top: 100px;">
         <div class="dashboard-hero-card" style="margin-bottom: 30px; display: block;">
           <h3 style="margin-bottom: 8px; font-size: 20px; color: #fff;">🔗 Integrasi Sosial Media</h3>
-          <p style="color: #9ca3af; font-size: 13px; margin-bottom: 24px;">Hubungkan akun sosial media Anda (Maksimal 2 platform untuk Free Trial). Akun terhubung akan otomatis menerima postingan dari Web Dashboard dan n8n.</p>
+          <p style="color: #9ca3af; font-size: 13px; margin-bottom: 24px;">Hubungkan akun sosial media Anda. Akun yang terhubung akan otomatis menerima postingan dari Webhook n8n Anda.</p>
           
           <div id="socialConnectionsList" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px;">
             <p style="color: #6b7280; font-size: 13px;">Memuat daftar platform...</p>
@@ -303,14 +269,21 @@
 
       <section id="section-logs" style="scroll-margin-top: 100px;">
         <div class="dashboard-hero-card" style="display: block; overflow-x: auto;">
-          <h3 style="margin-bottom: 16px; font-size: 20px; color: #fff;">📊 Riwayat Aktivitas Upload Video</h3>
-          <p style="color: #9ca3af; font-size: 13px; margin-bottom: 20px;">Pantau log pengiriman video dari Web Dashboard dan n8n ke sosial media secara real-time.</p>
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 16px;">
+            <div>
+              <h3 style="margin-bottom: 4px; font-size: 20px; color: #fff;">📊 Riwayat Aktivitas Upload Video</h3>
+              <p style="color: #9ca3af; font-size: 13px;">Pantau log pengiriman video dari n8n dan automasi ke sosial media secara real-time.</p>
+            </div>
+            <button onclick="fetchAndRenderDashboardLogs(true)" style="padding: 8px 16px; background: rgba(236,72,153,0.15); border: 1px solid rgba(236,72,153,0.4); color: #f472b6; border-radius: 8px; cursor: pointer; font-size: 12px; font-weight: 700; display: flex; align-items: center; gap: 6px;">
+              🔄 Muat Ulang Log
+            </button>
+          </div>
           
           <div style="display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;">
-            <input type="text" id="filter-waktu" placeholder="Cari Waktu (ex: 06/08/2026)" style="padding: 10px 14px; border-radius: 8px; background: rgba(255,255,255,0.05); color: #e5e7eb; border: 1px solid rgba(255,255,255,0.15); outline: none; font-size: 12px; flex: 1; min-width: 150px;">
-            <input type="text" id="filter-logid" placeholder="Cari Log ID" style="padding: 10px 14px; border-radius: 8px; background: rgba(255,255,255,0.05); color: #e5e7eb; border: 1px solid rgba(255,255,255,0.15); outline: none; font-size: 12px; flex: 1; min-width: 150px;">
+            <input type="text" id="filter-waktu" placeholder="Cari Waktu (ex: 30/08/2026)" style="padding: 10px 14px; border-radius: 8px; background: rgba(255,255,255,0.05); color: #e5e7eb; border: 1px solid rgba(255,255,255,0.15); outline: none; font-size: 12px; flex: 1; min-width: 150px;">
+            <input type="text" id="filter-logid" placeholder="Cari Log ID (ex: LOG-123)" style="padding: 10px 14px; border-radius: 8px; background: rgba(255,255,255,0.05); color: #e5e7eb; border: 1px solid rgba(255,255,255,0.15); outline: none; font-size: 12px; flex: 1; min-width: 150px;">
             
-            <select id="filter-platform" style="padding: 10px 14px; border-radius: 8px; background: rgba(255,255,255,0.05); color: #e5e7eb; border: 1px solid rgba(255,255,255,0.15); outline: none; font-size: 12px; flex: 1; min-width: 120px; cursor: pointer;">
+            <select id="filter-platform" style="padding: 10px 14px; border-radius: 8px; background: rgba(255,255,255,0.05); color: #e5e7eb; border: 1px solid rgba(255,255,255,0.15); outline: none; font-size: 12px; flex: 1; min-width: 130px; cursor: pointer;">
               <option value="" style="background: #0f1524;">Semua Platform</option>
               <option value="tiktok" style="background: #0f1524;">TikTok</option>
               <option value="youtube" style="background: #0f1524;">YouTube</option>
@@ -321,10 +294,10 @@
               <option value="threads" style="background: #0f1524;">Threads</option>
             </select>
             
-            <select id="filter-status" style="padding: 10px 14px; border-radius: 8px; background: rgba(255,255,255,0.05); color: #e5e7eb; border: 1px solid rgba(255,255,255,0.15); outline: none; font-size: 12px; flex: 1; min-width: 120px; cursor: pointer;">
+            <select id="filter-status" style="padding: 10px 14px; border-radius: 8px; background: rgba(255,255,255,0.05); color: #e5e7eb; border: 1px solid rgba(255,255,255,0.15); outline: none; font-size: 12px; flex: 1; min-width: 130px; cursor: pointer;">
               <option value="" style="background: #0f1524;">Semua Status</option>
-              <option value="success" style="background: #0f1524;">SUCCESS</option>
-              <option value="failed" style="background: #0f1524;">FAILED</option>
+              <option value="success" style="background: #0f1524;">SUCCESS / PUBLISHED</option>
+              <option value="failed" style="background: #0f1524;">FAILED (Gagal)</option>
             </select>
             
             <button onclick="applyLogFilters()" style="padding: 10px 20px; background: #6366f1; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 700; font-size: 12px; transition: background 0.2s;" onmouseover="this.style.background='#4f46e5'" onmouseout="this.style.background='#6366f1'">Filter</button>
@@ -332,7 +305,7 @@
           </div>
 
           <div style="overflow-x: auto; background: rgba(0, 0, 0, 0.2); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 12px; padding: 10px; width: 100%;">
-            <table style="width: 100%; min-width: 600px; border-collapse: collapse; text-align: left;">
+            <table style="width: 100%; min-width: 700px; border-collapse: collapse; text-align: left;">
               <thead>
                 <tr style="border-bottom: 1px solid rgba(255,255,255,0.1); color: #9ca3af;">
                   <th style="padding: 12px; font-size: 12px; font-weight: 600;">Waktu</th>
@@ -344,7 +317,7 @@
               </thead>
               <tbody id="dashLogsTableBody">
                 <tr>
-                  <td colspan="5" style="padding: 20px; text-align: center; color: #6b7280;">⏳ Memuat log dari server...</td>
+                  <td colspan="5" style="padding: 24px; text-align: center; color: #6b7280;">⏳ Memuat log dari server...</td>
                 </tr>
               </tbody>
             </table>
@@ -365,8 +338,7 @@
   {% include 'apiKeyModal.html' %}
 
   <script>
-    let selectedVideoFile = null;
-    let selectedVideoUrl = "";
+    window.cachedDashboardLogs = [];
 
     function toggleSidebar() {
       document.body.classList.toggle('sidebar-hidden');
@@ -380,346 +352,167 @@
         btnText.innerText = 'Tutup Menu';
       }
     }
-    
-    document.addEventListener('DOMContentLoaded', () => {
-      const sidebarLinks = document.querySelectorAll('.sidebar-link');
-      sidebarLinks.forEach(link => {
-        link.addEventListener('click', function(e) {
-          sidebarLinks.forEach(l => l.classList.remove('active'));
-          this.classList.add('active');
-        });
-      });
 
-      // Drag & drop handlers
-      const dropzone = document.getElementById('videoDropzone');
-      if (dropzone) {
-        ['dragenter', 'dragover'].forEach(eventName => {
-          dropzone.addEventListener(eventName, (e) => {
-            e.preventDefault();
-            dropzone.classList.add('dragover');
-          }, false);
-        });
-
-        ['dragleave', 'drop'].forEach(eventName => {
-          dropzone.addEventListener(eventName, (e) => {
-            e.preventDefault();
-            dropzone.classList.remove('dragover');
-          }, false);
-        });
-
-        dropzone.addEventListener('drop', (e) => {
-          const dt = e.dataTransfer;
-          const files = dt.files;
-          if (files && files.length > 0) {
-            handleDirectVideoFile(files[0]);
-          }
-        });
-      }
-    });
-
-    function handleDirectVideoSelect(event) {
-      const file = event.target.files[0];
-      if (file) {
-        handleDirectVideoFile(file);
-      }
-    }
-
-    function handleDirectVideoFile(file) {
-      if (!file.type.startsWith('video/')) {
-        showDirectUploadAlert('Harap pilih berkas dengan format video (.mp4, .mov, dll)', 'error');
-        return;
-      }
-      selectedVideoFile = file;
-      document.getElementById('dropzoneLabel').innerText = `✅ Berkas Dipilih: ${file.name} (${(file.size / (1024*1024)).toFixed(1)} MB)`;
-      
-      const videoPlayer = document.getElementById('directVideoPlayer');
-      const placeholder = document.getElementById('videoPlaceholderBox');
-      const objectUrl = URL.createObjectURL(file);
-      videoPlayer.src = objectUrl;
-      videoPlayer.style.display = 'block';
-      placeholder.style.display = 'none';
-      videoPlayer.load();
-    }
-
-    function handleVideoUrlInput(url) {
-      selectedVideoUrl = url.trim();
-      if (selectedVideoUrl) {
-        const videoPlayer = document.getElementById('directVideoPlayer');
-        const placeholder = document.getElementById('videoPlaceholderBox');
-        videoPlayer.src = selectedVideoUrl;
-        videoPlayer.style.display = 'block';
-        placeholder.style.display = 'none';
-      }
-    }
-
-    function showDirectUploadAlert(msg, type) {
-      const alertBox = document.getElementById('directUploadAlertMsg');
-      alertBox.style.display = 'block';
-      alertBox.innerText = msg;
-      if (type === 'error') {
-        alertBox.style.color = '#ef4444';
-        alertBox.style.background = 'rgba(239, 68, 68, 0.1)';
-        alertBox.style.padding = '10px 14px';
-        alertBox.style.borderRadius = '8px';
-        alertBox.style.border = '1px solid rgba(239, 68, 68, 0.3)';
-      } else {
-        alertBox.style.color = '#34d399';
-        alertBox.style.background = 'rgba(52, 211, 153, 0.1)';
-        alertBox.style.padding = '10px 14px';
-        alertBox.style.borderRadius = '8px';
-        alertBox.style.border = '1px solid rgba(52, 211, 153, 0.3)';
-      }
-    }
-
-    async function executePublishTikTok() {
-      const caption = document.getElementById('directVideoCaption').value.trim();
-      const hashtags = document.getElementById('directVideoHashtags').value.trim();
-      const privacy = document.getElementById('directVideoPrivacy').value;
-      const btn = document.getElementById('btnPublishTikTok');
-      const progressWrapper = document.getElementById('uploadProgressWrapper');
-      const progressBar = document.getElementById('uploadProgressBar');
-      const progressStatus = document.getElementById('uploadProgressStatusText');
-      const progressPercent = document.getElementById('uploadProgressPercent');
-
-      if (!selectedVideoFile && !selectedVideoUrl) {
-        showDirectUploadAlert('Silakan pilih berkas video atau masukkan URL video terlebih dahulu!', 'error');
-        return;
-      }
-
-      if (!caption) {
-        showDirectUploadAlert('Silakan isi judul/caption postingan terlebih dahulu!', 'error');
-        return;
-      }
-
-      // Ambil API Key dari berbagai sumber (DOM, Global State, Storage)
+    // Mendapatkan raw API Key & Email pengguna yang valid
+    function getValidUserCredentials() {
+      let email = "";
       let apiKey = "";
 
-      const displayElem = document.getElementById('dashApiKeyDisplay');
-      if (displayElem) {
-        const textKey = (displayElem.innerText || displayElem.textContent || '').trim();
-        if (textKey.startsWith('TRD-') && !textKey.includes('•') && !textKey.includes('Belum Ada')) {
-          apiKey = textKey;
-        } else if (displayElem.dataset && displayElem.dataset.rawKey) {
-          apiKey = displayElem.dataset.rawKey;
+      try {
+        const storedUser = localStorage.getItem('trendora_user') || sessionStorage.getItem('trendora_user');
+        if (storedUser) {
+          const parsed = JSON.parse(storedUser);
+          email = (parsed.email || "").toLowerCase().trim();
+          apiKey = (parsed.apiKey || parsed.api_key || parsed.key || "").trim();
         }
+      } catch (e) {}
+
+      if (!apiKey && window.currentUser) {
+        apiKey = (window.currentUser.apiKey || window.currentUser.api_key || "").trim();
+        if (!email) email = (window.currentUser.email || "").toLowerCase().trim();
       }
 
-      if (!apiKey && typeof window.currentApiKey === 'string' && window.currentApiKey.startsWith('TRD-')) {
-        apiKey = window.currentApiKey;
-      }
-      if (!apiKey && window.currentUser && (window.currentUser.apiKey || window.currentUser.api_key)) {
-        apiKey = window.currentUser.apiKey || window.currentUser.api_key;
+      if (!apiKey && typeof window.currentApiKey === 'string') {
+        apiKey = window.currentApiKey.trim();
       }
 
-      if (!apiKey) {
-        try {
-          const storedUser = localStorage.getItem('trendora_user') || sessionStorage.getItem('trendora_user');
-          if (storedUser) {
-            const parsed = JSON.parse(storedUser);
-            apiKey = parsed.apiKey || parsed.api_key || parsed.key || "";
-          }
-        } catch (e) {}
+      // Bersihkan jika key dalam kondisi masked
+      if (apiKey.includes('•') || apiKey === "-" || apiKey.includes('Belum Ada')) {
+        apiKey = "";
       }
 
-      if (!apiKey) {
-        apiKey = localStorage.getItem('trendora_api_key') || sessionStorage.getItem('trendora_api_key') || localStorage.getItem('api_key') || "";
+      return { email, apiKey };
+    }
+
+    // Fungsi utama mengambil log dari backend
+    async function fetchAndRenderDashboardLogs(isManualRefresh = false) {
+      const tbody = document.getElementById('dashLogsTableBody');
+      if (!tbody) return;
+
+      if (isManualRefresh) {
+        tbody.innerHTML = `<tr><td colspan="5" style="padding: 24px; text-align: center; color: #60a5fa;">🔄 Menyegarkan data log terbaru...</td></tr>`;
       }
 
-      apiKey = (apiKey || "").replace(/[^\x00-\x7F]/g, "").trim();
+      const { email, apiKey } = getValidUserCredentials();
 
-      if (!apiKey || apiKey === "-" || apiKey.includes("•")) {
-        try {
-          let userEmail = "";
-          const storedUser = localStorage.getItem('trendora_user') || sessionStorage.getItem('trendora_user');
-          if (storedUser) {
-            userEmail = JSON.parse(storedUser).email || "";
-          }
-          if (!userEmail) {
-            const emailSpan = document.getElementById('dashUserEmail');
-            if (emailSpan && emailSpan.innerText && emailSpan.innerText.includes('@')) {
-              userEmail = emailSpan.innerText.trim();
-            }
-          }
-          if (userEmail) {
-            const meRes = await fetch('/api/me', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ email: userEmail })
-            });
-            const meData = await meRes.json();
-            if (meData.success && meData.user && meData.user.apiKey && meData.user.apiKey.startsWith('TRD-')) {
-              apiKey = meData.user.apiKey.replace(/[^\x00-\x7F]/g, "").trim();
-            }
-          }
-        } catch (syncErr) {
-          console.error("Gagal sinkronisasi API Key:", syncErr);
+      try {
+        const res = await fetch('/api/get-logs', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-API-Key': apiKey || '',
+            'X-User-Email': email || ''
+          },
+          body: JSON.stringify({
+            api_key: apiKey || '',
+            email: email || ''
+          })
+        });
+
+        const data = await res.json();
+        if (data.success && Array.isArray(data.logs)) {
+          window.cachedDashboardLogs = data.logs;
+          renderLogsToTable(data.logs);
+        } else {
+          tbody.innerHTML = `<tr><td colspan="5" style="padding: 24px; text-align: center; color: #f87171;">⚠️ ${data.message || 'Gagal memuat log aktivitas.'}</td></tr>`;
         }
+      } catch (err) {
+        console.error("Gagal mengambil log:", err);
+        tbody.innerHTML = `<tr><td colspan="5" style="padding: 24px; text-align: center; color: #f87171;">⚠️ Terjadi kendala saat menghubungkan ke server log.</td></tr>`;
       }
+    }
 
-      if (!apiKey || apiKey === "-" || apiKey.includes("•")) {
-        showDirectUploadAlert('API Key tidak valid atau belum di-generate. Silakan klik tombol "🔑 Generate API Key" di Ringkasan Dashboard terlebih dahulu!', 'error');
+    // Render baris log ke dalam tabel DOM
+    function renderLogsToTable(logs) {
+      const tbody = document.getElementById('dashLogsTableBody');
+      if (!tbody) return;
+
+      if (!logs || logs.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" style="padding: 24px; text-align: center; color: #9ca3af;">📭 Belum ada riwayat aktivitas log. Postingan dari n8n akan otomatis muncul di sini.</td></tr>`;
         return;
       }
 
-      btn.disabled = true;
-      btn.style.opacity = '0.6';
-      btn.innerHTML = `<span>⏳</span> <span>Mengunggah ke TikTok...</span>`;
-      progressWrapper.style.display = 'block';
-      progressBar.style.width = '10%';
-      progressPercent.innerText = '10%';
-      progressStatus.innerText = 'Menginisialisasi TikTok Gateway...';
-
-      try {
-        const fullCaption = hashtags ? `${caption} ${hashtags}` : caption;
-
-        // KASUS 1: PENGGUNA MEMILIH BERKAS VIDEO LOKAL (DIRECT PUT UPLOAD KE TIKTOK)
-        if (selectedVideoFile) {
-          progressStatus.innerText = 'Meminta izin upload TikTok...';
-          
-          const initRes = await fetch('/api/tiktok-init-upload', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'X-API-Key': apiKey
-            },
-            body: JSON.stringify({
-              caption: fullCaption,
-              privacy_level: privacy,
-              file_size: selectedVideoFile.size
-            })
-          });
-
-          let initData;
-          const initText = await initRes.text();
-          try {
-            initData = JSON.parse(initText);
-          } catch (pe) {
-            throw new Error(initText || "Gagal menghubungi server inisialisasi");
-          }
-
-          if (!initData.success || !initData.upload_url) {
-            throw new Error(initData.message || 'Gagal mendapatkan izin unggah dari TikTok.');
-          }
-
-          const uploadUrl = initData.upload_url;
-          progressBar.style.width = '25%';
-          progressPercent.innerText = '25%';
-          progressStatus.innerText = 'Mengunggah video ke TikTok... (0%)';
-
-          // Direct PUT upload ke upload_url resmi TikTok
-          await new Promise((resolve, reject) => {
-            const xhr = new XMLHttpRequest();
-            xhr.open('PUT', uploadUrl, true);
-            xhr.setRequestHeader('Content-Type', 'video/mp4');
-            xhr.setRequestHeader('Content-Range', `bytes 0-${selectedVideoFile.size - 1}/${selectedVideoFile.size}`);
-
-            xhr.upload.onprogress = (e) => {
-              if (e.lengthComputable) {
-                const percent = Math.round((e.loaded / e.total) * 70) + 25; // Rentang 25% -> 95%
-                progressBar.style.width = `${percent}%`;
-                progressPercent.innerText = `${percent}%`;
-                progressStatus.innerText = `Mengunggah video ke TikTok... (${Math.round((e.loaded / e.total) * 100)}%)`;
-              }
-            };
-
-            xhr.onload = () => {
-              if (xhr.status >= 200 && xhr.status < 300) {
-                resolve(xhr.response);
-              } else {
-                reject(new Error(`TikTok upload gagal dengan HTTP ${xhr.status}: ${xhr.statusText}`));
-              }
-            };
-
-            xhr.onerror = () => reject(new Error('Koneksi terputus saat mengunggah video ke TikTok.'));
-            xhr.send(selectedVideoFile);
-          });
-
-          // Catat log sukses ke server
-          progressBar.style.width = '100%';
-          progressPercent.innerText = '100%';
-          progressStatus.innerText = '✅ Video Berhasil Dipublikasikan!';
-
-          await fetch('/api/n8n-webhook', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'X-API-Key': apiKey
-            },
-            body: JSON.stringify({
-              platform: "tiktok",
-              status: "PUBLISHED (SUCCESS)",
-              details: {
-                caption: fullCaption,
-                file_name: selectedVideoFile.name,
-                privacy_level: initData.privacy_level || privacy,
-                publish_id: initData.publish_id
-              }
-            })
-          });
-
-          showDirectUploadAlert(`🎉 Sukses! Video "${selectedVideoFile.name}" telah berhasil dipublikasikan ke TikTok. Silakan cek profil TikTok Anda.`, 'success');
-          
-          if (typeof loadDashboardLogs === 'function') {
-            setTimeout(loadDashboardLogs, 1000);
-          }
-
-        } else {
-          // KASUS 2: PENGGUNA MEMASUKKAN URL MEDIA ONLINE
-          progressBar.style.width = '50%';
-          progressPercent.innerText = '50%';
-          progressStatus.innerText = 'Mengirim instruksi download ke TikTok...';
-
-          const res = await fetch('/api/n8n-webhook', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'X-API-Key': apiKey
-            },
-            body: JSON.stringify({
-              platform: "tiktok",
-              status: "UPLOAD_TRIGGERED",
-              details: {
-                caption: fullCaption,
-                media_url: selectedVideoUrl,
-                privacy_level: privacy
-              }
-            })
-          });
-
-          let data;
-          const resText = await res.text();
-          try {
-            data = JSON.parse(resText);
-          } catch (pe) {
-            throw new Error(resText || "Gagal memproses respon server");
-          }
-
-          progressBar.style.width = '100%';
-          progressPercent.innerText = '100%';
-
-          if (data.success || data.status === "PUBLISHED (SUCCESS)") {
-            progressStatus.innerText = '✅ Video Berhasil Dipublikasikan ke TikTok!';
-            showDirectUploadAlert(`🎉 Sukses! Video online berhasil dipublikasikan ke TikTok. Log ID: ${data.log_id || 'LOG-TIKTOK-OK'}.`, 'success');
-            if (typeof loadDashboardLogs === 'function') {
-              setTimeout(loadDashboardLogs, 1000);
-            }
-          } else {
-            progressStatus.innerText = '⚠️ Pengunggahan Memerlukan Perhatian';
-            showDirectUploadAlert(data.message || (data.details && data.details.tiktok_error) || 'Gagal mempublikasikan ke TikTok.', 'error');
-          }
+      tbody.innerHTML = logs.map(log => {
+        const statusUpper = (log.Status || "").toUpperCase();
+        let statusBadgeClass = "pending";
+        if (statusUpper.includes("SUCCESS") || statusUpper.includes("PUBLISHED")) {
+          statusBadgeClass = "success";
+        } else if (statusUpper.includes("FAIL") || statusUpper.includes("ERR")) {
+          statusBadgeClass = "failed";
         }
 
-      } catch (err) {
-        progressBar.style.width = '100%';
-        progressPercent.innerText = '100%';
-        progressStatus.innerText = '❌ Gagal Mengunggah Video';
-        showDirectUploadAlert(`Kesalahan pengunggahan: ${err.message}`, 'error');
-      } finally {
-        btn.disabled = false;
-        btn.style.opacity = '1';
-        btn.innerHTML = `<span>🚀</span> <span>Publikasikan ke TikTok Sekarang</span>`;
-      }
+        const platform = (log.Platform || "webhook").toLowerCase();
+        let platformIcon = "🔗";
+        if (platform.includes("tiktok")) platformIcon = "🎵 TikTok";
+        else if (platform.includes("youtube")) platformIcon = "▶️ YouTube";
+        else if (platform.includes("instagram")) platformIcon = "📷 Instagram";
+        else if (platform.includes("facebook")) platformIcon = "📘 Facebook";
+        else if (platform.includes("linkedin")) platformIcon = "💼 LinkedIn";
+        else if (platform.includes("twitter") || platform.includes("x")) platformIcon = "🐦 Twitter/X";
+        else if (platform.includes("threads")) platformIcon = "🧵 Threads";
+        else platformIcon = `🌐 ${log.Platform || 'General'}`;
+
+        let detailsFormatted = log.Details || "-";
+        if (typeof detailsFormatted === 'object') {
+          detailsFormatted = JSON.stringify(detailsFormatted);
+        }
+
+        return `
+          <tr style="border-bottom: 1px solid rgba(255,255,255,0.05); transition: background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.02)'" onmouseout="this.style.background='transparent'">
+            <td style="padding: 14px 12px; font-size: 12px; color: #cbd5e1; white-space: nowrap;">${log.Timestamp || '-'}</td>
+            <td style="padding: 14px 12px; font-size: 12px; font-family: monospace; color: #60a5fa; white-space: nowrap;">${log.LogID || '-'}</td>
+            <td style="padding: 14px 12px;"><span class="platform-badge">${platformIcon}</span></td>
+            <td style="padding: 14px 12px;"><span class="status-badge ${statusBadgeClass}">${log.Status || '-'}</span></td>
+            <td style="padding: 14px 12px; font-size: 12px; color: #9ca3af; max-width: 320px; word-break: break-word; font-family: monospace;">${detailsFormatted}</td>
+          </tr>
+        `;
+      }).join('');
     }
+
+    // Filter log berdasarkan input
+    function applyLogFilters() {
+      const waktuVal = (document.getElementById('filter-waktu').value || '').trim().toLowerCase();
+      const logIdVal = (document.getElementById('filter-logid').value || '').trim().toLowerCase();
+      const platformVal = (document.getElementById('filter-platform').value || '').trim().toLowerCase();
+      const statusVal = (document.getElementById('filter-status').value || '').trim().toLowerCase();
+
+      let filtered = window.cachedDashboardLogs.filter(log => {
+        const timeMatch = !waktuVal || (log.Timestamp || '').toLowerCase().includes(waktuVal);
+        const logIdMatch = !logIdVal || (log.LogID || '').toLowerCase().includes(logIdVal);
+        const platformMatch = !platformVal || (log.Platform || '').toLowerCase().includes(platformVal);
+        
+        let statusMatch = true;
+        if (statusVal === 'success') {
+          const s = (log.Status || '').toUpperCase();
+          statusMatch = s.includes('SUCCESS') || s.includes('PUBLISHED');
+        } else if (statusVal === 'failed') {
+          const s = (log.Status || '').toUpperCase();
+          statusMatch = s.includes('FAIL') || s.includes('ERR');
+        }
+
+        return timeMatch && logIdMatch && platformMatch && statusMatch;
+      });
+
+      renderLogsToTable(filtered);
+    }
+
+    function resetLogFilters() {
+      document.getElementById('filter-waktu').value = '';
+      document.getElementById('filter-logid').value = '';
+      document.getElementById('filter-platform').value = '';
+      document.getElementById('filter-status').value = '';
+      renderLogsToTable(window.cachedDashboardLogs);
+    }
+
+    // Auto-load saat halaman siap
+    document.addEventListener('DOMContentLoaded', () => {
+      fetchAndRenderDashboardLogs();
+      
+      // Auto refresh log setiap 30 detik secara berkala
+      setInterval(() => {
+        fetchAndRenderDashboardLogs(false);
+      }, 30000);
+    });
   </script>
 
   <script src="{{ url_for('static', filename='js/ui.js') }}"></script>
