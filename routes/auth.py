@@ -10,12 +10,90 @@ if PARENT_DIR not in sys.path:
 from flask import Blueprint, request, jsonify, session
 import urllib.parse
 import uuid
+import smtplib
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 
 import config
 from utils import database as db
 from utils import security as sec
 
 auth_bp = Blueprint('auth', __name__)
+
+def send_2fa_reset_email(to_email, secret, qr_code_url, user_name="User"):
+    """Mengirimkan email instruksi reset 2FA berisi QR Code dan Setup Key via SMTP."""
+    smtp_user = getattr(config, 'SMTP_EMAIL', '')
+    smtp_pass = getattr(config, 'SMTP_PASSWORD', '')
+    
+    if not smtp_user or not smtp_pass:
+        print("[SMTP Warning]: SMTP_EMAIL atau SMTP_PASSWORD belum dikonfigurasi di environment!")
+        return False, "Kredensial SMTP server belum diisi di konfigurasi environment."
+
+    try:
+        msg = MIMEMultipart('alternative')
+        msg['Subject'] = "🔐 Reset Google Authenticator (2FA) - TRENDORA"
+        msg['From'] = f"TRENDORA Security <{smtp_user}>"
+        msg['To'] = to_email
+
+        formatted_secret = " ".join([secret[i:i+4] for i in range(0, len(secret), 4)])
+
+        html_content = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="utf-8">
+        </head>
+        <body style="background-color: #0d0a1a; margin: 0; padding: 24px; font-family: 'Inter', Arial, sans-serif; color: #ffffff;">
+          <div style="max-width: 520px; margin: 0 auto; background-color: #0f1524; border: 1px solid rgba(236,72,153,0.4); border-radius: 16px; padding: 32px 24px; color: #ffffff; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+            <div style="margin-bottom: 20px;">
+              <span style="background-color: rgba(236, 72, 153, 0.2); color: #ec4899; padding: 6px 14px; border-radius: 20px; font-size: 11px; font-weight: bold; letter-spacing: 1px; display: inline-block;">⚡ TRENDORA SECURITY</span>
+              <h2 style="color: #ffffff; font-size: 22px; margin: 16px 0 6px 0; font-weight: 800;">Reset Google Authenticator (2FA)</h2>
+              <p style="color: #9ca3af; font-size: 13px; margin: 0; line-height: 1.5;">Halo <strong>{user_name}</strong>, kami telah membuatkan kunci 2FA baru untuk akun Anda ({to_email}).</p>
+            </div>
+
+            <div style="background-color: #ffffff; padding: 14px; border-radius: 12px; display: inline-block; margin: 16px 0; border: 2px solid #ec4899;">
+              <img src="{qr_code_url}" alt="Google Authenticator QR Code" width="180" height="180" style="display: block; border-radius: 6px;" />
+            </div>
+
+            <p style="color: #d1d5db; font-size: 13px; line-height: 1.6; margin: 12px 0 16px 0;">
+              1. Buka aplikasi <strong>Google Authenticator</strong> di ponsel Anda.<br>
+              2. Tekan tombol <strong>(+)</strong> lalu pilih <strong>Scan a QR code</strong> ke gambar di atas.
+            </p>
+
+            <div style="margin-top: 16px; text-align: left; background-color: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; padding: 14px;">
+              <div style="font-size: 11px; color: #9ca3af; margin-bottom: 4px;">Atau masukkan <strong>Setup Key</strong> manual jika tidak bisa scan QR:</div>
+              <div style="font-family: monospace; font-size: 15px; color: #38bdf8; font-weight: bold; letter-spacing: 2px; word-break: break-all;">{formatted_secret}</div>
+            </div>
+
+            <p style="color: #f87171; font-size: 11px; margin-top: 24px; line-height: 1.5;">
+              ⚠️ Jangan bagikan email ini atau Setup Key di atas kepada siapa pun demi keamanan akun Anda.
+            </p>
+
+            <div style="margin-top: 24px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.08); font-size: 11px; color: #6b7280;">
+              &copy; 2026 TRENDORA AUTOMATION Inc. All rights reserved.
+            </div>
+          </div>
+        </body>
+        </html>
+        """
+
+        msg.attach(MIMEText(html_content, 'html'))
+
+        # Kirim melalui Gmail SMTP SSL (Port 465) dengan fallback TLS (Port 587)
+        try:
+            with smtplib.SMTP_SSL('smtp.gmail.com', 465, timeout=15) as server:
+                server.login(smtp_user, smtp_pass)
+                server.sendmail(smtp_user, to_email, msg.as_string())
+        except Exception:
+            with smtplib.SMTP('smtp.gmail.com', 587, timeout=15) as server:
+                server.starttls()
+                server.login(smtp_user, smtp_pass)
+                server.sendmail(smtp_user, to_email, msg.as_string())
+
+        return True, "Email berhasil dikirim."
+    except Exception as e:
+        print(f"[SMTP Send Error]: {e}")
+        return False, str(e)
 
 def generate_50char_api_key():
     """Generates a formatted API Key with prefix TRD- and exact total length of 50 characters."""
@@ -164,6 +242,57 @@ def verify_otp_route():
         return jsonify({"success": False, "message": "Kode OTP salah atau sudah kadaluarsa!"}), 200
     except Exception as e:
         print(f"[Error /api/verify-otp]: {e}")
+        return jsonify({"success": False, "message": f"Terjadi kesalahan server: {str(e)}"}), 200
+
+@auth_bp.route('/api/reset-2fa', methods=['POST', 'OPTIONS'])
+def reset_2fa():
+    """
+    Endpoint untuk mereset secret 2FA pengguna jika kehilangan akses Google Authenticator.
+    Menghasilkan Secret Key baru & QR Code baru, menyimpannya di Google Sheets,
+    dan MENGIRIMKANNYA LANGSUNG KE EMAIL PENGGUNA VIA SMTP.
+    """
+    if request.method == 'OPTIONS':
+        return jsonify({"success": True}), 200
+    try:
+        data = request.get_json(silent=True) or {}
+        email = data.get('email', '').strip().lower()
+        if not email:
+            return jsonify({"success": False, "message": "Email wajib diisi untuk mereset 2FA!"}), 200
+            
+        user_data = db.db_get_user(email)
+        if not user_data:
+            return jsonify({"success": False, "message": "Email tidak terdaftar di sistem!"}), 200
+
+        # Buat Secret Key baru dan ubah is_linked kembali ke False
+        new_secret = sec.generate_base32_secret()
+        name = user_data.get('name', 'User')
+        api_key = user_data.get('api_key', '')
+        status = user_data.get('status', '')
+        
+        # Simpan secret key baru ke Google Sheets
+        db.db_save_user(email, new_secret, False, name, api_key, status)
+        
+        # Buat URI dan QR Code URL untuk Google Authenticator
+        issuer = "TRENDORA"
+        totp_uri = f"otpauth://totp/{issuer}:{email}?secret={new_secret}&issuer={issuer}"
+        qr_code_url = f"https://api.qrserver.com/v1/create-qr-code/?size=200x200&data={urllib.parse.quote(totp_uri)}"
+
+        # Kirim QR Code & Setup Key ke email pengguna
+        email_sent, email_err = send_2fa_reset_email(email, new_secret, qr_code_url, user_name=name)
+
+        if email_sent:
+            return jsonify({
+                "success": True, 
+                "message": f"QR Code 2FA baru telah dikirim ke email {email}. Silakan buka inbox/spam email Anda, scan di Google Authenticator, lalu masukkan 6 digit OTP di bawah!"
+            }), 200
+        else:
+            return jsonify({
+                "success": False, 
+                "message": f"Kunci 2FA berhasil dibuat, namun email gagal dikirim: {email_err}. Pastikan SMTP_PASSWORD terisi di konfigurasi."
+            }), 200
+
+    except Exception as e:
+        print(f"[Error /api/reset-2fa]: {e}")
         return jsonify({"success": False, "message": f"Terjadi kesalahan server: {str(e)}"}), 200
 
 @auth_bp.route('/api/register-trial', methods=['POST', 'OPTIONS'])

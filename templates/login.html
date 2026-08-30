@@ -32,11 +32,6 @@
         </button>
       </form>
 
-      <div id="qrCodeContainer" style="display: none; text-align: center; margin-top: 16px; background: rgba(255,255,255,0.05); padding: 16px; border-radius: 12px; border: 1px solid rgba(236,72,153,0.3);">
-        <p style="font-size: 13px; color: #d1d5db; margin-bottom: 12px;">Scan QR Code ini menggunakan aplikasi <strong style="color:#fff;">Google Authenticator</strong>.</p>
-        <img id="qrCodeImage" src="" alt="Google Authenticator QR Code" style="width: 150px; height: 150px; border-radius: 8px; margin: 0 auto; display: block; border: 2px solid #fff;" />
-      </div>
-
       <form id="otpInputGroup" style="display: none; margin-top: 16px;" onsubmit="handleVerifyOTP(event)">
         <div class="form-group">
           <label for="loginOTP">Kode OTP (6 Digit)</label>
@@ -71,5 +66,57 @@
 
   <script src="{{ url_for('static', filename='js/ui.js') }}"></script>
   <script src="{{ url_for('static', filename='js/auth.js') }}"></script>
+
+  <script>
+    async function handleReset2FA() {
+      const emailInput = document.getElementById('loginEmail');
+      const email = (emailInput ? emailInput.value : '').trim().toLowerCase();
+      const alertBox = document.getElementById('loginAlertMsg');
+
+      if (!email) {
+        if (alertBox) {
+          alertBox.style.color = '#ef4444';
+          alertBox.innerText = '⚠️ Silakan masukkan alamat email Anda terlebih dahulu di kolom atas!';
+        }
+        return;
+      }
+
+      if (alertBox) {
+        alertBox.style.color = '#60a5fa';
+        alertBox.innerText = '⏳ Sedang mereset 2FA dan mengirimkan QR Code ke email Anda...';
+      }
+
+      try {
+        const res = await fetch('/api/reset-2fa', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: email })
+        });
+
+        const data = await res.json();
+        if (data.success) {
+          // Buka form input OTP agar user bisa langsung memasukkan kode setelah scan dari email
+          const otpGroup = document.getElementById('otpInputGroup');
+          if (otpGroup) otpGroup.style.display = 'block';
+
+          if (alertBox) {
+            alertBox.style.color = '#34d399';
+            alertBox.innerText = '✅ ' + (data.message || 'QR Code telah dikirim ke email Anda. Silakan cek inbox/spam!');
+          }
+        } else {
+          if (alertBox) {
+            alertBox.style.color = '#ef4444';
+            alertBox.innerText = '⚠️ ' + (data.message || 'Gagal mereset 2FA.');
+          }
+        }
+      } catch (err) {
+        console.error('Reset 2FA Error:', err);
+        if (alertBox) {
+          alertBox.style.color = '#ef4444';
+          alertBox.innerText = '⚠️ Terjadi kendala saat menghubungi server. Silakan coba lagi.';
+        }
+      }
+    }
+  </script>
 </body>
 </html>
