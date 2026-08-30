@@ -515,7 +515,7 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
   <script>
     window.cachedDashboardLogs = [];
     window.currentUserData = null;
-    window.isApiKeyMasked = false; // Default: Terbuka untuk Free Trial aktif & Paid
+    window.isApiKeyMasked = false; // Default: Terbuka untuk Free Trial aktif (< 7 hari) & Paid
 
     // FUNGSI GANTI TAB SESUAI SIDEBAR
     function switchDashboardTab(tabKey) {
@@ -560,11 +560,9 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
     }
 
     function redirectToPricingOrUpgrade() {
-      // Jika modal checkout pembayaran tersedia di halaman
       if (typeof window.openUpgradePayment === 'function') {
         window.openUpgradePayment();
       } else {
-        // Arahkan langsung ke bagian pricing di landing page
         window.location.href = '/#pricing';
       }
     }
@@ -608,7 +606,7 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
       const rawKey = window.currentUserData.apiKey || "-";
 
       if (isExpired && !isPaid) {
-        // 🔒 JIKA TRIAL EXPIRED: Kunci API Key & Ubah Tombol
+        // 🔒 JIKA TRIAL EXPIRED: Kunci API Key & Arahkan ke Upgrade
         displayElem.innerText = "TRD-••••••••••••••••••••••••••••••••••••• [TERKUNCI]";
         displayElem.style.color = "#f87171";
         if (toggleBtn) toggleBtn.style.display = 'none';
@@ -632,7 +630,7 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
           keyStatusPill.style.background = "rgba(239, 68, 68, 0.15)";
         }
       } else {
-        // 🟢 JIKA TRIAL AKTIF (< 7 HARI) ATAU BERBAYAR: Berikan akses buka & copy
+        // 🟢 JIKA TRIAL AKTIF (< 7 HARI) ATAU BERBAYAR: Akses Penuh
         if (toggleBtn) toggleBtn.style.display = 'inline-block';
         if (keyBoxWrapper) {
           keyBoxWrapper.classList.remove('key-box-locked');
@@ -640,7 +638,7 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
         }
 
         if (window.isApiKeyMasked) {
-          displayElem.innerText = rawKey.substring(0, 8) + "••••••••••••••••••••••••••••••";
+          displayElem.innerText = rawKey.length > 8 ? (rawKey.substring(0, 8) + "••••••••••••••••••••••••••••••") : rawKey;
           displayElem.style.color = "#9ca3af";
           if (toggleBtn) toggleBtn.innerText = "👁️ Tampilkan";
         } else {
@@ -710,7 +708,7 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
         return;
       }
 
-      // Gunakan textarea fallback untuk menyalin ke clipboard secara kompatibel
+      // Gunakan fallback textarea untuk menyalin ke clipboard
       const dummy = document.createElement("textarea");
       dummy.value = rawKey;
       dummy.style.position = "fixed";
@@ -1149,6 +1147,5 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
   <script src="{{ url_for('static', filename='js/ui.js') }}"></script>
   <script src="{{ url_for('static', filename='js/auth.js') }}"></script>
   <script src="{{ url_for('static', filename='js/payment.js') }}"></script>
-  <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
 </body>
 </html>

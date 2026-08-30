@@ -224,13 +224,16 @@ def verify_otp_route():
         is_valid = sec.verify_totp(secret, otp)
         if is_valid:
             name = user_data.get('name') or email.split('@')[0].capitalize()
-            api_key = user_data.get('api_key') or "-"
-            
-            if not user_data.get('is_linked'):
-                db.db_save_user(email, secret, True, name, api_key, user_data.get('status', ''))
-                
+            api_key = user_data.get('api_key', '').strip()
             trial_info = check_user_trial_status(user_data)
             
+            # Jika user belum memiliki API Key aktif dan trial masih aktif, buatkan otomatis
+            if (not api_key or api_key == '-' or '•' in api_key) and not trial_info["is_expired"]:
+                api_key = generate_50char_api_key()
+            
+            # Simpan status verifikasi akun
+            db.db_save_user(email, secret, True, name, api_key, user_data.get('status', ''))
+                
             # Mendeteksi platform yang sudah terhubung
             connected_platforms = []
             if user_data.get('tiktok_connected'): connected_platforms.append('TikTok')
@@ -270,10 +273,7 @@ def verify_otp_route():
 @auth_bp.route('/api/reset-2fa', methods=['POST', 'OPTIONS'])
 @auth_bp.route('/api/reset-2fa-qr', methods=['POST', 'OPTIONS'])
 def reset_2fa():
-    """
-    Endpoint untuk mereset secret 2FA pengguna jika kehilangan akses Google Authenticator.
-    Menghasilkan Secret Key baru, menyimpannya di Google Sheets, dan MENGIRIMKANNYA KE EMAIL PENGGUNA.
-    """
+    """Endpoint untuk mereset secret 2FA pengguna jika kehilangan akses Google Authenticator."""
     ensure_app_secret_key()
     if request.method == 'OPTIONS':
         return jsonify({"success": True}), 200
@@ -402,7 +402,7 @@ def generate_api_key_route():
                 "success": False, 
                 "isPaid": False, 
                 "isExpired": True,
-                "message": "Masa Free Trial 1 Minggu Anda sudah habis! Silakan upgrade akun ke berbayar untuk membuat API Key baru."
+                "message": "Masa Free Trial 7 Hari Anda sudah habis! Silakan upgrade akun ke berbayar untuk membuat API Key baru."
             }), 200
 
         new_api_key = generate_50char_api_key()
@@ -456,6 +456,19 @@ def get_me():
             }), 401
         
         trial_info = check_user_trial_status(user_data)
+        api_key = (user_data.get('api_key') or '').strip()
+
+        # JIKA TRIAL MASIH AKTIF TAPI API KEY BELUM TERBUAT (KOSONG ATAU "-"), GENERATE OTOMATIS
+        if (not api_key or api_key == '-' or '•' in api_key) and not trial_info["is_expired"]:
+            api_key = generate_50char_api_key()
+            db.db_save_user(
+                email,
+                user_data.get('secret', ''),
+                user_data.get('is_linked', False),
+                user_data.get('name', ''),
+                api_key,
+                user_data.get('status', '')
+            )
         
         connected_platforms = []
         if user_data.get('tiktok_connected'): connected_platforms.append('TikTok')
@@ -476,7 +489,7 @@ def get_me():
             "user": {
                 "name": user_data.get('name', ''),
                 "email": email,
-                "apiKey": user_data.get('api_key', '-'),
+                "apiKey": api_key,
                 "status": trial_info["status_text"],
                 "isPaid": trial_info["is_paid"],
                 "isTrial": trial_info["is_trial"],
