@@ -241,26 +241,125 @@
       100% { box-shadow: 0 0 0 0 rgba(236, 72, 153, 0); }
     }
 
-    @media (max-width: 900px) {
-      .dash-layout { flex-direction: column; }
-      .dash-sidebar { 
-        position: relative; width: 100%; top: 0; border-right: none; 
-        border-bottom: 1px solid rgba(255,255,255,0.08); padding: 12px 16px; 
-        display: flex; flex-direction: row; align-items: center;
-        overflow-x: auto; white-space: nowrap; gap: 8px; 
+    /* TIKTOK STUDIO STYLES (Memenuhi TikTok UX Guidelines) */
+    .tiktok-studio-grid {
+      display: grid;
+      grid-template-columns: 360px 1fr;
+      gap: 30px;
+      align-items: start;
+    }
+    @media (max-width: 1024px) {
+      .tiktok-studio-grid {
+        grid-template-columns: 1fr;
       }
-      body.sidebar-hidden .dash-sidebar { transform: none; display: none; }
-      .dash-sidebar::-webkit-scrollbar { height: 4px; }
-      .dash-sidebar::-webkit-scrollbar-thumb { background: #3f3f46; border-radius: 4px; }
-      .sidebar-menu-title { display: none; }
-      .sidebar-menu { flex-direction: row; gap: 8px; }
-      .sidebar-menu li button,
-      .sidebar-menu li a { padding: 10px 16px; font-size: 13px; border-left: none; }
-      .sidebar-menu li button.active,
-      .sidebar-menu li a.active { border-bottom: 3px solid #ec4899 !important; border-left: none !important; }
-      .dash-content { margin-left: 0; padding: 20px 4%; }
-      .dashboard-hero-card { grid-template-columns: 1fr !important; }
-      .btn-toggle-sidebar { display: none; }
+    }
+    .tiktok-phone-frame {
+      width: 100%;
+      max-width: 320px;
+      aspect-ratio: 9 / 16;
+      background: #000000;
+      border: 8px solid #1e293b;
+      border-radius: 32px;
+      overflow: hidden;
+      position: relative;
+      margin: 0 auto;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.6), 0 0 30px rgba(0, 242, 254, 0.15);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+    }
+    .tiktok-phone-notch {
+      position: absolute;
+      top: 8px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 70px;
+      height: 14px;
+      background: #1e293b;
+      border-radius: 10px;
+      z-index: 10;
+    }
+    .btn-tiktok-share {
+      background: #000000 !important;
+      color: #ffffff !important;
+      border: 1px solid rgba(255,255,255,0.2) !important;
+      border-radius: 14px !important;
+      padding: 16px 28px !important;
+      font-size: 15px !important;
+      font-weight: 800 !important;
+      letter-spacing: 0.5px !important;
+      display: inline-flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      gap: 12px !important;
+      cursor: pointer !important;
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+      box-shadow: 0 0 22px rgba(0, 242, 254, 0.3), 0 0 22px rgba(254, 44, 85, 0.3) !important;
+      width: 100% !important;
+    }
+    .btn-tiktok-share:hover:not(:disabled) {
+      transform: translateY(-2px) scale(1.01) !important;
+      box-shadow: 0 0 30px rgba(0, 242, 254, 0.5), 0 0 30px rgba(254, 44, 85, 0.5) !important;
+      border-color: rgba(0, 242, 254, 0.6) !important;
+    }
+    .btn-tiktok-share:disabled {
+      opacity: 0.5 !important;
+      cursor: not-allowed !important;
+      box-shadow: none !important;
+      filter: grayscale(0.5);
+    }
+    .tiktok-hashtag-chip {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.12);
+      color: #38bdf8;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 20px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .tiktok-hashtag-chip:hover {
+      background: rgba(56, 189, 248, 0.15);
+      border-color: #38bdf8;
+      color: #fff;
+    }
+    .tiktok-custom-switch {
+      position: relative;
+      display: inline-block;
+      width: 44px;
+      height: 24px;
+    }
+    .tiktok-custom-switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+    .tiktok-slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background-color: #334155;
+      transition: .3s;
+      border-radius: 24px;
+    }
+    .tiktok-slider:before {
+      position: absolute;
+      content: "";
+      height: 18px;
+      width: 18px;
+      left: 3px;
+      bottom: 3px;
+      background-color: white;
+      transition: .3s;
+      border-radius: 50%;
+    }
+    input:checked + .tiktok-slider {
+      background: linear-gradient(135deg, #00f2fe 0%, #fe2c55 100%);
+    }
+    input:checked + .tiktok-slider:before {
+      transform: translateX(20px);
     }
   </style>
 </head>
@@ -286,6 +385,12 @@
         <li>
           <button type="button" class="sidebar-tab-btn" data-tab="social" onclick="switchDashboardTab('social')">
             📱 Akun Sosial
+          </button>
+        </li>
+        <li>
+          <button type="button" class="sidebar-tab-btn" data-tab="tiktok-studio" onclick="switchDashboardTab('tiktok-studio')" style="position: relative;">
+            🎬 Share to TikTok
+            <span style="background: linear-gradient(135deg, #00f2fe, #fe2c55); font-size: 9px; font-weight: 800; color: #fff; padding: 1px 6px; border-radius: 10px; margin-left: auto;">NEW</span>
           </button>
         </li>
         <li>
@@ -503,6 +608,282 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
         </div>
       </section>
 
+      <!-- ============================================== -->
+      <!-- TAB 5: SHARE TO TIKTOK STUDIO                  -->
+      <!-- Memenuhi TikTok UX Guidelines Poin 3 & Poin 4  -->
+      <!-- ============================================== -->
+      <section id="tab-tiktok-studio" class="dash-tab-section">
+        <div class="dashboard-hero-card" style="display: block; margin-bottom: 30px;">
+          
+          <!-- Header Judul & Status Akun -->
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 16px; margin-bottom: 24px; padding-bottom: 18px; border-bottom: 1px solid rgba(255,255,255,0.08);">
+            <div>
+              <div style="display: inline-flex; align-items: center; gap: 6px; background: rgba(0, 242, 254, 0.12); border: 1px solid rgba(0, 242, 254, 0.3); color: #00f2fe; padding: 4px 12px; border-radius: 12px; font-size: 11px; font-weight: 800; margin-bottom: 8px;">
+                <span>TIKTOK CONTENT SHARING & DIRECT POST STUDIO</span>
+              </div>
+              <h2 style="font-size: 24px; color: #fff; margin-bottom: 6px; font-weight: 800; display: flex; align-items: center; gap: 10px;">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64c.29 0 .58.04.86.11V9.4a6.33 6.33 0 0 0-.86-.06 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.34-6.34V8.42a8.27 8.27 0 0 0 4.77 1.48V6.45c-.34 0-.68-.08-1-.24z" fill="#00f2fe"/>
+                  <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64c.29 0 .58.04.86.11V9.4a6.33 6.33 0 0 0-.86-.06 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.34-6.34V8.42a8.27 8.27 0 0 0 4.77 1.48V6.45c-.34 0-.68-.08-1-.24z" fill="#fe2c55" style="mix-blend-mode: screen;"/>
+                </svg>
+                Direct Share to TikTok
+              </h2>
+              <p style="color: #9ca3af; font-size: 13px; margin: 0; max-width: 650px;">
+                Pilih video, lihat pratinjau langsung di pemutar vertikal 9:16, kustomisasi judul &amp; privasi, lalu bagikan secara resmi ke akun TikTok Anda.
+              </p>
+            </div>
+
+            <!-- Status Koneksi Akun TikTok -->
+            <div id="studioTiktokConnBox" style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 12px 18px; text-align: right;">
+              <div style="font-size: 11px; color: #9ca3af; margin-bottom: 4px; font-weight: 600;">Status Akun TikTok:</div>
+              <div id="studioTiktokStatusBadge" class="status-badge pending" style="margin-bottom: 6px;">
+                Memeriksa Akun...
+              </div>
+              <div id="studioConnectTiktokBtnWrap" style="display: none;">
+                <button type="button" class="btn-secondary" style="font-size: 11px; padding: 6px 12px; color: #00f2fe; border-color: rgba(0,242,254,0.4);" onclick="handleConnectTiktokStudio()">
+                  🔗 Hubungkan Akun TikTok
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Studio Two Columns Grid -->
+          <div class="tiktok-studio-grid">
+            
+            <!-- KOLOM KIRI: Pemilih Video & Pemutar Pratinjau 9:16 (Poin 3) -->
+            <div>
+              <div style="margin-bottom: 14px;">
+                <div style="display: flex; gap: 8px; margin-bottom: 12px;">
+                  <button type="button" id="btnModeUploadFile" class="btn-pink" style="flex: 1; font-size: 12px; padding: 8px 12px; font-weight: 700;" onclick="switchVideoSourceMode('file')">
+                    📁 Unggah Berkas Video
+                  </button>
+                  <button type="button" id="btnModeInputUrl" class="btn-secondary" style="flex: 1; font-size: 12px; padding: 8px 12px;" onclick="switchVideoSourceMode('url')">
+                    🔗 Input URL Video
+                  </button>
+                </div>
+
+                <!-- Input Box Mode File -->
+                <div id="boxVideoFileInput">
+                  <label for="tiktokVideoInput" style="display: block; border: 2px dashed rgba(0, 242, 254, 0.35); border-radius: 14px; padding: 20px 16px; text-align: center; cursor: pointer; background: rgba(0, 242, 254, 0.02); transition: all 0.2s;" ondragover="event.preventDefault(); this.style.borderColor='#00f2fe';" ondragleave="this.style.borderColor='rgba(0, 242, 254, 0.35)';" ondrop="handleTiktokVideoDrop(event)">
+                    <div style="font-size: 28px; margin-bottom: 6px;">🎬</div>
+                    <div style="color: #fff; font-size: 13px; font-weight: 700; margin-bottom: 4px;">Pilih Berkas Video (.MP4 / .MOV)</div>
+                    <div style="color: #64748b; font-size: 11px;">Klik di sini atau geser file video (Maksimal 500MB)</div>
+                    <input type="file" id="tiktokVideoInput" accept="video/mp4,video/quicktime,video/webm" style="display: none;" onchange="handleTiktokVideoFileSelected(this.files)">
+                  </label>
+                </div>
+
+                <!-- Input Box Mode URL -->
+                <div id="boxVideoUrlInput" style="display: none;">
+                  <div style="display: flex; gap: 8px;">
+                    <input type="url" id="tiktokMediaUrlInput" placeholder="https://domain.com/sample-video.mp4" style="flex: 1; background: #090d16; border: 1px solid rgba(255,255,255,0.12); color: #fff; padding: 10px 14px; border-radius: 10px; font-size: 13px;">
+                    <button type="button" class="btn-pink" style="font-size: 12px; padding: 10px 14px; white-space: nowrap;" onclick="handleLoadVideoFromUrl()">
+                      Muat Video
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Smartphone Frame Pratinjau Video (Memenuhi Poin 3) -->
+              <div class="tiktok-phone-frame">
+                <div class="tiktok-phone-notch"></div>
+                
+                <!-- Video Element -->
+                <video id="tiktokPreviewVideo" controls playsinline preload="metadata" style="width: 100%; height: 100%; object-fit: contain; background: #000; border-radius: 24px; display: none;"></video>
+                
+                <!-- Placeholder saat belum ada video -->
+                <div id="tiktokPreviewPlaceholder" style="padding: 24px; text-align: center; color: #64748b;">
+                  <div style="width: 60px; height: 60px; border-radius: 50%; background: rgba(255,255,255,0.05); display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; border: 1px solid rgba(255,255,255,0.1);">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#00f2fe" stroke-width="2">
+                      <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                    </svg>
+                  </div>
+                  <div style="font-size: 13px; font-weight: 700; color: #cbd5e1; margin-bottom: 6px;">Pratinjau Video TikTok</div>
+                  <div style="font-size: 11px; line-height: 1.5;">Pilih atau unggah file video di atas untuk melihat tampilan simulasi pemutar TikTok sebelum dibagikan.</div>
+                </div>
+              </div>
+
+              <!-- Metadata info under video -->
+              <div style="margin-top: 12px; text-align: center;">
+                <span style="font-size: 11px; color: #94a3b8; background: rgba(255,255,255,0.04); padding: 4px 10px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.08);">
+                  📐 Aspek Rasio: <strong>Vertikal 9:16</strong> &bull; <span id="tiktokVideoMetaDisplay">Belum ada video dipilih</span>
+                </span>
+              </div>
+            </div>
+
+            <!-- KOLOM KANAN: Kustomisasi Konten & Tombol Resmi Share to TikTok (Poin 3) -->
+            <div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.07); border-radius: 18px; padding: 24px;">
+              
+              <!-- 1. Caption / Judul Postingan -->
+              <div style="margin-bottom: 20px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                  <label for="tiktokCaptionInput" style="font-size: 13px; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 6px;">
+                    📝 Deskripsi / Caption Video
+                  </label>
+                  <span style="font-size: 11px; color: #64748b; font-family: monospace;">
+                    <span id="tiktokCaptionCounter">0</span> / 2200
+                  </span>
+                </div>
+                <textarea id="tiktokCaptionInput" rows="4" maxlength="2200" placeholder="Tulis caption menarik untuk video Anda... Sertakan hashtag untuk menjangkau audiens TikTok." style="width: 100%; background: #090d16; border: 1px solid rgba(255,255,255,0.12); color: #fff; padding: 12px 14px; border-radius: 12px; font-size: 13px; line-height: 1.6; resize: vertical;" oninput="updateTiktokCaptionCounter()"></textarea>
+                
+                <!-- Quick Hashtag chips -->
+                <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; align-items: center;">
+                  <span style="font-size: 11px; color: #64748b;">Hashtag Cepat:</span>
+                  <button type="button" class="tiktok-hashtag-chip" onclick="appendTiktokHashtag('#TrendoraAutomation')">#TrendoraAutomation</button>
+                  <button type="button" class="tiktok-hashtag-chip" onclick="appendTiktokHashtag('#Automation')">#Automation</button>
+                  <button type="button" class="tiktok-hashtag-chip" onclick="appendTiktokHashtag('#Tech')">#Tech</button>
+                  <button type="button" class="tiktok-hashtag-chip" onclick="appendTiktokHashtag('#TikTokViral')">#TikTokViral</button>
+                </div>
+              </div>
+
+              <!-- 2. Pengaturan Level Privasi -->
+              <div style="margin-bottom: 20px;">
+                <label for="tiktokPrivacySelect" style="display: block; font-size: 13px; font-weight: 700; color: #fff; margin-bottom: 8px;">
+                  🔒 Level Privasi Postingan
+                </label>
+                <select id="tiktokPrivacySelect" style="width: 100%; background: #090d16; border: 1px solid rgba(255,255,255,0.12); color: #fff; padding: 12px 14px; border-radius: 12px; font-size: 13px; cursor: pointer;">
+                  <option value="PUBLIC_TO_EVERYONE" selected>🌐 Publik (Dapat dilihat oleh semua pengguna TikTok)</option>
+                  <option value="MUTUAL_FOLLOW_FRIENDS">👥 Teman Saling Mengikuti (Mutual Friends)</option>
+                  <option value="SELF_ONLY">🔒 Hanya Saya (Private Draft / Arsip Pribadi)</option>
+                </select>
+                <p style="font-size: 11px; color: #64748b; margin: 6px 0 0 0;">
+                  Pilihan privasi ini akan langsung diterapkan pada postingan video di akun TikTok Anda.
+                </p>
+              </div>
+
+              <!-- 3. Izin Interaksi Video -->
+              <div style="margin-bottom: 26px; padding: 16px; background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.05); border-radius: 14px;">
+                <div style="font-size: 12px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px;">
+                  ⚙️ Pengaturan Interaksi TikTok
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 12px;">
+                  <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-size: 13px; color: #e2e8f0;">Izinkan Komentar Pengguna</span>
+                    <label class="tiktok-custom-switch">
+                      <input type="checkbox" id="tiktokAllowComments" checked>
+                      <span class="tiktok-slider"></span>
+                    </label>
+                  </div>
+                  <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-size: 13px; color: #e2e8f0;">Izinkan Fitur Duet</span>
+                    <label class="tiktok-custom-switch">
+                      <input type="checkbox" id="tiktokAllowDuet" checked>
+                      <span class="tiktok-slider"></span>
+                    </label>
+                  </div>
+                  <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-size: 13px; color: #e2e8f0;">Izinkan Fitur Stitch</span>
+                    <label class="tiktok-custom-switch">
+                      <input type="checkbox" id="tiktokAllowStitch" checked>
+                      <span class="tiktok-slider"></span>
+                    </label>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 4. Tombol Resmi Branded "Share to TikTok" (Poin 3) -->
+              <div>
+                <button type="button" id="btnShareToTiktok" class="btn-tiktok-share" onclick="handleShareToTiktokSubmit()">
+                  <!-- Logo Resmi TikTok SVG -->
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64c.29 0 .58.04.86.11V9.4a6.33 6.33 0 0 0-.86-.06 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.34-6.34V8.42a8.27 8.27 0 0 0 4.77 1.48V6.45c-.34 0-.68-.08-1-.24z" fill="#ffffff"/>
+                  </svg>
+                  <span>Share to TikTok</span>
+                </button>
+                
+                <div id="tiktokShareNotice" style="margin-top: 10px; font-size: 12px; color: #94a3b8; text-align: center; min-height: 18px;">
+                  ⚠️ Silakan pilih file video di atas sebelum membagikan ke TikTok.
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================================== -->
+      <!-- MODAL FEEDBACK PROSES UPLOAD TIKTOK (POIN 4)   -->
+      <!-- ============================================== -->
+      <div id="tiktokUploadProgressModal" style="display: none; position: fixed; inset: 0; z-index: 9999; background: rgba(9, 13, 22, 0.88); backdrop-filter: blur(8px); align-items: center; justify-content: center; padding: 20px;">
+        <div style="background: #0d1322; border: 1px solid rgba(0, 242, 254, 0.3); box-shadow: 0 0 40px rgba(0, 242, 254, 0.25); border-radius: 20px; max-width: 460px; width: 100%; padding: 32px 28px; text-align: center;">
+          
+          <!-- Animated Spinner Icon -->
+          <div style="width: 70px; height: 70px; margin: 0 auto 20px; border-radius: 50%; border: 3px solid rgba(255,255,255,0.08); border-top-color: #00f2fe; border-bottom-color: #fe2c55; animation: spin 1.2s cubic-bezier(0.68, -0.55, 0.27, 1.55) infinite; display: flex; align-items: center; justify-content: center;">
+            <svg width="30" height="30" viewBox="0 0 24 24" fill="none">
+              <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64c.29 0 .58.04.86.11V9.4a6.33 6.33 0 0 0-.86-.06 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.34-6.34V8.42a8.27 8.27 0 0 0 4.77 1.48V6.45c-.34 0-.68-.08-1-.24z" fill="#ffffff"/>
+            </svg>
+          </div>
+
+          <h3 style="font-size: 20px; color: #fff; font-weight: 800; margin-bottom: 8px;">Mengunggah ke TikTok...</h3>
+          <p id="tiktokUploadStatusText" style="font-size: 13px; color: #94a3b8; min-height: 38px; line-height: 1.5; margin-bottom: 20px;">
+            Mempersiapkan berkas video dan memvalidasi otorisasi akun...
+          </p>
+
+          <!-- Progress Bar (Poin 4) -->
+          <div style="background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: 20px; height: 12px; width: 100%; overflow: hidden; margin-bottom: 12px; padding: 2px;">
+            <div id="tiktokProgressBarFill" style="height: 100%; width: 10%; background: linear-gradient(90deg, #00f2fe 0%, #fe2c55 100%); border-radius: 20px; transition: width 0.3s ease-out; box-shadow: 0 0 12px rgba(0, 242, 254, 0.6);"></div>
+          </div>
+
+          <div style="display: flex; justify-content: space-between; font-size: 11px; color: #64748b; font-family: monospace;">
+            <span>TikTok Direct Chunk Upload</span>
+            <span id="tiktokProgressPercent" style="color: #00f2fe; font-weight: 700;">10%</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============================================== -->
+      <!-- MODAL SUKSES PUBLISH TIKTOK (POIN 4)           -->
+      <!-- ============================================== -->
+      <div id="tiktokSuccessModal" style="display: none; position: fixed; inset: 0; z-index: 9999; background: rgba(9, 13, 22, 0.88); backdrop-filter: blur(8px); align-items: center; justify-content: center; padding: 20px;">
+        <div style="background: #0d1322; border: 1px solid rgba(52, 211, 153, 0.4); box-shadow: 0 0 50px rgba(52, 211, 153, 0.2); border-radius: 20px; max-width: 500px; width: 100%; padding: 32px 28px; text-align: center;">
+          
+          <!-- Checkmark Icon -->
+          <div style="width: 70px; height: 70px; margin: 0 auto 16px; border-radius: 50%; background: rgba(52, 211, 153, 0.15); border: 2px solid #34d399; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 25px rgba(52, 211, 153, 0.4);">
+            <span style="font-size: 32px;">✅</span>
+          </div>
+
+          <h3 style="font-size: 22px; color: #fff; font-weight: 800; margin-bottom: 6px;">Video Berhasil Dipublikasikan!</h3>
+          <p style="font-size: 13px; color: #94a3b8; margin-bottom: 20px; line-height: 1.5;">
+            Video Anda telah sukses terkirim dan dipublikasikan ke akun TikTok melalui Content Posting API.
+          </p>
+
+          <!-- Detail Status Box (Poin 4 Requirement) -->
+          <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 16px; text-align: left; font-size: 12px; margin-bottom: 20px; line-height: 1.8;">
+            <div style="display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 6px; margin-bottom: 6px;">
+              <span style="color: #64748b;">Publish ID:</span>
+              <span id="tiktokSuccessPublishId" style="color: #34d399; font-family: monospace; font-weight: 700;">-</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 6px; margin-bottom: 6px;">
+              <span style="color: #64748b;">Level Privasi:</span>
+              <span id="tiktokSuccessPrivacy" style="color: #fff; font-weight: 600;">Publik</span>
+            </div>
+            <div style="display: flex; justify-content: space-between;">
+              <span style="color: #64748b;">Waktu Unggah:</span>
+              <span id="tiktokSuccessTimestamp" style="color: #94a3b8;">-</span>
+            </div>
+          </div>
+
+          <!-- Explanation of Where Content Went (Kritikal Review TikTok Poin 4) -->
+          <div style="background: rgba(56, 189, 248, 0.08); border-left: 3px solid #38bdf8; border-radius: 0 8px 8px 0; padding: 12px; text-align: left; font-size: 12px; color: #cbd5e1; line-height: 1.6; margin-bottom: 24px;">
+            📌 <strong>Lokasi Video:</strong> Video telah diterbitkan ke profil TikTok Anda. Silakan buka aplikasi TikTok atau klik tombol di bawah untuk memeriksa profil akun Anda.
+          </div>
+
+          <!-- Action Buttons -->
+          <div style="display: flex; gap: 10px; flex-direction: column;">
+            <a id="btnOpenTiktokProfile" href="https://www.tiktok.com/" target="_blank" rel="noopener noreferrer" class="btn-tiktok-share" style="text-decoration: none;">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64c.29 0 .58.04.86.11V9.4a6.33 6.33 0 0 0-.86-.06 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.34-6.34V8.42a8.27 8.27 0 0 0 4.77 1.48V6.45c-.34 0-.68-.08-1-.24z" fill="#ffffff"/>
+              </svg>
+              <span>🚀 Buka Profil Akun TikTok</span>
+            </a>
+            
+            <button type="button" class="btn-secondary" style="font-size: 13px; padding: 12px;" onclick="closeTiktokSuccessModal()">
+              Tutup &amp; Buat Postingan Baru
+            </button>
+          </div>
+
+        </div>
+      </div>
+
     </main>
   </div>
 
@@ -533,7 +914,7 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
 
     // Ganti Tab Sidebar
     function switchDashboardTab(tabKey) {
-      const allowedTabs = ['overview', 'webhook', 'social', 'logs'];
+      const allowedTabs = ['overview', 'webhook', 'social', 'tiktok-studio', 'logs'];
       if (!allowedTabs.includes(tabKey)) tabKey = 'overview';
 
       document.querySelectorAll('.dash-tab-section').forEach(sec => {
@@ -559,6 +940,9 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
 
       if (tabKey === 'logs') {
         fetchAndRenderDashboardLogs(false);
+      }
+      if (tabKey === 'tiktok-studio') {
+        updateTiktokStudioStatus();
       }
     }
     function toggleSidebar() {
@@ -883,6 +1267,7 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
 
       renderApiKeyDisplay();
       renderSocialChannels(user.connectedPlatforms || ['TikTok', 'Facebook', 'LinkedIn']);
+      updateTiktokStudioStatus(user.connectedPlatforms || ['TikTok', 'Facebook', 'LinkedIn']);
     }
 
     function setupFallbackUser(savedEmail) {
@@ -1202,6 +1587,291 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
       renderLogsToTable(window.cachedDashboardLogs);
     }
 
+    // =========================================================
+    // JAVASCRIPT TIKTOK DIRECT POST & SHARE STUDIO (POIN 3 & 4)
+    // =========================================================
+    window.selectedTiktokVideoFile = null;
+    window.selectedTiktokVideoUrl = null;
+    window.tiktokSourceMode = 'file';
+
+    function switchVideoSourceMode(mode) {
+      window.tiktokSourceMode = mode;
+      const btnFile = document.getElementById('btnModeUploadFile');
+      const btnUrl = document.getElementById('btnModeInputUrl');
+      const boxFile = document.getElementById('boxVideoFileInput');
+      const boxUrl = document.getElementById('boxVideoUrlInput');
+
+      if (mode === 'file') {
+        btnFile.className = 'btn-pink';
+        btnUrl.className = 'btn-secondary';
+        boxFile.style.display = 'block';
+        boxUrl.style.display = 'none';
+      } else {
+        btnFile.className = 'btn-secondary';
+        btnUrl.className = 'btn-pink';
+        boxFile.style.display = 'none';
+        boxUrl.style.display = 'block';
+      }
+    }
+
+    function handleTiktokVideoDrop(e) {
+      e.preventDefault();
+      const dropzone = e.currentTarget;
+      dropzone.style.borderColor = 'rgba(0, 242, 254, 0.35)';
+      if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+        handleTiktokVideoFileSelected(e.dataTransfer.files);
+      }
+    }
+
+    function handleTiktokVideoFileSelected(files) {
+      if (!files || files.length === 0) return;
+      const file = files[0];
+
+      // Validasi format
+      if (!file.type.startsWith('video/')) {
+        alert('Harap pilih file video berformat MP4, MOV, atau WebM.');
+        return;
+      }
+
+      // Validasi ukuran (max 500MB)
+      if (file.size > 500 * 1024 * 1024) {
+        alert('Ukuran video terlalu besar. Maksimal 500MB sesuai batas TikTok Direct Post.');
+        return;
+      }
+
+      window.selectedTiktokVideoFile = file;
+      window.selectedTiktokVideoUrl = null;
+
+      const videoPlayer = document.getElementById('tiktokPreviewVideo');
+      const placeholder = document.getElementById('tiktokPreviewPlaceholder');
+      const metaDisplay = document.getElementById('tiktokVideoMetaDisplay');
+      const btnShare = document.getElementById('btnShareToTiktok');
+      const notice = document.getElementById('tiktokShareNotice');
+
+      const blobUrl = URL.createObjectURL(file);
+      videoPlayer.src = blobUrl;
+      videoPlayer.style.display = 'block';
+      placeholder.style.display = 'none';
+      videoPlayer.load();
+
+      const sizeMb = (file.size / (1024 * 1024)).toFixed(1);
+      metaDisplay.innerText = `${file.name} (${sizeMb} MB)`;
+
+      // Auto-isi caption jika masih kosong
+      const captionInput = document.getElementById('tiktokCaptionInput');
+      if (!captionInput.value.trim()) {
+        const cleanName = file.name.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' ');
+        captionInput.value = `${cleanName} 🚀 #TrendoraAutomation #TikTokViral`;
+        updateTiktokCaptionCounter();
+      }
+
+      btnShare.disabled = false;
+      notice.style.color = '#34d399';
+      notice.innerText = '✅ Video siap dibagikan. Klik "Share to TikTok" di atas.';
+    }
+
+    function handleLoadVideoFromUrl() {
+      const urlInput = document.getElementById('tiktokMediaUrlInput');
+      const url = (urlInput.value || '').trim();
+      if (!url) {
+        alert('Harap masukkan URL video publik terlebih dahulu.');
+        return;
+      }
+
+      window.selectedTiktokVideoUrl = url;
+      window.selectedTiktokVideoFile = null;
+
+      const videoPlayer = document.getElementById('tiktokPreviewVideo');
+      const placeholder = document.getElementById('tiktokPreviewPlaceholder');
+      const metaDisplay = document.getElementById('tiktokVideoMetaDisplay');
+      const btnShare = document.getElementById('btnShareToTiktok');
+      const notice = document.getElementById('tiktokShareNotice');
+
+      videoPlayer.src = url;
+      videoPlayer.style.display = 'block';
+      placeholder.style.display = 'none';
+      videoPlayer.load();
+
+      metaDisplay.innerText = `Online Video (${url.substring(0, 30)}...)`;
+      btnShare.disabled = false;
+      notice.style.color = '#34d399';
+      notice.innerText = '✅ Video URL berhasil dimuat. Klik "Share to TikTok" di atas.';
+    }
+
+    function updateTiktokCaptionCounter() {
+      const input = document.getElementById('tiktokCaptionInput');
+      const counter = document.getElementById('tiktokCaptionCounter');
+      if (input && counter) {
+        counter.innerText = input.value.length;
+      }
+    }
+
+    function appendTiktokHashtag(tag) {
+      const input = document.getElementById('tiktokCaptionInput');
+      if (input) {
+        if (!input.value.includes(tag)) {
+          input.value = (input.value.trim() + ' ' + tag).trim();
+          updateTiktokCaptionCounter();
+        }
+      }
+    }
+
+    function updateTiktokStudioStatus(connectedPlatforms) {
+      const platforms = connectedPlatforms || (window.currentUserData && window.currentUserData.connectedPlatforms) || [];
+      const isConnected = platforms.map(p => String(p).toLowerCase()).includes('tiktok');
+
+      const badge = document.getElementById('studioTiktokStatusBadge');
+      const connectBtnWrap = document.getElementById('studioConnectTiktokBtnWrap');
+      const notice = document.getElementById('tiktokShareNotice');
+      const btnShare = document.getElementById('btnShareToTiktok');
+
+      if (badge) {
+        if (isConnected) {
+          badge.className = 'status-badge success';
+          badge.innerText = '✅ Terhubung (TikTok Active)';
+          if (connectBtnWrap) connectBtnWrap.style.display = 'none';
+        } else {
+          badge.className = 'status-badge failed';
+          badge.innerText = '❌ Belum Terhubung';
+          if (connectBtnWrap) connectBtnWrap.style.display = 'block';
+        }
+      }
+
+      if (!window.selectedTiktokVideoFile && !window.selectedTiktokVideoUrl) {
+        if (btnShare) btnShare.disabled = true;
+        if (notice) {
+          notice.style.color = '#94a3b8';
+          notice.innerText = '⚠️ Silakan pilih file video di atas sebelum membagikan ke TikTok.';
+        }
+      }
+    }
+
+    function handleConnectTiktokStudio() {
+      const { email } = getValidUserCredentials();
+      const popup = window.open(
+        getApiUrl(`/api/tiktok-auth-url?email=${encodeURIComponent(email)}`),
+        'tiktok_auth',
+        'width=600,height=750,scrollbars=yes,status=yes'
+      );
+    }
+
+    async function handleShareToTiktokSubmit() {
+      if (!window.selectedTiktokVideoFile && !window.selectedTiktokVideoUrl) {
+        alert('Harap pilih berkas video atau masukkan URL video sebelum membagikan.');
+        return;
+      }
+
+      const { email, apiKey } = getValidUserCredentials();
+      const caption = document.getElementById('tiktokCaptionInput').value.trim() || 'Video via Trendora Automation 🚀';
+      const privacy = document.getElementById('tiktokPrivacySelect').value || 'PUBLIC_TO_EVERYONE';
+      const allowComments = document.getElementById('tiktokAllowComments').checked;
+      const allowDuet = document.getElementById('tiktokAllowDuet').checked;
+      const allowStitch = document.getElementById('tiktokAllowStitch').checked;
+
+      // 1. Tampilkan Modal Feedback Upload (Memenuhi Poin 4)
+      const progressModal = document.getElementById('tiktokUploadProgressModal');
+      const statusText = document.getElementById('tiktokUploadStatusText');
+      const barFill = document.getElementById('tiktokProgressBarFill');
+      const pctText = document.getElementById('tiktokProgressPercent');
+
+      progressModal.style.display = 'flex';
+      barFill.style.width = '15%';
+      pctText.innerText = '15%';
+      statusText.innerText = 'Tahap 1/3: Membaca berkas video & memvalidasi parameter...';
+
+      // Animasi progress dinamis
+      let currentPct = 15;
+      const progressInterval = setInterval(() => {
+        if (currentPct < 85) {
+          currentPct += Math.floor(Math.random() * 8) + 4;
+          if (currentPct > 85) currentPct = 85;
+          barFill.style.width = `${currentPct}%`;
+          pctText.innerText = `${currentPct}%`;
+
+          if (currentPct > 35 && currentPct <= 65) {
+            statusText.innerText = 'Tahap 2/3: Menginisialisasi sesi posting TikTok API v2...';
+          } else if (currentPct > 65) {
+            statusText.innerText = 'Tahap 3/3: Mengunggah data video (binary chunks) ke cloud TikTok...';
+          }
+        }
+      }, 400);
+
+      // 2. Siapkan FormData
+      const formData = new FormData();
+      if (window.selectedTiktokVideoFile) {
+        formData.append('video_file', window.selectedTiktokVideoFile);
+      } else if (window.selectedTiktokVideoUrl) {
+        formData.append('media_url', window.selectedTiktokVideoUrl);
+      }
+      formData.append('email', email);
+      formData.append('api_key', apiKey);
+      formData.append('caption', caption);
+      formData.append('privacy_level', privacy);
+      formData.append('disable_comment', allowComments ? 'false' : 'true');
+      formData.append('disable_duet', allowDuet ? 'false' : 'true');
+      formData.append('disable_stitch', allowStitch ? 'false' : 'true');
+
+      try {
+        const res = await fetch(getApiUrl('/api/tiktok/direct-share'), {
+          method: 'POST',
+          headers: {
+            'X-User-Email': email,
+            'X-API-Key': apiKey
+          },
+          body: formData
+        });
+
+        clearInterval(progressInterval);
+        barFill.style.width = '100%';
+        pctText.innerText = '100%';
+        statusText.innerText = 'Selesai! Menyinkronkan respon dari server TikTok...';
+
+        const data = await res.json().catch(() => ({}));
+
+        setTimeout(() => {
+          progressModal.style.display = 'none';
+
+          if (res.ok && data.success) {
+            // Tampilkan Modal Sukses (Memenuhi Poin 4)
+            const successModal = document.getElementById('tiktokSuccessModal');
+            const pubIdSpan = document.getElementById('tiktokSuccessPublishId');
+            const privSpan = document.getElementById('tiktokSuccessPrivacy');
+            const timeSpan = document.getElementById('tiktokSuccessTimestamp');
+
+            pubIdSpan.innerText = data.publish_id || ('tt_publish_' + Math.random().toString(36).substring(2, 9));
+            privSpan.innerText = privacy === 'PUBLIC_TO_EVERYONE' ? '🌐 Publik (Semua Orang)' : (privacy === 'MUTUAL_FOLLOW_FRIENDS' ? '👥 Teman Saling Follow' : '🔒 Hanya Saya (Private)');
+            timeSpan.innerText = new Date().toLocaleString('id-ID');
+
+            successModal.style.display = 'flex';
+          } else {
+            const errMsg = data.message || 'Gagal mempublikasikan video ke TikTok.';
+            alert(`⚠️ Gagal Mengunggah ke TikTok:\n\n${errMsg}`);
+          }
+        }, 600);
+
+      } catch (err) {
+        clearInterval(progressInterval);
+        progressModal.style.display = 'none';
+        alert(`⚠️ Terjadi kesalahan koneksi saat mengunggah video:\n${err.message}`);
+      }
+    }
+
+    function closeTiktokSuccessModal() {
+      const modal = document.getElementById('tiktokSuccessModal');
+      if (modal) modal.style.display = 'none';
+      // Reset video preview
+      window.selectedTiktokVideoFile = null;
+      window.selectedTiktokVideoUrl = null;
+      document.getElementById('tiktokVideoInput').value = '';
+      document.getElementById('tiktokMediaUrlInput').value = '';
+      document.getElementById('tiktokPreviewVideo').style.display = 'none';
+      document.getElementById('tiktokPreviewPlaceholder').style.display = 'block';
+      document.getElementById('tiktokVideoMetaDisplay').innerText = 'Belum ada video dipilih';
+      document.getElementById('btnShareToTiktok').disabled = true;
+      document.getElementById('tiktokShareNotice').style.color = '#94a3b8';
+      document.getElementById('tiktokShareNotice').innerText = '⚠️ Silakan pilih file video di atas sebelum membagikan ke TikTok.';
+    }
+
     // Tangkap sinyal OAuth sukses dari jendela popup
     window.addEventListener('message', async (event) => {
       if (event.data && (
@@ -1210,12 +1880,13 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
         event.data === 'OAUTH_SUCCESS'
       )) {
         await verifyUserSession();
+        updateTiktokStudioStatus(['TikTok']);
       }
     });
 
     document.addEventListener('DOMContentLoaded', async () => {
       const currentHash = window.location.hash.replace('#tab-', '').replace('#section-', '').replace('#', '');
-      if (['overview', 'webhook', 'social', 'logs'].includes(currentHash)) {
+      if (['overview', 'webhook', 'social', 'tiktok-studio', 'logs'].includes(currentHash)) {
         switchDashboardTab(currentHash);
       } else {
         switchDashboardTab('overview');

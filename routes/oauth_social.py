@@ -5,7 +5,7 @@ PARENT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if PARENT_DIR not in sys.path:
     sys.path.insert(0, PARENT_DIR)
 
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, session
 import urllib.request
 import urllib.parse
 import uuid
@@ -13,6 +13,7 @@ import json
 import base64
 import hmac
 import hashlib
+from datetime import datetime
 
 import config
 from utils import database as db
@@ -474,3 +475,126 @@ def threads_callback():
             print("Threads OAuth Error:", e)
 
     return """<html><body style="background:#0d0a1a;"><h2 style="color:#ffffff;text-align:center;margin-top:50px;">Threads Connected!</h2><script>if(window.opener){window.opener.postMessage({type:'OAUTH_SUCCESS', platform:'Threads'}, '*');window.close();}</script></body></html>"""
+
+
+@oauth_bp.route('/api/tiktok/direct-share', methods=['POST'])
+def direct_share_to_tiktok():
+    """
+    Endpoint resmi untuk fitur 'Studio Share to TikTok' di Dashboard Trendora.
+    Memenuhi standar UX Guidelines Poin 3 & 4 TikTok Developer Review:
+    - Menerima aksi klik eksplisit dari pengguna untuk membagikan video.
+    - Menerima file video upload langsung (.mp4/.mov) atau media_url.
+    - Menerapkan parameter kustomisasi privasi & interaksi (komentar, duet, stitch).
+    - Menghasilkan respon transparan untuk feedback indikator upload & konfirmasi sukses.
+    """
+    from routes.webhook_n8n import upload_video_to_tiktok
+    
+    # 1. Dapatkan identitas pengguna (email / API key)
+    email = (request.form.get('email') or request.headers.get('X-User-Email') or session.get('user_email') or '').strip()
+    api_key = (request.form.get('api_key') or request.headers.get('X-API-Key') or '').strip()
+    
+    if not email and not api_key:
+        return jsonify({
+            "success": False,
+            "error_code": "AUTH_REQUIRED",
+            "message": "Autentikasi gagal. Sesi login pengguna tidak ditemukan."
+        }), 401
+        
+    # 2. Ambil token TikTok pengguna dari database
+    user_tokens = db.db_get_tiktok_tokens_by_api_key(api_key=api_key, email=email)
+    access_token = user_tokens.get('access_token')
+    refresh_token = user_tokens.get('refresh_token')
+    row_idx = user_tokens.get('row_idx')
+    
+    if not access_token and not refresh_token:
+        return jsonify({
+            "success": False,
+            "error_code": "TIKTOK_NOT_CONNECTED",
+            "message": "Akun TikTok belum terhubung! Silakan klik 'Hubungkan Akun TikTok' terlebih dahulu untuk memberikan otorisasi."
+        }), 400
+        
+    # 3. Tangani berkas video (Upload File Langsung atau Media URL)
+    video_bytes = None
+    media_url = None
+    
+    if 'video_file' in request.files:
+        v_file = request.files['video_file']
+        if v_file and v_file.filename != '':
+            video_bytes = v_file.read()
+            if len(video_bytes) == 0:
+                return jsonify({
+                    "success": False,
+                    "error_code": "EMPTY_FILE",
+                    "message": "Berkas video yang diunggah kosong (0 bytes)."
+                }), 400
+    
+    if not video_bytes:
+        media_url = request.form.get('media_url', '').strip()
+        if not media_url:
+            return jsonify({
+                "success": False,
+                "error_code": "NO_MEDIA",
+                "message": "Harap pilih file video (.mp4) atau masukkan URL video sebelum membagikan ke TikTok."
+            }), 400
+
+    # 4. Ambil opsi kustomisasi (Poin 3: Kontrol & Kustomisasi Pengguna)
+    caption = request.form.get('caption', 'Video via Trendora Automation 🚀').strip()
+    privacy_level = request.form.get('privacy_level', 'PUBLIC_TO_EVERYONE').strip()
+    disable_comment = request.form.get('disable_comment', 'false').lower() == 'true'
+    disable_duet = request.form.get('disable_duet', 'false').lower() == 'true'
+    disable_stitch = request.form.get('disable_stitch', 'false').lower() == 'true'
+
+    # 5. Jalankan proses pengunggahan ke TikTok via Content Posting API v2
+    try:
+        is_ok, res_dict = upload_video_to_tiktok(
+            access_token=access_token,
+            refresh_token=refresh_token,
+            media_url=media_url,
+            caption=caption,
+            privacy_level=privacy_level,
+            row_idx=row_idx,
+            video_bytes=video_bytes,
+            disable_duet=disable_duet,
+            disable_comment=disable_comment,
+            disable_stitch=disable_stitch
+        )
+        
+        if is_ok:
+            publish_id = res_dict.get('publish_id', '')
+            # Catat aktivitas ke audit logs
+            try:
+                sheet_logs = db.get_logs_sheet()
+                if sheet_logs:
+                    now_str = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+                    sheet_logs.append_row([
+                        now_str,
+                        email or "Web Studio",
+                        "Direct Share to TikTok",
+                        "SUCCESS",
+                        f"Publish ID: {publish_id} | Privasi: {privacy_level}"
+                    ])
+            except Exception:
+                pass
+
+            return jsonify({
+                "success": True,
+                "publish_id": publish_id,
+                "privacy_level": privacy_level,
+                "message": "Video berhasil dikirim dan dipublikasikan ke akun TikTok Anda!",
+                "details": res_dict
+            })
+        else:
+            err_msg = res_dict.get('tiktok_error', 'Gagal mengunggah video ke server TikTok.')
+            return jsonify({
+                "success": False,
+                "error_code": "TIKTOK_API_ERROR",
+                "message": err_msg,
+                "details": res_dict
+            }), 400
+            
+    except Exception as e:
+        return jsonify({
+            "success": False,
+            "error_code": "SERVER_EXCEPTION",
+            "message": f"Terjadi kesalahan internal saat memproses video: {str(e)}"
+        }), 500

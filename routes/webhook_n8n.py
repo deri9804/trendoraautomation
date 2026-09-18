@@ -76,10 +76,10 @@ def refresh_tiktok_token(refresh_token, row_idx=None):
         return None
 
 
-def upload_video_to_tiktok(access_token, refresh_token, media_url, caption, privacy_level="SELF_ONLY", row_idx=None):
+def upload_video_to_tiktok(access_token, refresh_token, media_url=None, caption="", privacy_level="PUBLIC_TO_EVERYONE", row_idx=None, video_bytes=None, disable_duet=False, disable_comment=False, disable_stitch=False):
     """
     Mengunggah video ke TikTok menggunakan metode FILE_UPLOAD (Direct Chunk Binary Upload).
-    Metode ini TIDAK memerlukan verifikasi domain Google Storage / DNS URL Ownership.
+    Mendukung upload dari URL publik maupun data video_bytes langsung.
     """
     if not access_token and refresh_token:
         access_token = refresh_tiktok_token(refresh_token, row_idx)
@@ -87,30 +87,34 @@ def upload_video_to_tiktok(access_token, refresh_token, media_url, caption, priv
         return False, {"tiktok_error": "Akun TikTok belum terhubung atau Access Token kosong."}
 
     def _exec_tiktok_upload(tok):
-        # 1. Download berkas video dari media_url untuk mendapatkan ukuran binary bytes
-        req_v = urllib.request.Request(
-            media_url, 
-            headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'}
-        )
-        try:
-            with urllib.request.urlopen(req_v, timeout=60) as v_res:
-                video_bytes = v_res.read()
-        except Exception as e_dl:
-            return False, {"tiktok_error": f"Gagal mengunduh file video dari Google Storage: {str(e_dl)}"}
+        raw_bytes = video_bytes
+        if not raw_bytes:
+            if not media_url:
+                return False, {"tiktok_error": "Media URL atau file video tidak ditemukan."}
+            # 1. Download berkas video dari media_url untuk mendapatkan ukuran binary bytes
+            req_v = urllib.request.Request(
+                media_url, 
+                headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'}
+            )
+            try:
+                with urllib.request.urlopen(req_v, timeout=60) as v_res:
+                    raw_bytes = v_res.read()
+            except Exception as e_dl:
+                return False, {"tiktok_error": f"Gagal mengunduh file video dari URL: {str(e_dl)}"}
 
-        video_size = len(video_bytes)
+        video_size = len(raw_bytes)
         if video_size == 0:
-            return False, {"tiktok_error": "File video dari media_url berukuran 0 bytes (kosong)."}
+            return False, {"tiktok_error": "File video berukuran 0 bytes (kosong)."}
 
         # 2. Inisialisasi upload ke TikTok dengan metode FILE_UPLOAD
         init_url = "https://open.tiktokapis.com/v2/post/publish/video/init/"
         init_payload = {
             "post_info": {
                 "title": caption[:2200] if caption else "Video otomatis via TRENDORA 🚀",
-                "privacy_level": privacy_level or "SELF_ONLY",
-                "disable_duet": False,
-                "disable_comment": False,
-                "disable_stitch": False
+                "privacy_level": privacy_level or "PUBLIC_TO_EVERYONE",
+                "disable_duet": bool(disable_duet),
+                "disable_comment": bool(disable_comment),
+                "disable_stitch": bool(disable_stitch)
             },
             "source_info": {
                 "source": "FILE_UPLOAD",
@@ -158,7 +162,7 @@ def upload_video_to_tiktok(access_token, refresh_token, media_url, caption, priv
 
         put_req = urllib.request.Request(
             upload_url, 
-            data=video_bytes, 
+            data=raw_bytes, 
             headers=put_headers, 
             method='PUT'
         )
