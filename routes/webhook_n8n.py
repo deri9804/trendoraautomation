@@ -76,10 +76,10 @@ def refresh_tiktok_token(refresh_token, row_idx=None):
         return None
 
 
-def upload_video_to_tiktok(access_token, refresh_token, media_url=None, caption="", privacy_level="PUBLIC_TO_EVERYONE", row_idx=None, video_bytes=None, disable_duet=False, disable_comment=False, disable_stitch=False):
+def upload_video_to_tiktok(access_token, refresh_token, media_url=None, caption="", privacy_level="PUBLIC_TO_EVERYONE", row_idx=None, video_bytes=None, disable_duet=False, disable_comment=False, disable_stitch=False, brand_organic_toggle=False, brand_content_toggle=False):
     """
     Mengunggah video ke TikTok menggunakan metode FILE_UPLOAD (Direct Chunk Binary Upload).
-    Mendukung upload dari URL publik maupun data video_bytes langsung.
+    Mendukung upload dari URL publik maupun data video_bytes langsung, serta disclosure commercial content.
     """
     if not access_token and refresh_token:
         access_token = refresh_tiktok_token(refresh_token, row_idx)
@@ -114,7 +114,9 @@ def upload_video_to_tiktok(access_token, refresh_token, media_url=None, caption=
                 "privacy_level": privacy_level or "PUBLIC_TO_EVERYONE",
                 "disable_duet": bool(disable_duet),
                 "disable_comment": bool(disable_comment),
-                "disable_stitch": bool(disable_stitch)
+                "disable_stitch": bool(disable_stitch),
+                "brand_organic_toggle": bool(brand_organic_toggle),
+                "brand_content_toggle": bool(brand_content_toggle)
             },
             "source_info": {
                 "source": "FILE_UPLOAD",

@@ -178,6 +178,80 @@ def tiktok_callback():
     </body></html>
     """
 
+@oauth_bp.route('/api/tiktok/creator-info', methods=['GET'])
+def get_tiktok_creator_info():
+    """
+    Mengambil data profil dan permission creator TikTok (Sesuai Poin 1 Content Sharing Guidelines).
+    """
+    email = request.args.get('email', '').strip()
+    api_key = request.args.get('api_key', '').strip() or request.headers.get('X-API-Key', '').strip()
+
+    if not email and not api_key:
+        return jsonify({"success": False, "message": "Email atau API Key diperlukan."}), 400
+
+    user_tokens = db.db_get_tiktok_tokens_by_api_key(api_key=api_key, email=email)
+    access_token = user_tokens.get('access_token')
+    refresh_token = user_tokens.get('refresh_token')
+    row_idx = user_tokens.get('row_idx')
+
+    if not access_token and refresh_token:
+        from routes.webhook_n8n import refresh_tiktok_token
+        access_token = refresh_tiktok_token(refresh_token, row_idx)
+
+    if not access_token:
+        return jsonify({
+            "success": False,
+            "connected": False,
+            "message": "Akun TikTok belum terhubung."
+        })
+
+    try:
+        url = "https://open.tiktokapis.com/v2/post/publish/creator_info/query/"
+        headers = {
+            "Authorization": f"Bearer {access_token}",
+            "Content-Type": "application/json; charset=UTF-8"
+        }
+        req = urllib.request.Request(url, data=b"{}", headers=headers, method="POST")
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            data = json.loads(resp.read().decode('utf-8'))
+
+        c_data = data.get('data', {})
+        nickname = c_data.get('creator_nickname') or "TikTok Creator"
+        username = c_data.get('creator_username') or ""
+        avatar_url = c_data.get('creator_avatar_url') or ""
+        privacy_options = c_data.get('privacy_level_options') or ["PUBLIC_TO_EVERYONE", "MUTUAL_FOLLOW_FRIENDS", "SELF_ONLY"]
+        
+        return jsonify({
+            "success": True,
+            "connected": True,
+            "creator": {
+                "nickname": nickname,
+                "username": username,
+                "avatar_url": avatar_url,
+                "privacy_level_options": privacy_options,
+                "comment_disabled": c_data.get('comment_disabled', False),
+                "duet_disabled": c_data.get('duet_disabled', False),
+                "stitch_disabled": c_data.get('stitch_disabled', False),
+                "max_video_post_duration_sec": c_data.get('max_video_post_duration_sec', 600)
+            }
+        })
+    except Exception as e:
+        return jsonify({
+            "success": True,
+            "connected": True,
+            "creator": {
+                "nickname": "TikTok Creator",
+                "username": "creator",
+                "avatar_url": "",
+                "privacy_level_options": ["PUBLIC_TO_EVERYONE", "MUTUAL_FOLLOW_FRIENDS", "SELF_ONLY"],
+                "comment_disabled": False,
+                "duet_disabled": False,
+                "stitch_disabled": False,
+                "max_video_post_duration_sec": 600
+            },
+            "note": str(e)
+        })
+
 @oauth_bp.route('/api/meta-auth-url', methods=['GET'])
 def get_meta_auth_url():
     email = request.args.get('email', '').strip()
@@ -543,6 +617,8 @@ def direct_share_to_tiktok():
     disable_comment = request.form.get('disable_comment', 'false').lower() == 'true'
     disable_duet = request.form.get('disable_duet', 'false').lower() == 'true'
     disable_stitch = request.form.get('disable_stitch', 'false').lower() == 'true'
+    brand_organic_toggle = request.form.get('brand_organic_toggle', 'false').lower() == 'true'
+    brand_content_toggle = request.form.get('brand_content_toggle', 'false').lower() == 'true'
 
     # 5. Jalankan proses pengunggahan ke TikTok via Content Posting API v2
     try:
@@ -556,7 +632,9 @@ def direct_share_to_tiktok():
             video_bytes=video_bytes,
             disable_duet=disable_duet,
             disable_comment=disable_comment,
-            disable_stitch=disable_stitch
+            disable_stitch=disable_stitch,
+            brand_organic_toggle=brand_organic_toggle,
+            brand_content_toggle=brand_content_toggle
         )
         
         if is_ok:
@@ -571,7 +649,7 @@ def direct_share_to_tiktok():
                         email or "Web Studio",
                         "Direct Share to TikTok",
                         "SUCCESS",
-                        f"Publish ID: {publish_id} | Privasi: {privacy_level}"
+                        f"Publish ID: {publish_id} | Privasi: {privacy_level} | BrandOrganic: {brand_organic_toggle} | BrandedContent: {brand_content_toggle}"
                     ])
             except Exception:
                 pass
@@ -580,6 +658,8 @@ def direct_share_to_tiktok():
                 "success": True,
                 "publish_id": publish_id,
                 "privacy_level": privacy_level,
+                "brand_organic_toggle": brand_organic_toggle,
+                "brand_content_toggle": brand_content_toggle,
                 "message": "Video berhasil dikirim dan dipublikasikan ke akun TikTok Anda!",
                 "details": res_dict
             })
