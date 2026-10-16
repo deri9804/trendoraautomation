@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template
+from flask import Blueprint, render_template, redirect, url_for, session
 
 pages_bp = Blueprint('pages', __name__)
 
@@ -8,6 +8,9 @@ def index():
 
 @pages_bp.route('/login')
 def login_page():
+    # Jika sudah login, langsung arahkan ke dashboard
+    if session.get('user_email'):
+        return redirect(url_for('pages.dashboard_page'))
     return render_template('login.html')
 
 @pages_bp.route('/checkout')
@@ -16,6 +19,9 @@ def checkout_page():
 
 @pages_bp.route('/dashboard')
 def dashboard_page():
+    # SECURITY FIX: Server-side route guard (Tolak akses dashboard jika belum login)
+    if not session.get('user_email'):
+        return redirect(url_for('pages.login_page'))
     return render_template('dashboard.html')
 
 @pages_bp.route('/webhook')

@@ -411,21 +411,32 @@ def upload_video_to_youtube(access_token, refresh_token, media_url, caption, row
         return False, {"youtube_error": f"[YouTube Error] {str(e)}"}
 
 
+# Server-side pricing catalog: Anti-Manipulasi F12 Console
+PLANS_CATALOG = {
+    "monthly": 200000,
+    "annual": 1800000,
+    "pro": 200000,
+    "lifetime": 3500000
+}
+
 @webhook_bp.route('/api/create-transaction', methods=['POST'])
 def create_transaction():
     data = request.json or {}
     name = data.get('name', 'User')
-    email = data.get('email', 'user@example.com').strip().lower()
-    price_str = data.get('price', '200000')
+    # Prioritaskan email dari sesi login server jika user sedang login
+    email = (session.get('user_email') or data.get('email', '')).strip().lower()
+    plan_key = str(data.get('plan') or data.get('plan_id') or 'monthly').lower()
     is_upgrading = data.get('isUpgrading', False)
+
+    if not email:
+        return jsonify({"success": False, "message": "Email wajib diisi!"}), 400
 
     existing_user = db.db_get_user(email)
     if existing_user and not is_upgrading:
         return jsonify({"success": False, "message": "Email sudah terdaftar!"})
-    try:
-        amount = int(re.sub(r'[^\d]', '', price_str))
-    except Exception:
-        amount = 200000
+    
+    # SECURITY FIX: Harga (amount) WAJIB ditentukan 100% oleh server (Anti-F12 Console Tampering)
+    amount = PLANS_CATALOG.get(plan_key, 200000)
 
     order_id = f"ORDER-{uuid.uuid4().hex[:8].upper()}"
     auth_string = base64.b64encode(f"{config.MIDTRANS_SERVER_KEY}:".encode()).decode()
@@ -482,27 +493,34 @@ def n8n_webhook():
         except Exception as e:
             print(f"Error finding user by API key: {e}")
 
+    # SECURITY FIX: Tolak jika API Key tidak valid atau tidak terdaftar
+    if not user_data:
+        return jsonify({
+            "success": False, 
+            "status": "UNAUTHORIZED", 
+            "message": "API Key tidak valid atau tidak terdaftar di sistem TRENDORA."
+        }), 401
+
     # 2. VERIFIKASI TRIAL & KUOTA POSTING
-    if user_data:
-        trial_info = check_user_trial_status(user_data)
+    trial_info = check_user_trial_status(user_data)
+    
+    if trial_info["is_expired"] and not trial_info["is_paid"]:
+        return jsonify({
+            "success": False,
+            "status": "FAILED",
+            "message": "Masa Free Trial 1 Minggu Anda telah habis! Silakan upgrade akun ke berbayar di Dashboard TRENDORA.",
+            "details": {"error": "Free Trial Expired (> 7 hari). Silakan upgrade ke akun berbayar."}
+        }), 400
         
-        if trial_info["is_expired"] and not trial_info["is_paid"]:
+    if trial_info["is_trial"] and not trial_info["is_paid"]:
+        today_posts = count_today_posts_for_key(api_key)
+        if today_posts >= 1:
             return jsonify({
                 "success": False,
                 "status": "FAILED",
-                "message": "Masa Free Trial 1 Minggu Anda telah habis! Silakan upgrade akun ke berbayar di Dashboard TRENDORA.",
-                "details": {"error": "Free Trial Expired (> 7 hari). Silakan upgrade ke akun berbayar."}
+                "message": "Batas Free Trial tercapai! Akun Free Trial hanya diperbolehkan posting maksimal 1 video per hari. Silakan upgrade ke akun berbayar.",
+                "details": {"error": "Maksimal 1 video per hari untuk akun Free Trial."}
             }), 400
-            
-        if trial_info["is_trial"] and not trial_info["is_paid"]:
-            today_posts = count_today_posts_for_key(api_key)
-            if today_posts >= 1:
-                return jsonify({
-                    "success": False,
-                    "status": "FAILED",
-                    "message": "Batas Free Trial tercapai! Akun Free Trial hanya diperbolehkan posting maksimal 1 video per hari. Silakan upgrade ke akun berbayar.",
-                    "details": {"error": "Maksimal 1 video per hari untuk akun Free Trial."}
-                }), 400
 
     data = request.json or {}
     platform = data.get('platform', 'unknown').lower()
@@ -703,43 +721,36 @@ def get_logs():
     Mengambil riwayat log aktivitas yang TERISOLASI KETAT per pengguna.
     Hanya mengembalikan log milik API Key pengguna aktif.
     """
-    # 1. Identifikasi Pengguna dari Sesi Server / Headers / Request Body
+    # 1. Identifikasi Pengguna terotentikasi HANYA dari Sesi Server atau X-API-Key terverifikasi
     active_email = session.get('user_email', '').strip().lower()
-    
-    if not active_email:
-        active_email = request.headers.get('X-User-Email', '').strip().lower()
-
     api_key = request.headers.get('X-API-Key', '').strip()
 
-    if request.is_json:
-        body = request.get_json(silent=True) or {}
-        if not active_email:
-            active_email = body.get('email', '').strip().lower()
-        if not api_key:
-            api_key = body.get('api_key', '').strip()
+    # Jika via API Key tanpa sesi, verifikasi API Key ke database
+    if not active_email and api_key:
+        sheet_u = db.get_gsheet()
+        if sheet_u:
+            try:
+                for r in sheet_u.get_all_values()[1:]:
+                    if len(r) >= 5 and str(r[4]).strip() == api_key:
+                        active_email = str(r[0]).strip().lower()
+                        break
+            except Exception:
+                pass
 
     if not active_email:
-        active_email = request.args.get('email', '').strip().lower()
-    if not api_key:
-        api_key = request.args.get('api_key', '').strip()
+        return jsonify({
+            "success": False, 
+            "message": "Autentikasi gagal. Sesi login atau API Key valid tidak ditemukan.", 
+            "logs": []
+        }), 401
 
     if api_key and ('•' in api_key or api_key == '-'):
         api_key = ''
 
     # 2. Resolusi API Key Pengguna Aktif
-    user_info = None
-    if active_email:
-        user_info = db.db_get_user(active_email)
-        if user_info and user_info.get('api_key') and user_info.get('api_key') != '-':
-            api_key = user_info.get('api_key').strip()
-
-    # 3. KETAT: Jika Pengguna Belum Terverifikasi atau Tidak Memiliki API Key, Kembalikan Array Kosong
-    if not active_email and not api_key:
-        return jsonify({
-            "success": False, 
-            "message": "Autentikasi diperlukan. Sesi tidak ditemukan.", 
-            "logs": []
-        }), 401
+    user_info = db.db_get_user(active_email)
+    if user_info and user_info.get('api_key') and user_info.get('api_key') != '-':
+        api_key = user_info.get('api_key').strip()
 
     if not api_key or api_key == '-' or '•' in api_key:
         return jsonify({
@@ -748,7 +759,7 @@ def get_logs():
             "notice": "Akun ini belum memiliki API Key aktif atau belum melakukan postingan."
         }), 200
 
-    # 4. Kueri Log di Google Sheets khusus untuk API Key Pengguna Aktif
+    # 3. Kueri Log di Google Sheets khusus untuk API Key Pengguna Aktif
     logs = []
     sheet_logs = db.get_logs_sheet()
     
@@ -762,10 +773,12 @@ def get_logs():
                         
                         # FILTER KETAT: Hanya ambil baris yang tepat sesuai API Key pengguna aktif
                         if row_key == api_key:
+                            # SECURITY FIX: Sensor API Key di respon agar tidak bocor via inspect network
+                            masked_log_key = row_key[:8] + "•" * 16 if len(row_key) > 8 else "TREND_••••"
                             logs.append({
                                 "Timestamp": str(row[0]).strip() if len(row) > 0 else "-", 
                                 "LogID": str(row[1]).strip() if len(row) > 1 else "-",
-                                "APIKey": row_key,
+                                "APIKey": masked_log_key,
                                 "Platform": str(row[3]).strip() if len(row) > 3 else "-", 
                                 "Status": str(row[4]).strip() if len(row) > 4 else "-",
                                 "Details": str(row[5]).strip() if len(row) > 5 else "-"

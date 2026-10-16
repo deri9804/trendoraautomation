@@ -59,12 +59,18 @@ def check_trial_social_limit(email):
 
 @oauth_bp.route('/api/disconnect-social', methods=['POST'])
 def disconnect_social():
+    # SECURITY FIX: Hanya izinkan user yang sedang login di sesi server (Anti-F12 Hijack)
+    active_email = session.get('user_email', '').strip().lower()
+    if not active_email:
+        return jsonify({"success": False, "message": "Autentikasi gagal. Sesi tidak ditemukan."}), 401
+
     data = request.json or {}
-    email = data.get('email', '').strip().lower()
     platform = data.get('platform', '').strip()
 
-    if not email or not platform:
-        return jsonify({"success": False, "message": "Data tidak lengkap"})
+    if not platform:
+        return jsonify({"success": False, "message": "Data tidak lengkap"}), 400
+
+    email = active_email
 
     sheet = db.get_gsheet()
     if sheet:
@@ -183,11 +189,26 @@ def get_tiktok_creator_info():
     """
     Mengambil data profil dan permission creator TikTok (Sesuai Poin 1 Content Sharing Guidelines).
     """
-    email = request.args.get('email', '').strip()
-    api_key = request.args.get('api_key', '').strip() or request.headers.get('X-API-Key', '').strip()
+    # SECURITY FIX: Utamakan sesi login server, atau validasi API Key terdaftar
+    session_email = session.get('user_email', '').strip().lower()
+    api_key = (request.headers.get('X-API-Key') or request.args.get('api_key') or '').strip()
 
-    if not email and not api_key:
-        return jsonify({"success": False, "message": "Email atau API Key diperlukan."}), 400
+    email = None
+    if session_email:
+        email = session_email
+    elif api_key:
+        sheet_u = db.get_gsheet()
+        if sheet_u:
+            try:
+                for r in sheet_u.get_all_values()[1:]:
+                    if len(r) >= 5 and str(r[4]).strip() == api_key:
+                        email = str(r[0]).strip().lower()
+                        break
+            except Exception:
+                pass
+
+    if not email:
+        return jsonify({"success": False, "message": "Autentikasi sesi atau API Key valid diperlukan."}), 401
 
     user_tokens = db.db_get_tiktok_tokens_by_api_key(api_key=api_key, email=email)
     access_token = user_tokens.get('access_token')
@@ -563,15 +584,29 @@ def direct_share_to_tiktok():
     """
     from routes.webhook_n8n import upload_video_to_tiktok
     
-    # 1. Dapatkan identitas pengguna (email / API key)
-    email = (request.form.get('email') or request.headers.get('X-User-Email') or session.get('user_email') or '').strip()
-    api_key = (request.form.get('api_key') or request.headers.get('X-API-Key') or '').strip()
-    
-    if not email and not api_key:
+    # 1. Dapatkan identitas pengguna terotentikasi (Sesi server terenkripsi atau API Key terdaftar)
+    session_email = session.get('user_email', '').strip().lower()
+    api_key = (request.headers.get('X-API-Key') or request.form.get('api_key') or '').strip()
+
+    email = None
+    if session_email:
+        email = session_email
+    elif api_key:
+        sheet_u = db.get_gsheet()
+        if sheet_u:
+            try:
+                for r in sheet_u.get_all_values()[1:]:
+                    if len(r) >= 5 and str(r[4]).strip() == api_key:
+                        email = str(r[0]).strip().lower()
+                        break
+            except Exception:
+                pass
+
+    if not email:
         return jsonify({
             "success": False,
             "error_code": "AUTH_REQUIRED",
-            "message": "Autentikasi gagal. Sesi login pengguna tidak ditemukan."
+            "message": "Autentikasi gagal. Sesi login pengguna atau API Key valid tidak ditemukan."
         }), 401
         
     # 2. Ambil token TikTok pengguna dari database

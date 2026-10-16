@@ -289,6 +289,19 @@ function resetLogFilters() {
     if (tbody) tbody.innerHTML = '<tr><td colspan="5" style="padding: 20px; text-align: center; color: #6b7280;">Silakan pilih filter di atas dan klik "Filter" untuk melihat log.</td></tr>';
 }
 
+// Helper Sanitasi HTML (Anti-XSS Injection)
+function escapeHtml(text) {
+  if (text === null || text === undefined) return '';
+  const map = {
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#039;'
+  };
+  return String(text).replace(/[&<>"']/g, function(m) { return map[m]; });
+}
+
 function renderLogsTable(logsArray) {
   const tbody = document.getElementById('dashLogsTableBody');
   if (!tbody) return;
@@ -310,12 +323,19 @@ function renderLogsTable(logsArray) {
         detailsStr = parsed.caption || parsed.tiktok_error || parsed.yt_error || parsed.meta_error || parsed.linkedin_error || parsed.media_url || JSON.stringify(parsed);
     } catch(e) {}
 
+    // SECURITY FIX: Sanitasi semua input log dengan escapeHtml untuk mencegah eksekusi Stored XSS
+    const safeTimestamp = escapeHtml(log.Timestamp || '-');
+    const safeLogID = escapeHtml(log.LogID || '-');
+    const safePlatform = escapeHtml(log.Platform || '-');
+    const safeStatus = escapeHtml(logStatus);
+    const safeDetails = escapeHtml(detailsStr);
+
     html += '<tr style="border-bottom: 1px solid rgba(255,255,255,0.05); color: #e5e7eb;">';
-    html += '<td style="padding: 12px; font-size: 12px; white-space: nowrap;">' + (log.Timestamp || '-') + '</td>';
-    html += '<td style="padding: 12px; font-family: monospace; font-size: 12px; color: #818cf8;">' + (log.LogID || '-') + '</td>';
-    html += '<td style="padding: 12px; text-transform: capitalize; font-weight: 600;">' + (log.Platform || '-') + '</td>';
-    html += '<td style="padding: 12px;"><span style="font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 10px; ' + statusBadge + '">' + logStatus + '</span></td>';
-    html += '<td style="padding: 12px; font-size: 12px; color: #9ca3af; max-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title=\'' + detailsStr.replace(/'/g, "&#39;") + '\'>' + detailsStr + '</td>';
+    html += '<td style="padding: 12px; font-size: 12px; white-space: nowrap;">' + safeTimestamp + '</td>';
+    html += '<td style="padding: 12px; font-family: monospace; font-size: 12px; color: #818cf8;">' + safeLogID + '</td>';
+    html += '<td style="padding: 12px; text-transform: capitalize; font-weight: 600;">' + safePlatform + '</td>';
+    html += '<td style="padding: 12px;"><span style="font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 10px; ' + statusBadge + '">' + safeStatus + '</span></td>';
+    html += '<td style="padding: 12px; font-size: 12px; color: #9ca3af; max-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="' + safeDetails + '">' + safeDetails + '</td>';
     html += '</tr>';
   });
 

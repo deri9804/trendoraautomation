@@ -19,7 +19,8 @@ app.secret_key = getattr(config, 'SECRET_KEY', os.environ.get("SECRET_KEY", "tre
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=7)
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
-app.config['SESSION_COOKIE_SECURE'] = False  # Set True jika full HTTPS production
+# Otomatis aktifkan Secure Cookie jika running di Vercel HTTPS
+app.config['SESSION_COOKIE_SECURE'] = bool(os.environ.get('VERCEL') or os.environ.get('SESSION_COOKIE_SECURE', '').lower() == 'true')
 
 # Register All Route Blueprints
 app.register_blueprint(pages_bp)
@@ -27,11 +28,14 @@ app.register_blueprint(auth_bp)
 app.register_blueprint(webhook_bp)
 app.register_blueprint(oauth_bp)
 
-# Global CORS Handler
+# Global Security Headers & CORS Handler
 @app.after_request
-def add_cors_headers(response):
-    response.headers['Access-Control-Allow-Origin'] = '*'
-    response.headers['Access-Control-Allow-Headers'] = 'Content-Type,Authorization,X-API-Key,X-User-Email'
+def add_security_headers(response):
+    response.headers['X-Content-Type-Options'] = 'nosniff'
+    response.headers['X-Frame-Options'] = 'SAMEORIGIN'
+    response.headers['X-XSS-Protection'] = '1; mode=block'
+    # Batasi CORS untuk headers yang diizinkan
+    response.headers['Access-Control-Allow-Headers'] = 'Content-Type,Authorization,X-API-Key'
     response.headers['Access-Control-Allow-Methods'] = 'GET,PUT,POST,DELETE,OPTIONS'
     return response
 
@@ -41,7 +45,9 @@ def page_not_found(e):
 
 @app.errorhandler(500)
 def server_error(e):
-    return jsonify({"success": False, "message": f"Internal Server Error: {str(e)}"}), 500
+    # SECURITY FIX: Jangan pernah bocorkan internal traceback/error str(e) ke user/client publik!
+    print(f"[Internal Server Error 500]: {e}")
+    return jsonify({"success": False, "message": "Terjadi kendala pada server (500). Silakan hubungi admin."}), 500
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))

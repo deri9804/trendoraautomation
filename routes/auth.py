@@ -162,6 +162,10 @@ def check_user_trial_status(user_data):
             "reg_date": reg_date.strftime("%d/%m/%Y")
         }
 
+# Rate limiting in-memory storage (Anti Brute-Force & Anti Spam Reset)
+_otp_attempts = {}    # {email: [timestamp, ...]}
+_reset_cooldown = {}  # {email: last_request_timestamp}
+
 @auth_bp.route('/api/request-otp', methods=['POST', 'OPTIONS'])
 def request_otp():
     if request.method == 'OPTIONS':
@@ -188,18 +192,16 @@ def request_otp():
                 user_data.get('status', '')
             )
 
-        is_linked = user_data.get('is_linked', False)
-        
-        if not is_linked:
-            issuer = "TRENDORA"
-            totp_uri = f"otpauth://totp/{issuer}:{email}?secret={secret}&issuer={issuer}"
-            qr_code_url = f"https://api.qrserver.com/v1/create-qr-code/?size=200x200&data={urllib.parse.quote(totp_uri)}"
-            return jsonify({"success": True, "is2faLinked": False, "qrCodeUrl": qr_code_url}), 200
-        else:
-            return jsonify({"success": True, "is2faLinked": True}), 200
+        # SECURITY FIX: JANGAN PERNAH membocorkan secret / qrCodeUrl di respon publik!
+        # User cukup diinstruksikan untuk memasukkan 6 digit OTP dari Google Authenticator.
+        return jsonify({
+            "success": True, 
+            "is2faLinked": True,
+            "message": "Silakan buka aplikasi Google Authenticator Anda dan masukkan 6 digit kode OTP."
+        }), 200
     except Exception as e:
         print(f"[Error /api/request-otp]: {e}")
-        return jsonify({"success": False, "message": f"Terjadi kesalahan server: {str(e)}"}), 200
+        return jsonify({"success": False, "message": "Terjadi kesalahan server saat memproses permintaan OTP."}), 500
 
 @auth_bp.route('/api/verify-otp', methods=['POST', 'OPTIONS'])
 def verify_otp_route():
@@ -212,6 +214,17 @@ def verify_otp_route():
         otp = data.get('otp', '').strip()
         if not email or not otp:
             return jsonify({"success": False, "message": "Data tidak lengkap!"}), 200
+
+        # SECURITY FIX: Proteksi Brute-Force OTP (Maksimal 5 percobaan gagal per 10 menit)
+        now_ts = datetime.now().timestamp()
+        if email in _otp_attempts:
+            # Bersihkan percobaan yang sudah lewat dari 10 menit (600 detik)
+            _otp_attempts[email] = [ts for ts in _otp_attempts[email] if now_ts - ts < 600]
+            if len(_otp_attempts[email]) >= 5:
+                return jsonify({
+                    "success": False, 
+                    "message": "Terlalu banyak percobaan OTP yang salah. Demi keamanan akun, silakan tunggu 10 menit sebelum mencoba lagi."
+                }), 429
             
         user_data = db.db_get_user(email)
         if not user_data:
@@ -223,6 +236,9 @@ def verify_otp_route():
 
         is_valid = sec.verify_totp(secret, otp)
         if is_valid:
+            # Reset counter percobaan gagal jika sukses
+            _otp_attempts.pop(email, None)
+
             name = user_data.get('name') or email.split('@')[0].capitalize()
             api_key = user_data.get('api_key', '').strip()
             trial_info = check_user_trial_status(user_data)
@@ -250,13 +266,17 @@ def verify_otp_route():
             session['session_token'] = session_token
             session.permanent = True
             
+            # SECURITY FIX: Sensor API Key di respon jika akun belum berbayar
+            masked_key = api_key if trial_info["is_paid"] else (api_key[:8] + "•" * 24 if api_key and api_key != '-' else "-")
+            
             return jsonify({
                 "success": True, 
                 "sessionToken": session_token,
                 "user": {
                     "name": name, 
                     "email": email, 
-                    "apiKey": api_key, 
+                    "apiKey": masked_key, 
+                    "isKeyLocked": not trial_info["is_paid"],
                     "status": trial_info["status_text"], 
                     "isPaid": trial_info["is_paid"],
                     "isTrial": trial_info["is_trial"],
@@ -265,10 +285,20 @@ def verify_otp_route():
                     "connectedPlatforms": connected_platforms
                 }
             }), 200
-        return jsonify({"success": False, "message": "Kode OTP salah atau sudah kadaluarsa!"}), 200
+
+        # Catat percobaan gagal
+        if email not in _otp_attempts:
+            _otp_attempts[email] = []
+        _otp_attempts[email].append(now_ts)
+        sisa_percobaan = max(0, 5 - len(_otp_attempts[email]))
+        
+        return jsonify({
+            "success": False, 
+            "message": f"Kode OTP salah atau sudah kadaluarsa! (Sisa percobaan: {sisa_percobaan})"
+        }), 200
     except Exception as e:
         print(f"[Error /api/verify-otp]: {e}")
-        return jsonify({"success": False, "message": f"Terjadi kesalahan server: {str(e)}"}), 200
+        return jsonify({"success": False, "message": "Terjadi kesalahan server saat memverifikasi OTP."}), 500
 
 @auth_bp.route('/api/reset-2fa', methods=['POST', 'OPTIONS'])
 @auth_bp.route('/api/reset-2fa-qr', methods=['POST', 'OPTIONS'])
@@ -290,36 +320,47 @@ def reset_2fa():
         if not user_data:
             return jsonify({"success": False, "message": "Email tidak terdaftar di sistem!"}), 200
 
+        # SECURITY FIX: Rate Limit Cooldown Reset 2FA (Minimal jeda 3 menit antar permintaan reset)
+        now_ts = datetime.now().timestamp()
+        last_reset = _reset_cooldown.get(email, 0)
+        if now_ts - last_reset < 180:
+            remaining = int(180 - (now_ts - last_reset))
+            return jsonify({
+                "success": False, 
+                "message": f"Permintaan reset 2FA baru saja dikirim. Harap tunggu {remaining} detik lagi sebelum meminta ulang demi mencegah spam."
+            }), 429
+
         new_secret = sec.generate_base32_secret()
         name = user_data.get('name', 'User')
         api_key = user_data.get('api_key', '')
         status = user_data.get('status', '')
-        
-        # Simpan secret key baru ke Google Sheets
-        db.db_save_user(email, new_secret, False, name, api_key, status)
         
         # Buat URI dan QR Code URL untuk Google Authenticator
         issuer = "TRENDORA"
         totp_uri = f"otpauth://totp/{issuer}:{email}?secret={new_secret}&issuer={issuer}"
         qr_code_url = f"https://api.qrserver.com/v1/create-qr-code/?size=200x200&data={urllib.parse.quote(totp_uri)}"
 
-        # Kirim QR Code & Setup Key ke email pengguna
+        # SECURITY FIX: Kirim QR Code & Setup Key ke EMAIL TERDAFTAR pengguna via SMTP.
+        # HANYA simpan ke database jika email berhasil terkirim!
         email_sent, email_err = send_2fa_reset_email(email, new_secret, qr_code_url, user_name=name)
 
         if email_sent:
+            _reset_cooldown[email] = now_ts
+            # Simpan secret key baru ke Google Sheets setelah terkirim ke email
+            db.db_save_user(email, new_secret, True, name, api_key, status)
             return jsonify({
                 "success": True, 
-                "message": f"QR Code 2FA baru telah dikirim ke email {email}. Silakan buka kotak masuk/spam email Anda, scan di Google Authenticator, lalu masukkan 6 digit OTP di form login!"
+                "message": f"Instruksi dan QR Code 2FA baru telah dikirim ke email terdaftar Anda ({email}). Silakan periksa inbox atau folder spam, lalu masukkan 6 digit OTP baru."
             }), 200
         else:
             return jsonify({
                 "success": False, 
-                "message": f"Kunci 2FA berhasil dibuat di database, namun email gagal dikirim: {email_err}. Pastikan variabel SMTP_PASSWORD (App Password Gmail) sudah disetel di Vercel."
-            }), 200
+                "message": f"Gagal mengirimkan email reset 2FA: {email_err}. Pastikan konfigurasi SMTP server aktif."
+            }), 500
 
     except Exception as e:
         print(f"[Error /api/reset-2fa]: {e}")
-        return jsonify({"success": False, "message": f"Terjadi kesalahan server: {str(e)}"}), 200
+        return jsonify({"success": False, "message": "Terjadi kesalahan server saat mereset 2FA."}), 500
 
 @auth_bp.route('/api/register-trial', methods=['POST', 'OPTIONS'])
 def register_trial():
@@ -381,19 +422,15 @@ def generate_api_key_route():
     if request.method == 'OPTIONS':
         return jsonify({"success": True}), 200
     try:
-        data = request.get_json(silent=True) or {}
-        email = data.get('email', '').strip().lower()
-        
-        # Validasi sesi aktif
-        if not email:
-            email = session.get('user_email', '').strip().lower()
+        # SECURITY FIX: Validasi sesi aktif HANYA dari session server terenkripsi (Anti-F12 IDOR)
+        email = session.get('user_email', '').strip().lower()
 
         if not email:
-            return jsonify({"success": False, "message": "Sesi tidak valid atau email tidak ditemukan!"}), 401
+            return jsonify({"success": False, "message": "Sesi tidak valid atau belum login!"}), 401
 
         user_data = db.db_get_user(email)
         if not user_data:
-            return jsonify({"success": False, "message": "User tidak ditemukan!"}), 200
+            return jsonify({"success": False, "message": "User tidak ditemukan!"}), 404
 
         trial_info = check_user_trial_status(user_data)
 
@@ -403,7 +440,7 @@ def generate_api_key_route():
                 "isPaid": False, 
                 "isExpired": True,
                 "message": "Masa Free Trial 7 Hari Anda sudah habis! Silakan upgrade akun ke berbayar untuk membuat API Key baru."
-            }), 200
+            }), 403
 
         new_api_key = generate_50char_api_key()
         db.db_save_user(
@@ -414,15 +451,18 @@ def generate_api_key_route():
             new_api_key, 
             user_data.get('status', '')
         )
+
+        display_key = new_api_key if trial_info["is_paid"] else (new_api_key[:8] + "•" * 24)
+
         return jsonify({
             "success": True, 
             "isPaid": trial_info["is_paid"], 
             "isExpired": False,
-            "apiKey": new_api_key
+            "apiKey": display_key
         }), 200
     except Exception as e:
         print(f"[Error /api/generate-api-key]: {e}")
-        return jsonify({"success": False, "message": f"Terjadi kesalahan server: {str(e)}"}), 200
+        return jsonify({"success": False, "message": "Terjadi kesalahan server saat membuat API Key."}), 500
 
 @auth_bp.route('/api/me', methods=['POST', 'GET', 'OPTIONS'])
 def get_me():
@@ -430,14 +470,9 @@ def get_me():
     if request.method == 'OPTIONS':
         return jsonify({"success": True}), 200
     try:
+        # SECURITY FIX: HANYA percaya sesi terenkripsi server-side (HTTP Cookie)!
+        # TIDAK PERNAH membaca email dari request.json / request.headers yang bisa dipalsukan via F12
         email = session.get('user_email', '').strip().lower()
-        
-        if not email and request.is_json:
-            data = request.get_json(silent=True) or {}
-            email = data.get('email', '').strip().lower()
-            
-        if not email:
-            email = request.headers.get('X-User-Email', '').strip().lower()
             
         if not email:
             return jsonify({
@@ -456,20 +491,26 @@ def get_me():
             }), 401
         
         trial_info = check_user_trial_status(user_data)
-        api_key = (user_data.get('api_key') or '').strip()
+        raw_api_key = (user_data.get('api_key') or '').strip()
 
         # JIKA TRIAL MASIH AKTIF TAPI API KEY BELUM TERBUAT (KOSONG ATAU "-"), GENERATE OTOMATIS
-        if (not api_key or api_key == '-' or '•' in api_key) and not trial_info["is_expired"]:
-            api_key = generate_50char_api_key()
+        if (not raw_api_key or raw_api_key == '-' or '•' in raw_api_key) and not trial_info["is_expired"]:
+            raw_api_key = generate_50char_api_key()
             db.db_save_user(
                 email,
                 user_data.get('secret', ''),
                 user_data.get('is_linked', False),
                 user_data.get('name', ''),
-                api_key,
+                raw_api_key,
                 user_data.get('status', '')
             )
         
+        # SECURITY FIX: Sensor API Key jika akun belum berbayar (Mencegah intip F12 console)
+        if not trial_info["is_paid"]:
+            display_api_key = (raw_api_key[:8] + "•" * 24) if raw_api_key and raw_api_key != '-' else "-"
+        else:
+            display_api_key = raw_api_key
+
         connected_platforms = []
         if user_data.get('tiktok_connected'): connected_platforms.append('TikTok')
         if user_data.get('meta_connected'):
@@ -480,16 +521,14 @@ def get_me():
         if user_data.get('threads_connected'): connected_platforms.append('Threads')
         if user_data.get('twitter_connected'): connected_platforms.append('Twitter')
         
-        # Perbarui sesi server aktif
-        session['user_email'] = email
-        
         return jsonify({
             "success": True,
             "authenticated": True,
             "user": {
                 "name": user_data.get('name', ''),
                 "email": email,
-                "apiKey": api_key,
+                "apiKey": display_api_key,
+                "isKeyLocked": not trial_info["is_paid"],
                 "status": trial_info["status_text"],
                 "isPaid": trial_info["is_paid"],
                 "isTrial": trial_info["is_trial"],
@@ -500,7 +539,7 @@ def get_me():
         }), 200
     except Exception as e:
         print(f"[Error /api/me]: {e}")
-        return jsonify({"success": False, "message": f"Terjadi kesalahan server: {str(e)}"}), 200
+        return jsonify({"success": False, "message": "Terjadi kesalahan server saat memuat sesi pengguna."}), 500
 
 @auth_bp.route('/api/logout', methods=['POST', 'GET'])
 def logout_route():

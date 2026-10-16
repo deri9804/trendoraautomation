@@ -23,31 +23,35 @@ function handleLogout() {
 
 function checkStoredSession() {
   try {
-    const savedUser = localStorage.getItem('automedia_user');
-    if (savedUser) {
-      globalUserData = JSON.parse(savedUser);
-      renderLoggedInUI(globalUserData, false);
-      
-      // Silent sync dengan database tiap kali halamannya dimuat
-      if (globalUserData && globalUserData.email) {
-        fetch('/api/me', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email: globalUserData.email })
-        })
-        .then(res => res.json())
-        .then(data => {
-          if (data.success) {
-            globalUserData = data.user;
-            localStorage.setItem('automedia_user', JSON.stringify(globalUserData));
-            renderLoggedInUI(globalUserData, false);
-          }
-        })
-        .catch(err => console.log("Sync error:", err));
+    // SECURITY FIX: Sinkronisasi resmi dengan server menggunakan HTTPOnly Session Cookie
+    // JANGAN PERNAH mengirim email dari localStorage sebagai bukti autentikasi!
+    fetch('/api/me', {
+      method: 'GET',
+      headers: { 'Accept': 'application/json' }
+    })
+    .then(res => {
+      if (res.status === 401 || !res.ok) {
+        // Sesi di server tidak valid atau sudah expired, bersihkan data lokal palsu/usang
+        localStorage.removeItem('automedia_user');
+        globalUserData = null;
+        if (typeof renderGuestUI === 'function') renderGuestUI();
+        if (window.location.pathname.includes('/dashboard')) {
+          window.location.href = '/login';
+        }
+        return null;
       }
-    }
+      return res.json();
+    })
+    .then(data => {
+      if (data && data.success && data.user) {
+        globalUserData = data.user;
+        localStorage.setItem('automedia_user', JSON.stringify(globalUserData));
+        renderLoggedInUI(globalUserData, false);
+      }
+    })
+    .catch(err => console.log("Sync session error:", err));
   } catch (e) {
-    console.error('Session parse error:', e);
+    console.error('Session check error:', e);
   }
 }
 
