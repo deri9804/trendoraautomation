@@ -1066,7 +1066,10 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
       let apiKey = "";
 
       try {
-        const storedUser = localStorage.getItem('trendora_user') || sessionStorage.getItem('trendora_user');
+        const storedUser = localStorage.getItem('trendora_user') || 
+                           sessionStorage.getItem('trendora_user') ||
+                           localStorage.getItem('automedia_user') ||
+                           sessionStorage.getItem('automedia_user');
         if (storedUser) {
           const parsed = JSON.parse(storedUser);
           email = (parsed.email || "").toLowerCase().trim();
@@ -1074,9 +1077,18 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
         }
       } catch (e) {}
 
+      if (!email && window.currentUserData && window.currentUserData.email) {
+        email = String(window.currentUserData.email).toLowerCase().trim();
+      }
       if (!apiKey && window.currentUserData) {
-        apiKey = (window.currentUserData.apiKey || window.currentUserData.api_key || "").trim();
-        if (!email) email = (window.currentUserData.email || "").toLowerCase().trim();
+        apiKey = String(window.currentUserData.apiKey || window.currentUserData.api_key || "").trim();
+      }
+
+      if (!email) {
+        const emailElem = document.getElementById('dashUserEmail');
+        if (emailElem && emailElem.innerText && emailElem.innerText.includes('@')) {
+          email = emailElem.innerText.trim().toLowerCase();
+        }
       }
 
       if (apiKey.includes('•') || apiKey === "-" || apiKey.includes('Belum Ada')) {
@@ -1486,6 +1498,7 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
         const res = await fetch(getApiUrl(`${authEndpoint}?email=${encodeURIComponent(email)}`));
         const data = await res.json();
         if (data.success && data.url) {
+          if (btnContainer && prevHtml) btnContainer.innerHTML = prevHtml;
           const width = 600, height = 700;
           const left = (window.innerWidth - width) / 2;
           const top = (window.innerHeight - height) / 2;

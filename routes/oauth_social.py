@@ -21,17 +21,20 @@ from routes.auth import check_user_trial_status
 
 oauth_bp = Blueprint('oauth_social', __name__)
 
-def check_trial_social_limit(email):
+def check_trial_social_limit(email=None):
     """
     Memeriksa apakah akun trial sudah melebihi batas 2 sosial media atau sudah expired.
     Return (can_connect: bool, error_message: str)
     """
     if not email:
-        return False, "Email pengguna tidak valid."
+        email = session.get('user_email', '').strip().lower()
+
+    if not email:
+        return False, "Sesi login tidak ditemukan atau email tidak valid. Silakan muat ulang halaman atau login kembali."
         
     user_data = db.db_get_user(email)
     if not user_data:
-        return False, "User tidak ditemukan."
+        return False, f"User dengan email '{email}' tidak ditemukan di database."
         
     trial_info = check_user_trial_status(user_data)
     
@@ -120,7 +123,7 @@ def disconnect_social():
 
 @oauth_bp.route('/api/tiktok-auth-url', methods=['GET'])
 def get_tiktok_auth_url():
-    email = request.args.get('email', '').strip()
+    email = (session.get('user_email', '') or request.args.get('email', '')).strip().lower()
     can_connect, err_msg = check_trial_social_limit(email)
     if not can_connect:
         return jsonify({"success": False, "message": err_msg}), 400
@@ -275,7 +278,7 @@ def get_tiktok_creator_info():
 
 @oauth_bp.route('/api/meta-auth-url', methods=['GET'])
 def get_meta_auth_url():
-    email = request.args.get('email', '').strip()
+    email = (session.get('user_email', '') or request.args.get('email', '')).strip().lower()
     can_connect, err_msg = check_trial_social_limit(email)
     if not can_connect:
         return jsonify({"success": False, "message": err_msg}), 400
@@ -368,7 +371,7 @@ def twitter_webhook():
 
 @oauth_bp.route('/api/twitter-auth-url', methods=['GET'])
 def get_twitter_auth_url():
-    email = request.args.get('email', '').strip()
+    email = (session.get('user_email', '') or request.args.get('email', '')).strip().lower()
     can_connect, err_msg = check_trial_social_limit(email)
     if not can_connect:
         return jsonify({"success": False, "message": err_msg}), 400
@@ -425,7 +428,7 @@ def twitter_callback():
 
 @oauth_bp.route('/api/linkedin-auth-url', methods=['GET'])
 def get_linkedin_auth_url():
-    email = request.args.get('email', '').strip()
+    email = (session.get('user_email', '') or request.args.get('email', '')).strip().lower()
     can_connect, err_msg = check_trial_social_limit(email)
     if not can_connect:
         return jsonify({"success": False, "message": err_msg}), 400
@@ -475,7 +478,7 @@ def linkedin_callback():
 
 @oauth_bp.route('/api/youtube-auth-url', methods=['GET'])
 def get_youtube_auth_url():
-    email = request.args.get('email', '').strip()
+    email = (session.get('user_email', '') or request.args.get('email', '')).strip().lower()
     can_connect, err_msg = check_trial_social_limit(email)
     if not can_connect:
         return jsonify({"success": False, "message": err_msg}), 400
@@ -530,7 +533,7 @@ def youtube_callback():
 
 @oauth_bp.route('/api/threads-auth-url', methods=['GET'])
 def get_threads_auth_url():
-    email = request.args.get('email', '').strip()
+    email = (session.get('user_email', '') or request.args.get('email', '')).strip().lower()
     can_connect, err_msg = check_trial_social_limit(email)
     if not can_connect:
         return jsonify({"success": False, "message": err_msg}), 400
