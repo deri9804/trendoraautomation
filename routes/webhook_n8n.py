@@ -99,6 +99,12 @@ def upload_video_to_tiktok(access_token, refresh_token, media_url=None, caption=
             try:
                 with urllib.request.urlopen(req_v, timeout=60) as v_res:
                     raw_bytes = v_res.read()
+            except urllib.error.HTTPError as e_http:
+                if e_http.code == 403:
+                    return False, {"tiktok_error": f"Gagal mengunduh file video (HTTP 403 Forbidden). File pada URL cloud storage masih PRIVATE (Access Denied). Silakan ubah izin file/bucket di Google Cloud Storage menjadi Public (Principal 'allUsers' role 'Storage Object Viewer') atau gunakan Signed URL publik."}
+                elif e_http.code == 404:
+                    return False, {"tiktok_error": f"Gagal mengunduh file video (HTTP 404 Not Found). File tidak ditemukan pada URL: {media_url}"}
+                return False, {"tiktok_error": f"Gagal mengunduh file video dari URL (HTTP {e_http.code}): {str(e_http)}"}
             except Exception as e_dl:
                 return False, {"tiktok_error": f"Gagal mengunduh file video dari URL: {str(e_dl)}"}
 
@@ -523,25 +529,36 @@ def n8n_webhook():
             }), 400
 
     data = request.json or {}
-    platform = data.get('platform', 'unknown').lower()
+    platform = str(data.get('platform', 'unknown')).strip().lower()
     status = data.get('status', 'RECEIVED')
-    details = data.get('details', {})
+    
+    # Robust details handling (mendukung format dict, string, atau kosong)
+    raw_details = data.get('details', {})
+    details = raw_details if isinstance(raw_details, dict) else {}
+
+    # Ekstraksi parameter fleksibel: support data di dalam details maupun root level payload
+    media_url = details.get('media_url') or data.get('media_url') or data.get('video_url') or data.get('url') or ''
+    caption = details.get('caption') or data.get('caption') or data.get('title') or data.get('text') or ''
+    hashtag = details.get('hashtag') or data.get('hashtag') or data.get('tags') or ''
+    privacy_level = details.get('privacy_level') or data.get('privacy_level') or 'PUBLIC_TO_EVERYONE'
     
     # 3. TIKTOK AUTO UPLOAD HANDLER (Menggunakan FILE_UPLOAD, Bebas dari batasan Domain Verification)
-    if platform == 'tiktok' and isinstance(details, dict) and status != "PUBLISHED (SUCCESS)":
-        media_url = details.get('media_url')
-        caption = details.get('caption', 'Diposting otomatis via TRENDORA Automation! 🚀')
-        privacy_level = details.get('privacy_level', 'SELF_ONLY')
-        
-        if media_url:
-            user_tokens = db.db_get_tiktok_tokens_by_api_key(
-                api_key, 
-                email=user_data.get('email') if user_data else None
-            )
-            access_token = user_tokens.get('access_token')
-            refresh_tok = user_tokens.get('refresh_token')
-            row_idx = user_tokens.get('row_idx')
+    if platform == 'tiktok' and status != "PUBLISHED (SUCCESS)":
+        user_tokens = db.db_get_tiktok_tokens_by_api_key(
+            api_key, 
+            email=user_data.get('email') if user_data else None
+        )
+        access_token = user_tokens.get('access_token')
+        refresh_tok = user_tokens.get('refresh_token')
+        row_idx = user_tokens.get('row_idx')
 
+        if not access_token and not refresh_tok:
+            status = "FAILED"
+            details['tiktok_error'] = "Akun TikTok belum terhubung di Dashboard TRENDORA. Silakan hubungkan akun TikTok di menu Integrasi Akun Sosial Media."
+        elif not media_url:
+            status = "FAILED"
+            details['tiktok_error'] = "Media URL video tidak ditemukan pada payload n8n (kirimkan parameter 'media_url')."
+        else:
             is_ok, res_dict = upload_video_to_tiktok(
                 access_token, 
                 refresh_tok, 
@@ -556,16 +573,18 @@ def n8n_webhook():
             else:
                 status = "FAILED"
                 details.update(res_dict)
-        else:
-            status = "FAILED"
-            details['tiktok_error'] = "Media URL video tidak ditemukan pada payload."
 
     # 4. META (FACEBOOK PAGE) HANDLER
-    elif platform == 'facebook' and isinstance(details, dict):
-        media_url = details.get('media_url')
-        caption = details.get('caption', 'Auto-post by TRENDORA ⚡')
+    elif platform == 'facebook':
         meta_token = db.db_get_meta_token_by_api_key(api_key, email=user_data.get('email') if user_data else None)
-        if meta_token and media_url:
+        if not meta_token:
+            status = "FAILED"
+            details['facebook_error'] = "Akun Facebook belum terhubung di Dashboard TRENDORA. Silakan hubungkan akun Facebook Anda di dashboard (menu Integrasi Akun Sosial Media) terlebih dahulu."
+        elif not media_url:
+            status = "FAILED"
+            details['facebook_error'] = "Media URL video tidak ditemukan pada payload n8n (kirimkan parameter 'media_url')."
+        else:
+            caption_text = caption or 'Auto-post by TRENDORA ⚡'
             try:
                 page_url = f"https://graph.facebook.com/v18.0/me/accounts?access_token={meta_token}"
                 with urllib.request.urlopen(urllib.request.Request(page_url)) as response:
@@ -574,7 +593,7 @@ def n8n_webhook():
                     page_id = page_data['data'][0]['id']
                     page_token = page_data['data'][0]['access_token']
                     fb_post_url = f"https://graph.facebook.com/v18.0/{page_id}/videos"
-                    fb_payload = urllib.parse.urlencode({'file_url': media_url, 'description': caption, 'access_token': page_token}).encode('utf-8')
+                    fb_payload = urllib.parse.urlencode({'file_url': media_url, 'description': caption_text, 'access_token': page_token}).encode('utf-8')
                     with urllib.request.urlopen(urllib.request.Request(fb_post_url, data=fb_payload, method='POST')) as res_post:
                         fb_res = json.loads(res_post.read().decode('utf-8'))
                         status = "PUBLISHED (SUCCESS)"
@@ -582,17 +601,26 @@ def n8n_webhook():
                         details['fb_video_id'] = fb_res.get('id')
                 else:
                     status = "FAILED"
-                    details['meta_error'] = "Tidak menemukan Facebook Page pada akun Meta yang terhubung."
+                    details['facebook_error'] = "Tidak menemukan Facebook Page pada akun Meta yang terhubung. Pastikan akun Facebook Anda mengelola minimal 1 Facebook Page."
+            except urllib.error.HTTPError as e_fb:
+                status = "FAILED"
+                err_resp = e_fb.read().decode('utf-8', errors='ignore')
+                details['facebook_error'] = f"[Facebook API HTTP {e_fb.code}] {err_resp}"
             except Exception as e:
                 status = "FAILED"
-                details['meta_error'] = str(e)
+                details['facebook_error'] = str(e)
 
     # 5. META (INSTAGRAM REELS) HANDLER
-    elif platform == 'instagram' and isinstance(details, dict):
-        media_url = details.get('media_url')
-        caption = details.get('caption', 'Auto-post Reels by TRENDORA ⚡')
+    elif platform == 'instagram':
         meta_token = db.db_get_meta_token_by_api_key(api_key, email=user_data.get('email') if user_data else None)
-        if meta_token and media_url:
+        if not meta_token:
+            status = "FAILED"
+            details['instagram_error'] = "Akun Instagram belum terhubung di Dashboard TRENDORA. Silakan hubungkan akun Meta/Instagram di Dashboard terlebih dahulu."
+        elif not media_url:
+            status = "FAILED"
+            details['instagram_error'] = "Media URL video tidak ditemukan pada payload n8n (kirimkan parameter 'media_url')."
+        else:
+            caption_text = caption or 'Auto-post Reels by TRENDORA ⚡'
             try:
                 page_url = f"https://graph.facebook.com/v18.0/me/accounts?access_token={meta_token}"
                 with urllib.request.urlopen(urllib.request.Request(page_url)) as response:
@@ -606,7 +634,7 @@ def n8n_webhook():
                     ig_user_id = ig_data.get('instagram_business_account', {}).get('id')
                     if ig_user_id:
                         ig_container_url = f"https://graph.facebook.com/v18.0/{ig_user_id}/media"
-                        ig_payload = urllib.parse.urlencode({'media_type': 'REELS', 'video_url': media_url, 'caption': caption, 'access_token': meta_token}).encode('utf-8')
+                        ig_payload = urllib.parse.urlencode({'media_type': 'REELS', 'video_url': media_url, 'caption': caption_text, 'access_token': meta_token}).encode('utf-8')
                         with urllib.request.urlopen(urllib.request.Request(ig_container_url, data=ig_payload, method='POST')) as res_cont:
                             cont_data = json.loads(res_cont.read().decode('utf-8'))
                             creation_id = cont_data.get('id')
@@ -622,60 +650,71 @@ def n8n_webhook():
                         except urllib.error.HTTPError:
                             status = "PENDING / RENDERING"
                             details['ig_status'] = f"Video diproses Instagram (ID: {creation_id})."
+                    else:
+                        status = "FAILED"
+                        details['instagram_error'] = "Facebook Page tidak terhubung ke Akun Bisnis Instagram (instagram_business_account)."
+                else:
+                    status = "FAILED"
+                    details['instagram_error'] = "Tidak menemukan Facebook Page yang terhubung ke Instagram Business."
+            except urllib.error.HTTPError as e_ig:
+                status = "FAILED"
+                err_resp = e_ig.read().decode('utf-8', errors='ignore')
+                details['instagram_error'] = f"[Instagram API HTTP {e_ig.code}] {err_resp}"
             except Exception as e:
                 status = "FAILED"
-                details['meta_error'] = str(e)
+                details['instagram_error'] = str(e)
 
     # 6. LINKEDIN UGC VIDEO HANDLER
-    elif platform == 'linkedin' and isinstance(details, dict):
-        media_url = details.get('media_url')
-        caption = details.get('caption', 'Diposting otomatis via TRENDORA Automation ⚡')
+    elif platform == 'linkedin':
         linkedin_token = db.db_get_linkedin_token_by_api_key(api_key, email=user_data.get('email') if user_data else None)
-        
-        if linkedin_token and media_url:
-            is_ok, res_dict = upload_video_to_linkedin(linkedin_token, media_url, caption)
+        if not linkedin_token:
+            status = "FAILED"
+            details['linkedin_error'] = "Akun LinkedIn belum terhubung atau Token Otorisasi kosong di Dashboard."
+        elif not media_url:
+            status = "FAILED"
+            details['linkedin_error'] = "Media URL video tidak ditemukan pada payload n8n (kirimkan parameter 'media_url')."
+        else:
+            caption_text = caption or 'Diposting otomatis via TRENDORA Automation ⚡'
+            is_ok, res_dict = upload_video_to_linkedin(linkedin_token, media_url, caption_text)
             if is_ok:
                 status = "PUBLISHED (SUCCESS)"
                 details.update(res_dict)
             else:
                 status = "FAILED"
                 details.update(res_dict)
-        else:
-            status = "FAILED"
-            if not linkedin_token:
-                details['linkedin_error'] = "Akun LinkedIn belum terhubung atau Token Otorisasi kosong."
-            elif not media_url:
-                details['linkedin_error'] = "Media URL video tidak ditemukan pada payload."
 
     # 7. YOUTUBE SHORTS / VIDEO HANDLER
-    elif platform == 'youtube' and isinstance(details, dict):
-        media_url = details.get('media_url')
-        caption = details.get('caption', 'Diposting otomatis via TRENDORA Automation ⚡')
+    elif platform == 'youtube':
         yt_tokens = db.db_get_youtube_tokens_by_api_key(api_key, email=user_data.get('email') if user_data else None)
         yt_access = yt_tokens.get('access_token')
         yt_refresh = yt_tokens.get('refresh_token')
         yt_row = yt_tokens.get('row_idx')
 
-        if (yt_access or yt_refresh) and media_url:
-            is_ok, res_dict = upload_video_to_youtube(yt_access, yt_refresh, media_url, caption, row_idx=yt_row)
+        if not yt_access and not yt_refresh:
+            status = "FAILED"
+            details['youtube_error'] = "Akun YouTube belum terhubung atau Token Otorisasi kosong di Dashboard."
+        elif not media_url:
+            status = "FAILED"
+            details['youtube_error'] = "Media URL video tidak ditemukan pada payload n8n (kirimkan parameter 'media_url')."
+        else:
+            caption_text = caption or 'Diposting otomatis via TRENDORA Automation ⚡'
+            is_ok, res_dict = upload_video_to_youtube(yt_access, yt_refresh, media_url, caption_text, row_idx=yt_row)
             if is_ok:
                 status = "PUBLISHED (SUCCESS)"
                 details.update(res_dict)
             else:
                 status = "FAILED"
                 details.update(res_dict)
-        else:
-            status = "FAILED"
-            if not yt_access and not yt_refresh:
-                details['youtube_error'] = "Akun YouTube belum terhubung atau Token Otorisasi kosong."
-            elif not media_url:
-                details['youtube_error'] = "Media URL video tidak ditemukan pada payload."
 
-
-    media_url_val = details.pop('media_url', '') if isinstance(details, dict) else ''
-    caption_val = details.pop('caption', '') if isinstance(details, dict) else ''
-    hashtag_val = details.pop('hashtag', '') if isinstance(details, dict) else ''
+    media_url_val = media_url or ''
+    caption_val = caption or ''
+    hashtag_val = hashtag or ''
     
+    if isinstance(details, dict):
+        details.pop('media_url', None)
+        details.pop('caption', None)
+        details.pop('hashtag', None)
+
     if isinstance(details, dict) and len(details) == 0:
         if "SUCCESS" in status or status == "PUBLISHED":
             details = {"message": f"Video sukses dipublikasikan ke {platform.capitalize()}"}
@@ -706,11 +745,31 @@ def n8n_webhook():
         })
         
     is_upload_success = "SUCCESS" in status or status == "PUBLISHED"
+    
+    if is_upload_success:
+        resp_message = f"Video sukses dipublikasikan ke {platform.capitalize()}! 🚀"
+    else:
+        err_msg = (
+            details.get(f'{platform}_error') or 
+            details.get('facebook_error') or
+            details.get('instagram_error') or
+            details.get('tiktok_error') or
+            details.get('linkedin_error') or
+            details.get('youtube_error') or
+            details.get('meta_error') or 
+            details.get('error') or 
+            details.get('message') or 
+            "Upload Gagal / Tertunda"
+        )
+        resp_message = f"Upload Gagal: {err_msg}" if err_msg != "Upload Gagal / Tertunda" else err_msg
+
     return jsonify({
         "success": is_upload_success, 
         "status": status,
-        "message": "Processed & Logged" if is_upload_success else "Upload Gagal / Tertunda", 
+        "message": resp_message, 
         "log_id": log_id,
+        "targetPlatform": platform,
+        "submittedMediaUrl": media_url_val,
         "details": details
     })
 
