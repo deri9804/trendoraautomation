@@ -1361,8 +1361,8 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
       }
 
       renderApiKeyDisplay();
-      renderSocialChannels(user.connectedPlatforms || ['TikTok', 'Facebook', 'LinkedIn']);
-      updateTiktokStudioStatus(user.connectedPlatforms || ['TikTok', 'Facebook', 'LinkedIn']);
+      renderSocialChannels(Array.isArray(user.connectedPlatforms) ? user.connectedPlatforms : []);
+      updateTiktokStudioStatus(Array.isArray(user.connectedPlatforms) ? user.connectedPlatforms : []);
     }
 
     function setupFallbackUser(savedEmail) {
@@ -1381,7 +1381,7 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
         isTrial: true,
         isExpired: false,
         daysLeft: 7,
-        connectedPlatforms: (stored && stored.connectedPlatforms) ? stored.connectedPlatforms : ['TikTok', 'Facebook', 'LinkedIn']
+        connectedPlatforms: (stored && Array.isArray(stored.connectedPlatforms)) ? stored.connectedPlatforms : []
       };
       applyUserData(user);
     }
@@ -1498,22 +1498,12 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
             }
           }, 1000);
         } else {
-          if (window.currentUserData) {
-            if (!window.currentUserData.connectedPlatforms) window.currentUserData.connectedPlatforms = [];
-            if (!window.currentUserData.connectedPlatforms.includes(platform)) {
-              window.currentUserData.connectedPlatforms.push(platform);
-            }
-            renderSocialChannels(window.currentUserData.connectedPlatforms);
-          }
+          if (btnContainer && prevHtml) btnContainer.innerHTML = prevHtml;
+          alert(data.message || 'Gagal memulai otorisasi akun sosial media.');
         }
       } catch (e) {
-        if (window.currentUserData) {
-          if (!window.currentUserData.connectedPlatforms) window.currentUserData.connectedPlatforms = [];
-          if (!window.currentUserData.connectedPlatforms.includes(platform)) {
-            window.currentUserData.connectedPlatforms.push(platform);
-          }
-          renderSocialChannels(window.currentUserData.connectedPlatforms);
-        }
+        if (btnContainer && prevHtml) btnContainer.innerHTML = prevHtml;
+        alert('Terjadi kesalahan saat menghubungi server otorisasi.');
       }
     }
 

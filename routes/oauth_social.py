@@ -280,12 +280,18 @@ def get_meta_auth_url():
     if not can_connect:
         return jsonify({"success": False, "message": err_msg}), 400
 
+    if not config.META_CLIENT_ID:
+        return jsonify({
+            "success": False, 
+            "message": "Meta App ID (META_CLIENT_ID) belum dikonfigurasi di Environment Variables server. Silakan tambahkan META_CLIENT_ID & META_CLIENT_SECRET di dashboard Vercel / server Anda."
+        }), 400
+
     redirect_uri = "https://trendoraautomation.my.id/auth/meta/callback"
     state = f"{uuid.uuid4().hex[:8]}|{email}"
     scopes = "pages_show_list,pages_read_engagement,pages_manage_posts,instagram_basic,instagram_content_publish"
     
     params = {
-        "client_id": config.META_CLIENT_ID or "DUMMY_ID",
+        "client_id": config.META_CLIENT_ID,
         "redirect_uri": redirect_uri,
         "state": state,
         "scope": scopes,
