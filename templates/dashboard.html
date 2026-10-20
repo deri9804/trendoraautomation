@@ -879,7 +879,7 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
               <span>💬</span> Status Sensor Auto-Balas Komen AI (Real-Time)
             </div>
 
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; margin-bottom: 18px;">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 18px;">
               <!-- Facebook -->
               <div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(59,130,246,0.3); border-radius: 10px; padding: 12px 14px; display: flex; justify-content: space-between; align-items: center;">
                 <div style="display: flex; align-items: center; gap: 10px;">
@@ -904,16 +904,16 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
                 <span style="font-size: 10px; font-weight: 800; background: rgba(16,185,129,0.15); color: #34d399; padding: 2px 8px; border-radius: 6px;">AKTIF</span>
               </div>
 
-              <!-- YouTube -->
-              <div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 12px 14px; display: flex; justify-content: space-between; align-items: center;">
+              <!-- Twitter / X -->
+              <div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.15); border-radius: 10px; padding: 12px 14px; display: flex; justify-content: space-between; align-items: center;">
                 <div style="display: flex; align-items: center; gap: 10px;">
-                  <span style="font-size: 20px;">▶️</span>
+                  <span style="font-size: 20px;">🐦</span>
                   <div>
-                    <div style="font-size: 12.5px; font-weight: 700; color: #fff;">YouTube Shorts</div>
-                    <div style="font-size: 10.5px; color: #94a3b8;">Data API v3</div>
+                    <div style="font-size: 12.5px; font-weight: 700; color: #fff;">Twitter / X</div>
+                    <div style="font-size: 10.5px; color: #94a3b8;">Tweet Replies v2</div>
                   </div>
                 </div>
-                <span style="font-size: 10px; font-weight: 800; background: rgba(56,189,248,0.15); color: #38bdf8; padding: 2px 8px; border-radius: 6px;">TERSEDIA</span>
+                <span style="font-size: 10px; font-weight: 800; background: rgba(16,185,129,0.15); color: #34d399; padding: 2px 8px; border-radius: 6px;">AKTIF</span>
               </div>
 
               <!-- Threads -->
@@ -926,6 +926,42 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
                   </div>
                 </div>
                 <span style="font-size: 10px; font-weight: 800; background: rgba(16,185,129,0.15); color: #34d399; padding: 2px 8px; border-radius: 6px;">TERHUBUNG</span>
+              </div>
+
+              <!-- YouTube -->
+              <div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 12px 14px; display: flex; justify-content: space-between; align-items: center;">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                  <span style="font-size: 20px;">▶️</span>
+                  <div>
+                    <div style="font-size: 12.5px; font-weight: 700; color: #fff;">YouTube Shorts</div>
+                    <div style="font-size: 10.5px; color: #94a3b8;">Data API v3</div>
+                  </div>
+                </div>
+                <span style="font-size: 10px; font-weight: 800; background: rgba(56,189,248,0.15); color: #38bdf8; padding: 2px 8px; border-radius: 6px;">TERSEDIA</span>
+              </div>
+
+              <!-- TikTok -->
+              <div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 12px 14px; display: flex; justify-content: space-between; align-items: center;">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                  <span style="font-size: 20px;">🎵</span>
+                  <div>
+                    <div style="font-size: 12.5px; font-weight: 700; color: #fff;">TikTok Video</div>
+                    <div style="font-size: 10.5px; color: #94a3b8;">Creator Query API</div>
+                  </div>
+                </div>
+                <span style="font-size: 10px; font-weight: 800; background: rgba(245,158,11,0.15); color: #fbbf24; padding: 2px 8px; border-radius: 6px;">TERSEDIA</span>
+              </div>
+
+              <!-- LinkedIn -->
+              <div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 12px 14px; display: flex; justify-content: space-between; align-items: center;">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                  <span style="font-size: 20px;">💼</span>
+                  <div>
+                    <div style="font-size: 12.5px; font-weight: 700; color: #fff;">LinkedIn</div>
+                    <div style="font-size: 10.5px; color: #94a3b8;">Community API</div>
+                  </div>
+                </div>
+                <span style="font-size: 10px; font-weight: 800; background: rgba(99,102,241,0.15); color: #818cf8; padding: 2px 8px; border-radius: 6px;">B2B READY</span>
               </div>
             </div>
 
@@ -962,11 +998,14 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
 
             <!-- INPUT BAR COMBINED -->
             <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 14px;">
-              <select id="omniPlatformSelect" onchange="onOmniPlatformChange()" style="padding: 12px 14px; border-radius: 10px; background: #090d16; color: #fff; border: 1px solid rgba(255, 255, 255, 0.15); font-size: 13px; font-weight: 600; outline: none; cursor: pointer; min-width: 170px;">
-                <option value="facebook">📘 Facebook (Reels / Post)</option>
-                <option value="instagram">📷 Instagram (Reels / Post)</option>
-                <option value="youtube">▶️ YouTube (Shorts / Video)</option>
-                <option value="tiktok">🎵 TikTok (Video Query)</option>
+              <select id="omniPlatformSelect" onchange="onOmniPlatformChange()" style="padding: 12px 14px; border-radius: 10px; background: #090d16; color: #fff; border: 1px solid rgba(255, 255, 255, 0.15); font-size: 13px; font-weight: 600; outline: none; cursor: pointer; min-width: 200px;">
+                <option value="facebook">📘 Facebook (Reels &amp; Post)</option>
+                <option value="instagram">📷 Instagram (Reels &amp; Post)</option>
+                <option value="youtube">▶️ YouTube (Shorts &amp; Video)</option>
+                <option value="tiktok">🎵 TikTok (Video &amp; FYP)</option>
+                <option value="twitter">🐦 Twitter / X (Tweet &amp; Media)</option>
+                <option value="linkedin">💼 LinkedIn (B2B Post &amp; Video)</option>
+                <option value="threads">🧵 Threads (Post &amp; Reply)</option>
               </select>
 
               <input type="text" id="omniVideoIdInput" placeholder="Masukkan ID Reels Facebook atau Link Video (contoh: 948302984630142)" style="flex: 1; min-width: 250px; padding: 12px 16px; border-radius: 10px; background: rgba(255, 255, 255, 0.05); color: #fff; border: 1px solid rgba(255, 255, 255, 0.15); font-size: 13px; outline: none;">
@@ -2746,7 +2785,13 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
       } else if (p === 'youtube') {
         input.placeholder = 'Masukkan Link Shorts / ID Video YouTube (contoh: https://youtu.be/... atau dQw4w9WgXcQ)';
       } else if (p === 'tiktok') {
-        input.placeholder = 'Masukkan ID Video TikTok atau Link Video';
+        input.placeholder = 'Masukkan Link Video TikTok atau ID Video (contoh: https://www.tiktok.com/@user/video/...)';
+      } else if (p === 'twitter') {
+        input.placeholder = 'Masukkan Link Tweet / X atau Tweet ID (contoh: https://x.com/user/status/123456789)';
+      } else if (p === 'linkedin') {
+        input.placeholder = 'Masukkan Link Post LinkedIn atau Post URN (contoh: https://www.linkedin.com/feed/update/...)';
+      } else if (p === 'threads') {
+        input.placeholder = 'Masukkan Link Post Threads atau Media ID (contoh: https://www.threads.net/@user/post/...)';
       }
     }
 
@@ -2807,6 +2852,9 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
         if (platform === "instagram") platformIcon = "📷";
         else if (platform === "youtube") platformIcon = "▶️";
         else if (platform === "tiktok") platformIcon = "🎵";
+        else if (platform === "twitter" || platform === "x") platformIcon = "🐦";
+        else if (platform === "linkedin") platformIcon = "💼";
+        else if (platform === "threads") platformIcon = "🧵";
 
         container.style.display = 'block';
         container.innerHTML = `
