@@ -309,11 +309,28 @@ def get_meta_auth_url():
 def meta_callback():
     code = request.args.get('code')
     state = request.args.get('state', '')
+    error_reason = request.args.get('error_reason') or request.args.get('error')
+    error_description = request.args.get('error_description')
     email = state.split('|')[1] if '|' in state else ''
     
+    if error_reason:
+        print(f"[Meta OAuth Error from Facebook]: {error_reason} - {error_description}")
+        return f"""
+        <html><body style="background:#0d0a1a;color:#fff;font-family:sans-serif;text-align:center;padding:40px 20px;">
+        <h2 style="color:#f87171;">⚠️ Otorisasi Meta Gagal</h2>
+        <p style="color:#cbd5e1;font-size:14px;max-width:500px;margin:15px auto;">{error_description or error_reason}</p>
+        <p style="color:#94a3b8;font-size:12px;">Pastikan akun Facebook Anda memiliki Halaman (Fanpage) dan izin telah disetujui.</p>
+        <button onclick="window.close()" style="background:#3b82f6;color:#fff;padding:8px 20px;border:none;border-radius:6px;cursor:pointer;margin-top:15px;">Tutup Jendela</button>
+        </body></html>
+        """
+
+    page_name = None
+    page_id = None
+    has_instagram = False
+
     if code and email:
         try:
-            token_url = "https://graph.facebook.com/v18.0/oauth/access_token"
+            token_url = "https://graph.facebook.com/v21.0/oauth/access_token"
             payload = {
                 "client_id": config.META_CLIENT_ID,
                 "client_secret": config.META_CLIENT_SECRET,
@@ -323,24 +340,83 @@ def meta_callback():
             data = urllib.parse.urlencode(payload).encode('utf-8')
             req = urllib.request.Request(token_url, data=data)
             
-            with urllib.request.urlopen(req) as response:
+            with urllib.request.urlopen(req, timeout=15) as response:
                 res_data = json.loads(response.read().decode('utf-8'))
-                access_token = res_data.get('access_token')
+                short_token = res_data.get('access_token')
+
+            if short_token:
+                # 1. Exchange short-lived token ke Long-Lived Token (60 hari)
+                long_lived_token = short_token
+                try:
+                    ll_url = (
+                        f"https://graph.facebook.com/v21.0/oauth/access_token?"
+                        f"grant_type=fb_exchange_token&"
+                        f"client_id={config.META_CLIENT_ID}&"
+                        f"client_secret={config.META_CLIENT_SECRET}&"
+                        f"fb_exchange_token={short_token}"
+                    )
+                    with urllib.request.urlopen(urllib.request.Request(ll_url), timeout=12) as ll_resp:
+                        ll_data = json.loads(ll_resp.read().decode('utf-8'))
+                        long_lived_token = ll_data.get('access_token') or short_token
+                except Exception as e_ll:
+                    print("[Meta Long-Lived Token Exchange Error]:", e_ll)
+
+                # 2. Ambil Daftar Halaman Facebook milik User (/me/accounts)
+                final_token = long_lived_token
+                try:
+                    acc_url = f"https://graph.facebook.com/v21.0/me/accounts?fields=id,name,access_token,category,instagram_business_account&access_token={long_lived_token}"
+                    with urllib.request.urlopen(urllib.request.Request(acc_url), timeout=12) as acc_resp:
+                        acc_data = json.loads(acc_resp.read().decode('utf-8'))
+                        pages = acc_data.get('data', [])
+                        if pages:
+                            first_page = pages[0]
+                            page_name = first_page.get('name')
+                            page_id = first_page.get('id')
+                            if first_page.get('access_token'):
+                                final_token = first_page.get('access_token')
+                            
+                            ig_info = first_page.get('instagram_business_account')
+                            if ig_info:
+                                has_instagram = True
+                                print(f"[Meta Discovery]: Terhubung ke Page '{page_name}' (ID: {page_id}) & Instagram (ID: {ig_info.get('id')})")
+                            else:
+                                print(f"[Meta Discovery]: Terhubung ke Page '{page_name}' (ID: {page_id})")
+                        else:
+                            print(f"[Meta Warning]: User {email} tidak memiliki Facebook Page.")
+                except Exception as e_acc:
+                    print("[Meta Accounts Fetch Error]:", e_acc)
+
+                # 3. Simpan Token ke Database GSheet
                 sheet = db.get_gsheet()
-                if sheet and access_token:
+                if sheet and final_token:
                     all_vals = sheet.get_all_values()
                     for idx in range(len(all_vals)-1, 0, -1):
                         row = all_vals[idx]
                         if len(row) > 0 and str(row[0]).strip().lower() == email.lower():
-                            sheet.update_cell(idx + 1, 10, access_token)
+                            sheet.update_cell(idx + 1, 10, final_token)
                             break
         except Exception as e:
             print("Meta OAuth Error:", e)
 
-    return """
-    <html><body style="background:#0d0a1a;"><h2 style="color:#34d399;text-align:center;margin-top:50px;">Meta Connected!</h2>
-    <script>if(window.opener){window.opener.postMessage({type:'OAUTH_SUCCESS', platform:'Meta'}, '*');window.close();}</script>
-    </body></html>
+    page_msg = f"Halaman <strong>{page_name}</strong> berhasil ditautkan!" if page_name else "Akun Facebook terhubung! (Belum ada Fanpage terdeteksi)"
+    ig_msg = "<div style='color:#38bdf8;font-size:12px;margin-top:6px;'>📷 Akun Instagram Bisnis otomatis terdeteksi!</div>" if has_instagram else "<div style='color:#94a3b8;font-size:11.5px;margin-top:6px;'>Tip: Tautkan Instagram Profesional ke Halaman FB Anda agar Reels aktif.</div>"
+
+    return f"""
+    <html>
+    <body style="background:#0d0a1a;color:#fff;font-family:sans-serif;text-align:center;padding:40px 20px;">
+      <div style="font-size:36px;margin-bottom:10px;">🎉</div>
+      <h2 style="color:#34d399;margin-bottom:8px;">Meta Berhasil Terhubung!</h2>
+      <p style="color:#e2e8f0;font-size:14px;margin-bottom:4px;">{page_msg}</p>
+      {ig_msg}
+      <p style="color:#64748b;font-size:11px;margin-top:16px;">Jendela ini akan tertutup otomatis...</p>
+      <script>
+        if(window.opener){{
+          window.opener.postMessage({{type:'OAUTH_SUCCESS', platform:'Meta'}}, '*');
+          setTimeout(() => {{ window.close(); }}, 2000);
+        }}
+      </script>
+    </body>
+    </html>
     """
 
 @oauth_bp.route('/auth/meta/webhook', methods=['GET', 'POST'])
@@ -1597,14 +1673,18 @@ def get_twitter_auth_url():
         return jsonify({"success": False, "message": err_msg}), 400
 
     state = f"{uuid.uuid4().hex[:8]}|{email}"
+    code_verifier = "trendora_twitter_secure_verifier_code_2026_pkce"
+    sha256_hash = hashlib.sha256(code_verifier.encode('ascii')).digest()
+    code_challenge = base64.urlsafe_b64encode(sha256_hash).decode('ascii').replace('=', '')
+
     params = {
         "response_type": "code",
         "client_id": config.TWITTER_CLIENT_ID or "DUMMY_ID",
         "redirect_uri": "https://trendoraautomation.my.id/auth/twitter/callback",
         "scope": "tweet.read tweet.write users.read offline.access",
         "state": state,
-        "code_challenge": "trendora_twitter_challenge_123",
-        "code_challenge_method": "plain"
+        "code_challenge": code_challenge,
+        "code_challenge_method": "S256"
     }
     return jsonify({"success": True, "url": f"https://twitter.com/i/oauth2/authorize?{urllib.parse.urlencode(params)}"})
 
@@ -1620,7 +1700,7 @@ def twitter_callback():
                 "grant_type": "authorization_code",
                 "client_id": config.TWITTER_CLIENT_ID,
                 "redirect_uri": "https://trendoraautomation.my.id/auth/twitter/callback",
-                "code_verifier": "trendora_twitter_challenge_123"
+                "code_verifier": "trendora_twitter_secure_verifier_code_2026_pkce"
             }
             auth_str = f"{config.TWITTER_CLIENT_ID}:{config.TWITTER_CLIENT_SECRET}"
             b64_auth = base64.b64encode(auth_str.encode()).decode()
