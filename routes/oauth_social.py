@@ -1129,6 +1129,7 @@ def get_meta_insights():
 
         return jsonify({
             "success": True,
+            "platform": "facebook",
             "type": "reels",
             "object_id": target_id,
             "video_info": video_info,
