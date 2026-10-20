@@ -533,10 +533,10 @@
           </button>
         </li>
         <li>
-          <button type="button" class="sidebar-tab-btn" data-tab="meta-suite" onclick="switchDashboardTab('meta-suite')">
+          <button type="button" class="sidebar-tab-btn" data-tab="omnichannel" onclick="switchDashboardTab('omnichannel')">
             <svg class="menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm1 14.5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0zm1.75-6.75l-.5 2.5h-4.5l-.5-2.5a2.5 2.5 0 1 1 5.5 0z"/></svg>
-            <span>Meta AI Growth Suite</span>
-            <span class="menu-badge-new">NEW</span>
+            <span>Omnichannel AI Suite</span>
+            <span class="menu-badge-new">PRO AI</span>
           </button>
         </li>
         <li>
@@ -851,62 +851,133 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
       </section>
 
       <!-- ============================================== -->
-      <!-- TAB 4: META AI GROWTH SUITE (GRAPH API v21.0)  -->
+      <!-- TAB 4: OMNICHANNEL AI GROWTH & DIAGNOSTICS     -->
       <!-- ============================================== -->
-      <section id="tab-meta-suite" class="dash-tab-section">
-        <div class="dashboard-hero-card" style="margin-bottom: 30px; display: block; border: 1px solid rgba(59, 130, 246, 0.3); background: linear-gradient(135deg, rgba(30, 58, 138, 0.15), rgba(15, 23, 42, 0.7));">
+      <section id="tab-omnichannel" class="dash-tab-section">
+        <div class="dashboard-hero-card" style="margin-bottom: 24px; display: block; border: 1px solid rgba(59, 130, 246, 0.3); background: linear-gradient(135deg, rgba(30, 58, 138, 0.2), rgba(15, 23, 42, 0.75));">
           <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 14px; margin-bottom: 20px;">
             <div>
               <span style="display: inline-flex; align-items: center; gap: 6px; background: rgba(59, 130, 246, 0.2); color: #60a5fa; padding: 4px 12px; border-radius: 12px; font-size: 11px; font-weight: 800; margin-bottom: 8px;">
-                ⚡ META GRAPH API v21.0 PRO
+                ⚡ OMNICHANNEL AI ENGINE (ALL-IN-ONE)
               </span>
               <h3 style="margin-bottom: 6px; font-size: 22px; color: #fff; display: flex; align-items: center; gap: 10px;">
-                🤖 Meta Auto-Balas Komen &amp; Reels Insight AI
+                🤖 Omnichannel AI Growth &amp; Diagnostics Suite
               </h3>
-              <p style="color: #9ca3af; font-size: 13px; margin: 0;">Otomatisasi balasan komentar dengan Gemini AI untuk mendongkrak sinyal interaksi algoritma, serta audit mendalam performa Reels.</p>
+              <p style="color: #94a3b8; font-size: 13px; margin: 0;">Pusat kendali otomatisasi balasan komentar AI dan evaluasi performa algoritma lintas platform (Facebook, Instagram, YouTube, TikTok).</p>
             </div>
             <div style="display: flex; gap: 10px; align-items: center;">
               <span style="display: inline-flex; align-items: center; gap: 6px; background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.3); color: #34d399; padding: 6px 12px; border-radius: 8px; font-size: 12px; font-weight: 700;">
                 <span style="width: 8px; height: 8px; background: #34d399; border-radius: 50%; box-shadow: 0 0 8px #34d399;"></span>
-                Webhook Feed: AKTIF
+                AI Agent: AKTIF (Gemini 1.5)
               </span>
             </div>
           </div>
 
-          <!-- DUA FITUR HIGHLIGHT -->
-          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin-bottom: 24px;">
-            <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 12px; padding: 16px;">
-              <div style="font-weight: 700; color: #60a5fa; font-size: 14px; margin-bottom: 6px; display: flex; align-items: center; gap: 8px;">
-                <span>💬</span> Auto-Balas Komen AI (Real-Time)
-              </div>
-              <p style="font-size: 12px; color: #9ca3af; line-height: 1.5; margin: 0;">
-                Setiap komentar baru di Post / Reels Page Anda ditangkap server Trendora via webhook <code style="color: #93c5fd;">feed</code> dan dibalas otomatis oleh Gemini AI secara ramah. Menjaga followers agar betah dan memicu interaksi awal.
-              </p>
+          <!-- PANEL 1: STATUS SAKLAR AUTO-BALAS KOMEN PER PLATFORM -->
+          <div style="background: rgba(0, 0, 0, 0.3); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 14px; padding: 20px; margin-bottom: 24px;">
+            <div style="font-size: 14px; font-weight: 700; color: #fff; margin-bottom: 14px; display: flex; align-items: center; gap: 8px;">
+              <span>💬</span> Status Sensor Auto-Balas Komen AI (Real-Time)
             </div>
-            <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 12px; padding: 16px;">
-              <div style="font-weight: 700; color: #ec4899; font-size: 14px; margin-bottom: 6px; display: flex; align-items: center; gap: 8px;">
-                <span>📊</span> AI Diagnostic &amp; Drop-Off Audit
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; margin-bottom: 18px;">
+              <!-- Facebook -->
+              <div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(59,130,246,0.3); border-radius: 10px; padding: 12px 14px; display: flex; justify-content: space-between; align-items: center;">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                  <span style="font-size: 20px;">📘</span>
+                  <div>
+                    <div style="font-size: 12.5px; font-weight: 700; color: #fff;">Facebook Page</div>
+                    <div style="font-size: 10.5px; color: #94a3b8;">Webhook Feed</div>
+                  </div>
+                </div>
+                <span style="font-size: 10px; font-weight: 800; background: rgba(16,185,129,0.15); color: #34d399; padding: 2px 8px; border-radius: 6px;">AKTIF</span>
               </div>
-              <p style="font-size: 12px; color: #9ca3af; line-height: 1.5; margin: 0;">
-                Tarik data analitik Reels langsung dari Meta Graph API: views, jangkauan unik, engaged users, dan durasi tonton. Trendora AI akan mendiagnosis penyebab video sepi / stuck di cold audience.
-              </p>
+
+              <!-- Instagram -->
+              <div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(236,72,153,0.3); border-radius: 10px; padding: 12px 14px; display: flex; justify-content: space-between; align-items: center;">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                  <span style="font-size: 20px;">📷</span>
+                  <div>
+                    <div style="font-size: 12.5px; font-weight: 700; color: #fff;">Instagram Reels</div>
+                    <div style="font-size: 10.5px; color: #94a3b8;">Comments &amp; Mentions</div>
+                  </div>
+                </div>
+                <span style="font-size: 10px; font-weight: 800; background: rgba(16,185,129,0.15); color: #34d399; padding: 2px 8px; border-radius: 6px;">AKTIF</span>
+              </div>
+
+              <!-- YouTube -->
+              <div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 12px 14px; display: flex; justify-content: space-between; align-items: center;">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                  <span style="font-size: 20px;">▶️</span>
+                  <div>
+                    <div style="font-size: 12.5px; font-weight: 700; color: #fff;">YouTube Shorts</div>
+                    <div style="font-size: 10.5px; color: #94a3b8;">Data API v3</div>
+                  </div>
+                </div>
+                <span style="font-size: 10px; font-weight: 800; background: rgba(56,189,248,0.15); color: #38bdf8; padding: 2px 8px; border-radius: 6px;">TERSEDIA</span>
+              </div>
+
+              <!-- Threads -->
+              <div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 12px 14px; display: flex; justify-content: space-between; align-items: center;">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                  <span style="font-size: 20px;">🧵</span>
+                  <div>
+                    <div style="font-size: 12.5px; font-weight: 700; color: #fff;">Threads</div>
+                    <div style="font-size: 10.5px; color: #94a3b8;">Graph API v1.0</div>
+                  </div>
+                </div>
+                <span style="font-size: 10px; font-weight: 800; background: rgba(16,185,129,0.15); color: #34d399; padding: 2px 8px; border-radius: 6px;">TERHUBUNG</span>
+              </div>
+            </div>
+
+            <!-- PERSONA SELECTOR -->
+            <div style="border-top: 1px solid rgba(255,255,255,0.06); padding-top: 14px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px;">
+              <div>
+                <div style="font-size: 12.5px; font-weight: 700; color: #fff; margin-bottom: 3px;">🎭 Persona Nada Bicara AI:</div>
+                <div style="font-size: 11px; color: #94a3b8;">Pilih bagaimana AI Trendora menyapa dan merespons penonton Anda.</div>
+              </div>
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <select id="omniPersonaSelect" onchange="updatePersonaPreview()" style="padding: 8px 14px; border-radius: 8px; background: #090d16; color: #fff; border: 1px solid rgba(255,255,255,0.15); font-size: 12px; outline: none; cursor: pointer;">
+                  <option value="creator">🔥 Ramah &amp; Gaul (Kreator Santai, Emoji, Panggil Kak/Bro)</option>
+                  <option value="professional">💼 Profesional &amp; Solutif (Cocok untuk Bisnis &amp; Edukasi)</option>
+                  <option value="support">💬 CS Sopan &amp; Ramah (Cocok untuk Toko &amp; Brand)</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- LIVE PREVIEW PERSONA -->
+            <div style="margin-top: 12px; background: rgba(255,255,255,0.02); border: 1px dashed rgba(255,255,255,0.1); border-radius: 8px; padding: 10px 14px; font-size: 11.5px; color: #cbd5e1; display: flex; align-items: center; gap: 8px;">
+              <span style="color: #60a5fa; font-weight: 700;">Contoh Balasan AI:</span>
+              <span id="omniPersonaPreviewText">"Hai kak Budi! Makasih banyak udah mampir nonton yaa, semoga tipsnya bermanfaat! Gas dicoba! 🔥✨"</span>
             </div>
           </div>
 
-          <!-- CHECKER REELS INSIGHT FORM -->
-          <div style="background: rgba(0, 0, 0, 0.3); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 12px; padding: 20px;">
-            <h4 style="font-size: 15px; color: #fff; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
-              🔍 Tarik Data Insight Reels / Post Facebook Spesifik
-            </h4>
+          <!-- PANEL 2: UNIVERSAL VIDEO AUDIT & ALGORITHM DIAGNOSIS -->
+          <div style="background: rgba(0, 0, 0, 0.3); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 14px; padding: 22px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 14px;">
+              <h4 style="font-size: 15px; color: #fff; margin: 0; display: flex; align-items: center; gap: 8px;">
+                🔍 Universal Video Performance &amp; Algorithmic Diagnosis
+              </h4>
+              <span style="font-size: 11px; color: #94a3b8;">Mendukung Link / ID Video Facebook, Instagram, YouTube &amp; TikTok</span>
+            </div>
+
+            <!-- INPUT BAR COMBINED -->
             <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 14px;">
-              <input type="text" id="metaReelsIdInput" placeholder="Masukkan ID Reels / Video (contoh: 948302984630142)" style="flex: 1; min-width: 250px; padding: 12px 16px; border-radius: 10px; background: rgba(255, 255, 255, 0.05); color: #fff; border: 1px solid rgba(255, 255, 255, 0.15); font-size: 13px; outline: none;">
-              <button type="button" id="btnCheckMetaInsight" onclick="checkMetaReelsInsight()" style="padding: 12px 22px; background: linear-gradient(135deg, #2563eb, #7c3aed); color: #fff; font-weight: 700; font-size: 13px; border: none; border-radius: 10px; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 8px;">
-                <span>🚀 Tarik Data Insight &amp; Evaluasi AI</span>
+              <select id="omniPlatformSelect" onchange="onOmniPlatformChange()" style="padding: 12px 14px; border-radius: 10px; background: #090d16; color: #fff; border: 1px solid rgba(255, 255, 255, 0.15); font-size: 13px; font-weight: 600; outline: none; cursor: pointer; min-width: 170px;">
+                <option value="facebook">📘 Facebook (Reels / Post)</option>
+                <option value="instagram">📷 Instagram (Reels / Post)</option>
+                <option value="youtube">▶️ YouTube (Shorts / Video)</option>
+                <option value="tiktok">🎵 TikTok (Video Query)</option>
+              </select>
+
+              <input type="text" id="omniVideoIdInput" placeholder="Masukkan ID Reels Facebook atau Link Video (contoh: 948302984630142)" style="flex: 1; min-width: 250px; padding: 12px 16px; border-radius: 10px; background: rgba(255, 255, 255, 0.05); color: #fff; border: 1px solid rgba(255, 255, 255, 0.15); font-size: 13px; outline: none;">
+              
+              <button type="button" id="btnCheckOmniInsight" onclick="checkOmnichannelInsight()" style="padding: 12px 24px; background: linear-gradient(135deg, #2563eb, #7c3aed); color: #fff; font-weight: 700; font-size: 13px; border: none; border-radius: 10px; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 8px;">
+                <span>🚀 Tarik Insight &amp; Diagnosis AI</span>
               </button>
             </div>
             
             <!-- RESULT AREA -->
-            <div id="metaInsightResultContainer" style="display: none; margin-top: 20px;"></div>
+            <div id="omniInsightResultContainer" style="display: none; margin-top: 22px;"></div>
           </div>
         </div>
       </section>
@@ -1377,10 +1448,10 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
     // Ganti Tab Sidebar
     function switchDashboardTab(tabKey) {
       if (tabKey === 'webhook') tabKey = 'integration';
-      if (tabKey === 'meta') tabKey = 'meta-suite';
+      if (tabKey === 'meta' || tabKey === 'meta-suite') tabKey = 'omnichannel';
       if (tabKey === 'studio') tabKey = 'tiktok-studio';
 
-      const allowedTabs = ['overview', 'integration', 'social', 'meta-suite', 'tiktok-studio', 'logs'];
+      const allowedTabs = ['overview', 'integration', 'social', 'omnichannel', 'meta-suite', 'tiktok-studio', 'logs'];
       if (!allowedTabs.includes(tabKey)) tabKey = 'overview';
 
       document.querySelectorAll('.dash-tab-section').forEach(sec => {
@@ -2664,25 +2735,57 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
       }
     });
 
-    async function checkMetaReelsInsight() {
-      const input = document.getElementById('metaReelsIdInput');
-      const btn = document.getElementById('btnCheckMetaInsight');
-      const container = document.getElementById('metaInsightResultContainer');
+    function onOmniPlatformChange() {
+      const p = document.getElementById('omniPlatformSelect').value;
+      const input = document.getElementById('omniVideoIdInput');
+      if (!input) return;
+      if (p === 'facebook') {
+        input.placeholder = 'Masukkan ID Reels Facebook atau Link Video (contoh: 948302984630142)';
+      } else if (p === 'instagram') {
+        input.placeholder = 'Masukkan Link Reels / ID Media Instagram (contoh: https://www.instagram.com/reel/...)';
+      } else if (p === 'youtube') {
+        input.placeholder = 'Masukkan Link Shorts / ID Video YouTube (contoh: https://youtu.be/... atau dQw4w9WgXcQ)';
+      } else if (p === 'tiktok') {
+        input.placeholder = 'Masukkan ID Video TikTok atau Link Video';
+      }
+    }
+
+    function updatePersonaPreview() {
+      const p = document.getElementById('omniPersonaSelect').value;
+      const preview = document.getElementById('omniPersonaPreviewText');
+      if (!preview) return;
+      if (p === 'creator') {
+        preview.innerText = '"Hai kak Budi! Makasih banyak udah mampir nonton yaa, semoga tipsnya bermanfaat! Gas dicoba! 🔥✨"';
+      } else if (p === 'professional') {
+        preview.innerText = '"Terima kasih Bapak/Ibu atas masukannya. Kami senantiasa berkomitmen menghadirkan informasi yang solutif dan akurat."';
+      } else if (p === 'support') {
+        preview.innerText = '"Halo kak Budi! Terima kasih sudah menghubungi kami. Tim kami siap membantu kapan pun dibutuhkan yaa 😊🙌"';
+      }
+    }
+
+    async function checkOmnichannelInsight() {
+      const pSelect = document.getElementById('omniPlatformSelect');
+      const input = document.getElementById('omniVideoIdInput');
+      const btn = document.getElementById('btnCheckOmniInsight');
+      const container = document.getElementById('omniInsightResultContainer');
+      const persona = (document.getElementById('omniPersonaSelect') || {}).value || 'creator';
+
+      const platform = (pSelect ? pSelect.value : 'facebook').trim();
       const objectId = (input.value || '').trim();
 
       if (!objectId) {
-        alert('Silakan masukkan ID Reels atau Post Facebook terlebih dahulu.');
+        alert('Silakan masukkan ID Video atau Link konten terlebih dahulu.');
         input.focus();
         return;
       }
 
       const { email, apiKey } = getValidUserCredentials();
       const prevBtnText = btn.innerHTML;
-      btn.innerHTML = '<span>⏳ Menarik Data Insights...</span>';
+      btn.innerHTML = '<span>⏳ Menganalisis Algoritma ' + platform.toUpperCase() + '...</span>';
       btn.disabled = true;
 
       try {
-        const url = getApiUrl(`/api/meta/insights?object_id=${encodeURIComponent(objectId)}&type=reels&email=${encodeURIComponent(email)}&api_key=${encodeURIComponent(apiKey)}`);
+        const url = getApiUrl(`/api/omnichannel/insights?platform=${encodeURIComponent(platform)}&object_id=${encodeURIComponent(objectId)}&persona=${encodeURIComponent(persona)}&email=${encodeURIComponent(email)}&api_key=${encodeURIComponent(apiKey)}`);
         const res = await fetch(url);
         const data = await res.json();
 
@@ -2690,7 +2793,7 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
           container.style.display = 'block';
           container.innerHTML = `
             <div style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 10px; padding: 14px 18px; color: #fca5a5; font-size: 13px;">
-              ⚠️ <strong>Gagal mengambil insight:</strong> ${data.error || 'Terjadi kesalahan saat menghubungi Meta Graph API.'}
+              ⚠️ <strong>Gagal mengambil insight:</strong> ${data.error || data.message || 'Terjadi kesalahan saat memproses data.'}
             </div>
           `;
           return;
@@ -2700,18 +2803,26 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
         const vInfo = data.video_info || {};
         const ai = data.ai_evaluation || {};
 
+        let platformIcon = "📘";
+        if (platform === "instagram") platformIcon = "📷";
+        else if (platform === "youtube") platformIcon = "▶️";
+        else if (platform === "tiktok") platformIcon = "🎵";
+
         container.style.display = 'block';
         container.innerHTML = `
           <!-- HEADER VIDEO -->
           <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 16px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
-            <div>
-              <div style="font-size: 11px; color: #9ca3af; font-weight: 700;">VIDEO REELS ID: ${data.object_id}</div>
-              <div style="font-size: 15px; font-weight: 700; color: #fff; margin-top: 2px;">
-                ${vInfo.title || vInfo.description ? (vInfo.title || vInfo.description).substring(0, 60) + '...' : 'Reels Video Facebook'}
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <span style="font-size: 28px;">${platformIcon}</span>
+              <div>
+                <div style="font-size: 11px; color: #9ca3af; font-weight: 700; text-transform: uppercase;">${data.platform || platform} VIDEO ID: ${data.object_id}</div>
+                <div style="font-size: 15px; font-weight: 700; color: #fff; margin-top: 2px;">
+                  ${vInfo.title || vInfo.description ? (vInfo.title || vInfo.description).substring(0, 65) + '...' : 'Konten Video Media Sosial'}
+                </div>
               </div>
             </div>
-            <div style="font-size: 12px; color: #38bdf8; background: rgba(56,189,248,0.1); padding: 4px 10px; border-radius: 6px; border: 1px solid rgba(56,189,248,0.2);">
-              Durasi: ${vInfo.length ? Math.round(vInfo.length) + ' detik' : '-'}
+            <div style="font-size: 12px; color: #38bdf8; background: rgba(56,189,248,0.1); padding: 5px 12px; border-radius: 6px; border: 1px solid rgba(56,189,248,0.2);">
+              Audit Engine: <strong>Gemini AI</strong>
             </div>
           </div>
 
@@ -2722,13 +2833,12 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
               <div style="font-size: 24px; font-weight: 800; color: #fff; margin-top: 4px;">${metrics.views || 0}</div>
             </div>
             <div style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.25); border-radius: 10px; padding: 14px; text-align: center;">
-              <div style="font-size: 11px; color: #6ee7b7; font-weight: 700; text-transform: uppercase;">Reach (Akun Unik)</div>
-              <div style="font-size: 24px; font-weight: 800; color: #fff; margin-top: 4px;">${metrics.reach || 0}</div>
+              <div style="font-size: 11px; color: #6ee7b7; font-weight: 700; text-transform: uppercase;">Reach / Jangkauan</div>
+              <div style="font-size: 24px; font-weight: 800; color: #fff; margin-top: 4px;">${metrics.reach || metrics.views || 0}</div>
             </div>
             <div style="background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.25); border-radius: 10px; padding: 14px; text-align: center;">
-              <div style="font-size: 11px; color: #fcd34d; font-weight: 700; text-transform: uppercase;">Watch Time</div>
-              <div style="font-size: 20px; font-weight: 800; color: #fff; margin-top: 4px;">${metrics.total_watch_time_sec || 0}s</div>
-              <div style="font-size: 10px; color: #9ca3af; margin-top: 2px;">Rata-rata: ${metrics.avg_watch_time_sec || 0}s</div>
+              <div style="font-size: 11px; color: #fcd34d; font-weight: 700; text-transform: uppercase;">Interaksi / Likes</div>
+              <div style="font-size: 22px; font-weight: 800; color: #fff; margin-top: 4px;">${metrics.likes || metrics.engaged_users || 0}</div>
             </div>
             <div style="background: rgba(236, 72, 153, 0.1); border: 1px solid rgba(236, 72, 153, 0.25); border-radius: 10px; padding: 14px; text-align: center;">
               <div style="font-size: 11px; color: #f472b6; font-weight: 700; text-transform: uppercase;">Engaged Users</div>
@@ -2740,10 +2850,10 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
           <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(139, 92, 246, 0.3); border-radius: 12px; padding: 18px;">
             <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
               <div style="font-size: 14px; font-weight: 800; color: #c084fc; display: flex; align-items: center; gap: 8px;">
-                <span>🧠</span> AI Algorithmic Diagnosis (Kenapa Views Berhenti / Rendah)
+                <span>🧠</span> Evaluasi Algoritma AI (${platform.toUpperCase()})
               </div>
               <span style="font-size: 11px; padding: 3px 8px; border-radius: 6px; font-weight: 700; background: ${ai.status === 'Needs Optimization' ? 'rgba(239, 68, 68, 0.2); color: #f87171;' : 'rgba(52, 211, 153, 0.2); color: #34d399;'}">
-                ${ai.status || 'Status Normal'}
+                ${ai.status || 'Traction Normal'}
               </span>
             </div>
 
@@ -2752,7 +2862,7 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
             </ul>
 
             <div style="font-size: 13px; font-weight: 700; color: #38bdf8; margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
-              <span>💡</span> Action Plan Rekomendasi Algoritma:
+              <span>💡</span> Action Plan Algoritma untuk Post Berikutnya:
             </div>
             <ul style="margin: 0; padding-left: 20px; font-size: 12px; color: #cbd5e1; line-height: 1.6;">
               ${(ai.recommendations || []).map(r => `<li style="margin-bottom: 5px;">${r}</li>`).join('')}
@@ -2772,6 +2882,12 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
       }
     }
 
+    // Backward compatibility for old calls
+    function checkMetaReelsInsight() {
+      checkOmnichannelInsight();
+    }
+
+    
     document.addEventListener('DOMContentLoaded', async () => {
       const currentHash = window.location.hash.replace('#tab-', '').replace('#section-', '').replace('#', '');
       if (['overview', 'integration', 'webhook', 'social', 'meta-suite', 'meta', 'tiktok-studio', 'studio', 'logs'].includes(currentHash)) {

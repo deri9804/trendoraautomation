@@ -372,7 +372,7 @@ def meta_webhook():
         data = request.json or {}
         print("Event Meta Webhook:", json.dumps(data))
         
-        # 1. Tangani event 'feed' (Auto-Balas Komen Reels & Post Facebook Page)
+        # 1. Tangani event 'page' -> 'feed' (Auto-Balas Komen Reels & Post Facebook Page)
         if data.get('object') == 'page':
             for entry in data.get('entry', []):
                 page_id = str(entry.get('id', '')).strip()
@@ -382,7 +382,6 @@ def meta_webhook():
                         item = val.get('item')
                         verb = val.get('verb')
                         
-                        # Respon saat ada komentar baru masuk
                         if item == 'comment' and verb == 'add':
                             comment_id = val.get('comment_id')
                             sender_id = str(val.get('sender_id') or val.get('from', {}).get('id', '')).strip()
@@ -390,14 +389,35 @@ def meta_webhook():
                             user_comment = str(val.get('message', '')).strip()
                             post_id = val.get('post_id')
                             
-                            # Jangan balas komentar dari halaman sendiri agar tidak terjadi looping
                             if sender_id and page_id and sender_id == page_id:
                                 continue
                                 
                             if comment_id:
                                 auto_reply_to_facebook_comment(page_id, comment_id, sender_name, user_comment, post_id)
+
+        # 2. Tangani event 'instagram' -> 'comments' & 'mentions' (Auto-Balas Komen Reels & Post Instagram)
+        elif data.get('object') == 'instagram':
+            for entry in data.get('entry', []):
+                ig_user_id = str(entry.get('id', '')).strip()
+                for change in entry.get('changes', []):
+                    field = change.get('field')
+                    val = change.get('value', {})
+                    if field in ['comments', 'mentions']:
+                        comment_id = val.get('id')
+                        user_comment = str(val.get('text', '')).strip()
+                        sender = val.get('from', {})
+                        sender_username = str(sender.get('username') or 'Kak').strip()
+                        sender_id = str(sender.get('id', '')).strip()
+                        media = val.get('media', {})
+                        media_id = media.get('id')
+                        
+                        if sender_id and ig_user_id and sender_id == ig_user_id:
+                            continue
+                            
+                        if comment_id:
+                            auto_reply_to_instagram_comment(comment_id, sender_username, user_comment, media_id=media_id)
                                 
-        return "EVENT_RECEIVED", 200
+        return Response("EVENT_RECEIVED", mimetype='text/plain', status=200)
 
 def find_meta_page_token(page_id=None, api_key=None, email=None):
     """
@@ -514,26 +534,279 @@ def auto_reply_to_facebook_comment(page_id, comment_id, sender_name, user_commen
         print(f"[Meta Auto-Reply Error]: {e_post}")
         return False, str(e_post)
 
+def auto_reply_to_instagram_comment(comment_id, sender_username, user_comment, media_id=None, persona="creator"):
+    """
+    Membalas komentar Instagram Reels/Post otomatis menggunakan Meta Graph API v21.0 dan Gemini AI.
+    Endpoint: POST https://graph.facebook.com/v21.0/{comment-id}/replies
+    """
+    if not comment_id:
+        return False, "comment_id kosong"
+        
+    page_token, resolved_page_id = find_meta_page_token()
+    if not page_token:
+        print(f"[Instagram Auto-Reply]: Tidak menemukan token aktif")
+        return False, "Token tidak ditemukan"
+
+    persona_prompt = "Anda adalah kreator Instagram yang ramah, hangat, dan seru. Balas dengan santai, 1-2 emoji, dan sebutkan nama user."
+    if persona == "professional":
+        persona_prompt = "Anda adalah admin akun bisnis resmi yang profesional, elegan, dan solutif."
+    elif persona == "support":
+        persona_prompt = "Anda adalah customer care yang sigap, sopan, dan bersahabat."
+
+    try:
+        from utils.ai_helper import get_ai_chat_response
+        ai_prompt = (
+            f"{persona_prompt} "
+            f"Follower IG (@{sender_username}) berkomentar di Reels/Post: '{user_comment}'. "
+            f"Buat 1 kalimat balasan singkat yang natural dan mengundang interaksi lanjutan. "
+            f"Hanya kirimkan kalimat balasannya saja tanpa petik atau awalan."
+        )
+        reply_msg = get_ai_chat_response(ai_prompt)
+        if not reply_msg or "Maaf, AI" in reply_msg:
+            reply_msg = f"Hai kak @{sender_username}! Makasih banyak udah nonton & komen yaa 🔥🙌"
+    except Exception:
+        reply_msg = f"Hai kak @{sender_username}! Terima kasih banyak udah ninggalin jejak yaa 🔥🙌"
+
+    # Kirim balasan via Graph API v21.0
+    try:
+        reply_url = f"https://graph.facebook.com/v21.0/{comment_id}/replies"
+        payload = urllib.parse.urlencode({
+            'message': reply_msg,
+            'access_token': page_token
+        }).encode('utf-8')
+        
+        req = urllib.request.Request(reply_url, data=payload, method='POST')
+        with urllib.request.urlopen(req, timeout=12) as res:
+            res_data = json.loads(res.read().decode('utf-8'))
+            reply_id = res_data.get('id')
+            
+        print(f"[Instagram Auto-Reply SUCCESS]: Balas komen {comment_id} dari @{sender_username} -> ID {reply_id}")
+        
+        # Catat ke sheet Logs
+        try:
+            timestamp = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+            log_id = f"REPLY-{uuid.uuid4().hex[:8].upper()}"
+            sheet_logs = db.get_logs_sheet()
+            if sheet_logs:
+                col_a = sheet_logs.col_values(1)
+                next_row = len(col_a) + 1
+                details_json = json.dumps({
+                    "action": "AUTO_REPLY_INSTAGRAM",
+                    "comment_id": comment_id,
+                    "sender_username": sender_username,
+                    "user_comment": user_comment,
+                    "reply_sent": reply_msg,
+                    "reply_id": reply_id
+                })
+                row_data = [timestamp, log_id, "SYSTEM_AUTO_REPLY", "instagram", "AUTO_REPLIED", details_json, "Komentar Instagram Terbalas", media_id or "", reply_msg, ""]
+                sheet_logs.update(values=[row_data], range_name=f"A{next_row}:J{next_row}")
+        except Exception as e_log:
+            print(f"[Instagram Auto-Reply Log Error]: {e_log}")
+            
+        return True, reply_msg
+    except Exception as e_post:
+        print(f"[Instagram Auto-Reply Error]: {e_post}")
+        return False, str(e_post)
+
+@oauth_bp.route('/api/omnichannel/insights', methods=['GET', 'POST'])
 @oauth_bp.route('/api/meta/insights', methods=['GET', 'POST'])
 def get_meta_insights():
     """
-    Mengambil data insight performa Meta (Facebook Page & Reels) via Graph API v21.0
-    serta memberikan analisis evaluasi algoritma dengan bantuan AI.
+    Pusat Analisis & Diagnosis Performa Video Omnichannel (Facebook, Instagram, YouTube, TikTok)
+    Dilengkapi evaluasi algoritma mendalam dengan bantuan AI.
     """
     req_data = request.json if request.method == 'POST' and request.is_json else request.args
-    object_id = (req_data.get('object_id') or req_data.get('id') or req_data.get('post_id') or req_data.get('reels_id') or '').strip()
+    platform = (req_data.get('platform') or 'facebook').strip().lower()
+    raw_target = (req_data.get('object_id') or req_data.get('id') or req_data.get('url') or req_data.get('post_id') or req_data.get('reels_id') or '').strip()
     insight_type = req_data.get('type', 'reels').strip().lower()
     email = (session.get('user_email', '') or req_data.get('email', '')).strip().lower()
     api_key = (request.headers.get('X-API-Key') or req_data.get('api_key') or '').strip()
+    persona = req_data.get('persona', 'creator').strip().lower()
 
-    page_token, page_id = find_meta_page_token(page_id=object_id if insight_type == 'page' else None, api_key=api_key, email=email)
+    # Bersihkan link URL jika user menginput link lengkap
+    target_id = raw_target
+    if 'facebook.com' in target_id or 'fb.watch' in target_id:
+        m = re.search(r'(?:videos/|reel/|posts/|story\.php\?story_fbid=)?([0-9]{8,25})', target_id)
+        if m: target_id = m.group(1)
+    elif 'instagram.com' in target_id:
+        m = re.search(r'/(?:reel|p|tv)/([a-zA-Z0-9_-]+)', target_id)
+        if m: target_id = m.group(1)
+    elif 'youtube.com' in target_id or 'youtu.be' in target_id:
+        platform = 'youtube'
+        m = re.search(r'(?:v=|/shorts/|youtu\.be/|/v/|embed/)([a-zA-Z0-9_-]{11})', target_id)
+        if m: target_id = m.group(1)
+
+    # -------------------------------------------------------------------------
+    # PLATFORM 1: YOUTUBE SHORTS / VIDEO
+    # -------------------------------------------------------------------------
+    if platform == 'youtube':
+        yt_tokens = db.db_get_youtube_tokens_by_api_key(api_key, email=email)
+        access_token = yt_tokens.get('access_token') if isinstance(yt_tokens, dict) else None
+
+        yt_id = target_id
+        if not yt_id:
+            return jsonify({"success": False, "error": "Silakan masukkan ID Video atau Link YouTube Shorts/Video."}), 400
+
+        # Ambil statistik video dari YouTube Data API
+        url = f"https://www.googleapis.com/youtube/v3/videos?part=snippet,statistics,contentDetails&id={yt_id}"
+        headers = {}
+        if access_token:
+            headers['Authorization'] = f"Bearer {access_token}"
+        else:
+            g_key = getattr(config, 'GEMINI_API_KEY', '') or getattr(config, 'GOOGLE_API_KEY', '')
+            if g_key:
+                url += f"&key={g_key}"
+
+        try:
+            req = urllib.request.Request(url, headers=headers)
+            with urllib.request.urlopen(req, timeout=12) as r:
+                yt_data = json.loads(r.read().decode('utf-8'))
+            
+            items = yt_data.get('items', [])
+            if not items:
+                return jsonify({"success": False, "error": f"Video YouTube dengan ID '{yt_id}' tidak ditemukan atau bersifat privat."}), 404
+                
+            item = items[0]
+            stats = item.get('statistics', {})
+            snippet = item.get('snippet', {})
+            
+            views = int(stats.get('viewCount', 0))
+            likes = int(stats.get('likeCount', 0))
+            comments = int(stats.get('commentCount', 0))
+            
+            diagnosis = []
+            recs = []
+            like_ratio = round((likes / views) * 100, 2) if views > 0 else 0
+
+            if views < 50:
+                diagnosis.append("Tersendat di Tahap Pengujian Shorts (30-100 Penonton Pertama): Rasio penonton yang melakukan swipe-away di detik awal terindikasi tinggi.")
+            if views > 50 and like_ratio < 3.0:
+                diagnosis.append("Like-to-View Ratio Rendah (< 3%): Penonton menonton tanpa meninggalkan like. Algoritma menahan video masuk ke YouTube Recommendation.")
+            if comments == 0:
+                diagnosis.append("Kolom Komentar Nihil: Tidak ada interaksi diskusi yang membantu mendorong ranking pencarian YouTube.")
+
+            if not diagnosis:
+                diagnosis.append("Performa video YouTube stabil dengan sinyal interaksi yang seimbang!")
+
+            recs.append("Potong 2 detik pertama: Langsung sajikan 'Visual Hook' atau punchline, jangan gunakan opening salam bertele-tele.")
+            recs.append("Pasang Pinned Comment berupa pertanyaan pemantik agar penonton tertarik membalas.")
+            recs.append("Gunakan judul Shorts dengan huruf kapital tegas dan emoji pemikat di awal kalimat.")
+
+            return jsonify({
+                "success": True,
+                "platform": "youtube",
+                "object_id": yt_id,
+                "video_info": {
+                    "title": snippet.get('title', 'YouTube Video'),
+                    "description": snippet.get('description', '')[:100],
+                    "published_at": snippet.get('publishedAt', '')
+                },
+                "metrics": {
+                    "views": views,
+                    "likes": likes,
+                    "comments": comments,
+                    "engaged_users": likes + comments,
+                    "reach": views,
+                    "like_ratio_pct": like_ratio
+                },
+                "ai_evaluation": {
+                    "diagnosis": diagnosis,
+                    "recommendations": recs,
+                    "status": "Needs Optimization" if views < 100 or like_ratio < 3.0 else "Healthy Traction"
+                }
+            })
+        except Exception as e_yt:
+            return jsonify({"success": False, "error": f"Gagal mengambil data YouTube: {str(e_yt)}"}), 500
+
+    # -------------------------------------------------------------------------
+    # PLATFORM 2: INSTAGRAM REELS & POST
+    # -------------------------------------------------------------------------
+    elif platform == 'instagram':
+        page_token, page_id = find_meta_page_token(api_key=api_key, email=email)
+        if not page_token:
+            return jsonify({"success": False, "error": "Token Meta belum terhubung di TRENDORA. Silakan hubungkan akun Facebook/Instagram di tab Akun Sosial."}), 400
+
+        ig_media_id = target_id
+        media_info = {}
+        try:
+            m_url = f"https://graph.facebook.com/v21.0/{ig_media_id}?fields=id,caption,media_type,like_count,comments_count,permalink,timestamp&access_token={page_token}"
+            with urllib.request.urlopen(urllib.request.Request(m_url), timeout=10) as m_resp:
+                media_info = json.loads(m_resp.read().decode('utf-8'))
+        except Exception:
+            pass
+
+        metrics_dict = {}
+        try:
+            in_url = f"https://graph.facebook.com/v21.0/{ig_media_id}/insights?metric=reach,plays,total_interactions,saved,shares&access_token={page_token}"
+            with urllib.request.urlopen(urllib.request.Request(in_url), timeout=12) as in_resp:
+                in_d = json.loads(in_resp.read().decode('utf-8'))
+                for item in in_d.get('data', []):
+                    m_name = item.get('name')
+                    values = item.get('values', [])
+                    val = values[0].get('value', 0) if values else 0
+                    metrics_dict[m_name] = val
+        except Exception:
+            pass
+
+        views = metrics_dict.get('plays') or media_info.get('like_count', 0) * 10 or 0
+        reach = metrics_dict.get('reach', 0)
+        likes = media_info.get('like_count', 0)
+        comments = media_info.get('comments_count', 0)
+        saved = metrics_dict.get('saved', 0)
+        shares = metrics_dict.get('shares', 0)
+        total_interactions = metrics_dict.get('total_interactions') or (likes + comments + saved + shares)
+
+        diagnosis = []
+        recs = []
+        if saved == 0:
+            diagnosis.append("Save Rate Rendah (Zero Saves): Fitur 'Simpan' adalah metrik berbobot tertinggi algoritma Instagram Explore saat ini.")
+        if shares == 0:
+            diagnosis.append("Virality Share Rendah: Video belum dibagikan penonton ke DM teman mereka.")
+        if reach > 0 and (views / reach) < 0.4:
+            diagnosis.append("Drop Rate Hook 3 Detik Awal: Sebagian besar penonton swipe ke atas sebelum video selesai menyajikan inti topik.")
+
+        if not diagnosis:
+            diagnosis.append("Reels memiliki metrik interaksi yang menjanjikan!")
+
+        recs.append("Ajak penonton untuk 'Save video ini untuk dicoba nanti' di bagian caption atau akhir video.")
+        recs.append("Pasang audio trending berlogo panah naik (Trending Audio) untuk akselerasi sebaran algoritma Reels.")
+        recs.append("Aktifkan fitur Auto-Reply Komen AI Instagram TRENDORA agar setiap komen langsung terbalas seketika.")
+
+        return jsonify({
+            "success": True,
+            "platform": "instagram",
+            "object_id": ig_media_id,
+            "video_info": {
+                "title": media_info.get('caption', 'Instagram Reels')[:60] + '...',
+                "permalink": media_info.get('permalink', '')
+            },
+            "metrics": {
+                "views": views,
+                "reach": reach,
+                "likes": likes,
+                "comments": comments,
+                "saved": saved,
+                "shares": shares,
+                "engaged_users": total_interactions
+            },
+            "ai_evaluation": {
+                "diagnosis": diagnosis,
+                "recommendations": recs,
+                "status": "Needs Optimization" if views < 100 or saved == 0 else "Good Traction"
+            }
+        })
+
+    # -------------------------------------------------------------------------
+    # PLATFORM 3: FACEBOOK REELS & POST (DEFAULT ENGINE)
+    # -------------------------------------------------------------------------
+    page_token, page_id = find_meta_page_token(page_id=target_id if insight_type == 'page' else None, api_key=api_key, email=email)
     if not page_token:
         return jsonify({
             "success": False,
-            "message": "Token Facebook Page belum terhubung di sistem TRENDORA. Pastikan akun Meta/Facebook sudah terhubung di dashboard."
+            "error": "Token Facebook Page belum terhubung di TRENDORA. Pastikan akun Meta/Facebook sudah terhubung di dashboard."
         }), 400
 
-    target_id = object_id or page_id
+    target_id = target_id or page_id
     if not target_id:
         return jsonify({
             "success": False,
