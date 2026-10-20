@@ -291,7 +291,7 @@ def get_meta_auth_url():
 
     redirect_uri = "https://trendoraautomation.my.id/auth/meta/callback"
     state = f"{uuid.uuid4().hex[:8]}|{email}"
-    scopes = "pages_show_list,pages_read_engagement,pages_manage_posts,instagram_basic,instagram_content_publish"
+    scopes = "pages_show_list,pages_read_engagement,pages_manage_posts,pages_manage_engagement,pages_read_user_content,read_insights,instagram_basic,instagram_content_publish"
     
     params = {
         "client_id": config.META_CLIENT_ID,
@@ -352,8 +352,290 @@ def meta_webhook():
             return challenge, 200
         return "Forbidden", 403
     elif request.method == 'POST':
-        print("Event Meta Webhook:", request.json)
+        data = request.json or {}
+        print("Event Meta Webhook:", json.dumps(data))
+        
+        # 1. Tangani event 'feed' (Auto-Balas Komen Reels & Post Facebook Page)
+        if data.get('object') == 'page':
+            for entry in data.get('entry', []):
+                page_id = str(entry.get('id', '')).strip()
+                for change in entry.get('changes', []):
+                    if change.get('field') == 'feed':
+                        val = change.get('value', {})
+                        item = val.get('item')
+                        verb = val.get('verb')
+                        
+                        # Respon saat ada komentar baru masuk
+                        if item == 'comment' and verb == 'add':
+                            comment_id = val.get('comment_id')
+                            sender_id = str(val.get('sender_id') or val.get('from', {}).get('id', '')).strip()
+                            sender_name = str(val.get('sender_name') or val.get('from', {}).get('name') or 'Kak').strip()
+                            user_comment = str(val.get('message', '')).strip()
+                            post_id = val.get('post_id')
+                            
+                            # Jangan balas komentar dari halaman sendiri agar tidak terjadi looping
+                            if sender_id and page_id and sender_id == page_id:
+                                continue
+                                
+                            if comment_id:
+                                auto_reply_to_facebook_comment(page_id, comment_id, sender_name, user_comment, post_id)
+                                
         return "EVENT_RECEIVED", 200
+
+def find_meta_page_token(page_id=None, api_key=None, email=None):
+    """
+    Menemukan Page Access Token Facebook dari database berdasarkan page_id, api_key, atau email.
+    """
+    token = None
+    if api_key or email:
+        token = db.db_get_meta_token_by_api_key(api_key, email=email)
+        
+    if not token:
+        sheet = db.get_gsheet()
+        if sheet:
+            try:
+                for row in sheet.get_all_values()[1:]:
+                    if len(row) >= 10 and str(row[9]).strip():
+                        token = str(row[9]).strip()
+                        break
+            except Exception:
+                pass
+
+    if not token:
+        return None, None
+
+    # Periksa apakah token adalah User Token yang memiliki daftar Pages
+    try:
+        acc_url = f"https://graph.facebook.com/v21.0/me/accounts?access_token={token}"
+        with urllib.request.urlopen(urllib.request.Request(acc_url), timeout=10) as resp:
+            data = json.loads(resp.read().decode('utf-8'))
+            pages = data.get('data', [])
+            if pages:
+                if page_id:
+                    for p in pages:
+                        if str(p.get('id')) == str(page_id):
+                            return p.get('access_token'), p.get('id')
+                return pages[0].get('access_token'), pages[0].get('id')
+    except Exception:
+        pass
+
+    # Jika langsung merupakan Page Token
+    try:
+        me_url = f"https://graph.facebook.com/v21.0/me?access_token={token}"
+        with urllib.request.urlopen(urllib.request.Request(me_url), timeout=10) as resp:
+            me_data = json.loads(resp.read().decode('utf-8'))
+            return token, me_data.get('id')
+    except Exception:
+        pass
+
+    return token, page_id
+
+def auto_reply_to_facebook_comment(page_id, comment_id, sender_name, user_comment, post_id=None):
+    """
+    Membalas komentar Facebook otomatis menggunakan Graph API v21.0 dan Gemini AI.
+    """
+    if not comment_id:
+        return False, "comment_id kosong"
+        
+    page_token, resolved_page_id = find_meta_page_token(page_id=page_id)
+    if not page_token:
+        print(f"[Meta Auto-Reply]: Tidak menemukan token aktif untuk Page {page_id}")
+        return False, "Page token tidak ditemukan"
+
+    # Hasilkan pesan balasan interaktif via Gemini AI
+    try:
+        from utils.ai_helper import get_ai_chat_response
+        ai_prompt = (
+            f"Anda adalah admin Facebook Page resmi yang ramah, santai, dan interaktif. "
+            f"Penonton ({sender_name}) berkomentar: '{user_comment}'. "
+            f"Buat 1 kalimat balasan yang apresiatif, hangat, dan gunakan 1-2 emoji. "
+            f"Kirimkan langsung kalimat balasannya saja tanpa tanda petik atau pengantar."
+        )
+        reply_msg = get_ai_chat_response(ai_prompt)
+        if not reply_msg or "Maaf, AI" in reply_msg or "Halo! Terima kasih" in reply_msg:
+            reply_msg = f"Halo kak {sender_name}! Makasih banyak udah mampir dan ninggalin jejak ya 🔥 Sukses selalu buat kakak!"
+    except Exception:
+        reply_msg = f"Halo kak {sender_name}! Terima kasih banyak sudah mampir dan berkomentar ya 🔥 Semoga harimu menyenangkan!"
+
+    # Kirim balasan via Graph API v21.0
+    try:
+        reply_url = f"https://graph.facebook.com/v21.0/{comment_id}/comments"
+        payload = urllib.parse.urlencode({
+            'message': reply_msg,
+            'access_token': page_token
+        }).encode('utf-8')
+        req = urllib.request.Request(reply_url, data=payload, method='POST')
+        with urllib.request.urlopen(req, timeout=15) as res:
+            res_data = json.loads(res.read().decode('utf-8'))
+            reply_id = res_data.get('id')
+            
+        print(f"[Meta Auto-Reply Success]: Berhasil balas komentar {comment_id} (Reply ID: {reply_id})")
+        
+        # Catat ke sheet Logs
+        try:
+            timestamp = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+            log_id = f"REPLY-{uuid.uuid4().hex[:8].upper()}"
+            sheet_logs = db.get_logs_sheet()
+            if sheet_logs:
+                col_a = sheet_logs.col_values(1)
+                next_row = len(col_a) + 1
+                details_json = json.dumps({
+                    "action": "AUTO_REPLY_FACEBOOK",
+                    "comment_id": comment_id,
+                    "sender_name": sender_name,
+                    "user_comment": user_comment,
+                    "reply_sent": reply_msg,
+                    "reply_id": reply_id
+                })
+                row_data = [timestamp, log_id, "SYSTEM_AUTO_REPLY", "facebook", "AUTO_REPLIED", details_json, "Komentar Otomatis Terbalas", post_id or "", reply_msg, ""]
+                sheet_logs.update(values=[row_data], range_name=f"A{next_row}:J{next_row}")
+        except Exception as e_log:
+            print(f"[Meta Auto-Reply Log Error]: {e_log}")
+            
+        return True, reply_msg
+    except Exception as e_post:
+        print(f"[Meta Auto-Reply Error]: {e_post}")
+        return False, str(e_post)
+
+@oauth_bp.route('/api/meta/insights', methods=['GET', 'POST'])
+def get_meta_insights():
+    """
+    Mengambil data insight performa Meta (Facebook Page & Reels) via Graph API v21.0
+    serta memberikan analisis evaluasi algoritma dengan bantuan AI.
+    """
+    req_data = request.json if request.method == 'POST' and request.is_json else request.args
+    object_id = (req_data.get('object_id') or req_data.get('id') or req_data.get('post_id') or req_data.get('reels_id') or '').strip()
+    insight_type = req_data.get('type', 'reels').strip().lower()
+    email = (session.get('user_email', '') or req_data.get('email', '')).strip().lower()
+    api_key = (request.headers.get('X-API-Key') or req_data.get('api_key') or '').strip()
+
+    page_token, page_id = find_meta_page_token(page_id=object_id if insight_type == 'page' else None, api_key=api_key, email=email)
+    if not page_token:
+        return jsonify({
+            "success": False,
+            "message": "Token Facebook Page belum terhubung di sistem TRENDORA. Pastikan akun Meta/Facebook sudah terhubung di dashboard."
+        }), 400
+
+    target_id = object_id or page_id
+    if not target_id:
+        return jsonify({
+            "success": False,
+            "message": "Parameter object_id (ID Reels atau ID Post) harus diisi."
+        }), 400
+
+    # 1. INSIGHT LEVEL PAGE
+    if insight_type == 'page':
+        metrics = "page_post_engagements,page_views_total,page_follows"
+        url = f"https://graph.facebook.com/v21.0/{target_id}/insights?metric={metrics}&access_token={page_token}"
+        try:
+            with urllib.request.urlopen(urllib.request.Request(url), timeout=15) as resp:
+                data = json.loads(resp.read().decode('utf-8'))
+            return jsonify({
+                "success": True,
+                "type": "page",
+                "page_id": target_id,
+                "insights": data.get('data', [])
+            })
+        except urllib.error.HTTPError as he:
+            err_body = he.read().decode('utf-8', errors='ignore')
+            return jsonify({"success": False, "error": f"[Meta API HTTP {he.code}] {err_body}"}), 400
+        except Exception as e:
+            return jsonify({"success": False, "error": str(e)}), 500
+
+    # 2. STATUS MONETISASI
+    elif insight_type == 'monetization':
+        url = f"https://graph.facebook.com/v21.0/{page_id}?fields=monetization_status,content_monetization_eligibility&access_token={page_token}"
+        try:
+            with urllib.request.urlopen(urllib.request.Request(url), timeout=15) as resp:
+                data = json.loads(resp.read().decode('utf-8'))
+            return jsonify({
+                "success": True,
+                "type": "monetization",
+                "page_id": page_id,
+                "monetization": data
+            })
+        except urllib.error.HTTPError as he:
+            err_body = he.read().decode('utf-8', errors='ignore')
+            return jsonify({"success": False, "error": f"[Meta API HTTP {he.code}] {err_body}"}), 400
+        except Exception as e:
+            return jsonify({"success": False, "error": str(e)}), 500
+
+    # 3. INSIGHT REELS / VIDEO / POST
+    else:
+        video_info = {}
+        try:
+            v_url = f"https://graph.facebook.com/v21.0/{target_id}?fields=title,description,created_time,length,views&access_token={page_token}"
+            with urllib.request.urlopen(urllib.request.Request(v_url), timeout=10) as v_resp:
+                video_info = json.loads(v_resp.read().decode('utf-8'))
+        except Exception:
+            pass
+
+        metrics = "post_impressions,post_impressions_unique,post_engaged_users,post_video_views,post_video_view_time"
+        url = f"https://graph.facebook.com/v21.0/{target_id}/insights?metric={metrics}&access_token={page_token}"
+        
+        metrics_dict = {}
+        try:
+            with urllib.request.urlopen(urllib.request.Request(url), timeout=15) as resp:
+                data = json.loads(resp.read().decode('utf-8'))
+                for item in data.get('data', []):
+                    m_name = item.get('name')
+                    values = item.get('values', [])
+                    val = values[0].get('value', 0) if values else 0
+                    metrics_dict[m_name] = val
+        except urllib.error.HTTPError:
+            metrics_dict = {
+                "post_video_views": video_info.get('views', 0),
+                "post_impressions": 0,
+                "post_impressions_unique": 0,
+                "post_engaged_users": 0,
+                "post_video_view_time": 0
+            }
+
+        total_views = metrics_dict.get('post_video_views') or video_info.get('views') or 0
+        total_reach = metrics_dict.get('post_impressions_unique', 0)
+        total_impressions = metrics_dict.get('post_impressions', 0)
+        engaged_users = metrics_dict.get('post_engaged_users', 0)
+        watch_time_ms = metrics_dict.get('post_video_view_time', 0)
+        watch_time_sec = round(watch_time_ms / 1000, 1) if watch_time_ms > 1000 else watch_time_ms
+        avg_watch_time = round(watch_time_sec / total_views, 1) if total_views > 0 else 0
+
+        # Evaluasi Algoritma AI (Khusus analisa views rendah / 4 views)
+        diagnosis_reasons = []
+        recommendations = []
+
+        if total_views < 15:
+            diagnosis_reasons.append("Terkunci di Tahap Cold Audience (Pengujian 10-20 Penonton Pertama): Meta menyodorkan video ke segmen kecil penonton. Karena tidak ada lonjakan tontonan >3 detik atau interaksi cepat, sebaran feed otomatis dihentikan.")
+        if total_reach > 0 and total_views > 0 and (total_views / total_reach) < 0.35:
+            diagnosis_reasons.append("Drop Rate Hook 3 Detik Awal: Penonton langsung melakukan swipe-up sebelum video sempat menyajikan inti topik.")
+        if engaged_users == 0:
+            diagnosis_reasons.append("Sinyal Interaksi Kosong (Zero Engagement): Belum ada like, komentar, atau share dalam 15-30 menit awal rilis.")
+
+        if not diagnosis_reasons:
+            diagnosis_reasons.append("Video memiliki akselerasi distribusi yang sehat. Pertahankan konsistensi!")
+
+        recommendations.append("Pasang Hook Teks Kontras & Padat di detik 0-2 (contoh: 'Jangan lakukan ini saat WFH!' daripada judul biasa).")
+        recommendations.append("Tulis pertanyaan pemantik di caption/akhir video untuk mengundang komentar pertama.")
+        recommendations.append("Fitur Auto-Reply TRENDORA sekarang aktif: setiap ada komentar masuk akan langsung dibalas AI, memberikan sinyal aktif ke algoritma Meta.")
+
+        return jsonify({
+            "success": True,
+            "type": "reels",
+            "object_id": target_id,
+            "video_info": video_info,
+            "metrics": {
+                "views": total_views,
+                "reach": total_reach,
+                "impressions": total_impressions,
+                "engaged_users": engaged_users,
+                "total_watch_time_sec": watch_time_sec,
+                "avg_watch_time_sec": avg_watch_time
+            },
+            "ai_evaluation": {
+                "diagnosis": diagnosis_reasons,
+                "recommendations": recommendations,
+                "status": "Needs Optimization" if total_views < 50 else "Good Traction"
+            }
+        })
 
 @oauth_bp.route('/api/twitter-webhook', methods=['GET', 'POST'], strict_slashes=False)
 def twitter_webhook():

@@ -542,6 +542,72 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
             <p style="color: #6b7280; font-size: 13px;">Memuat status koneksi sosial media...</p>
           </div>
         </div>
+
+        <!-- TIKTOK PRIVACY TIPS ALERT -->
+        <div style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.25); border-radius: 14px; padding: 16px 20px; margin-bottom: 24px; display: flex; align-items: flex-start; gap: 14px;">
+          <span style="font-size: 24px; line-height: 1;">💡</span>
+          <div style="font-size: 13px; color: #d1d5db; line-height: 1.5;">
+            <strong style="color: #34d399; font-size: 14px; display: block; margin-bottom: 3px;">Tips Pengaturan Akun TikTok Creator:</strong>
+            Jika video ter-upload dalam status <code style="background: rgba(0,0,0,0.3); color: #f59e0b; padding: 2px 6px; border-radius: 4px;">Hanya Saya (Self Only)</code> meskipun setelan di n8n / dashboard sudah <strong>Public</strong>, periksa profil TikTok Anda di HP. Pastikan toggle <strong>Akun Privat</strong> dinonaktifkan (Buka TikTok &gt; Profil &gt; Pengaturan & Privasi &gt; Privasi &gt; matikan <em>Akun Privat</em>). API resmi TikTok secara default mengunci upload ke 'Hanya Saya' jika akun kreator disetel privat.
+          </div>
+        </div>
+
+        <!-- META PRO GROWTH SUITE (Graph API v21.0) -->
+        <div class="dashboard-hero-card" style="margin-bottom: 30px; display: block; border: 1px solid rgba(59, 130, 246, 0.3); background: linear-gradient(135deg, rgba(30, 58, 138, 0.15), rgba(15, 23, 42, 0.7));">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 14px; margin-bottom: 20px;">
+            <div>
+              <span style="display: inline-flex; align-items: center; gap: 6px; background: rgba(59, 130, 246, 0.2); color: #60a5fa; padding: 4px 12px; border-radius: 12px; font-size: 11px; font-weight: 800; margin-bottom: 8px;">
+                ⚡ META GRAPH API v21.0 PRO
+              </span>
+              <h3 style="margin-bottom: 6px; font-size: 22px; color: #fff; display: flex; align-items: center; gap: 10px;">
+                🤖 Meta Auto-Balas Komen & Reels Insight AI
+              </h3>
+              <p style="color: #9ca3af; font-size: 13px;">Otomatisasi balasan komentar dengan Gemini AI untuk memicu interaksi algoritma, serta audit mendalam performa Reels.</p>
+            </div>
+            <div style="display: flex; gap: 10px; align-items: center;">
+              <span style="display: inline-flex; align-items: center; gap: 6px; background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.3); color: #34d399; padding: 6px 12px; border-radius: 8px; font-size: 12px; font-weight: 700;">
+                <span style="width: 8px; height: 8px; background: #34d399; border-radius: 50%; box-shadow: 0 0 8px #34d399;"></span>
+                Webhook Feed: AKTIF
+              </span>
+            </div>
+          </div>
+
+          <!-- DUA FITUR HIGHLIGHT -->
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin-bottom: 24px;">
+            <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 12px; padding: 16px;">
+              <div style="font-weight: 700; color: #60a5fa; font-size: 14px; margin-bottom: 6px; display: flex; align-items: center; gap: 8px;">
+                <span>💬</span> Auto-Balas Komen AI (Real-Time)
+              </div>
+              <p style="font-size: 12px; color: #9ca3af; line-height: 1.5; margin: 0;">
+                Setiap komentar baru di Post / Reels Page Anda ditangkap server Trendora via webhook <code style="color: #93c5fd;">feed</code> dan dibalas otomatis oleh Gemini AI secara ramah. Menjaga followers agar betah dan memicu interaksi awal.
+              </p>
+            </div>
+            <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 12px; padding: 16px;">
+              <div style="font-weight: 700; color: #ec4899; font-size: 14px; margin-bottom: 6px; display: flex; align-items: center; gap: 8px;">
+                <span>📊</span> AI Diagnostic & Drop-Off Audit
+              </div>
+              <p style="font-size: 12px; color: #9ca3af; line-height: 1.5; margin: 0;">
+                Tarik data analitik Reels langsung dari Meta Graph API: views, jangkauan unik, engaged users, dan durasi tonton. Trendora AI akan mendiagnosis kenapa video sepi / stuck di cold audience.
+              </p>
+            </div>
+          </div>
+
+          <!-- CHECKER REELS INSIGHT FORM -->
+          <div style="background: rgba(0, 0, 0, 0.3); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 12px; padding: 20px;">
+            <h4 style="font-size: 15px; color: #fff; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+              🔍 Tarik Data Insight Reels / Post Facebook Spesifik
+            </h4>
+            <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 14px;">
+              <input type="text" id="metaReelsIdInput" placeholder="Masukkan ID Reels / Video (contoh: 948302984630142)" style="flex: 1; min-width: 250px; padding: 12px 16px; border-radius: 10px; background: rgba(255, 255, 255, 0.05); color: #fff; border: 1px solid rgba(255, 255, 255, 0.15); font-size: 13px; outline: none;">
+              <button type="button" id="btnCheckMetaInsight" onclick="checkMetaReelsInsight()" style="padding: 12px 22px; background: linear-gradient(135deg, #2563eb, #7c3aed); color: #fff; font-weight: 700; font-size: 13px; border: none; border-radius: 10px; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 8px;">
+                <span>🚀 Tarik Data Insight & Evaluasi AI</span>
+              </button>
+            </div>
+            
+            <!-- RESULT AREA -->
+            <div id="metaInsightResultContainer" style="display: none; margin-top: 20px;"></div>
+          </div>
+        </div>
       </section>
 
       <!-- ============================================== -->
@@ -2228,6 +2294,114 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
         updateTiktokStudioStatus(['TikTok']);
       }
     });
+
+    async function checkMetaReelsInsight() {
+      const input = document.getElementById('metaReelsIdInput');
+      const btn = document.getElementById('btnCheckMetaInsight');
+      const container = document.getElementById('metaInsightResultContainer');
+      const objectId = (input.value || '').trim();
+
+      if (!objectId) {
+        alert('Silakan masukkan ID Reels atau Post Facebook terlebih dahulu.');
+        input.focus();
+        return;
+      }
+
+      const { email, apiKey } = getValidUserCredentials();
+      const prevBtnText = btn.innerHTML;
+      btn.innerHTML = '<span>⏳ Menarik Data Insights...</span>';
+      btn.disabled = true;
+
+      try {
+        const url = getApiUrl(`/api/meta/insights?object_id=${encodeURIComponent(objectId)}&type=reels&email=${encodeURIComponent(email)}&api_key=${encodeURIComponent(apiKey)}`);
+        const res = await fetch(url);
+        const data = await res.json();
+
+        if (!data.success) {
+          container.style.display = 'block';
+          container.innerHTML = `
+            <div style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 10px; padding: 14px 18px; color: #fca5a5; font-size: 13px;">
+              ⚠️ <strong>Gagal mengambil insight:</strong> ${data.error || 'Terjadi kesalahan saat menghubungi Meta Graph API.'}
+            </div>
+          `;
+          return;
+        }
+
+        const metrics = data.metrics || {};
+        const vInfo = data.video_info || {};
+        const ai = data.ai_evaluation || {};
+
+        container.style.display = 'block';
+        container.innerHTML = `
+          <!-- HEADER VIDEO -->
+          <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 16px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+            <div>
+              <div style="font-size: 11px; color: #9ca3af; font-weight: 700;">VIDEO REELS ID: ${data.object_id}</div>
+              <div style="font-size: 15px; font-weight: 700; color: #fff; margin-top: 2px;">
+                ${vInfo.title || vInfo.description ? (vInfo.title || vInfo.description).substring(0, 60) + '...' : 'Reels Video Facebook'}
+              </div>
+            </div>
+            <div style="font-size: 12px; color: #38bdf8; background: rgba(56,189,248,0.1); padding: 4px 10px; border-radius: 6px; border: 1px solid rgba(56,189,248,0.2);">
+              Durasi: ${vInfo.length ? Math.round(vInfo.length) + ' detik' : '-'}
+            </div>
+          </div>
+
+          <!-- METRICS GRID -->
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-bottom: 20px;">
+            <div style="background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.25); border-radius: 10px; padding: 14px; text-align: center;">
+              <div style="font-size: 11px; color: #93c5fd; font-weight: 700; text-transform: uppercase;">Total Views</div>
+              <div style="font-size: 24px; font-weight: 800; color: #fff; margin-top: 4px;">${metrics.views || 0}</div>
+            </div>
+            <div style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.25); border-radius: 10px; padding: 14px; text-align: center;">
+              <div style="font-size: 11px; color: #6ee7b7; font-weight: 700; text-transform: uppercase;">Reach (Akun Unik)</div>
+              <div style="font-size: 24px; font-weight: 800; color: #fff; margin-top: 4px;">${metrics.reach || 0}</div>
+            </div>
+            <div style="background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.25); border-radius: 10px; padding: 14px; text-align: center;">
+              <div style="font-size: 11px; color: #fcd34d; font-weight: 700; text-transform: uppercase;">Watch Time</div>
+              <div style="font-size: 20px; font-weight: 800; color: #fff; margin-top: 4px;">${metrics.total_watch_time_sec || 0}s</div>
+              <div style="font-size: 10px; color: #9ca3af; margin-top: 2px;">Rata-rata: ${metrics.avg_watch_time_sec || 0}s</div>
+            </div>
+            <div style="background: rgba(236, 72, 153, 0.1); border: 1px solid rgba(236, 72, 153, 0.25); border-radius: 10px; padding: 14px; text-align: center;">
+              <div style="font-size: 11px; color: #f472b6; font-weight: 700; text-transform: uppercase;">Engaged Users</div>
+              <div style="font-size: 24px; font-weight: 800; color: #fff; margin-top: 4px;">${metrics.engaged_users || 0}</div>
+            </div>
+          </div>
+
+          <!-- DIAGNOSIS & REKOMENDASI AI -->
+          <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(139, 92, 246, 0.3); border-radius: 12px; padding: 18px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+              <div style="font-size: 14px; font-weight: 800; color: #c084fc; display: flex; align-items: center; gap: 8px;">
+                <span>🧠</span> AI Algorithmic Diagnosis (Kenapa Views Berhenti / Rendah)
+              </div>
+              <span style="font-size: 11px; padding: 3px 8px; border-radius: 6px; font-weight: 700; background: ${ai.status === 'Needs Optimization' ? 'rgba(239, 68, 68, 0.2); color: #f87171;' : 'rgba(52, 211, 153, 0.2); color: #34d399;'}">
+                ${ai.status || 'Status Normal'}
+              </span>
+            </div>
+
+            <ul style="margin: 0 0 14px 0; padding-left: 20px; font-size: 12.5px; color: #e2e8f0; line-height: 1.6;">
+              ${(ai.diagnosis || []).map(d => `<li style="margin-bottom: 6px;">${d}</li>`).join('')}
+            </ul>
+
+            <div style="font-size: 13px; font-weight: 700; color: #38bdf8; margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
+              <span>💡</span> Action Plan Rekomendasi Algoritma:
+            </div>
+            <ul style="margin: 0; padding-left: 20px; font-size: 12px; color: #cbd5e1; line-height: 1.6;">
+              ${(ai.recommendations || []).map(r => `<li style="margin-bottom: 5px;">${r}</li>`).join('')}
+            </ul>
+          </div>
+        `;
+      } catch (err) {
+        container.style.display = 'block';
+        container.innerHTML = `
+          <div style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 10px; padding: 14px 18px; color: #fca5a5; font-size: 13px;">
+            ⚠️ <strong>Error Jaringan:</strong> ${err.message}
+          </div>
+        `;
+      } finally {
+        btn.innerHTML = prevBtnText;
+        btn.disabled = false;
+      }
+    }
 
     document.addEventListener('DOMContentLoaded', async () => {
       const currentHash = window.location.hash.replace('#tab-', '').replace('#section-', '').replace('#', '');
