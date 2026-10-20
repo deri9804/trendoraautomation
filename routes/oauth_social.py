@@ -1829,7 +1829,22 @@ def youtube_callback():
         except Exception as e:
             print("YouTube OAuth Error:", e)
 
-    return """<html><body style="background:#0d0a1a;"><h2 style="color:#ff0000;text-align:center;margin-top:50px;">YouTube Connected!</h2><script>if(window.opener){window.opener.postMessage({type:'OAUTH_SUCCESS', platform:'YouTube'}, '*');window.close();}</script></body></html>"""
+    return """
+    <html>
+    <body style="background:#0d0a1a;color:#fff;font-family:sans-serif;text-align:center;padding:40px 20px;">
+      <div style="font-size:36px;margin-bottom:10px;">▶️</div>
+      <h2 style="color:#ef4444;margin-bottom:8px;">YouTube Shorts Berhasil Terhubung!</h2>
+      <p style="color:#e2e8f0;font-size:14px;">Akun YouTube Anda telah aktif untuk automasi Trendora.</p>
+      <p style="color:#64748b;font-size:11px;margin-top:16px;">Jendela ini akan tertutup otomatis...</p>
+      <script>
+        if(window.opener){
+          window.opener.postMessage({type:'OAUTH_SUCCESS', platform:'YouTube'}, '*');
+          setTimeout(() => { window.close(); }, 2000);
+        }
+      </script>
+    </body>
+    </html>
+    """
 
 @oauth_bp.route('/api/threads-auth-url', methods=['GET'])
 def get_threads_auth_url():
