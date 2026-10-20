@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, redirect, url_for, session
+from flask import Blueprint, render_template, redirect, url_for, session, Response
 
 pages_bp = Blueprint('pages', __name__)
 
@@ -39,3 +39,7 @@ def privacy_page():
 @pages_bp.route('/data-deletion')
 def data_deletion_page():
     return render_template('data_deletion.html')
+
+@pages_bp.route('/google73174c9969287988.html')
+def google_verification_file():
+    return Response("google-site-verification: google73174c9969287988.html", mimetype="text/html")
