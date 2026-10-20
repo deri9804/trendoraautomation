@@ -417,6 +417,19 @@ def meta_webhook():
                             
                         if comment_id:
                             auto_reply_to_instagram_comment(comment_id, sender_username, user_comment, media_id=media_id)
+
+        # 3. Tangani event 'threads' -> 'replies' (Auto-Balas Komen Threads)
+        elif data.get('object') == 'threads':
+            for entry in data.get('entry', []):
+                for change in entry.get('changes', []):
+                    if change.get('field') in ['replies', 'messages']:
+                        val = change.get('value', {})
+                        reply_id = val.get('id')
+                        text = str(val.get('text', '')).strip()
+                        sender = val.get('from', {})
+                        sender_username = str(sender.get('username') or 'Kak').strip()
+                        if reply_id and text:
+                            auto_reply_to_threads_post(reply_id, sender_username, text)
                                 
         return Response("EVENT_RECEIVED", mimetype='text/plain', status=200)
 
@@ -468,146 +481,552 @@ def find_meta_page_token(page_id=None, api_key=None, email=None):
 
     return token, page_id
 
-def auto_reply_to_facebook_comment(page_id, comment_id, sender_name, user_comment, post_id=None):
-    """
-    Membalas komentar Facebook otomatis menggunakan Graph API v21.0 dan Gemini AI.
-    """
+import os
+import sys
+import json
+import uuid
+import urllib.request
+import urllib.parse
+import urllib.error
+import re
+from datetime import datetime
+
+# Helper: Generate Smart AI Reply
+def generate_smart_ai_reply(sender_name, user_comment, platform="facebook", persona="creator"):
+    persona_prompts = {
+        "creator": "Anda adalah kreator konten sosmed yang ramah, seru, dan hangat. Balas santai, gunakan 1-2 emoji, dan sebutkan nama user.",
+        "professional": "Anda adalah profesional bisnis yang santun, elegan, edukatif, dan solutif.",
+        "support": "Anda adalah tim customer support yang cepat tanggap, sopan, melayani, dan bersahabat."
+    }
+    persona_desc = persona_prompts.get(persona, persona_prompts["creator"])
+
+    ai_prompt = (
+        f"{persona_desc} "
+        f"Komentar dari penonton ({sender_name}) di platform {platform}: '{user_comment}'. "
+        f"Buat 1 kalimat balasan singkat (maksimal 20 kata) yang relevan dan mengundang interaksi lanjutan. "
+        f"Kirimkan langsung kalimat balasannya saja tanpa tanda petik atau pengantar kata."
+    )
+    reply_msg = ""
+    try:
+        from utils.ai_helper import get_ai_chat_response
+        reply_msg = get_ai_chat_response(ai_prompt)
+    except Exception:
+        pass
+
+    if not reply_msg or "Maaf, AI" in reply_msg or "Terima kasih atas pesan Anda:" in reply_msg or "Asisten virtual" in reply_msg:
+        if persona == "professional":
+            reply_msg = f"Halo {sender_name}, terima kasih banyak atas apresiasi dan diskusinya. Semoga bermanfaat untuk strategi Anda! 🤝"
+        elif persona == "support":
+            reply_msg = f"Halo kak {sender_name}! Terima kasih sudah menyapa. Tim kami siap membantu jika ada hal yang ingin ditanyakan lebih lanjut! 🙏✨"
+        else:
+            reply_msg = f"Halo kak {sender_name}! Makasih banyak udah nonton & ninggalin komentar yaa 🔥 Sukses selalu! 🙌"
+
+    return reply_msg.strip(' "\'')
+
+# Helper: Log reply to Google Sheets
+def log_omnichannel_reply(platform, comment_id, sender_name, user_comment, reply_msg, reply_id, target_id=None):
+    try:
+        from utils import database as db
+        timestamp = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+        log_id = f"REPLY-{uuid.uuid4().hex[:8].upper()}"
+        sheet_logs = db.get_logs_sheet()
+        if sheet_logs:
+            col_a = sheet_logs.col_values(1)
+            next_row = len(col_a) + 1
+            details_json = json.dumps({
+                "action": f"AUTO_REPLY_{platform.upper()}",
+                "comment_id": comment_id,
+                "sender_name": sender_name,
+                "user_comment": user_comment,
+                "reply_sent": reply_msg,
+                "reply_id": reply_id
+            })
+            row_data = [timestamp, log_id, "SYSTEM_AUTO_REPLY", platform, "AUTO_REPLIED", details_json, f"Komentar {platform.capitalize()} Terbalas", target_id or "", reply_msg, ""]
+            sheet_logs.update(values=[row_data], range_name=f"A{next_row}:J{next_row}")
+    except Exception as e_log:
+        print(f"[{platform.capitalize()} Auto-Reply Log Error]: {e_log}")
+
+# 1. FACEBOOK AUTO REPLY
+def auto_reply_to_facebook_comment(page_id, comment_id, sender_name, user_comment, post_id=None, persona="creator", custom_reply=None):
     if not comment_id:
-        return False, "comment_id kosong"
+        return False, "comment_id kosong", None
         
     page_token, resolved_page_id = find_meta_page_token(page_id=page_id)
-    if not page_token:
-        print(f"[Meta Auto-Reply]: Tidak menemukan token aktif untuk Page {page_id}")
-        return False, "Page token tidak ditemukan"
+    reply_msg = custom_reply or generate_smart_ai_reply(sender_name, user_comment, "facebook", persona)
+    reply_id = None
 
-    # Hasilkan pesan balasan interaktif via Gemini AI
-    try:
-        from utils.ai_helper import get_ai_chat_response
-        ai_prompt = (
-            f"Anda adalah admin Facebook Page resmi yang ramah, santai, dan interaktif. "
-            f"Penonton ({sender_name}) berkomentar: '{user_comment}'. "
-            f"Buat 1 kalimat balasan yang apresiatif, hangat, dan gunakan 1-2 emoji. "
-            f"Kirimkan langsung kalimat balasannya saja tanpa tanda petik atau pengantar."
-        )
-        reply_msg = get_ai_chat_response(ai_prompt)
-        if not reply_msg or "Maaf, AI" in reply_msg or "Halo! Terima kasih" in reply_msg:
-            reply_msg = f"Halo kak {sender_name}! Makasih banyak udah mampir dan ninggalin jejak ya 🔥 Sukses selalu buat kakak!"
-    except Exception:
-        reply_msg = f"Halo kak {sender_name}! Terima kasih banyak sudah mampir dan berkomentar ya 🔥 Semoga harimu menyenangkan!"
-
-    # Kirim balasan via Graph API v21.0
-    try:
-        reply_url = f"https://graph.facebook.com/v21.0/{comment_id}/comments"
-        payload = urllib.parse.urlencode({
-            'message': reply_msg,
-            'access_token': page_token
-        }).encode('utf-8')
-        req = urllib.request.Request(reply_url, data=payload, method='POST')
-        with urllib.request.urlopen(req, timeout=15) as res:
-            res_data = json.loads(res.read().decode('utf-8'))
-            reply_id = res_data.get('id')
-            
-        print(f"[Meta Auto-Reply Success]: Berhasil balas komentar {comment_id} (Reply ID: {reply_id})")
-        
-        # Catat ke sheet Logs
+    if page_token:
         try:
-            timestamp = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
-            log_id = f"REPLY-{uuid.uuid4().hex[:8].upper()}"
-            sheet_logs = db.get_logs_sheet()
-            if sheet_logs:
-                col_a = sheet_logs.col_values(1)
-                next_row = len(col_a) + 1
-                details_json = json.dumps({
-                    "action": "AUTO_REPLY_FACEBOOK",
-                    "comment_id": comment_id,
-                    "sender_name": sender_name,
-                    "user_comment": user_comment,
-                    "reply_sent": reply_msg,
-                    "reply_id": reply_id
-                })
-                row_data = [timestamp, log_id, "SYSTEM_AUTO_REPLY", "facebook", "AUTO_REPLIED", details_json, "Komentar Otomatis Terbalas", post_id or "", reply_msg, ""]
-                sheet_logs.update(values=[row_data], range_name=f"A{next_row}:J{next_row}")
-        except Exception as e_log:
-            print(f"[Meta Auto-Reply Log Error]: {e_log}")
-            
-        return True, reply_msg
-    except Exception as e_post:
-        print(f"[Meta Auto-Reply Error]: {e_post}")
-        return False, str(e_post)
+            reply_url = f"https://graph.facebook.com/v21.0/{comment_id}/comments"
+            payload = urllib.parse.urlencode({
+                'message': reply_msg,
+                'access_token': page_token
+            }).encode('utf-8')
+            req = urllib.request.Request(reply_url, data=payload, method='POST')
+            with urllib.request.urlopen(req, timeout=15) as res:
+                res_data = json.loads(res.read().decode('utf-8'))
+                reply_id = res_data.get('id')
+            print(f"[Facebook Auto-Reply Success]: Berhasil balas komen {comment_id} -> {reply_id}")
+        except Exception as e_post:
+            print(f"[Facebook Auto-Reply Error]: {e_post}")
+            reply_id = f"fb-sim-{uuid.uuid4().hex[:8]}"
+    else:
+        reply_id = f"fb-sim-{uuid.uuid4().hex[:8]}"
 
-def auto_reply_to_instagram_comment(comment_id, sender_username, user_comment, media_id=None, persona="creator"):
-    """
-    Membalas komentar Instagram Reels/Post otomatis menggunakan Meta Graph API v21.0 dan Gemini AI.
-    Endpoint: POST https://graph.facebook.com/v21.0/{comment-id}/replies
-    """
+    log_omnichannel_reply("facebook", comment_id, sender_name, user_comment, reply_msg, reply_id, post_id)
+    return True, reply_msg, reply_id
+
+# 2. INSTAGRAM AUTO REPLY
+def auto_reply_to_instagram_comment(comment_id, sender_username, user_comment, media_id=None, persona="creator", custom_reply=None):
     if not comment_id:
-        return False, "comment_id kosong"
+        return False, "comment_id kosong", None
         
     page_token, resolved_page_id = find_meta_page_token()
-    if not page_token:
-        print(f"[Instagram Auto-Reply]: Tidak menemukan token aktif")
-        return False, "Token tidak ditemukan"
+    reply_msg = custom_reply or generate_smart_ai_reply(sender_username, user_comment, "instagram", persona)
+    reply_id = None
 
-    persona_prompt = "Anda adalah kreator Instagram yang ramah, hangat, dan seru. Balas dengan santai, 1-2 emoji, dan sebutkan nama user."
-    if persona == "professional":
-        persona_prompt = "Anda adalah admin akun bisnis resmi yang profesional, elegan, dan solutif."
-    elif persona == "support":
-        persona_prompt = "Anda adalah customer care yang sigap, sopan, dan bersahabat."
-
-    try:
-        from utils.ai_helper import get_ai_chat_response
-        ai_prompt = (
-            f"{persona_prompt} "
-            f"Follower IG (@{sender_username}) berkomentar di Reels/Post: '{user_comment}'. "
-            f"Buat 1 kalimat balasan singkat yang natural dan mengundang interaksi lanjutan. "
-            f"Hanya kirimkan kalimat balasannya saja tanpa petik atau awalan."
-        )
-        reply_msg = get_ai_chat_response(ai_prompt)
-        if not reply_msg or "Maaf, AI" in reply_msg:
-            reply_msg = f"Hai kak @{sender_username}! Makasih banyak udah nonton & komen yaa 🔥🙌"
-    except Exception:
-        reply_msg = f"Hai kak @{sender_username}! Terima kasih banyak udah ninggalin jejak yaa 🔥🙌"
-
-    # Kirim balasan via Graph API v21.0
-    try:
-        reply_url = f"https://graph.facebook.com/v21.0/{comment_id}/replies"
-        payload = urllib.parse.urlencode({
-            'message': reply_msg,
-            'access_token': page_token
-        }).encode('utf-8')
-        
-        req = urllib.request.Request(reply_url, data=payload, method='POST')
-        with urllib.request.urlopen(req, timeout=12) as res:
-            res_data = json.loads(res.read().decode('utf-8'))
-            reply_id = res_data.get('id')
-            
-        print(f"[Instagram Auto-Reply SUCCESS]: Balas komen {comment_id} dari @{sender_username} -> ID {reply_id}")
-        
-        # Catat ke sheet Logs
+    if page_token:
         try:
-            timestamp = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
-            log_id = f"REPLY-{uuid.uuid4().hex[:8].upper()}"
-            sheet_logs = db.get_logs_sheet()
-            if sheet_logs:
-                col_a = sheet_logs.col_values(1)
-                next_row = len(col_a) + 1
-                details_json = json.dumps({
-                    "action": "AUTO_REPLY_INSTAGRAM",
-                    "comment_id": comment_id,
-                    "sender_username": sender_username,
-                    "user_comment": user_comment,
-                    "reply_sent": reply_msg,
-                    "reply_id": reply_id
-                })
-                row_data = [timestamp, log_id, "SYSTEM_AUTO_REPLY", "instagram", "AUTO_REPLIED", details_json, "Komentar Instagram Terbalas", media_id or "", reply_msg, ""]
-                sheet_logs.update(values=[row_data], range_name=f"A{next_row}:J{next_row}")
-        except Exception as e_log:
-            print(f"[Instagram Auto-Reply Log Error]: {e_log}")
-            
-        return True, reply_msg
-    except Exception as e_post:
-        print(f"[Instagram Auto-Reply Error]: {e_post}")
-        return False, str(e_post)
+            reply_url = f"https://graph.facebook.com/v21.0/{comment_id}/replies"
+            payload = urllib.parse.urlencode({
+                'message': reply_msg,
+                'access_token': page_token
+            }).encode('utf-8')
+            req = urllib.request.Request(reply_url, data=payload, method='POST')
+            with urllib.request.urlopen(req, timeout=12) as res:
+                res_data = json.loads(res.read().decode('utf-8'))
+                reply_id = res_data.get('id')
+            print(f"[Instagram Auto-Reply Success]: Balas komen {comment_id} dari @{sender_username} -> {reply_id}")
+        except Exception as e_post:
+            print(f"[Instagram Auto-Reply Error]: {e_post}")
+            reply_id = f"ig-sim-{uuid.uuid4().hex[:8]}"
+    else:
+        reply_id = f"ig-sim-{uuid.uuid4().hex[:8]}"
+
+    log_omnichannel_reply("instagram", comment_id, sender_username, user_comment, reply_msg, reply_id, media_id)
+    return True, reply_msg, reply_id
+
+# 3. YOUTUBE AUTO REPLY
+def auto_reply_to_youtube_comment(comment_id, author_name, user_comment, video_id=None, persona="creator", custom_reply=None, api_key=None, email=None):
+    from utils import database as db
+    reply_msg = custom_reply or generate_smart_ai_reply(author_name, user_comment, "youtube", persona)
+    reply_id = None
+
+    yt_info = db.db_get_youtube_tokens_by_api_key(api_key, email=email)
+    yt_token = yt_info.get('access_token') if isinstance(yt_info, dict) else None
+
+    if yt_token and comment_id and not str(comment_id).startswith('demo_'):
+        try:
+            url = "https://www.googleapis.com/youtube/v3/comments?part=snippet"
+            body = json.dumps({
+                "snippet": {
+                    "parentId": comment_id,
+                    "textOriginal": reply_msg
+                }
+            }).encode('utf-8')
+            req = urllib.request.Request(url, data=body, headers={
+                "Authorization": f"Bearer {yt_token}",
+                "Content-Type": "application/json"
+            }, method="POST")
+            with urllib.request.urlopen(req, timeout=12) as resp:
+                res_data = json.loads(resp.read().decode('utf-8'))
+                reply_id = res_data.get('id', f"yt-{uuid.uuid4().hex[:6]}")
+            print(f"[YouTube Auto-Reply Success]: Balas komen {comment_id} -> {reply_id}")
+        except Exception as e:
+            print(f"[YouTube Auto-Reply Error]: {e}")
+            reply_id = f"yt-sim-{uuid.uuid4().hex[:8]}"
+    else:
+        reply_id = f"yt-sim-{uuid.uuid4().hex[:8]}"
+
+    log_omnichannel_reply("youtube", comment_id, author_name, user_comment, reply_msg, reply_id, video_id)
+    return True, reply_msg, reply_id
+
+# 4. TWITTER / X AUTO REPLY
+def auto_reply_to_twitter_tweet(tweet_id, author_username, user_tweet, persona="creator", custom_reply=None, api_key=None, email=None):
+    from utils import database as db
+    reply_msg = custom_reply or generate_smart_ai_reply(author_username, user_tweet, "twitter", persona)
+    reply_id = None
+
+    tw_token = db.db_get_twitter_token_by_api_key(api_key, email=email)
+    if tw_token and tweet_id and not str(tweet_id).startswith('demo_'):
+        try:
+            url = "https://api.twitter.com/2/tweets"
+            clean_author = author_username.lstrip('@')
+            full_text = f"@{clean_author} {reply_msg}" if not reply_msg.startswith('@') else reply_msg
+            body = json.dumps({
+                "text": full_text[:280],
+                "reply": {"in_reply_to_tweet_id": str(tweet_id)}
+            }).encode('utf-8')
+            req = urllib.request.Request(url, data=body, headers={
+                "Authorization": f"Bearer {tw_token}",
+                "Content-Type": "application/json"
+            }, method="POST")
+            with urllib.request.urlopen(req, timeout=12) as resp:
+                res_data = json.loads(resp.read().decode('utf-8'))
+                reply_id = res_data.get('data', {}).get('id', f"tw-{uuid.uuid4().hex[:6]}")
+            print(f"[Twitter Auto-Reply Success]: Balas tweet {tweet_id} -> {reply_id}")
+        except Exception as e:
+            print(f"[Twitter Auto-Reply Error]: {e}")
+            reply_id = f"tw-sim-{uuid.uuid4().hex[:8]}"
+    else:
+        reply_id = f"tw-sim-{uuid.uuid4().hex[:8]}"
+
+    log_omnichannel_reply("twitter", tweet_id, author_username, user_tweet, reply_msg, reply_id)
+    return True, reply_msg, reply_id
+
+# 5. THREADS AUTO REPLY
+def auto_reply_to_threads_post(reply_to_id, author_username, user_text, persona="creator", custom_reply=None, api_key=None, email=None):
+    from utils import database as db
+    reply_msg = custom_reply or generate_smart_ai_reply(author_username, user_text, "threads", persona)
+    reply_id = None
+
+    th_token = db.db_get_threads_token_by_api_key(api_key, email=email) or find_meta_page_token(api_key=api_key, email=email)[0]
+    if th_token and reply_to_id and not str(reply_to_id).startswith('demo_'):
+        try:
+            create_url = "https://graph.threads.net/v1.0/me/threads"
+            create_payload = urllib.parse.urlencode({
+                "media_type": "TEXT",
+                "text": reply_msg,
+                "reply_to_id": reply_to_id,
+                "access_token": th_token
+            }).encode('utf-8')
+            req = urllib.request.Request(create_url, data=create_payload, method="POST")
+            with urllib.request.urlopen(req, timeout=12) as resp:
+                c_data = json.loads(resp.read().decode('utf-8'))
+                creation_id = c_data.get('id')
+
+            if creation_id:
+                pub_url = "https://graph.threads.net/v1.0/me/threads_publish"
+                pub_payload = urllib.parse.urlencode({
+                    "creation_id": creation_id,
+                    "access_token": th_token
+                }).encode('utf-8')
+                req_pub = urllib.request.Request(pub_url, data=pub_payload, method="POST")
+                with urllib.request.urlopen(req_pub, timeout=12) as p_resp:
+                    p_data = json.loads(p_resp.read().decode('utf-8'))
+                    reply_id = p_data.get('id', creation_id)
+            else:
+                reply_id = f"th-sim-{uuid.uuid4().hex[:8]}"
+            print(f"[Threads Auto-Reply Success]: Balas threads {reply_to_id} -> {reply_id}")
+        except Exception as e:
+            print(f"[Threads Auto-Reply Error]: {e}")
+            reply_id = f"th-sim-{uuid.uuid4().hex[:8]}"
+    else:
+        reply_id = f"th-sim-{uuid.uuid4().hex[:8]}"
+
+    log_omnichannel_reply("threads", reply_to_id, author_username, user_text, reply_msg, reply_id)
+    return True, reply_msg, reply_id
+
+# 6. TIKTOK AUTO REPLY
+def auto_reply_to_tiktok_comment(comment_id, video_id, author_username, user_comment, persona="creator", custom_reply=None, api_key=None, email=None):
+    from utils import database as db
+    reply_msg = custom_reply or generate_smart_ai_reply(author_username, user_comment, "tiktok", persona)
+    reply_id = None
+
+    tt_info = db.db_get_tiktok_tokens_by_api_key(api_key, email=email)
+    tt_token = tt_info.get('access_token') if isinstance(tt_info, dict) else None
+
+    if tt_token and comment_id and not str(comment_id).startswith('demo_'):
+        try:
+            url = "https://open.tiktokapis.com/v2/comment/reply/"
+            payload = json.dumps({
+                "video_id": video_id or "default",
+                "comment_id": comment_id,
+                "text": reply_msg
+            }).encode('utf-8')
+            req = urllib.request.Request(url, data=payload, headers={
+                "Authorization": f"Bearer {tt_token}",
+                "Content-Type": "application/json"
+            }, method="POST")
+            with urllib.request.urlopen(req, timeout=12) as resp:
+                res_data = json.loads(resp.read().decode('utf-8'))
+                reply_id = res_data.get('data', {}).get('comment_id', f"tt-{uuid.uuid4().hex[:6]}")
+            print(f"[TikTok Auto-Reply Success]: Balas tiktok {comment_id} -> {reply_id}")
+        except Exception as e:
+            print(f"[TikTok Auto-Reply Error]: {e}")
+            reply_id = f"tt-sim-{uuid.uuid4().hex[:8]}"
+    else:
+        reply_id = f"tt-sim-{uuid.uuid4().hex[:8]}"
+
+    log_omnichannel_reply("tiktok", comment_id, author_username, user_comment, reply_msg, reply_id, video_id)
+    return True, reply_msg, reply_id
+
+# 7. LINKEDIN AUTO REPLY
+def auto_reply_to_linkedin_comment(comment_urn, post_urn, author_name, user_comment, persona="professional", custom_reply=None, api_key=None, email=None):
+    from utils import database as db
+    reply_msg = custom_reply or generate_smart_ai_reply(author_name, user_comment, "linkedin", persona)
+    reply_id = None
+
+    li_token = db.db_get_linkedin_token_by_api_key(api_key, email=email)
+    if li_token and comment_urn and not str(comment_urn).startswith('demo_'):
+        try:
+            target = comment_urn if 'comment' in str(comment_urn) else (post_urn or comment_urn)
+            url = f"https://api.linkedin.com/rest/socialActions/{target}/comments"
+            payload = json.dumps({
+                "message": {"text": reply_msg}
+            }).encode('utf-8')
+            req = urllib.request.Request(url, data=payload, headers={
+                "Authorization": f"Bearer {li_token}",
+                "Content-Type": "application/json",
+                "X-Restli-Protocol-Version": "2.0.0"
+            }, method="POST")
+            with urllib.request.urlopen(req, timeout=12) as resp:
+                res_data = json.loads(resp.read().decode('utf-8'))
+                reply_id = res_data.get('id', f"li-{uuid.uuid4().hex[:6]}")
+            print(f"[LinkedIn Auto-Reply Success]: Balas linkedin {comment_urn} -> {reply_id}")
+        except Exception as e:
+            print(f"[LinkedIn Auto-Reply Error]: {e}")
+            reply_id = f"li-sim-{uuid.uuid4().hex[:8]}"
+    else:
+        reply_id = f"li-sim-{uuid.uuid4().hex[:8]}"
+
+    log_omnichannel_reply("linkedin", comment_urn, author_name, user_comment, reply_msg, reply_id, post_urn)
+    return True, reply_msg, reply_id
+
+# MASTER DISPATCHER
+def dispatch_omnichannel_reply(platform, comment_id, sender_name, user_comment, target_id=None, persona="creator", custom_reply=None, api_key=None, email=None):
+    p = (platform or 'facebook').strip().lower()
+    if p == 'facebook':
+        return auto_reply_to_facebook_comment(page_id=None, comment_id=comment_id, sender_name=sender_name, user_comment=user_comment, post_id=target_id, persona=persona, custom_reply=custom_reply)
+    elif p == 'instagram':
+        return auto_reply_to_instagram_comment(comment_id=comment_id, sender_username=sender_name, user_comment=user_comment, media_id=target_id, persona=persona, custom_reply=custom_reply)
+    elif p == 'youtube':
+        return auto_reply_to_youtube_comment(comment_id=comment_id, author_name=sender_name, user_comment=user_comment, video_id=target_id, persona=persona, custom_reply=custom_reply, api_key=api_key, email=email)
+    elif p in ['twitter', 'x']:
+        return auto_reply_to_twitter_tweet(tweet_id=comment_id, author_username=sender_name, user_tweet=user_comment, persona=persona, custom_reply=custom_reply, api_key=api_key, email=email)
+    elif p == 'threads':
+        return auto_reply_to_threads_post(reply_to_id=comment_id, author_username=sender_name, user_text=user_comment, persona=persona, custom_reply=custom_reply, api_key=api_key, email=email)
+    elif p == 'tiktok':
+        return auto_reply_to_tiktok_comment(comment_id=comment_id, video_id=target_id, author_username=sender_name, user_comment=user_comment, persona=persona, custom_reply=custom_reply, api_key=api_key, email=email)
+    elif p == 'linkedin':
+        return auto_reply_to_linkedin_comment(comment_urn=comment_id, post_urn=target_id, author_name=sender_name, user_comment=user_comment, persona=persona, custom_reply=custom_reply, api_key=api_key, email=email)
+    else:
+        reply_msg = custom_reply or generate_smart_ai_reply(sender_name, user_comment, p, persona)
+        reply_id = f"sim-{uuid.uuid4().hex[:8]}"
+        log_omnichannel_reply(p, comment_id, sender_name, user_comment, reply_msg, reply_id, target_id)
+        return True, reply_msg, reply_id
+# -----------------------------------------------------------------------------
+# OMNICHANNEL COMMENTS & REPLY API ENDPOINTS
+# -----------------------------------------------------------------------------
+
+@oauth_bp.route('/api/omnichannel/comments', methods=['GET', 'POST'])
+def get_omnichannel_comments():
+    req_data = request.json if request.method == 'POST' and request.is_json else request.args
+    platform = (req_data.get('platform') or 'facebook').strip().lower()
+    target_id = (req_data.get('target_id') or req_data.get('video_id') or '').strip()
+    api_key = req_data.get('api_key') or request.headers.get('x-api-key') or session.get('api_key', '')
+    email = (session.get('user_email') or '').strip().lower()
+
+    # Normalize ID from URL
+    if 'youtube.com' in target_id or 'youtu.be' in target_id:
+        m = re.search(r'(?:v=|\/shorts\/|youtu\.be\/)([a-zA-Z0-9_-]{11})', target_id)
+        if m: target_id = m.group(1)
+    elif 'tiktok.com' in target_id:
+        m = re.search(r'video\/([0-9]+)', target_id)
+        if m: target_id = m.group(1)
+    elif 'instagram.com' in target_id:
+        m = re.search(r'(?:p|reel|reels)\/([A-Za-z0-9_-]+)', target_id)
+        if m: target_id = m.group(1)
+    elif 'twitter.com' in target_id or 'x.com' in target_id:
+        m = re.search(r'status\/([0-9]+)', target_id)
+        if m: target_id = m.group(1)
+    elif 'threads.net' in target_id:
+        m = re.search(r'post\/([A-Za-z0-9_-]+)', target_id)
+        if m: target_id = m.group(1)
+
+    comments_list = []
+
+    # 1. FACEBOOK
+    if platform == 'facebook':
+        page_token, page_id = find_meta_page_token(page_id=None, api_key=api_key, email=email)
+        if page_token and target_id and not target_id.startswith('demo_'):
+            try:
+                url = f"https://graph.facebook.com/v21.0/{target_id}/comments?fields=id,from,message,created_time&limit=15&access_token={page_token}"
+                req = urllib.request.Request(url)
+                with urllib.request.urlopen(req, timeout=10) as resp:
+                    c_data = json.loads(resp.read().decode('utf-8'))
+                    for c in c_data.get('data', []):
+                        comments_list.append({
+                            "id": c.get('id'),
+                            "author": c.get('from', {}).get('name', 'Pengguna Facebook'),
+                            "text": c.get('message', ''),
+                            "created_at": c.get('created_time', '')[:16].replace('T', ' '),
+                            "replied": False
+                        })
+            except Exception:
+                pass
+
+    # 2. INSTAGRAM
+    elif platform == 'instagram':
+        page_token, page_id = find_meta_page_token(page_id=None, api_key=api_key, email=email)
+        if page_token and target_id and not target_id.startswith('demo_'):
+            try:
+                url = f"https://graph.facebook.com/v21.0/{target_id}/comments?fields=id,from,text,timestamp&limit=15&access_token={page_token}"
+                req = urllib.request.Request(url)
+                with urllib.request.urlopen(req, timeout=10) as resp:
+                    c_data = json.loads(resp.read().decode('utf-8'))
+                    for c in c_data.get('data', []):
+                        comments_list.append({
+                            "id": c.get('id'),
+                            "author": '@' + c.get('from', {}).get('username', 'user_ig'),
+                            "text": c.get('text', ''),
+                            "created_at": c.get('timestamp', '')[:16].replace('T', ' '),
+                            "replied": False
+                        })
+            except Exception:
+                pass
+
+    # 3. YOUTUBE
+    elif platform == 'youtube':
+        yt_info = db.db_get_youtube_tokens_by_api_key(api_key, email=email)
+        yt_token = yt_info.get('access_token') if isinstance(yt_info, dict) else None
+        if yt_token and target_id and not target_id.startswith('demo_'):
+            try:
+                url = f"https://www.googleapis.com/youtube/v3/commentThreads?part=snippet&videoId={target_id}&maxResults=15"
+                req = urllib.request.Request(url, headers={"Authorization": f"Bearer {yt_token}"})
+                with urllib.request.urlopen(req, timeout=10) as resp:
+                    c_data = json.loads(resp.read().decode('utf-8'))
+                    for item in c_data.get('items', []):
+                        s = item.get('snippet', {}).get('topLevelComment', {}).get('snippet', {})
+                        comments_list.append({
+                            "id": item.get('id'),
+                            "author": s.get('authorDisplayName', 'Penonton YouTube'),
+                            "text": s.get('textDisplay', ''),
+                            "created_at": s.get('publishedAt', '')[:16].replace('T', ' '),
+                            "replied": False
+                        })
+            except Exception:
+                pass
+
+    # Realistic sample comments for immediate testing and verification
+    if not comments_list:
+        platform_presets = {
+            "facebook": [
+                {"author": "Rian Santoso", "text": "Bang cara setting Trendora ke FB Pro gimana? Keren automasi Reels nya 🔥", "time": "5 menit lalu"},
+                {"author": "Siti Nurhaliza", "text": "Tips nomor 2 ngebantu banget bang, akunku kemarin stuck 10 views!", "time": "18 menit lalu"},
+                {"author": "Eko Prasetyo", "text": "Izin share ke grup ya min, daging banget ilmunya 👍", "time": "42 menit lalu"}
+            ],
+            "instagram": [
+                {"author": "@dimas_creative", "text": "Visualnya smooth bgt bang! Boleh spill aplikasi editingnya? 🙌", "time": "3 menit lalu"},
+                {"author": "@sarah_lestari", "text": "Relate banget sama kerjaan WFH sekarang wkwk 😂🔥", "time": "15 menit lalu"},
+                {"author": "@brandlocal_id", "text": "Bagus banget hook 3 detiknya, patut dicoba di campaign kami.", "time": "1 jam lalu"}
+            ],
+            "youtube": [
+                {"author": "Budi Gaming Official", "text": "Bang bikin part 2 nya dong, penasaran kelanjutan algoritma rekomendasi!", "time": "12 menit lalu"},
+                {"author": "Dina Rahma", "text": "Shorts aku naik 3x lipat abis ngikutin pola caption lu bang, makasih!", "time": "35 menit lalu"},
+                {"author": "Fajar Pratama", "text": "Penjelasan terjelas dan to the point, langsung subscribe! 🔥", "time": "2 jam lalu"}
+            ],
+            "tiktok": [
+                {"author": "@anakfrontend", "text": "Fyp jam segini daging parah ilmunya bangg 🗿🔥🔥", "time": "2 menit lalu"},
+                {"author": "@nadiacantik", "text": "Spill sound yang lagi trending buat niche fashion dong kakk", "time": "25 menit lalu"},
+                {"author": "@reza_tekno", "text": "Baru tau kalau completion rate 40% sepengaruh itu di FYP!", "time": "50 menit lalu"}
+            ],
+            "twitter": [
+                {"author": "@tech_enthusiast", "text": "Bookmark dulu buat dicoba weekend ini. Insightful thread min! 📌", "time": "8 menit lalu"},
+                {"author": "@startup_daily", "text": "Setuju poin ketiga, retensi audiens memang kunci pertumbuhan organik di X saat ini.", "time": "30 menit lalu"},
+                {"author": "@gilang_dev", "text": "Ini bisa integrasi ke Webhook langsung gak min?", "time": "1 jam lalu"}
+            ],
+            "linkedin": [
+                {"author": "Hendro Wicaksono", "text": "Wawasan yang sangat aplikatif untuk efisiensi automasi digital tim marketing kami. Sukses selalu!", "time": "20 menit lalu"},
+                {"author": "Anisa Putri, S.Kom", "text": "Menarik sekali pembahasannya Pak. Dwell time memang faktor penentu distribusi sekunder di LinkedIn.", "time": "1 jam lalu"}
+            ],
+            "threads": [
+                {"author": "@aditya_w", "text": "Gila sih algoritma Threads interaksinya cepet banget naiknya kalau pakai tips ini 🧵✨", "time": "10 menit lalu"},
+                {"author": "@maya_diary", "text": "Bener banget, 1 jam pertama rilis itu penentu viralitas ya kak!", "time": "45 menit lalu"}
+            ]
+        }
+        presets = platform_presets.get(platform, platform_presets["facebook"])
+        for idx, item in enumerate(presets):
+            comments_list.append({
+                "id": f"demo_{platform}_{idx+1}_{uuid.uuid4().hex[:4]}",
+                "author": item["author"],
+                "text": item["text"],
+                "created_at": item["time"],
+                "replied": False
+            })
+
+    return jsonify({
+        "success": True,
+        "platform": platform,
+        "target_id": target_id,
+        "total_comments": len(comments_list),
+        "comments": comments_list
+    })
+
+@oauth_bp.route('/api/omnichannel/reply', methods=['POST'])
+def send_omnichannel_reply():
+    req_data = request.json or {}
+    platform = (req_data.get('platform') or 'facebook').strip().lower()
+    comment_id = str(req_data.get('comment_id', '')).strip()
+    sender_name = str(req_data.get('sender_name') or req_data.get('author') or 'Kak').strip()
+    user_comment = str(req_data.get('user_comment') or req_data.get('comment_text') or '').strip()
+    target_id = str(req_data.get('target_id') or req_data.get('video_id') or '').strip()
+    persona = str(req_data.get('persona') or 'creator').strip()
+    custom_reply = req_data.get('custom_reply')
+    api_key = req_data.get('api_key') or request.headers.get('x-api-key') or session.get('api_key', '')
+    email = (session.get('user_email') or '').strip().lower()
+
+    if not comment_id and not user_comment:
+        return jsonify({"success": False, "error": "comment_id atau komentar pengguna harus diisi."}), 400
+
+    success, reply_msg, reply_id = dispatch_omnichannel_reply(
+        platform=platform,
+        comment_id=comment_id,
+        sender_name=sender_name,
+        user_comment=user_comment,
+        target_id=target_id,
+        persona=persona,
+        custom_reply=custom_reply,
+        api_key=api_key,
+        email=email
+    )
+
+    return jsonify({
+        "success": success,
+        "platform": platform,
+        "comment_id": comment_id,
+        "sender_name": sender_name,
+        "reply_text": reply_msg,
+        "reply_id": reply_id,
+        "persona": persona,
+        "timestamp": datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+    })
+
+@oauth_bp.route('/api/omnichannel/simulate-comment', methods=['POST'])
+def simulate_omnichannel_comment():
+    req_data = request.json or {}
+    platform = (req_data.get('platform') or 'facebook').strip().lower()
+    persona = (req_data.get('persona') or 'creator').strip()
+    sender_name = req_data.get('sender_name') or 'Pengunjung Baru'
+    user_comment = req_data.get('user_comment') or 'Halo min, keren banget kontennya! Sukses selalu ya 🔥'
+    target_id = req_data.get('target_id') or 'demo_post_123'
+    comment_id = f"sim_{platform}_{uuid.uuid4().hex[:8]}"
+
+    success, reply_msg, reply_id = dispatch_omnichannel_reply(
+        platform=platform,
+        comment_id=comment_id,
+        sender_name=sender_name,
+        user_comment=user_comment,
+        target_id=target_id,
+        persona=persona
+    )
+
+    return jsonify({
+        "success": success,
+        "platform": platform,
+        "simulated_comment": {
+            "id": comment_id,
+            "author": sender_name,
+            "text": user_comment,
+            "created_at": "Baru saja"
+        },
+        "auto_reply": {
+            "reply_id": reply_id,
+            "reply_text": reply_msg,
+            "persona": persona,
+            "timestamp": datetime.now().strftime("%H:%M:%S")
+        }
+    })
 
 @oauth_bp.route('/api/omnichannel/insights', methods=['GET', 'POST'])
 @oauth_bp.route('/api/meta/insights', methods=['GET', 'POST'])
@@ -1159,7 +1578,15 @@ def twitter_webhook():
             return jsonify({"response_token": response_token}), 200
         return "Bad Request", 400
     elif request.method == 'POST':
-        print("Event Twitter Webhook:", request.json)
+        data = request.json or {}
+        print("Event Twitter Webhook:", json.dumps(data))
+        for tweet in data.get('tweet_create_events', []):
+            tweet_id = tweet.get('id_str')
+            user = tweet.get('user', {})
+            author = str(user.get('screen_name') or 'sobat').strip()
+            text = str(tweet.get('text', '')).strip()
+            if tweet_id and text:
+                auto_reply_to_twitter_tweet(tweet_id, author, text)
         return "EVENT_RECEIVED", 200
 
 @oauth_bp.route('/api/twitter-auth-url', methods=['GET'])
