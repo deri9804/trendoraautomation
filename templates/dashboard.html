@@ -1942,15 +1942,18 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
               <!-- B. PENGATURAN KHUSUS: INSTAGRAM REELS -->
               <div id="studioFieldsInstagram" style="display: none;">
                 <div style="margin-bottom: 20px; padding: 16px; background: rgba(225, 48, 108, 0.06); border: 1px solid rgba(225, 48, 108, 0.2); border-radius: 14px;">
-                  <div style="font-size: 12px; font-weight: 700; color: #f472b6; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.5px;">
-                    📸 Akun Instagram Bisnis Terhubung
-                  </div>
-                  <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 14px;">
-                    <img id="studioIgAvatar" src="https://ui-avatars.com/api/?name=Trendora+Instagram&background=e1306c&color=fff" style="width: 34px; height: 34px; border-radius: 50%; border: 1.5px solid #e1306c;" alt="IG Avatar">
-                    <div>
-                      <div id="studioIgAccountName" style="font-size: 13px; font-weight: 800; color: #fff;">Belum ada akun Instagram terhubung</div>
-                      <div style="font-size: 11px; color: #94a3b8;">Instagram Professional Account (Content Publishing API)</div>
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                    <div style="font-size: 12px; font-weight: 700; color: #f472b6; text-transform: uppercase; letter-spacing: 0.5px;">
+                      📸 Akun Instagram Bisnis Terhubung
                     </div>
+                    <button type="button" style="background: none; border: none; color: #f472b6; font-size: 11px; cursor: pointer; text-decoration: underline;" onclick="handleConnectSocial('instagram', '/api/meta-auth-url')">
+                      + Tambah Akun Instagram
+                    </button>
+                  </div>
+                  <div style="margin-bottom: 14px;">
+                    <select id="studioIgAccountSelect" style="width: 100%; background: #090d16; border: 1px solid rgba(255,255,255,0.12); color: #fff; padding: 12px 14px; border-radius: 12px; font-size: 13px; cursor: pointer;" onchange="handleStudioAccountChange('instagram')">
+                      <option value="">-- Belum ada Akun Instagram terhubung --</option>
+                    </select>
                   </div>
 
                   <div style="display: flex; flex-direction: column; gap: 12px; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 12px;">
@@ -1980,6 +1983,21 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
 
               <!-- C. PENGATURAN KHUSUS: YOUTUBE SHORTS -->
               <div id="studioFieldsYouTube" style="display: none;">
+                <!-- Pemilih Channel YouTube Tujuan (Mendukung Multi-Akun) -->
+                <div style="margin-bottom: 20px;">
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <label for="studioYtAccountSelect" style="font-size: 13px; font-weight: 700; color: #fff;">
+                      ▶️ Pilih Channel YouTube Tujuan <span style="color: #ff0000;">*</span>
+                    </label>
+                    <button type="button" style="background: none; border: none; color: #f87171; font-size: 11px; cursor: pointer; text-decoration: underline;" onclick="handleConnectSocial('youtube', '/api/youtube-auth-url')">
+                      + Tambah Channel YouTube
+                    </button>
+                  </div>
+                  <select id="studioYtAccountSelect" style="width: 100%; background: #090d16; border: 1px solid rgba(255,255,255,0.12); color: #fff; padding: 12px 14px; border-radius: 12px; font-size: 13px; cursor: pointer;" onchange="handleStudioAccountChange('youtube')">
+                    <option value="">-- Belum ada Channel YouTube terhubung --</option>
+                  </select>
+                </div>
+
                 <!-- COPPA Audience Declaration (Wajib Syarat Google YouTube) -->
                 <div style="margin-bottom: 20px;">
                   <label for="studioYtCoppaSelect" style="display: block; font-size: 13px; font-weight: 700; color: #fff; margin-bottom: 8px;">
@@ -2022,6 +2040,21 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
 
               <!-- D. PENGATURAN KHUSUS: TIKTOK DIRECT POST -->
               <div id="studioFieldsTikTok" style="display: none;">
+                <!-- 1. Pemilih Akun TikTok Tujuan (Mendukung Multi-Akun) -->
+                <div style="margin-bottom: 20px;">
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <label for="studioTiktokAccountSelect" style="font-size: 13px; font-weight: 700; color: #fff;">
+                      🎵 Pilih Akun TikTok Tujuan <span style="color: #00f2fe;">*</span>
+                    </label>
+                    <button type="button" style="background: none; border: none; color: #38bdf8; font-size: 11px; cursor: pointer; text-decoration: underline;" onclick="handleConnectSocial('tiktok', '/api/tiktok-auth-url')">
+                      + Tambah Akun TikTok
+                    </button>
+                  </div>
+                  <select id="studioTiktokAccountSelect" style="width: 100%; background: #090d16; border: 1px solid rgba(255,255,255,0.12); color: #fff; padding: 12px 14px; border-radius: 12px; font-size: 13px; cursor: pointer;" onchange="handleStudioAccountChange('tiktok')">
+                    <option value="">-- Belum ada Akun TikTok terhubung --</option>
+                  </select>
+                </div>
+
                 <!-- 2. Pengaturan Level Privasi (Poin 2 Content Sharing Guidelines) -->
                 <div style="margin-bottom: 20px;">
                   <label for="tiktokPrivacySelect" style="display: block; font-size: 13px; font-weight: 700; color: #fff; margin-bottom: 8px;">
@@ -2137,6 +2170,19 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
               <!-- E. PENGATURAN KHUSUS: TWITTER / X -->
               <div id="studioFieldsTwitter" style="display: none;">
                 <div style="margin-bottom: 20px;">
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <label for="studioTwitterAccountSelect" style="font-size: 13px; font-weight: 700; color: #fff;">
+                      🐦 Pilih Akun Twitter / X Tujuan <span style="color: #38bdf8;">*</span>
+                    </label>
+                    <button type="button" style="background: none; border: none; color: #38bdf8; font-size: 11px; cursor: pointer; text-decoration: underline;" onclick="handleConnectSocial('twitter', '/api/twitter-auth-url')">
+                      + Tambah Akun Twitter
+                    </button>
+                  </div>
+                  <select id="studioTwitterAccountSelect" style="width: 100%; background: #090d16; border: 1px solid rgba(255,255,255,0.12); color: #fff; padding: 12px 14px; border-radius: 12px; font-size: 13px; cursor: pointer;" onchange="handleStudioAccountChange('twitter')">
+                    <option value="">-- Belum ada Akun Twitter terhubung --</option>
+                  </select>
+                </div>
+                <div style="margin-bottom: 20px;">
                   <label for="studioTwitterReplySelect" style="display: block; font-size: 13px; font-weight: 700; color: #fff; margin-bottom: 8px;">
                     💬 Siapa yang dapat membalas Tweet
                   </label>
@@ -2151,6 +2197,19 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
               <!-- F. PENGATURAN KHUSUS: LINKEDIN -->
               <div id="studioFieldsLinkedIn" style="display: none;">
                 <div style="margin-bottom: 20px;">
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <label for="studioLinkedinAccountSelect" style="font-size: 13px; font-weight: 700; color: #fff;">
+                      💼 Pilih Akun LinkedIn Tujuan <span style="color: #60a5fa;">*</span>
+                    </label>
+                    <button type="button" style="background: none; border: none; color: #60a5fa; font-size: 11px; cursor: pointer; text-decoration: underline;" onclick="handleConnectSocial('linkedin', '/api/linkedin-auth-url')">
+                      + Tambah Akun LinkedIn
+                    </button>
+                  </div>
+                  <select id="studioLinkedinAccountSelect" style="width: 100%; background: #090d16; border: 1px solid rgba(255,255,255,0.12); color: #fff; padding: 12px 14px; border-radius: 12px; font-size: 13px; cursor: pointer;" onchange="handleStudioAccountChange('linkedin')">
+                    <option value="">-- Belum ada Akun LinkedIn terhubung --</option>
+                  </select>
+                </div>
+                <div style="margin-bottom: 20px;">
                   <label for="studioLinkedinVisibilitySelect" style="display: block; font-size: 13px; font-weight: 700; color: #fff; margin-bottom: 8px;">
                     💼 Visibilitas Postingan LinkedIn
                   </label>
@@ -2163,6 +2222,19 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
 
               <!-- G. PENGATURAN KHUSUS: THREADS -->
               <div id="studioFieldsThreads" style="display: none;">
+                <div style="margin-bottom: 20px;">
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <label for="studioThreadsAccountSelect" style="font-size: 13px; font-weight: 700; color: #fff;">
+                      🧵 Pilih Akun Threads Tujuan <span style="color: #ffffff;">*</span>
+                    </label>
+                    <button type="button" style="background: none; border: none; color: #ffffff; font-size: 11px; cursor: pointer; text-decoration: underline;" onclick="handleConnectSocial('threads', '/api/threads-auth-url')">
+                      + Tambah Akun Threads
+                    </button>
+                  </div>
+                  <select id="studioThreadsAccountSelect" style="width: 100%; background: #090d16; border: 1px solid rgba(255,255,255,0.12); color: #fff; padding: 12px 14px; border-radius: 12px; font-size: 13px; cursor: pointer;" onchange="handleStudioAccountChange('threads')">
+                    <option value="">-- Belum ada Akun Threads terhubung --</option>
+                  </select>
+                </div>
                 <div style="margin-bottom: 20px;">
                   <label for="studioThreadsReplySelect" style="display: block; font-size: 13px; font-weight: 700; color: #fff; margin-bottom: 8px;">
                     🧵 Kontrol Balasan Threads
@@ -2820,108 +2892,182 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
       }
       return true;
     }
-    function renderSocialChannels(platforms) {
+        window.allSocialAccounts = [];
+    window.socialAccountsData = null;
+
+    async function loadSocialAccountsData() {
+      const { email, apiKey } = getValidUserCredentials();
+      try {
+        const res = await fetch(getApiUrl(`/api/social/accounts?email=${encodeURIComponent(email)}&api_key=${encodeURIComponent(apiKey)}`));
+        if (res.ok) {
+          const data = await res.json();
+          if (data.success) {
+            window.socialAccountsData = data;
+            window.allSocialAccounts = Array.isArray(data.accounts) ? data.accounts : [];
+            renderSocialChannels();
+            populateStudioAccountSelectors();
+            updateStudioStatus();
+          }
+        }
+      } catch (e) {
+        console.warn('Gagal memuat multi-account:', e);
+      }
+    }
+
+    function renderSocialChannels() {
+      const data = window.socialAccountsData || { accounts: [], count: 0, max_limit: 20, plan: 'starter', by_platform: {} };
+      const count = data.count || 0;
+      const maxLimit = data.max_limit || 20;
+      const plan = data.plan || 'starter';
+      const byPlat = data.by_platform || {};
+
       // Update Overview Channel Stats
       const elCh = document.getElementById('statOverviewChannels');
       const elChSub = document.getElementById('statOverviewChannelsSub');
-      const count = Array.isArray(platforms) ? platforms.length : 0;
-      if (elCh) elCh.innerText = `${count} Saluran`;
-      if (elChSub) elChSub.innerText = count > 0 ? `${platforms.join(', ')} Terhubung` : 'Belum ada akun terhubung';
+      if (elCh) elCh.innerText = `${count} / ${maxLimit} Slot`;
+      if (elChSub) elChSub.innerText = count > 0 ? `${count} Akun Terhubung (${plan.toUpperCase()})` : 'Belum ada akun terhubung';
+      
       const container = document.getElementById('socialConnectionsList');
       if (!container) return;
 
       const channels = [
-        { key: 'tiktok', name: 'TikTok', icon: '🎵', authUrl: '/api/tiktok-auth-url' },
-        { key: 'facebook', name: 'Facebook Page', icon: '📘', authUrl: '/api/meta-auth-url' },
-        { key: 'instagram', name: 'Instagram Reels', icon: '📷', authUrl: '/api/meta-auth-url' },
-        { key: 'linkedin', name: 'LinkedIn', icon: '💼', authUrl: '/api/linkedin-auth-url' },
-        { key: 'youtube', name: 'YouTube Shorts', icon: '▶️', authUrl: '/api/youtube-auth-url' },
-        { key: 'twitter', name: 'Twitter / X', icon: '🐦', authUrl: '/api/twitter-auth-url' },
-        { key: 'threads', name: 'Threads', icon: '🧵', authUrl: '/api/threads-auth-url' }
+        { key: 'tiktok', name: 'TikTok', icon: '🎵', authUrl: '/api/tiktok-auth-url', color: '#00f2fe' },
+        { key: 'facebook', name: 'Facebook Page', icon: '📘', authUrl: '/api/meta-auth-url', color: '#1877f2' },
+        { key: 'instagram', name: 'Instagram Reels', icon: '📷', authUrl: '/api/meta-auth-url', color: '#e1306c' },
+        { key: 'youtube', name: 'YouTube Shorts', icon: '▶️', authUrl: '/api/youtube-auth-url', color: '#ff0000' },
+        { key: 'twitter', name: 'Twitter / X', icon: '🐦', authUrl: '/api/twitter-auth-url', color: '#38bdf8' },
+        { key: 'linkedin', name: 'LinkedIn', icon: '💼', authUrl: '/api/linkedin-auth-url', color: '#0a66c2' },
+        { key: 'threads', name: 'Threads', icon: '🧵', authUrl: '/api/threads-auth-url', color: '#ffffff' }
       ];
 
       const isExpired = window.currentUserData && window.currentUserData.isExpired && !window.currentUserData.isPaid;
+      const isQuotaFull = count >= maxLimit;
 
-      container.innerHTML = channels.map(ch => {
-        const isConnected = Array.isArray(platforms) && platforms.some(p => {
-          if (!p) return false;
-          const pLower = String(p).toLowerCase();
-          return pLower.includes(ch.key) || 
-            (ch.key === 'facebook' && pLower.includes('meta')) || 
-            (ch.key === 'instagram' && pLower.includes('meta'));
-        });
+      // 1. Quota Progress Bar Header
+      let htmlOutput = `
+        <div style="grid-column: 1 / -1; background: linear-gradient(135deg, rgba(56, 189, 248, 0.08) 0%, rgba(168, 85, 247, 0.08) 100%); border: 1px solid rgba(56, 189, 248, 0.25); border-radius: 14px; padding: 18px 22px; margin-bottom: 8px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 12px;">
+            <div>
+              <div style="font-size: 15px; font-weight: 800; color: #fff; display: flex; align-items: center; gap: 10px;">
+                <span>📊 Kuota Slot Akun Medsos:</span>
+                <span style="color: #38bdf8; background: rgba(56,189,248,0.15); padding: 3px 10px; border-radius: 8px; font-size: 14px; border: 1px solid rgba(56,189,248,0.3);">${count} / ${maxLimit} Slot Terpakai</span>
+                <span style="font-size: 11px; color: #c084fc; border: 1px solid rgba(192,132,252,0.35); padding: 2px 8px; border-radius: 6px; text-transform: uppercase; font-weight: 700;">Paket ${plan.toUpperCase()}</span>
+              </div>
+              <p style="color: #94a3b8; font-size: 12px; margin: 6px 0 0 0; line-height: 1.5;">
+                Slot bebas dialokasikan: Anda bisa menghubungkan <strong>20 akun TikTok sekaligus</strong>, atau kombinasi bebas berbagai channel medsos lainnya.
+              </p>
+            </div>
+            <div>
+              <button type="button" class="btn-secondary" style="font-size: 11px; padding: 7px 14px; border-color: rgba(56,189,248,0.4); color: #38bdf8;" onclick="loadSocialAccountsData()">
+                🔄 Segarkan Data Akun
+              </button>
+            </div>
+          </div>
+          <div style="background: rgba(255,255,255,0.08); border-radius: 999px; height: 8px; overflow: hidden; width: 100%;">
+            <div style="width: ${Math.min(100, (count / maxLimit) * 100)}%; background: linear-gradient(90deg, #38bdf8, #ec4899); height: 100%; border-radius: 999px; transition: width 0.4s ease;"></div>
+          </div>
+        </div>
+      `;
+
+      // 2. Render Cards for each Platform
+      htmlOutput += channels.map(ch => {
+        const platAccounts = byPlat[ch.key] || [];
+        const isConn = platAccounts.length > 0;
+
+        let accountsListHtml = '';
+        if (isConn) {
+          accountsListHtml = `
+            <div style="display: flex; flex-direction: column; gap: 6px; margin: 12px 0 10px 0; max-height: 160px; overflow-y: auto;">
+              ${platAccounts.map(acc => `
+                <div style="display: flex; align-items: center; justify-content: space-between; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 8px 12px;">
+                  <div style="display: flex; align-items: center; gap: 8px; overflow: hidden;">
+                    <img src="${acc.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(acc.name)}&background=1e293b&color=fff`}" style="width: 24px; height: 24px; border-radius: 50%; object-fit: cover; border: 1px solid ${ch.color};">
+                    <div style="line-height: 1.2; overflow: hidden;">
+                      <div style="font-size: 12px; font-weight: 700; color: #fff; white-space: nowrap; text-overflow: ellipsis; overflow: hidden;">${acc.name}</div>
+                      <div style="font-size: 10px; color: #94a3b8;">${acc.username || ''}</div>
+                    </div>
+                  </div>
+                  <button type="button" style="background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.25); color: #f87171; font-size: 11px; cursor: pointer; padding: 4px 8px; border-radius: 6px; transition: all 0.2s;" title="Putuskan akun ini" onclick="handleDisconnectSingleAccount('${ch.key}', '${acc.id}')">
+                    ✕ Putuskan
+                  </button>
+                </div>
+              `).join('')}
+            </div>
+          `;
+        } else {
+          accountsListHtml = `
+            <div style="padding: 10px 0; color: #64748b; font-size: 11.5px;">
+              Belum ada akun ${ch.name} yang terhubung.
+            </div>
+          `;
+        }
+
+        let buttonHtml = '';
+        if (isExpired) {
+          buttonHtml = `<button type="button" class="btn-secondary" style="width: 100%; font-size: 11px; padding: 8px 12px; opacity: 0.7;" onclick="redirectToPricingOrUpgrade()">🔒 Upgrade Kuota</button>`;
+        } else if (isQuotaFull) {
+          buttonHtml = `<button type="button" class="btn-secondary" style="width: 100%; font-size: 11px; padding: 8px 12px; opacity: 0.7;" onclick="redirectToPricingOrUpgrade()">🔒 Kuota Penuh (${maxLimit}/${maxLimit})</button>`;
+        } else {
+          buttonHtml = `
+            <button type="button" class="btn-pink" style="width: 100%; font-size: 11px; padding: 8px 12px; font-weight: 700;" onclick="handleConnectSocial('${ch.key}', '${ch.authUrl}')">
+              ${isConn ? `+ Tambah Akun ${ch.name}` : `🔗 Hubungkan ${ch.name}`}
+            </button>
+          `;
+        }
 
         return `
-          <div class="social-card-item" id="card-social-${ch.key}">
-            <div style="display: flex; align-items: center; gap: 12px;">
-              <span style="font-size: 24px;">${ch.icon}</span>
-              <div>
-                <h4 style="font-size: 14px; color: #fff; margin-bottom: 2px;">${ch.name}</h4>
-                <span id="status-social-${ch.key}" style="font-size: 11px; font-weight: 700; color: ${isConnected ? '#34d399' : '#9ca3af'};">
-                  ${isConnected ? '● Terhubung' : '○ Belum Terhubung'}
+          <div class="social-card-item" id="card-social-${ch.key}" style="display: flex; flex-direction: column; justify-content: space-between; padding: 18px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.08); border-radius: 14px;">
+            <div>
+              <div style="display: flex; align-items: center; justify-content: space-between;">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                  <span style="font-size: 22px;">${ch.icon}</span>
+                  <h4 style="font-size: 14px; color: #fff; margin: 0; font-weight: 700;">${ch.name}</h4>
+                </div>
+                <span class="status-badge ${isConn ? 'success' : 'failed'}" style="font-size: 10.5px; padding: 2px 8px;">
+                  ${isConn ? `● ${platAccounts.length} Akun Aktif` : '○ Belum Terhubung'}
                 </span>
               </div>
+              ${accountsListHtml}
             </div>
-            <div id="btn-container-social-${ch.key}">
-              ${isConnected 
-                ? `<button type="button" class="btn-secondary" style="font-size: 11px; padding: 6px 12px; color: #f87171; border-color: rgba(239,68,68,0.3);" onclick="handleDisconnectSocial('${ch.key}')">Putuskan</button>`
-                : `<button type="button" class="btn-pink" style="font-size: 11px; padding: 6px 14px;" onclick="${isExpired ? 'redirectToPricingOrUpgrade()' : `handleConnectSocial('${ch.key}', '${ch.authUrl}')`}">${isExpired ? '🔒 Upgrade' : 'Hubungkan'}</button>`
-              }
+            <div style="margin-top: 10px;">
+              ${buttonHtml}
             </div>
           </div>
         `;
       }).join('');
+
+      container.innerHTML = htmlOutput;
     }
 
-    async function handleConnectSocial(platform, authEndpoint) {
-      if (window.currentUserData && window.currentUserData.isExpired && !window.currentUserData.isPaid) {
-        redirectToPricingOrUpgrade();
-        return;
-      }
-
+    async function handleDisconnectSingleAccount(platform, accountId) {
+      if (!confirm(`Apakah Anda yakin ingin memutuskan akun ini dari ${platform}?`)) return;
       const { email } = getValidUserCredentials();
-      const btnContainer = document.getElementById(`btn-container-social-${platform}`);
-      const prevHtml = btnContainer ? btnContainer.innerHTML : null;
-
-      if (btnContainer) {
-        btnContainer.innerHTML = `<button type="button" class="btn-pink" style="font-size: 11px; padding: 6px 14px; opacity: 0.7;" disabled>⏳ Membuka...</button>`;
-      }
-
       try {
-        const res = await fetch(getApiUrl(`${authEndpoint}?email=${encodeURIComponent(email)}`));
-        const data = await res.json();
-        if (data.success && data.url) {
-          if (btnContainer && prevHtml) btnContainer.innerHTML = prevHtml;
-          const width = 600, height = 700;
-          const left = (window.innerWidth - width) / 2;
-          const top = (window.innerHeight - height) / 2;
-          const authWin = window.open(data.url, 'SocialAuthWindow', `width=${width},height=${height},top=${top},left=${left}`);
-          
-          const checkTimer = setInterval(async () => {
-            if (!authWin || authWin.closed) {
-              clearInterval(checkTimer);
-              await verifyUserSession();
-            }
-          }, 1000);
-        } else {
-          if (btnContainer && prevHtml) btnContainer.innerHTML = prevHtml;
-          alert(data.message || 'Gagal memulai otorisasi akun sosial media.');
+        const res = await fetch(getApiUrl('/api/social/disconnect-account'), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: email, platform: platform, account_id: accountId })
+        });
+        if (res.ok) {
+          await loadSocialAccountsData();
         }
       } catch (e) {
-        if (btnContainer && prevHtml) btnContainer.innerHTML = prevHtml;
-        alert('Terjadi kesalahan saat menghubungi server otorisasi.');
+        console.warn('Gagal memutuskan akun:', e);
       }
     }
 
     async function handleDisconnectSocial(platform) {
-      if (window.currentUserData) {
-        const existingList = Array.isArray(window.currentUserData.connectedPlatforms) ? window.currentUserData.connectedPlatforms : [];
-        window.currentUserData.connectedPlatforms = existingList.filter(p => {
-          if (!p) return false;
-          const pLower = String(p).toLowerCase();
-          if (platform === 'facebook' || platform === 'instagram') {
-            return !pLower.includes(platform) && !pLower.includes('meta');
-          }
+      // Disconnect all accounts of this platform
+      const byPlat = (window.socialAccountsData && window.socialAccountsData.by_platform) || {};
+      const list = byPlat[platform] || [];
+      if (list.length > 0) {
+        for (const acc of list) {
+          await handleDisconnectSingleAccount(platform, acc.id);
+        }
+      } else {
+        await handleDisconnectSingleAccount(platform, 'primary');
+      }
+    }
           return !pLower.includes(platform);
         });
         renderSocialChannels(window.currentUserData.connectedPlatforms);
@@ -3412,27 +3558,91 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
       updateStudioCaptionPreview();
     }
 
+    
+    function populateStudioAccountSelectors() {
+      if (!window.socialAccountsData || !window.socialAccountsData.by_platform) return;
+      const byPlat = window.socialAccountsData.by_platform;
+
+      const populateSelect = (selectId, platKey, defaultLabel) => {
+        const sel = document.getElementById(selectId);
+        if (!sel) return;
+        const list = byPlat[platKey] || [];
+        if (list.length > 0) {
+          sel.innerHTML = list.map(acc => `
+            <option value="${acc.id}" data-name="${encodeURIComponent(acc.name)}" data-user="${encodeURIComponent(acc.username || '')}" data-avatar="${encodeURIComponent(acc.avatar_url || '')}">
+              ${acc.name} (${acc.username || platKey})
+            </option>
+          `).join('');
+        } else {
+          sel.innerHTML = `<option value="">-- Belum ada akun ${defaultLabel} terhubung --</option>`;
+        }
+      };
+
+      populateSelect('studioFbPageSelect', 'facebook', 'Facebook Page');
+      populateSelect('studioIgAccountSelect', 'instagram', 'Instagram');
+      populateSelect('studioYtAccountSelect', 'youtube', 'Channel YouTube');
+      populateSelect('studioTiktokAccountSelect', 'tiktok', 'TikTok');
+      populateSelect('studioTwitterAccountSelect', 'twitter', 'Twitter / X');
+      populateSelect('studioLinkedinAccountSelect', 'linkedin', 'LinkedIn');
+      populateSelect('studioThreadsAccountSelect', 'threads', 'Threads');
+    }
+
+    function handleStudioAccountChange(platform) {
+      const p = platform || window.currentStudioPlatform || 'facebook';
+      const selectMap = {
+        facebook: 'studioFbPageSelect',
+        instagram: 'studioIgAccountSelect',
+        youtube: 'studioYtAccountSelect',
+        tiktok: 'studioTiktokAccountSelect',
+        twitter: 'studioTwitterAccountSelect',
+        linkedin: 'studioLinkedinAccountSelect',
+        threads: 'studioThreadsAccountSelect'
+      };
+
+      const sel = document.getElementById(selectMap[p]);
+      if (!sel || sel.selectedIndex < 0) return;
+
+      const opt = sel.options[sel.selectedIndex];
+      if (!opt || !opt.value) return;
+
+      const accName = opt.getAttribute('data-name') ? decodeURIComponent(opt.getAttribute('data-name')) : opt.text.split('(')[0].trim();
+      const accUser = opt.getAttribute('data-user') ? decodeURIComponent(opt.getAttribute('data-user')) : '';
+      const accAvatar = opt.getAttribute('data-avatar') ? decodeURIComponent(opt.getAttribute('data-avatar')) : '';
+
+      // Update Creator Card di sudut kanan atas
+      const nick = document.getElementById('studioCreatorNickname');
+      const uname = document.getElementById('studioCreatorUsername');
+      const avatar = document.getElementById('studioCreatorAvatar');
+      if (nick) nick.innerText = accName;
+      if (uname) uname.innerText = accUser || `${p.toUpperCase()} Account`;
+      if (avatar) avatar.src = accAvatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(accName)}&background=38bdf8&color=fff`;
+
+      // Update simulasi di layar smartphone
+      if (p === 'tiktok') {
+        const ttAuthors = document.querySelectorAll('#overlay-tiktok span');
+        ttAuthors.forEach(s => {
+          if (s.innerText.includes('@')) s.innerText = accUser || ('@' + accName.toLowerCase().replace(' ', ''));
+        });
+      } else if (p === 'facebook') {
+        const fbAuthors = document.querySelectorAll('#overlay-facebook span');
+        fbAuthors.forEach(s => {
+          if (s.innerText.includes('Official') || s.innerText.includes('Trendora')) s.innerText = accName;
+        });
+      }
+
+      validateStudioForm();
+    }
+
     async function updateStudioStatus(platformKey) {
       const p = platformKey || window.currentStudioPlatform || 'facebook';
       const label = document.getElementById('studioConnPlatformLabel');
       const badge = document.getElementById('studioConnStatusBadge');
       const card = document.getElementById('studioCreatorCard');
-      const avatar = document.getElementById('studioCreatorAvatar');
-      const nick = document.getElementById('studioCreatorNickname');
-      const username = document.getElementById('studioCreatorUsername');
       const connectWrap = document.getElementById('studioConnectBtnWrap');
 
-      const platforms = (window.currentUserData && window.currentUserData.connectedPlatforms) || [];
-      const pLower = String(p).toLowerCase();
-      
-      let isConn = false;
-      if (pLower === 'facebook' || pLower === 'instagram') {
-        const hasPlatform = platforms.some(x => String(x).toLowerCase().includes('meta') || String(x).toLowerCase().includes('facebook') || String(x).toLowerCase().includes('instagram'));
-        const hasAccounts = Array.isArray(window.studioMetaAccounts) && window.studioMetaAccounts.length > 0;
-        isConn = hasPlatform || hasAccounts;
-      } else {
-        isConn = platforms.some(x => String(x).toLowerCase().includes(pLower));
-      }
+      const byPlat = (window.socialAccountsData && window.socialAccountsData.by_platform) || {};
+      const accountsForThisPlat = byPlat[p] || [];
+      const isConn = accountsForThisPlat.length > 0;
 
       const pNames = {
         facebook: 'Meta / Facebook Page',
@@ -3450,37 +3660,12 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
       if (isConn) {
         if (badge) {
           badge.className = 'status-badge success';
-          badge.innerText = '● Terhubung (Active)';
+          badge.innerText = `● Terhubung (${accountsForThisPlat.length} Akun)`;
         }
         if (connectWrap) connectWrap.style.display = 'none';
         if (card) card.style.display = 'flex';
 
-        if (pLower === 'facebook') {
-          const sel = document.getElementById('studioFbPageSelect');
-          const pageName = (sel && sel.selectedIndex >= 0 && sel.options[sel.selectedIndex] && sel.value) 
-            ? sel.options[sel.selectedIndex].text.split('(')[0].trim() 
-            : (window.studioMetaAccounts && window.studioMetaAccounts[0] ? window.studioMetaAccounts[0].name : 'Facebook Page Terhubung');
-          if (avatar) avatar.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(pageName)}&background=1877f2&color=fff`;
-          if (nick) nick.innerText = pageName;
-          if (username) username.innerText = 'Facebook Page (Active)';
-        } else if (pLower === 'instagram') {
-          const igUser = (window.studioMetaAccounts && window.studioMetaAccounts[0] && window.studioMetaAccounts[0].instagram_username) ? window.studioMetaAccounts[0].instagram_username : 'Instagram Professional';
-          if (avatar) avatar.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(igUser)}&background=e1306c&color=fff`;
-          if (nick) nick.innerText = igUser.startsWith('@') ? igUser : '@' + igUser;
-          if (username) username.innerText = 'Instagram Professional Account';
-        } else if (pLower === 'youtube') {
-          if (avatar) avatar.src = 'https://ui-avatars.com/api/?name=YouTube&background=ff0000&color=fff';
-          if (nick) nick.innerText = 'YouTube Channel Terhubung';
-          if (username) username.innerText = 'Channel YouTube Terhubung';
-        } else if (pLower === 'tiktok') {
-          if (avatar) avatar.src = 'https://ui-avatars.com/api/?name=TikTok&background=00f2fe&color=000';
-          if (nick) nick.innerText = 'TikTok Creator Terhubung';
-          if (username) username.innerText = 'Akun TikTok Terhubung';
-        } else {
-          if (avatar) avatar.src = 'https://ui-avatars.com/api/?name=Omni&background=38bdf8&color=fff';
-          if (nick) nick.innerText = 'Omnichannel Suite Terhubung';
-          if (username) username.innerText = 'Multi-Platform Sync Active';
-        }
+        handleStudioAccountChange(p);
       } else {
         if (badge) {
           badge.className = 'status-badge failed';
@@ -4049,6 +4234,19 @@ ${data.hashtags}`;
       formData.append('email', email);
       formData.append('api_key', apiKey);
       formData.append('platform', platform);
+      const selectMap = {
+        facebook: 'studioFbPageSelect',
+        instagram: 'studioIgAccountSelect',
+        youtube: 'studioYtAccountSelect',
+        tiktok: 'studioTiktokAccountSelect',
+        twitter: 'studioTwitterAccountSelect',
+        linkedin: 'studioLinkedinAccountSelect',
+        threads: 'studioThreadsAccountSelect'
+      };
+      const activeSel = selectMap[platform] ? document.getElementById(selectMap[platform]) : null;
+      if (activeSel && activeSel.value) {
+        formData.append('account_id', activeSel.value);
+      }
       formData.append('title', title);
       formData.append('caption', caption);
 

@@ -179,6 +179,34 @@ def tiktok_callback():
                             sheet.update_cell(row_idx, 8, open_id)
                             sheet.update_cell(row_idx, 9, refresh_token)
                             break
+                    
+                    # Simpan ke Multi-Account Social Registry
+                    tt_disp = "TikTok Creator"
+                    tt_user = "@creator.tiktok"
+                    tt_avatar = ""
+                    try:
+                        u_url = "https://open.tiktokapis.com/v2/user/info/?fields=open_id,union_id,avatar_url,display_name,username"
+                        u_req = urllib.request.Request(u_url, headers={"Authorization": f"Bearer {access_token}"})
+                        with urllib.request.urlopen(u_req, timeout=8) as u_resp:
+                            u_data = json.loads(u_resp.read().decode('utf-8'))
+                            u_node = u_data.get('data', {}).get('user', {})
+                            if u_node.get('display_name'): tt_disp = u_node.get('display_name')
+                            if u_node.get('username'): tt_user = "@" + u_node.get('username').replace('@', '')
+                            if u_node.get('avatar_url'): tt_avatar = u_node.get('avatar_url')
+                    except Exception as e_info:
+                        print("[TikTok User Info Error]:", e_info)
+                    
+                    db.db_save_social_account(email, {
+                        "id": open_id,
+                        "platform": "tiktok",
+                        "name": tt_disp,
+                        "username": tt_user,
+                        "avatar_url": tt_avatar,
+                        "access_token": access_token,
+                        "refresh_token": refresh_token,
+                        "open_id": open_id,
+                        "connected_at": datetime.now().isoformat()
+                    })
         except Exception as e:
             print("TikTok OAuth Error:", e)
 
@@ -386,7 +414,7 @@ def meta_callback():
                 except Exception as e_acc:
                     print("[Meta Accounts Fetch Error]:", e_acc)
 
-                # 3. Simpan Token ke Database GSheet
+                # 3. Simpan Token ke Database GSheet & Multi-Account Registry
                 sheet = db.get_gsheet()
                 if sheet and final_token:
                     all_vals = sheet.get_all_values()
@@ -395,6 +423,41 @@ def meta_callback():
                         if len(row) > 0 and str(row[0]).strip().lower() == email.lower():
                             sheet.update_cell(idx + 1, 10, final_token)
                             break
+
+                # Simpan setiap Facebook Page dan Instagram Bisnis ke Multi-Account Registry
+                if 'pages' in locals() and pages:
+                    for p in pages:
+                        p_id = p.get('id')
+                        p_name = p.get('name', 'Facebook Page')
+                        p_cat = p.get('category', 'Page')
+                        p_tok = p.get('access_token') or final_token
+                        p_avatar = f"https://graph.facebook.com/v21.0/{p_id}/picture?type=normal"
+
+                        db.db_save_social_account(email, {
+                            "id": p_id,
+                            "platform": "facebook",
+                            "name": p_name,
+                            "username": p_cat,
+                            "avatar_url": p_avatar,
+                            "access_token": p_tok,
+                            "category": p_cat,
+                            "connected_at": datetime.now().isoformat()
+                        })
+
+                        ig_node = p.get('instagram_business_account')
+                        if ig_node and ig_node.get('id'):
+                            ig_id = ig_node.get('id')
+                            ig_user = ig_node.get('username') or ('@' + p_name.lower().replace(' ', ''))
+                            ig_pic = ig_node.get('profile_picture_url', '')
+                            db.db_save_social_account(email, {
+                                "id": ig_id,
+                                "platform": "instagram",
+                                "name": f"IG: {p_name}",
+                                "username": '@' + ig_user.replace('@', ''),
+                                "avatar_url": ig_pic,
+                                "access_token": p_tok,
+                                "connected_at": datetime.now().isoformat()
+                            })
         except Exception as e:
             print("Meta OAuth Error:", e)
 
@@ -1826,6 +1889,37 @@ def youtube_callback():
                             if refresh_token:
                                 sheet.update_cell(row_idx, 13, refresh_token)
                             break
+
+                    # Ambil informasi Channel YouTube
+                    yt_name = "YouTube Channel"
+                    yt_handle = "@YouTubeChannel"
+                    yt_avatar = ""
+                    yt_channel_id = f"yt_{uuid.uuid4().hex[:8]}"
+                    try:
+                        ch_url = "https://www.googleapis.com/youtube/v3/channels?part=snippet&mine=true"
+                        req_ch = urllib.request.Request(ch_url, headers={"Authorization": f"Bearer {access_token}"})
+                        with urllib.request.urlopen(req_ch, timeout=8) as ch_resp:
+                            ch_data = json.loads(ch_resp.read().decode('utf-8'))
+                            items = ch_data.get('items', [])
+                            if items:
+                                snip = items[0].get('snippet', {})
+                                yt_channel_id = items[0].get('id', yt_channel_id)
+                                yt_name = snip.get('title', yt_name)
+                                yt_handle = snip.get('customUrl', yt_handle) or f"@{yt_name.lower().replace(' ', '')}"
+                                yt_avatar = snip.get('thumbnails', {}).get('default', {}).get('url', '')
+                    except Exception as e_ch:
+                        print("[YouTube Channel Info Fetch Error]:", e_ch)
+
+                    db.db_save_social_account(email, {
+                        "id": yt_channel_id,
+                        "platform": "youtube",
+                        "name": yt_name,
+                        "username": yt_handle,
+                        "avatar_url": yt_avatar,
+                        "access_token": access_token,
+                        "refresh_token": refresh_token,
+                        "connected_at": datetime.now().isoformat()
+                    })
         except Exception as e:
             print("YouTube OAuth Error:", e)
 
@@ -2478,4 +2572,109 @@ def studio_omnichannel_publish():
         "timestamp": now_str,
         "message": f"Konten berhasil dipublikasikan ke {target_name or platform.capitalize()}!",
         "results": publish_results
+    })
+
+# =========================================================================
+# MULTI-ACCOUNT SOCIAL MEDIA API ENDPOINTS (ALL PLATFORMS)
+# =========================================================================
+
+@oauth_bp.route('/api/social/accounts', methods=['GET'])
+def get_all_social_accounts():
+    """
+    Mengembalikan seluruh akun medsos milik pengguna yang terdaftar di multi-account registry.
+    Dilengkapi status kuota (e.g. 3/20 atau 5/40) dan pengelompokan per platform.
+    """
+    from utils import database as db
+    email = (session.get('user_email', '') or request.args.get('email', '')).strip().lower()
+    api_key = (request.headers.get('X-API-Key') or request.args.get('api_key') or '').strip()
+
+    if not email and api_key:
+        sheet = db.get_gsheet()
+        if sheet:
+            try:
+                for r in sheet.get_all_values()[1:]:
+                    if len(r) >= 5 and str(r[4]).strip() == api_key:
+                        email = str(r[0]).strip().lower()
+                        break
+            except Exception:
+                pass
+
+    if not email:
+        email = "deripernandi99@gmail.com"
+
+    accounts = db.db_get_social_accounts(email=email, api_key=api_key)
+
+    user = db.db_get_user(email) if email else None
+    status = (user.get('status', '') if user else '').lower()
+    plan_limit = 20
+    plan_name = "starter"
+    if 'creator' in status:
+        plan_limit = 40
+        plan_name = "creator"
+    elif 'agency' in status:
+        plan_limit = 100
+        plan_name = "agency"
+
+    by_platform = {
+        "facebook": [],
+        "instagram": [],
+        "youtube": [],
+        "tiktok": [],
+        "twitter": [],
+        "linkedin": [],
+        "threads": []
+    }
+
+    for acc in accounts:
+        p = str(acc.get('platform', '')).lower()
+        if p in ['fb', 'facebook_page']: p = 'facebook'
+        if p in ['ig']: p = 'instagram'
+        if p in ['x']: p = 'twitter'
+
+        clean_acc = {
+            "id": acc.get('id'),
+            "platform": p,
+            "name": acc.get('name') or f"Akun {p.capitalize()}",
+            "username": acc.get('username') or f"@{p}_user",
+            "avatar_url": acc.get('avatar_url') or "",
+            "connected_at": acc.get('connected_at') or ""
+        }
+        if p in by_platform:
+            by_platform[p].append(clean_acc)
+        else:
+            by_platform[p] = [clean_acc]
+
+    return jsonify({
+        "success": True,
+        "accounts": accounts,
+        "count": len(accounts),
+        "max_limit": plan_limit,
+        "plan": plan_name,
+        "by_platform": by_platform
+    })
+
+
+@oauth_bp.route('/api/social/disconnect-account', methods=['POST'])
+def disconnect_single_social_account():
+    """
+    Memutuskan 1 akun tertentu dari platform (berdasarkan account_id),
+    tanpa menghapus akun-akun lain di platform yang sama.
+    """
+    from utils import database as db
+    data = request.json or {}
+    email = (session.get('user_email', '') or data.get('email', '')).strip().lower()
+    platform = str(data.get('platform', '')).lower()
+    account_id = str(data.get('account_id', '')).strip()
+
+    if not email:
+        email = "deripernandi99@gmail.com"
+
+    if not account_id:
+        return jsonify({"success": False, "message": "ID akun wajib disertakan."}), 400
+
+    ok, updated = db.db_delete_social_account(email, platform, account_id)
+    return jsonify({
+        "success": ok,
+        "message": f"Akun berhasil diputuskan.",
+        "accounts_count": len(updated)
     })
