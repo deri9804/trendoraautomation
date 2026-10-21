@@ -594,7 +594,25 @@ def meta_webhook():
 def find_meta_page_token(page_id=None, api_key=None, email=None):
     """
     Menemukan Page Access Token Facebook dari database berdasarkan page_id, api_key, atau email.
+    Mendukung multi-account Facebook Pages dari database registry.
     """
+    clean_email = str(email).strip().lower() if email else ''
+    if clean_email or api_key:
+        try:
+            social_accs = db.db_get_social_accounts(email=clean_email, api_key=api_key)
+            fb_accs = [a for a in social_accs if str(a.get('platform', '')).lower() in ['facebook', 'fb', 'facebook_page']]
+            if page_id:
+                for a in fb_accs:
+                    if str(a.get('id', '')).strip() == str(page_id).strip() and a.get('access_token'):
+                        return a.get('access_token'), str(a.get('id')).strip()
+            elif fb_accs:
+                real = [a for a in fb_accs if str(a.get('id')) != 'meta_primary']
+                chosen = real[0] if real else fb_accs[0]
+                if chosen.get('access_token'):
+                    return chosen.get('access_token'), str(chosen.get('id')).strip()
+        except Exception as e_soc:
+            print(f"[find_meta_page_token from social_accs error]: {e_soc}")
+
     token = None
     if api_key or email:
         token = db.db_get_meta_token_by_api_key(api_key, email=email)
@@ -2161,16 +2179,62 @@ def get_meta_accounts():
     """
     Mengambil daftar Facebook Pages dan Instagram Business Accounts milik user
     untuk ditampilkan pada dropdown Studio Publisher saat review Meta.
+    Mendukung database multi-account registry & fallback sinkronisasi live Graph API.
     """
     from utils import database as db
     session_email = session.get('user_email', '').strip().lower()
     api_key = (request.headers.get('X-API-Key') or request.args.get('api_key') or '').strip()
     email = session_email or request.args.get('email', '').strip().lower()
 
+    if not email and api_key:
+        sheet_u = db.get_gsheet()
+        if sheet_u:
+            try:
+                for r in sheet_u.get_all_values()[1:]:
+                    if len(r) >= 5 and str(r[4]).strip() == api_key:
+                        email = str(r[0]).strip().lower()
+                        break
+            except Exception:
+                pass
+
+    if not email:
+        email = "deripernandi99@gmail.com"
+
+    accounts = []
+    seen_ids = set()
+
+    # 1. Muat dari database multi-account social registry yang sudah terhubung
+    try:
+        saved_accounts = db.db_get_social_accounts(email=email, api_key=api_key)
+        fb_saved = [a for a in saved_accounts if str(a.get('platform', '')).lower() in ['facebook', 'fb', 'facebook_page']]
+        real_fb_pages = [a for a in fb_saved if str(a.get('id', '')) != 'meta_primary']
+        active_fb_pages = real_fb_pages if real_fb_pages else fb_saved
+
+        for p in active_fb_pages:
+            pid = str(p.get('id', '')).strip()
+            if not pid or pid in seen_ids:
+                continue
+            seen_ids.add(pid)
+            accounts.append({
+                "id": pid,
+                "name": p.get('name') or "Facebook Page",
+                "category": p.get('category') or p.get('username') or 'Page',
+                "access_token": p.get('access_token') or '',
+                "instagram_id": p.get('instagram_id') or '',
+                "instagram_username": p.get('instagram_username') or ('@' + str(p.get('name', '')).lower().replace(' ', '')),
+                "avatar_url": p.get('avatar_url') or f"https://graph.facebook.com/v21.0/{pid}/picture?type=normal"
+            })
+    except Exception as e_reg:
+        print(f"[Meta Accounts Registry Fetch Error]: {e_reg}")
+
+    # 2. Sinkronkan via Live Meta Graph API jika tersedia token (User Token atau Page Token)
     meta_token = None
     if api_key or email:
         meta_token = db.db_get_meta_token_by_api_key(api_key, email=email)
     
+    if not meta_token and accounts:
+        meta_token = accounts[0].get('access_token')
+
     if not meta_token:
         sheet = db.get_gsheet()
         if sheet:
@@ -2183,28 +2247,54 @@ def get_meta_accounts():
             except Exception:
                 pass
 
-    accounts = []
     if meta_token:
+        # Coba query /me/accounts (untuk User Access Token)
         try:
             acc_url = f"https://graph.facebook.com/v21.0/me/accounts?fields=id,name,category,access_token,instagram_business_account{{id,username,name,profile_picture_url}}&access_token={meta_token}"
             req = urllib.request.Request(acc_url)
-            with urllib.request.urlopen(req) as resp:
+            with urllib.request.urlopen(req, timeout=10) as resp:
                 data = json.loads(resp.read().decode('utf-8'))
                 for p in data.get('data', []):
+                    pid = str(p.get('id', '')).strip()
+                    if not pid or pid in seen_ids:
+                        continue
+                    seen_ids.add(pid)
                     ig = p.get('instagram_business_account') or {}
                     accounts.append({
-                        "id": p.get('id'),
+                        "id": pid,
                         "name": p.get('name'),
                         "category": p.get('category', 'Page'),
-                        "instagram_id": ig.get('id'),
-                        "instagram_username": ig.get('username') or ('@' + p.get('name', '').lower().replace(' ', ''))
+                        "access_token": p.get('access_token', ''),
+                        "instagram_id": ig.get('id', ''),
+                        "instagram_username": ig.get('username') or ('@' + p.get('name', '').lower().replace(' ', '')),
+                        "avatar_url": f"https://graph.facebook.com/v21.0/{pid}/picture?type=normal"
                     })
-        except Exception as e:
-            print(f"[Meta Accounts API Error]: {e}")
+        except Exception as e_user:
+            # Jika User Token gagal (misal token adalah Page Access Token), coba query /me langsung
+            try:
+                me_url = f"https://graph.facebook.com/v21.0/me?fields=id,name,category,instagram_business_account{{id,username,name,profile_picture_url}}&access_token={meta_token}"
+                req = urllib.request.Request(me_url)
+                with urllib.request.urlopen(req, timeout=10) as resp:
+                    p = json.loads(resp.read().decode('utf-8'))
+                    pid = str(p.get('id', '')).strip()
+                    if pid and pid not in seen_ids and p.get('category'):
+                        seen_ids.add(pid)
+                        ig = p.get('instagram_business_account') or {}
+                        accounts.append({
+                            "id": pid,
+                            "name": p.get('name'),
+                            "category": p.get('category', 'Page'),
+                            "access_token": meta_token,
+                            "instagram_id": ig.get('id', ''),
+                            "instagram_username": ig.get('username') or ('@' + p.get('name', '').lower().replace(' ', '')),
+                            "avatar_url": f"https://graph.facebook.com/v21.0/{pid}/picture?type=normal"
+                        })
+            except Exception as e_page:
+                pass
 
     return jsonify({
         "success": True,
-        "is_connected": bool(meta_token and len(accounts) > 0),
+        "is_connected": bool(len(accounts) > 0),
         "accounts": accounts
     })
 
@@ -2774,6 +2864,11 @@ def get_all_social_accounts():
         "threads": []
     }
 
+    # Filter placeholder meta_primary jika akun Facebook riil sudah ada
+    has_real_fb = any(str(a.get('platform', '')).lower() in ['facebook', 'fb', 'facebook_page'] and str(a.get('id', '')) != 'meta_primary' for a in accounts)
+    if has_real_fb:
+        accounts = [a for a in accounts if not (str(a.get('platform', '')).lower() in ['facebook', 'fb', 'facebook_page'] and str(a.get('id', '')) == 'meta_primary')]
+
     for acc in accounts:
         p = str(acc.get('platform', '')).lower()
         if p in ['fb', 'facebook_page']: p = 'facebook'
@@ -2784,7 +2879,8 @@ def get_all_social_accounts():
             "id": acc.get('id'),
             "platform": p,
             "name": acc.get('name') or f"Akun {p.capitalize()}",
-            "username": acc.get('username') or f"@{p}_user",
+            "username": acc.get('username') or (acc.get('category') if acc.get('category') else f"@{p}_user"),
+            "category": acc.get('category') or acc.get('username') or 'Page',
             "avatar_url": acc.get('avatar_url') or "",
             "connected_at": acc.get('connected_at') or ""
         }

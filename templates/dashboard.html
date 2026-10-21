@@ -4288,11 +4288,11 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
       const populateSelect = (selectId, platKey, defaultLabel) => {
         const sel = document.getElementById(selectId);
         if (!sel) return;
-        const list = byPlat[platKey] || [];
+        const list = (byPlat[platKey] || []).filter(acc => acc.id !== 'meta_primary');
         if (list.length > 0) {
           sel.innerHTML = list.map(acc => `
-            <option value="${acc.id}" data-name="${encodeURIComponent(acc.name)}" data-user="${encodeURIComponent(acc.username || '')}" data-avatar="${encodeURIComponent(acc.avatar_url || '')}">
-              ${acc.name} (${acc.username || platKey})
+            <option value="${acc.id}" data-name="${encodeURIComponent(acc.name)}" data-user="${encodeURIComponent(acc.username || acc.category || '')}" data-avatar="${encodeURIComponent(acc.avatar_url || '')}">
+              ${acc.name} (${acc.username || acc.category || platKey})
             </option>
           `).join('');
         } else {
@@ -4307,6 +4307,8 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
       populateSelect('studioTwitterAccountSelect', 'twitter', 'Twitter / X');
       populateSelect('studioLinkedinAccountSelect', 'linkedin', 'LinkedIn');
       populateSelect('studioThreadsAccountSelect', 'threads', 'Threads');
+
+      handleStudioAccountChange(window.currentStudioPlatform || 'facebook');
     }
 
     function handleStudioAccountChange(platform) {
@@ -4416,42 +4418,60 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
     }
 
     async function fetchStudioMetaAccounts(isManual = false) {
+      if (isManual && typeof loadSocialAccountsData === 'function') {
+        try { await loadSocialAccountsData(); } catch(e){}
+      }
       try {
         const { email, apiKey } = getValidUserCredentials();
         const res = await fetch(getApiUrl(`/api/meta/accounts?email=${encodeURIComponent(email)}&api_key=${encodeURIComponent(apiKey)}`));
+        let accounts = [];
         if (res.ok) {
           const data = await res.json();
-          const sel = document.getElementById('studioFbPageSelect');
           if (data.success && Array.isArray(data.accounts) && data.accounts.length > 0) {
-            window.studioMetaAccounts = data.accounts;
-            if (sel) {
-              sel.innerHTML = data.accounts.map(acc => `
-                <option value="${acc.id}">${acc.name} (${acc.category || 'Page'})</option>
-              `).join('');
-            }
-            const first = data.accounts[0];
-            const igName = document.getElementById('studioIgAccountName');
-            if (igName) igName.innerText = '@' + (first.instagram_username || '').replace('@', '');
-            
-            // Tandai platform Meta aktif
-            if (window.currentUserData) {
-              if (!Array.isArray(window.currentUserData.connectedPlatforms)) window.currentUserData.connectedPlatforms = [];
-              if (!window.currentUserData.connectedPlatforms.includes('meta')) window.currentUserData.connectedPlatforms.push('meta');
-              if (!window.currentUserData.connectedPlatforms.includes('facebook')) window.currentUserData.connectedPlatforms.push('facebook');
-            }
-            updateStudioStatus(window.currentStudioPlatform || 'facebook');
-            if (isManual) alert('Daftar Halaman Meta Facebook berhasil disinkronkan!');
-          } else {
-            // Belum ada halaman Facebook terhubung
-            window.studioMetaAccounts = [];
-            if (sel) {
-              sel.innerHTML = '<option value="">-- Belum ada Facebook Page terhubung --</option>';
-            }
-            const igName = document.getElementById('studioIgAccountName');
-            if (igName) igName.innerText = 'Belum terhubung';
-            updateStudioStatus(window.currentStudioPlatform || 'facebook');
-            if (isManual) alert('Belum ada akun atau Halaman Facebook yang terhubung ke akun Anda.');
+            accounts = data.accounts.filter(a => a.id !== 'meta_primary');
           }
+        }
+
+        // Fallback ke window.allSocialAccounts jika endpoint meta/accounts mengembalikan list kosong
+        if (accounts.length === 0 && Array.isArray(window.allSocialAccounts)) {
+          accounts = window.allSocialAccounts.filter(a => a.platform === 'facebook' && a.id !== 'meta_primary');
+        }
+
+        const sel = document.getElementById('studioFbPageSelect');
+        if (accounts.length > 0) {
+          window.studioMetaAccounts = accounts;
+          if (sel) {
+            sel.innerHTML = accounts.map(acc => `
+              <option value="${acc.id}" data-name="${encodeURIComponent(acc.name)}" data-user="${encodeURIComponent(acc.category || acc.username || '')}" data-avatar="${encodeURIComponent(acc.avatar_url || '')}">
+                ${acc.name} (${acc.category || acc.username || 'Page'})
+              </option>
+            `).join('');
+          }
+          const first = accounts[0];
+          const igName = document.getElementById('studioIgAccountName');
+          if (igName) {
+            igName.innerText = first.instagram_username ? '@' + first.instagram_username.replace('@', '') : 'Belum terhubung';
+          }
+          
+          // Tandai platform Meta aktif
+          if (window.currentUserData) {
+            if (!Array.isArray(window.currentUserData.connectedPlatforms)) window.currentUserData.connectedPlatforms = [];
+            if (!window.currentUserData.connectedPlatforms.includes('meta')) window.currentUserData.connectedPlatforms.push('meta');
+            if (!window.currentUserData.connectedPlatforms.includes('facebook')) window.currentUserData.connectedPlatforms.push('facebook');
+          }
+          handleStudioFbPageChange();
+          updateStudioStatus(window.currentStudioPlatform || 'facebook');
+          if (isManual) alert('Daftar Halaman Meta Facebook berhasil disinkronkan!');
+        } else {
+          // Belum ada halaman Facebook terhubung
+          window.studioMetaAccounts = [];
+          if (sel) {
+            sel.innerHTML = '<option value="">-- Belum ada Facebook Page terhubung --</option>';
+          }
+          const igName = document.getElementById('studioIgAccountName');
+          if (igName) igName.innerText = 'Belum terhubung';
+          updateStudioStatus(window.currentStudioPlatform || 'facebook');
+          if (isManual) alert('Belum ada akun atau Halaman Facebook yang terhubung ke akun Anda.');
         }
       } catch (e) {
         console.warn('Gagal memuat akun Meta:', e);
@@ -4460,17 +4480,29 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
 
     function handleStudioFbPageChange() {
       const sel = document.getElementById('studioFbPageSelect');
-      if (!sel) return;
-      const selectedName = sel.options[sel.selectedIndex].text.split('(')[0].trim();
+      if (!sel || sel.selectedIndex < 0) return;
+      const opt = sel.options[sel.selectedIndex];
+      if (!opt || !opt.value) return;
+
+      const selectedName = opt.getAttribute('data-name') ? decodeURIComponent(opt.getAttribute('data-name')) : opt.text.split('(')[0].trim();
+      const selectedUser = opt.getAttribute('data-user') ? decodeURIComponent(opt.getAttribute('data-user')) : '';
+      const selectedAvatar = opt.getAttribute('data-avatar') ? decodeURIComponent(opt.getAttribute('data-avatar')) : '';
+
       const nick = document.getElementById('studioCreatorNickname');
+      const uname = document.getElementById('studioCreatorUsername');
+      const avatar = document.getElementById('studioCreatorAvatar');
       if (nick) nick.innerText = selectedName;
+      if (uname) uname.innerText = selectedUser || 'Facebook Page';
+      if (avatar && selectedAvatar) avatar.src = selectedAvatar;
+
       const previewCap = document.getElementById('studioPreviewCaptionFb');
       if (previewCap) {
         const authorSpans = document.querySelectorAll('#overlay-facebook span');
         authorSpans.forEach(s => {
-          if (s.innerText.includes('Trendora Official')) s.innerText = selectedName;
+          if (s.innerText.includes('Trendora Official') || s.innerText.includes('Official')) s.innerText = selectedName;
         });
       }
+      validateStudioForm();
     }
 
     function updateStudioCaptionPreview() {
