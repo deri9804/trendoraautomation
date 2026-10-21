@@ -3588,7 +3588,7 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
     }
 
     function renderSocialChannels() {
-      const data = window.socialAccountsData || { accounts: [], count: 0, max_limit: 20, plan: 'starter', by_platform: {} };
+      const data = window.socialAccountsData || { accounts: [], count: 0, max_limit: 1, plan: 'trial', by_platform: {} };
       const count = data.count || 0;
       const maxLimit = data.max_limit || 20;
       const plan = data.plan || 'starter';
@@ -3627,7 +3627,7 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
                 <span style="font-size: 11px; color: #c084fc; border: 1px solid rgba(192,132,252,0.35); padding: 2px 8px; border-radius: 6px; text-transform: uppercase; font-weight: 700;">Paket ${plan.toUpperCase()}</span>
               </div>
               <p style="color: #94a3b8; font-size: 12px; margin: 6px 0 0 0; line-height: 1.5;">
-                Slot bebas dialokasikan: Anda bisa menghubungkan <strong>20 akun TikTok sekaligus</strong>, atau kombinasi bebas berbagai channel medsos lainnya.
+                Slot bebas dialokasikan: Anda bisa menghubungkan hingga <strong>${maxLimit} akun sekaligus</strong> (misal ${maxLimit} akun TikTok atau kombinasi platform lainnya).
               </p>
             </div>
             <div>

@@ -1,8 +1,8 @@
 var globalUserData = null;
 var isKeyMasked = true;
 var currentViewMode = 'landing';
-var selectedPlanName = 'Creator Monthly';
-var selectedPlanPrice = 'Rp.200.000/mo';
+var selectedPlanName = 'VIP';
+var selectedPlanPrice = 'Rp.300.000/30 hari';
 var lastSnapToken = localStorage.getItem('automedia_snap_token') || null;
 var paymentPollingInterval = null;
 
@@ -130,7 +130,7 @@ function openLoginModal() {
   }
 }
 
-function openRegisterModal(planName = 'Creator Monthly', planPrice = 'Rp.200.000/mo') {
+function openRegisterModal(planName = 'VIP', planPrice = 'Rp.300.000/30 hari') {
   localStorage.setItem('selectedPlanName', planName);
   localStorage.setItem('selectedPlanPrice', planPrice);
   if (window.location.pathname !== '/checkout') {
@@ -138,7 +138,7 @@ function openRegisterModal(planName = 'Creator Monthly', planPrice = 'Rp.200.000
   }
 }
 
-function handleStartFree(planName = 'Creator Monthly', planPrice = 'Rp.200.000/mo') {
+function handleStartFree(planName = 'VIP', planPrice = 'Rp.300.000/30 hari') {
   openRegisterModal(planName, planPrice);
 }
 
@@ -320,8 +320,8 @@ document.addEventListener('DOMContentLoaded', () => {
   if (typeof checkStoredSession === 'function') checkStoredSession();
   
   if (window.location.pathname === '/checkout') {
-    const storedPlan = localStorage.getItem('selectedPlanName') || 'Creator Monthly';
-    const storedPrice = localStorage.getItem('selectedPlanPrice') || 'Rp.200.000/mo';
+    const storedPlan = localStorage.getItem('selectedPlanName') || 'VIP';
+    const storedPrice = localStorage.getItem('selectedPlanPrice') || 'Rp.300.000/30 hari';
     
     selectedPlanName = storedPlan;
     selectedPlanPrice = storedPrice;

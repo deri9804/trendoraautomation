@@ -24,40 +24,58 @@ oauth_bp = Blueprint('oauth_social', __name__)
 
 def check_trial_social_limit(email=None):
     """
-    Memeriksa apakah akun trial sudah melebihi batas 2 sosial media atau sudah expired.
-    Return (can_connect: bool, error_message: str)
+    Memeriksa batas kuota akun sosial media berdasarkan 4 paket resmi:
+    - Trial: (gratis) (7 Hari) (max 1 akun sosmed)
+    - Starter: (150.000) (30 hari) (max 10 akun sosmed)
+    - VIP: (300.000) (30 hari) (max 20 akun sosmed)
+    - VVIP: (500.000) (30 hari) (max 30 akun sosmed)
     """
     if not email:
         email = session.get('user_email', '').strip().lower()
 
     if not email:
-        return False, "Sesi login tidak ditemukan atau email tidak valid. Silakan muat ulang halaman atau login kembali."
+        return False, "Sesi login tidak ditemukan atau email tidak valid. Silakan login kembali."
         
     user_data = db.db_get_user(email)
     if not user_data:
         return False, f"User dengan email '{email}' tidak ditemukan di database."
         
     trial_info = check_user_trial_status(user_data)
-    
-    # Jika user berbayar, bebas hubungkan berapa saja
-    if trial_info["is_paid"]:
+    status_lower = (user_data.get('status', '') or '').lower()
+
+    saved_accounts = db.db_get_social_accounts(email=email)
+    current_count = len(saved_accounts)
+
+    # 1. Pengguna Trial (Belum Berbayar)
+    if not trial_info.get("is_paid", False):
+        if trial_info.get("is_expired", False):
+            return False, "Masa Free Trial 7 Hari Anda telah habis. Silakan pilih paket Starter, VIP, atau VVIP untuk melanjutkan."
+        if current_count >= 1:
+            return False, "Batas Kuota Paket Trial Tercapai! Paket Free Trial dibatasi maksimal 1 akun sosial media. Silakan upgrade ke paket Starter (10 akun), VIP (20 akun), atau VVIP (30 akun)."
         return True, ""
-        
-    # Jika trial sudah expired
-    if trial_info["is_expired"]:
-        return False, "Masa Free Trial 1 Minggu Anda telah habis. Silakan upgrade ke akun berbayar untuk menautkan sosial media."
-        
-    # Hitung jumlah sosial media terhubung
-    connected_count = 0
-    if user_data.get('tiktok_connected'): connected_count += 1
-    if user_data.get('meta_connected'): connected_count += 1
-    if user_data.get('linkedin_connected'): connected_count += 1
-    if user_data.get('youtube_connected'): connected_count += 1
-    if user_data.get('threads_connected'): connected_count += 1
-    if user_data.get('twitter_connected'): connected_count += 1
-    
-    if connected_count >= 2:
-        return False, "Batas Free Trial tercapai! Akun Free Trial hanya diperbolehkan menautkan maksimal 2 akun sosial media. Silakan upgrade ke akun berbayar."
+
+    # 2. Pengguna Berbayar (Starter / VIP / VVIP)
+    if any(w in status_lower for w in ["admin", "lifetime", "unlimited"]):
+        return True, ""
+
+    plan_name = "Starter"
+    max_allowed = 10
+    if "vvip" in status_lower:
+        plan_name = "VVIP"
+        max_allowed = 30
+    elif "vip" in status_lower:
+        plan_name = "VIP"
+        max_allowed = 20
+    elif "starter" in status_lower:
+        plan_name = "Starter"
+        max_allowed = 10
+
+    if current_count >= max_allowed:
+        return False, f"Batas Kuota Paket {plan_name} Tercapai! Paket Anda dibatasi maksimal {max_allowed} akun sosial media. Silakan upgrade paket untuk menautkan lebih banyak akun."
+
+    return True, ""
+
+def _legacy_check_trial_social_limit_removed():
         
     return True, ""
 
@@ -2723,15 +2741,27 @@ def get_all_social_accounts():
     accounts = db.db_get_social_accounts(email=email, api_key=api_key)
 
     user = db.db_get_user(email) if email else None
+    trial_info = check_user_trial_status(user) if user else {"is_paid": False, "is_expired": False}
     status = (user.get('status', '') if user else '').lower()
-    plan_limit = 20
-    plan_name = "starter"
-    if 'creator' in status:
-        plan_limit = 40
-        plan_name = "creator"
-    elif 'agency' in status:
+
+    if not trial_info.get("is_paid", False):
+        plan_limit = 1
+        plan_name = "trial"
+    elif 'vvip' in status:
+        plan_limit = 30
+        plan_name = "vvip"
+    elif 'vip' in status:
+        plan_limit = 20
+        plan_name = "vip"
+    elif 'starter' in status:
+        plan_limit = 10
+        plan_name = "starter"
+    elif any(w in status for w in ['admin', 'lifetime', 'unlimited']):
         plan_limit = 100
-        plan_name = "agency"
+        plan_name = "unlimited"
+    else:
+        plan_limit = 10
+        plan_name = "starter"
 
     by_platform = {
         "facebook": [],

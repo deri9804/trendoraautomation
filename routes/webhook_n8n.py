@@ -417,11 +417,23 @@ def upload_video_to_youtube(access_token, refresh_token, media_url, caption, row
         return False, {"youtube_error": f"[YouTube Error] {str(e)}"}
 
 
-# Server-side pricing catalog: Anti-Manipulasi F12 Console
+# Server-side pricing catalog: 4 Paket Resmi Trendora
 PLANS_CATALOG = {
-    "monthly": 200000,
-    "annual": 1800000,
-    "pro": 200000,
+    "trial": 0,
+    "starter": 150000,
+    "starter monthly": 150000,
+    "starter 30 hari": 150000,
+    "vip": 300000,
+    "vip monthly": 300000,
+    "vip 30 hari": 300000,
+    "vvip": 500000,
+    "vvip monthly": 500000,
+    "vvip 30 hari": 500000,
+    # Backward-compatible aliases
+    "monthly": 150000,
+    "creator": 300000,
+    "agency": 500000,
+    "pro": 300000,
     "lifetime": 3500000
 }
 
@@ -442,7 +454,18 @@ def create_transaction():
         return jsonify({"success": False, "message": "Email sudah terdaftar!"})
     
     # SECURITY FIX: Harga (amount) WAJIB ditentukan 100% oleh server (Anti-F12 Console Tampering)
-    amount = PLANS_CATALOG.get(plan_key, 200000)
+    amount = 300000
+    clean_plan = plan_key.strip().lower()
+    if "vvip" in clean_plan:
+        amount = 500000
+    elif "vip" in clean_plan:
+        amount = 300000
+    elif "starter" in clean_plan:
+        amount = 150000
+    elif "trial" in clean_plan:
+        amount = 0
+    else:
+        amount = PLANS_CATALOG.get(clean_plan, 300000)
 
     order_id = f"ORDER-{uuid.uuid4().hex[:8].upper()}"
     auth_string = base64.b64encode(f"{config.MIDTRANS_SERVER_KEY}:".encode()).decode()

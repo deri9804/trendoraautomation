@@ -121,7 +121,7 @@ def check_user_trial_status(user_data):
     status_lower = status_str.lower()
     
     # Pengguna berbayar atau admin
-    if any(word in status_lower for word in ["paid", "subscriber", "admin", "lifetime"]):
+    if any(word in status_lower for word in ["paid", "subscriber", "admin", "lifetime", "starter", "vip", "vvip"]):
         return {"is_paid": True, "is_trial": False, "is_expired": False, "days_left": 999, "status_text": "Active (Paid Subscriber)"}
     
     # Menghitung masa 7 hari dari tanggal registrasi

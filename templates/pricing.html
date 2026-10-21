@@ -2,54 +2,79 @@
 <section id="pricing" class="pricing-section">
   <!-- PRICING HERO HEADER -->
   <div class="pricing-header">
-    <span class="pricing-tag">&bull; SIMPLE PRICING</span>
-    <h1>Pick a plan. <span>Ship more content.</span></h1>
-    <p>Free 7-day trial on any plan. Cancel anytime. No per-post fees, no seat fees, no hidden tax on your soul.</p>
+    <span class="pricing-tag">&bull; PILIHAN PAKET &amp; HARGA RESMI</span>
+    <h1>Pilih Paket. <span>Otomasi Konten Tanpa Batas.</span></h1>
+    <p>Tersedia uji coba gratis 7 hari. Pilih paket sesuai kebutuhan dan skala jumlah akun sosial media Anda.</p>
   </div>
 
-  <!-- PRICING CARDS GRID -->
+  <!-- PRICING CARDS GRID (4 PAKET) -->
   <div class="pricing-grid">
-    <!-- STARTER PLAN -->
+    <!-- 1. TRIAL PLAN -->
+    <div class="pricing-card">
+      <div class="plan-head">
+        <h3>Trial</h3>
+        <div class="plan-price">Gratis <span>/7 hari</span></div>
+        <p class="plan-desc">Uji coba gratis seluruh fitur otomatisasi Trendora.</p>
+        <button class="btn-plan-secondary" onclick="handleStartFree('Trial', 'Gratis (7 Hari)')">Mulai Free Trial &rarr;</button>
+      </div>
+      <ul class="plan-features">
+        <li>&check; Durasi uji coba <strong>7 Hari</strong></li>
+        <li>&check; Maksimal <strong>1</strong> akun sosmed</li>
+        <li>&check; Studio Publisher &amp; Webhook API</li>
+        <li>&check; Akses Kalender Konten</li>
+      </ul>
+    </div>
+
+    <!-- 2. STARTER PLAN -->
     <div class="pricing-card">
       <div class="plan-head">
         <h3>Starter</h3>
-        <div class="plan-price">Rp.80k <span>/bulan</span></div>
-        <p class="plan-desc">Solo creators getting started.</p>
-        <button class="btn-plan-secondary" onclick="handleStartFree('Starter Monthly', 'Rp.80.000/bulan')">Start Free Trial &rarr;</button>
+        <div class="plan-price">Rp.150.000 <span>/30 hari</span></div>
+        <p class="plan-desc">Untuk kreator solo &amp; toko online yang mulai aktif posting.</p>
+        <button class="btn-plan-secondary" onclick="handleStartFree('Starter', 'Rp.150.000/30 hari')">Pilih Paket Starter &rarr;</button>
       </div>
       <ul class="plan-features">
-        <li>&check; Social media API</li>
-        <li>&check; <strong>20</strong> social media accounts</li>
+        <li>&check; Durasi aktif <strong>30 Hari</strong></li>
+        <li>&check; Maksimal <strong>10</strong> akun sosmed</li>
+        <li>&check; Integrasi n8n &amp; REST Webhook API</li>
+        <li>&check; Auto-Video Spinner &amp; Anti-Shadowban</li>
+        <li>&check; Kalender Konten &amp; Auto-Publish</li>
       </ul>
     </div>
 
-    <!-- CREATOR PLAN (MOST POPULAR) -->
+    <!-- 3. VIP PLAN (MOST POPULAR) -->
     <div class="pricing-card popular">
       <div class="popular-badge">MOST POPULAR</div>
       <div class="plan-head">
-        <h3>Creator</h3>
-        <div class="plan-price">Rp.100k <span>/bulan</span></div>
-        <p class="plan-desc">Operators scaling to a real audience.</p>
-        <button class="btn-pink btn-block" onclick="handleStartFree('Creator Monthly', 'Rp.100.000/bulan')">Start Free Trial &rarr;</button>
+        <h3>VIP</h3>
+        <div class="plan-price">Rp.300.000 <span>/30 hari</span></div>
+        <p class="plan-desc">Pilihan terbaik untuk scale-up multi-akun dan affiliate marketing.</p>
+        <button class="btn-pink btn-block" onclick="handleStartFree('VIP', 'Rp.300.000/30 hari')">Pilih Paket VIP &rarr;</button>
       </div>
       <ul class="plan-features">
-        <li>&check; <strong>Everything</strong> in Starter</li>
-        <li>&check; <strong>40</strong> social media accounts</li>
-        <li>&check; Support troubleshooting your n8n/Make automations</li>
+        <li>&check; Durasi aktif <strong>30 Hari</strong></li>
+        <li>&check; Maksimal <strong>20</strong> akun sosmed</li>
+        <li>&check; <strong>Semua Fitur</strong> di Paket Starter</li>
+        <li>&check; Multi-Platform Broadcast Simultan</li>
+        <li>&check; Smart Delay Scheduler &amp; Auto-Hash</li>
+        <li>&check; Priority Troubleshooting n8n</li>
       </ul>
     </div>
 
-    <!-- AGENCY PLAN -->
+    <!-- 4. VVIP PLAN -->
     <div class="pricing-card">
       <div class="plan-head">
-        <h3>Agency</h3>
-        <div class="plan-price">Rp.150k <span>/bulan</span></div>
-        <p class="plan-desc">Agencies and teams running multiple brands.</p>
-        <button class="btn-plan-secondary" onclick="handleStartFree('Agency Monthly', 'Rp.150.000/bulan')">Start Free Trial &rarr;</button>
+        <h3>VVIP</h3>
+        <div class="plan-price">Rp.500.000 <span>/30 hari</span></div>
+        <p class="plan-desc">Untuk agency, tim content creator profesional, dan skala masif.</p>
+        <button class="btn-plan-secondary" onclick="handleStartFree('VVIP', 'Rp.500.000/30 hari')">Pilih Paket VVIP &rarr;</button>
       </div>
       <ul class="plan-features">
-        <li>&check; <strong>Everything</strong> in Creator</li>
-        <li>&check; Dedicated support troubleshooting automations</li>
+        <li>&check; Durasi aktif <strong>30 Hari</strong></li>
+        <li>&check; Maksimal <strong>30</strong> akun sosmed</li>
+        <li>&check; <strong>Semua Fitur</strong> di Paket VIP</li>
+        <li>&check; Kapasitas Slot Tertinggi (30 Akun)</li>
+        <li>&check; Dedicated VIP Support &amp; Konsultasi</li>
       </ul>
     </div>
   </div>
@@ -59,17 +84,17 @@
     <div class="trial-info-content">
       <span class="icon-gift">🎁</span>
       <div>
-        <h4>What's in your free trial</h4>
-        <p>&check; Access to <strong>all features</strong> &mdash; except the API</p>
-        <p>&check; A <strong>limited amount of AI credits</strong> for image & video generation</p>
+        <h4>Apa yang Anda Dapatkan di Paket Trial (7 Hari)</h4>
+        <p>&check; Akses penuh ke seluruh fitur dan integrasi API</p>
+        <p>&check; <strong>Maksimal 1 akun sosial media</strong> aktif untuk uji coba auto-publish</p>
       </div>
     </div>
   </div>
 
   <div class="trial-perks">
     <span>&check; 7-day free trial</span>
-    <span>&check; Cancel anytime</span>
-    <span>&check; No per-post fees</span>
+    <span>&check; Maksimal 1 akun sosmed (Trial)</span>
+    <span>&check; Upgrade kapan saja</span>
     <span>&check; 10,000+ operators</span>
   </div>
 
@@ -77,7 +102,7 @@
   <div id="faq" class="faq-container">
     <div class="faq-header">
       <span class="pricing-tag">&bull; PRICING FAQ</span>
-      <h2>Common <span>questions</span>.</h2>
+      <h2>Pertanyaan <span>Populer</span>.</h2>
     </div>
 
     <div class="faq-list">
@@ -85,11 +110,11 @@
       <div class="faq-item active">
         <div class="faq-question" onclick="toggleFaq(this)">
           <span class="faq-num">#01</span>
-          <h4>What happens after my free trial?</h4>
+          <h4>Bagaimana cara kerja Paket Trial 7 Hari?</h4>
           <span class="faq-icon">&minus;</span>
         </div>
         <div class="faq-answer">
-          <p>Your trial runs for 7 days. We'll email you before it ends. If you cancel before then, you're not charged. If you stay, your card is charged for the plan you signed up for. You can downgrade or cancel any time after that, no clawback, no calls.</p>
+          <p>Paket Trial berjalan selama 7 hari gratis tanpa biaya kartu kredit di awal. Anda dapat menautkan 1 akun media sosial untuk menguji coba workflow n8n, studio publisher, dan auto-publish kalender.</p>
         </div>
       </div>
 
@@ -97,11 +122,11 @@
       <div class="faq-item">
         <div class="faq-question" onclick="toggleFaq(this)">
           <span class="faq-num">#02</span>
-          <h4>What's an AI credit?</h4>
+          <h4>Berapa banyak akun sosial media yang bisa saya hubungkan?</h4>
           <span class="faq-icon">&plus;</span>
         </div>
         <div class="faq-answer">
-          <p>AI credits are used when generating videos, rendering captions, or generating images using our AI models. 1 credit generally equals 1 standard image or video output.</p>
+          <p>Kapasitas akun disesuaikan dengan paket: Trial (1 akun), Starter (10 akun), VIP (20 akun), dan VVIP (30 akun). Anda bebas mengalokasikan slot untuk platform apa pun (misal seluruh slot untuk TikTok, atau campuran IG/FB/YouTube/X).</p>
         </div>
       </div>
 
@@ -109,11 +134,11 @@
       <div class="faq-item">
         <div class="faq-question" onclick="toggleFaq(this)">
           <span class="faq-num">#03</span>
-          <h4>Can I switch plans?</h4>
+          <h4>Apakah saya bisa upgrade paket sewaktu-waktu?</h4>
           <span class="faq-icon">&plus;</span>
         </div>
         <div class="faq-answer">
-          <p>Yes! You can upgrade or downgrade your plan at any time directly from your account settings page.</p>
+          <p>Ya! Anda dapat meningkatkan paket kapan saja langsung dari dashboard untuk menambah kuota akun sosial media.</p>
         </div>
       </div>
 
@@ -121,23 +146,11 @@
       <div class="faq-item">
         <div class="faq-question" onclick="toggleFaq(this)">
           <span class="faq-num">#04</span>
-          <h4>Do you offer annual pricing?</h4>
+          <h4>Metode pembayaran apa saja yang didukung?</h4>
           <span class="faq-icon">&plus;</span>
         </div>
         <div class="faq-answer">
-          <p>Yes, choosing annual billing gets you 2 months free on any of our plans.</p>
-        </div>
-      </div>
-
-      <!-- FAQ 5 -->
-      <div class="faq-item">
-        <div class="faq-question" onclick="toggleFaq(this)">
-          <span class="faq-num">#05</span>
-          <h4>Is there a refund policy?</h4>
-          <span class="faq-icon">&plus;</span>
-        </div>
-        <div class="faq-answer">
-          <p>We offer a 14-day money-back guarantee if you are unsatisfied with our platform for any reason.</p>
+          <p>Kami menerima pembayaran otomatis via QRIS (GoPay, OVO, Dana, ShopeePay), Transfer Bank Virtual Account (BCA, Mandiri, BNI, BRI), dan Kartu Kredit/Debit melalui gateway Midtrans resmi.</p>
         </div>
       </div>
     </div>
