@@ -3068,22 +3068,7 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
         await handleDisconnectSingleAccount(platform, 'primary');
       }
     }
-          return !pLower.includes(platform);
-        });
-        renderSocialChannels(window.currentUserData.connectedPlatforms);
-      }
 
-      const { email } = getValidUserCredentials();
-      try {
-        await fetch(getApiUrl('/api/disconnect-social'), {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email: email, platform: platform })
-        });
-      } catch (e) {
-        console.warn("Gagal memutuskan tautan:", e);
-      }
-    }
 
     async function handleSecureLogout() {
       try {
