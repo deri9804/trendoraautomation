@@ -1,0 +1,58 @@
+{
+  "name": "Trendora - Auto Publish Cron Scheduler",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 5
+            }
+          ]
+        }
+      },
+      "id": "e7225134-9279-4d6d-88b1-9f9353e414c1",
+      "name": "Trigger Tiap 5 Menit",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        260,
+        340
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://trendoraautomation.my.id/api/cron/process-scheduled",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "c138bfbe-09d1-419b-a320-b4d24177b960",
+      "name": "Cek & Auto-Publish Postingan",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        480,
+        340
+      ]
+    }
+  ],
+  "connections": {
+    "Trigger Tiap 5 Menit": {
+      "main": [
+        [
+          {
+            "node": "Cek & Auto-Publish Postingan",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  }
+}
