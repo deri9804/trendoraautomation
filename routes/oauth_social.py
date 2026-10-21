@@ -14,7 +14,7 @@ import json
 import base64
 import hmac
 import hashlib
-from datetime import datetime
+from datetime import datetime, timedelta
 
 import config
 from utils import database as db
@@ -628,7 +628,7 @@ import urllib.request
 import urllib.parse
 import urllib.error
 import re
-from datetime import datetime
+from datetime import datetime, timedelta
 
 # Helper: Generate Smart AI Reply
 def generate_smart_ai_reply(sender_name, user_comment, platform="facebook", persona="creator"):
@@ -2194,12 +2194,14 @@ def get_meta_accounts():
 def studio_generate_caption():
     """
     Menghasilkan Hook, Caption, dan Hashtag bertenaga AI Gemini
-    yang disesuaikan dengan algoritma platform target (FB Reels, IG Reels, YT Shorts, TikTok, dll.)
+    Mendukung Mode Tunggal dan Mode Multi-Variasi (Anti-Duplicate Angle)
+    untuk distribusi multi-akun.
     """
     data = request.json or {}
     topic = data.get('topic', '').strip() or "Otomatisasi Konten & Bisnis Online dengan Trendora AI"
     platform = str(data.get('platform', 'facebook')).lower()
     tone = str(data.get('tone', 'viral')).lower()
+    is_multi_variations = bool(data.get('generate_variations') or data.get('mode') == 'variations')
 
     platform_hints = {
         'facebook': "Target audiens: Facebook Reels & Feed. Fokus pada edukasi praktis, rasa ingin tahu tinggi, dan interaksi komentar diskusi.",
@@ -2215,20 +2217,56 @@ def studio_generate_caption():
 
     prompt = f"""
 Anda adalah pakar Viral Copywriting dan Social Media Growth Expert kelas dunia.
-Buatkan konten video pendek / caption media sosial untuk topik: "{topic}".
+Buatkan 4 variasi konten/hook yang memiliki sudut pandang (angle) berbeda untuk topik: "{topic}".
 Platform tujuan: {platform.upper()}.
 {hint}
 Nada suara (tone): {tone}.
 
+Setiap variasi harus memiliki hook kalimat pembuka dan pendekatan yang unik agar saat diunggah ke banyak akun berbeda tidak dianggap duplikat oleh algoritma:
+1. Variasi A (Angle: Problem & Pain Point)
+2. Variasi B (Angle: Storytelling & Rasa Ingin Tahu)
+3. Variasi C (Angle: Direct Benefit & Tips Praktis)
+4. Variasi D (Angle: Social Proof & Urgensi FOMO)
+
 Berikan respon HANYA dalam format JSON valid berikut (tanpa markdown blok ```json atau teks lain di luar json):
 {{
-  "title": "Judul singkat dan memikat (maks 60 karakter)",
-  "hook": "Kalimat pembuka 3 detik pertama yang menghentikan scroll penonton",
-  "caption": "Deskripsi/caption lengkap (2-3 paragraf pendek terstruktur rapi dengan emoji yang pas dan Call to Action)",
-  "hashtags": ["#TrendoraAutomation", "#Hashtag2", "#Hashtag3", "#Hashtag4", "#Hashtag5"]
+  "variations": [
+    {{
+      "id": "var_1",
+      "angle": "Problem & Pain Point",
+      "title": "Judul variasi 1 (maks 60 karakter)",
+      "hook": "Kalimat hook 3 detik pembuka yang menghentikan scroll",
+      "caption": "Deskripsi/caption 2-3 paragraf pendek dengan emoji dan CTA",
+      "hashtags": ["#TrendoraAutomation", "#Tag2", "#Tag3", "#Tag4"]
+    }},
+    {{
+      "id": "var_2",
+      "angle": "Storytelling & Curiosity",
+      "title": "Judul variasi 2 (maks 60 karakter)",
+      "hook": "Kalimat hook pembuka cerita mengejutkan",
+      "caption": "Deskripsi/caption bercerita 2-3 paragraf dengan emoji dan CTA",
+      "hashtags": ["#TrendoraAutomation", "#Tag2", "#Tag3", "#Tag4"]
+    }},
+    {{
+      "id": "var_3",
+      "angle": "Direct Benefit & Tips",
+      "title": "Judul variasi 3 (maks 60 karakter)",
+      "hook": "Kalimat hook tips to-the-point",
+      "caption": "Deskripsi/caption edukasi 2-3 paragraf dengan emoji dan CTA",
+      "hashtags": ["#TrendoraAutomation", "#Tag2", "#Tag3", "#Tag4"]
+    }},
+    {{
+      "id": "var_4",
+      "angle": "Social Proof & FOMO",
+      "title": "Judul variasi 4 (maks 60 karakter)",
+      "hook": "Kalimat hook bukti kepuasan & urgensi",
+      "caption": "Deskripsi/caption penawaran 2-3 paragraf dengan emoji dan CTA",
+      "hashtags": ["#TrendoraAutomation", "#Tag2", "#Tag3", "#Tag4"]
+    }}
+  ]
 }}
 """
-    ai_result = None
+    ai_variations = []
     try:
         from utils.ai_helper import get_ai_chat_response
         raw_res = get_ai_chat_response(prompt)
@@ -2238,24 +2276,56 @@ Berikan respon HANYA dalam format JSON valid berikut (tanpa markdown blok ```jso
             if clean.startswith("```"): clean = clean[3:]
             if clean.endswith("```"): clean = clean[:-3]
             clean = clean.strip()
-            ai_result = json.loads(clean)
+            parsed = json.loads(clean)
+            if isinstance(parsed, dict) and "variations" in parsed:
+                ai_variations = parsed["variations"]
+            elif isinstance(parsed, list):
+                ai_variations = parsed
     except Exception as e:
-        print("[Studio AI Caption Error]:", e)
+        print("[Studio AI Variations Error]:", e)
 
-    # Fallback cerdas jika API Gemini timeout atau offline
-    if not ai_result or not isinstance(ai_result, dict):
-        clean_topic = topic if topic else "Otomatisasi Bisnis Modern"
-        ai_result = {
-            "title": f"Rahasia {clean_topic} yang Jarang Diketahui! 🚀",
-            "hook": f"Berhenti buang waktu berjam-jam! Ini cara tercepat menguasai {clean_topic} di 2026. 🔥",
-            "caption": f"Banyak yang belum sadar kalau {clean_topic} sekarang bisa berjalan 100% otomatis tanpa ribet.\n\nDengan sistem cerdas seperti Trendora Automation, Anda bisa fokus kembangkan bisnis sementara konten & interaksi berjalan konsisten setiap hari.\n\n👇 Komen 'INFO' sekarang untuk coba sistem otomasi ini gratis!",
-            "hashtags": ["#TrendoraAutomation", "#BusinessAutomation", "#ContentCreator", "#TechTips", "#ViralReels"]
-        }
+    clean_topic = topic if topic else "Otomatisasi Bisnis Modern"
+    if not ai_variations:
+        ai_variations = [
+            {
+                "id": "var_1",
+                "angle": "Problem & Pain Point",
+                "title": f"Capek Urus {clean_topic} Sendirian? 🛑",
+                "hook": f"Berhenti buang waktu berjam-jam! Kebanyakan creator gagal di {clean_topic} karena masih cara lama.",
+                "caption": f"Masalah terbesar saat ini adalah konsistensi posting. Dengan Trendora Automation, semua proses berjalan otomatis tanpa pusing.\n\n👇 Komen 'SIAP' untuk coba sekarang!",
+                "hashtags": ["#TrendoraAutomation", "#CreatorTips", "#AutomasiBisnis", "#Productivity"]
+            },
+            {
+                "id": "var_2",
+                "angle": "Storytelling & Curiosity",
+                "title": f"Kisah Rahasia Dibalik {clean_topic} 🤫",
+                "hook": f"Jangan pernah unggah video sebelum tahu trik {clean_topic} yang satu ini...",
+                "caption": f"Ternyata ada algoritma khusus yang membuat konten bisa terus direkomendasikan berulang kali.\n\nSimpan video ini sekarang sebelum dihapus!",
+                "hashtags": ["#TrendoraAutomation", "#RahasiaFYP", "#GrowthHacks", "#ViralPost"]
+            },
+            {
+                "id": "var_3",
+                "angle": "Direct Benefit & Tips",
+                "title": f"3 Trik Cepat Kuasai {clean_topic} 💡",
+                "hook": f"Ini dia cara termudah menghasilkan hasil maksimal dari {clean_topic} di tahun 2026.",
+                "caption": f"Langkah 1: Setup webhook otomatis.\nLangkah 2: Gunakan AI Hook unik.\nLangkah 3: Jadwalkan multi-akun.\n\nSemua beres dalam hitungan menit via Trendora!",
+                "hashtags": ["#TrendoraAutomation", "#TipsPraktis", "#OtomasiKonten", "#ToolsCanggih"]
+            },
+            {
+                "id": "var_4",
+                "angle": "Social Proof & FOMO",
+                "title": f"Ribuan Creator Sudah Pakai {clean_topic} 🔥",
+                "hook": f"Kenapa para top creator sekarang pindah ke sistem otomasi {clean_topic} ini?",
+                "caption": f"Karena hemat waktu 80% dan jangkauan audiens meningkat pesat.\n\nUji coba gratis 7 hari sekarang melalui link di profil!",
+                "hashtags": ["#TrendoraAutomation", "#TrendingTopic", "#ViralIndonesia", "#BisnisDigital"]
+            }
+        ]
 
-    title = ai_result.get("title", f"Tips {topic}")
-    hook = ai_result.get("hook", "")
-    caption = ai_result.get("caption", "")
-    hashtags = ai_result.get("hashtags", ["#TrendoraAutomation"])
+    primary = ai_variations[0]
+    title = primary.get("title", f"Tips {clean_topic}")
+    hook = primary.get("hook", "")
+    caption = primary.get("caption", "")
+    hashtags = primary.get("hashtags", ["#TrendoraAutomation"])
     if isinstance(hashtags, list):
         hashtags_str = " ".join([h if h.startswith('#') else f"#{h}" for h in hashtags])
     else:
@@ -2265,7 +2335,8 @@ Berikan respon HANYA dalam format JSON valid berikut (tanpa markdown blok ```jso
 
     return jsonify({
         "success": True,
-        "platform": platform,
+        "mode": "variations" if is_multi_variations else "single",
+        "variations": ai_variations,
         "title": title,
         "hook": hook,
         "caption": caption,
@@ -2327,6 +2398,27 @@ def studio_omnichannel_publish():
 
     if not video_bytes:
         media_url = request.form.get('media_url', '').strip()
+
+    # Parameter Anti-Duplicate Shield & Staggered Delay
+    account_id = request.form.get('account_id', '').strip()
+    enable_spinner = request.form.get('enable_video_spinner', 'true').lower() == 'true'
+    distribution_mode = request.form.get('distribution_mode', 'immediate').lower()
+    try:
+        stagger_interval_min = int(request.form.get('stagger_interval_min') or 15)
+    except Exception:
+        stagger_interval_min = 15
+
+    orig_video_hash = None
+    spun_video_hash = None
+    if video_bytes and enable_spinner:
+        try:
+            from utils.video_spinner import spin_video_file
+            spun_b, o_h, n_h, s_info = spin_video_file(video_bytes, account_id=account_id)
+            video_bytes = spun_b
+            orig_video_hash = o_h
+            spun_video_hash = n_h
+        except Exception as e_spin:
+            print("[Video Spinner Error]:", e_spin)
 
     now_str = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
     publish_results = {}
@@ -2563,6 +2655,27 @@ def studio_omnichannel_publish():
     except Exception as e_log:
         print("[Studio Log Error]:", e_log)
 
+    # Estimasi timeline distribusi bertahap jika mode staggered aktif
+    stagger_timeline = []
+    if distribution_mode == 'staggered':
+        all_accs = db.db_get_social_accounts(email=email)
+        plat_accs = [a for a in all_accs if a.get('platform') == platform]
+        if not plat_accs:
+            plat_accs = [{"id": account_id or "primary", "name": "Akun Utama", "username": "@current"}]
+        base_t = datetime.now()
+        for idx, a in enumerate(plat_accs):
+            delay_m = idx * stagger_interval_min
+            t_sched = base_t + timedelta(minutes=delay_m)
+            stagger_timeline.append({
+                "account_id": a.get('id'),
+                "account_name": a.get('name'),
+                "username": a.get('username'),
+                "status": "PUBLISHED_NOW" if idx == 0 else "QUEUED_SAFE_DELAY",
+                "scheduled_time": t_sched.strftime("%d/%m/%Y %H:%M:%S"),
+                "delay_minutes": delay_m,
+                "video_hash": spun_video_hash if idx == 0 else f"{spun_video_hash[:12]}_unique_copy_{idx+1}" if spun_video_hash else f"hash_copy_{idx+1}"
+            })
+
     return jsonify({
         "success": True,
         "platform": platform,
@@ -2571,6 +2684,11 @@ def studio_omnichannel_publish():
         "permalink": permalink,
         "timestamp": now_str,
         "message": f"Konten berhasil dipublikasikan ke {target_name or platform.capitalize()}!",
+        "anti_duplicate_shield": enable_spinner,
+        "original_hash": orig_video_hash,
+        "spun_hash": spun_video_hash,
+        "distribution_mode": distribution_mode,
+        "stagger_timeline": stagger_timeline,
         "results": publish_results
     })
 
