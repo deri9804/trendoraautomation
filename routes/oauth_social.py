@@ -2538,30 +2538,76 @@ def studio_omnichannel_publish():
     # 1. FACEBOOK REELS & PAGE
     if platform == 'facebook':
         target_name = "Facebook Reels"
-        meta_token = db.db_get_meta_token_by_api_key(api_key, email=email)
+        p_tok, resolved_page_id = find_meta_page_token(page_id=page_id, api_key=api_key, email=email)
+        final_page_id = resolved_page_id if (resolved_page_id and resolved_page_id != 'meta_primary') else (page_id if (page_id and page_id != 'meta_primary') else None)
 
-        if meta_token and (media_url or video_bytes):
+        if not p_tok or not final_page_id:
+            return jsonify({
+                "success": False,
+                "message": "Halaman Facebook Page belum terhubung atau belum dipilih. Silakan hubungkan dan pilih halaman Anda."
+            }), 400
+
+        fb_err_detail = None
+        if media_url or video_bytes:
             try:
-                p_tok, resolved_page_id = find_meta_page_token(page_id=page_id, api_key=api_key, email=email)
-                final_page_id = page_id or resolved_page_id
-                if p_tok and final_page_id:
-                    fb_post_url = f"https://graph.facebook.com/v21.0/{final_page_id}/videos"
+                fb_post_url = f"https://graph-video.facebook.com/v21.0/{final_page_id}/videos"
+                desc_text = f"{title}\n\n{caption}".strip() if title else caption
+
+                # Mode A: Upload dari URL Video Publik (Google Drive, Cloud Storage, dll)
+                if media_url:
                     fb_data = {
-                        'description': f"{title}\n\n{caption}".strip() if title else caption,
-                        'access_token': p_tok
+                        'description': desc_text,
+                        'access_token': p_tok,
+                        'file_url': media_url
                     }
-                    if media_url:
-                        fb_data['file_url'] = media_url
+                    if title:
+                        fb_data['title'] = title
                     fb_payload = urllib.parse.urlencode(fb_data).encode('utf-8')
                     req = urllib.request.Request(fb_post_url, data=fb_payload, method='POST')
-                    with urllib.request.urlopen(req, timeout=20) as resp:
+                    with urllib.request.urlopen(req, timeout=30) as resp:
                         res_json = json.loads(resp.read().decode('utf-8'))
                         pub_id = res_json.get('id')
                         permalink = f"https://www.facebook.com/watch/?v={pub_id}"
+
+                # Mode B: Upload File Binary Langsung (Multipart/form-data)
+                elif video_bytes:
+                    boundary = f"----TrendoraBoundary{uuid.uuid4().hex}"
+                    parts = []
+                    parts.append(f'--{boundary}\r\nContent-Disposition: form-data; name="access_token"\r\n\r\n{p_tok}\r\n'.encode('utf-8'))
+                    parts.append(f'--{boundary}\r\nContent-Disposition: form-data; name="description"\r\n\r\n{desc_text}\r\n'.encode('utf-8'))
+                    if title:
+                        parts.append(f'--{boundary}\r\nContent-Disposition: form-data; name="title"\r\n\r\n{title}\r\n'.encode('utf-8'))
+                    parts.append(f'--{boundary}\r\nContent-Disposition: form-data; name="source"; filename="reel.mp4"\r\nContent-Type: video/mp4\r\n\r\n'.encode('utf-8'))
+                    parts.append(video_bytes)
+                    parts.append(f'\r\n--{boundary}--\r\n'.encode('utf-8'))
+                    fb_payload = b''.join(parts)
+                    req = urllib.request.Request(
+                        fb_post_url,
+                        data=fb_payload,
+                        headers={'Content-Type': f'multipart/form-data; boundary={boundary}'},
+                        method='POST'
+                    )
+                    with urllib.request.urlopen(req, timeout=30) as resp:
+                        res_json = json.loads(resp.read().decode('utf-8'))
+                        pub_id = res_json.get('id')
+                        permalink = f"https://www.facebook.com/watch/?v={pub_id}"
+            except urllib.error.HTTPError as he:
+                try:
+                    err_b = json.loads(he.read().decode('utf-8'))
+                    fb_err_detail = err_b.get('error', {}).get('message') or err_b.get('error', {}).get('error_user_msg')
+                except Exception:
+                    fb_err_detail = f"HTTP {he.code} dari Meta Graph API"
+                print(f"[Facebook Studio Publish HTTPError]: {he.code} {fb_err_detail}")
             except Exception as e:
+                fb_err_detail = str(e)
                 print(f"[Facebook Studio Publish Exception]: {e}")
 
         if not pub_id:
+            if fb_err_detail:
+                return jsonify({
+                    "success": False,
+                    "message": f"Gagal mempublikasikan ke Facebook: {fb_err_detail}"
+                }), 400
             pub_id = f"fb_reel_{uuid.uuid4().hex[:12]}"
             permalink = f"https://www.facebook.com/watch/?v={pub_id}"
 
@@ -2569,7 +2615,7 @@ def studio_omnichannel_publish():
             "status": "SUCCESS",
             "id": pub_id,
             "permalink": permalink,
-            "page_id": page_id or "Trendora Official",
+            "page_id": final_page_id,
             "type": "Reels / Video Post"
         }
 

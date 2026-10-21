@@ -487,6 +487,11 @@ def db_get_social_accounts(email=None, api_key=None):
                 "access_token": target_row[14].strip()
             })
 
+    # Singkirkan placeholder meta_primary jika akun Facebook riil sudah ada
+    has_real_fb = any(str(a.get('platform', '')).lower() in ['facebook', 'fb', 'facebook_page'] and str(a.get('id', '')) != 'meta_primary' for a in accounts)
+    if has_real_fb:
+        accounts = [a for a in accounts if not (str(a.get('platform', '')).lower() in ['facebook', 'fb', 'facebook_page'] and str(a.get('id', '')) == 'meta_primary')]
+
     return accounts
 
 def db_save_social_account(email, account_dict):
@@ -560,6 +565,11 @@ def db_save_social_account(email, account_dict):
         if len(existing_accounts) >= plan_limit:
             return False, f"Batas kuota akun ({plan_limit} akun) untuk paket Anda telah tercapai! Silakan upgrade paket untuk menambah akun lebih banyak."
         existing_accounts.append(account_dict)
+
+    # Singkirkan placeholder meta_primary jika akun Facebook riil sudah ada
+    has_real_fb = any(str(a.get('platform', '')).lower() in ['facebook', 'fb', 'facebook_page'] and str(a.get('id', '')) != 'meta_primary' for a in existing_accounts)
+    if has_real_fb:
+        existing_accounts = [a for a in existing_accounts if not (str(a.get('platform', '')).lower() in ['facebook', 'fb', 'facebook_page'] and str(a.get('id', '')) == 'meta_primary')]
 
     # Simpan kembali ke kolom 16
     json_str = json.dumps(existing_accounts, ensure_ascii=False)
