@@ -4723,6 +4723,7 @@ ${data.hashtags}`;
       const boxFile = document.getElementById('boxVideoFileInput');
       const boxUrl = document.getElementById('boxVideoUrlInput');
 
+      window.tiktokSourceMode = mode;
       if (mode === 'file') {
         btnFile.className = 'btn-pink';
         btnUrl.className = 'btn-secondary';
@@ -4734,6 +4735,7 @@ ${data.hashtags}`;
         boxFile.style.display = 'none';
         boxUrl.style.display = 'block';
       }
+      validateStudioForm();
     }
 
     function handleTiktokVideoDrop(e) {
@@ -5219,21 +5221,41 @@ ${data.hashtags}`;
         }
       }
 
-      // Validasi batas ukuran file serverless Vercel
-      if (window.selectedTiktokVideoFile && window.selectedTiktokVideoFile.size > 4.5 * 1024 * 1024) {
-        clearInterval(progressInterval);
-        progressModal.style.display = 'none';
-        const fSizeMb = (window.selectedTiktokVideoFile.size / (1024 * 1024)).toFixed(1);
-        alert(`⚠️ Ukuran Berkas Video Terlalu Besar (${fSizeMb} MB)\n\nArsitektur Serverless Vercel memiliki batas upload berkas langsung maksimal 4.5 MB.\n\nSolusi Praktis:\n1. Klik tab "🔗 Input URL Video" di atas.\n2. Tempelkan link video publik Anda (Google Drive direct link, Dropbox, dll).\n3. Video berukuran besar hingga 500 MB akan langsung diunggah oleh Meta Facebook & platform sosial media secara resmi.`);
-        return;
+      const activeSourceMode = window.tiktokSourceMode || (document.getElementById('boxVideoUrlInput') && document.getElementById('boxVideoUrlInput').style.display !== 'none' ? 'url' : 'file');
+      const urlInputElem = document.getElementById('tiktokMediaUrlInput');
+      const directUrlVal = urlInputElem ? urlInputElem.value.trim() : '';
+      const effectiveMediaUrl = window.selectedTiktokVideoUrl || directUrlVal;
+
+      if (activeSourceMode === 'url') {
+        if (!effectiveMediaUrl) {
+          clearInterval(progressInterval);
+          progressModal.style.display = 'none';
+          alert('Silakan masukkan link URL video online publik Anda pada kolom Input URL Video.');
+          if (urlInputElem) urlInputElem.focus();
+          return;
+        }
+      } else {
+        if (!window.selectedTiktokVideoFile) {
+          clearInterval(progressInterval);
+          progressModal.style.display = 'none';
+          alert('Silakan pilih berkas video (.mp4/.mov) dari perangkat Anda, atau beralih ke tab "🔗 Input URL Video".');
+          return;
+        }
+        if (window.selectedTiktokVideoFile.size > 4.5 * 1024 * 1024) {
+          clearInterval(progressInterval);
+          progressModal.style.display = 'none';
+          const fSizeMb = (window.selectedTiktokVideoFile.size / (1024 * 1024)).toFixed(1);
+          alert(`⚠️ Ukuran Berkas Video Terlalu Besar (${fSizeMb} MB)\n\nArsitektur Serverless Vercel memiliki batas upload berkas langsung maksimal 4.5 MB.\n\nSolusi Praktis:\n1. Klik tab "🔗 Input URL Video" di atas.\n2. Tempelkan link video publik Anda (Google Drive link, Dropbox, dll).\n3. Video berukuran besar hingga 500 MB akan langsung diunduh resmi oleh Meta Facebook / TikTok tanpa batasan ukuran.`);
+          return;
+        }
       }
 
       // Siapkan FormData
       const formData = new FormData();
-      if (window.selectedTiktokVideoFile) {
+      if (activeSourceMode === 'url') {
+        formData.append('media_url', effectiveMediaUrl);
+      } else if (window.selectedTiktokVideoFile) {
         formData.append('video_file', window.selectedTiktokVideoFile);
-      } else if (window.selectedTiktokVideoUrl) {
-        formData.append('media_url', window.selectedTiktokVideoUrl);
       }
       formData.append('email', email);
       formData.append('api_key', apiKey);

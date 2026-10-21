@@ -2454,6 +2454,27 @@ Berikan respon HANYA dalam format JSON valid berikut (tanpa markdown blok ```jso
     })
 
 
+def resolve_direct_video_url(url):
+    """
+    Mengonversi link sharing seperti Google Drive /view atau Dropbox ?dl=0
+    menjadi direct download link agar dapat diunduh langsung oleh Graph API Meta/Facebook.
+    """
+    if not url:
+        return url
+    u = str(url).strip()
+    import re
+    if 'drive.google.com' in u:
+        m = re.search(r'/file/d/([a-zA-Z0-9_-]+)', u) or re.search(r'id=([a-zA-Z0-9_-]+)', u)
+        if m:
+            file_id = m.group(1)
+            return f"https://drive.usercontent.google.com/download?id={file_id}&export=download&confirm=t"
+    if 'dropbox.com' in u:
+        if '?dl=0' in u:
+            return u.replace('?dl=0', '?dl=1')
+        elif '?' not in u:
+            return u + '?dl=1'
+    return u
+
 @oauth_bp.route('/api/studio/publish', methods=['POST'])
 def studio_omnichannel_publish():
     """
@@ -2535,7 +2556,7 @@ def studio_omnichannel_publish():
     permalink = None
     target_name = None
 
-    # 1. FACEBOOK REELS & PAGE
+    # 1. FACEBOOK REELS & PAGE (Graph Video API Official Direct Upload & Link)
     if platform == 'facebook':
         target_name = "Facebook Reels"
         p_tok, resolved_page_id = find_meta_page_token(page_id=page_id, api_key=api_key, email=email)
@@ -2548,33 +2569,37 @@ def studio_omnichannel_publish():
             }), 400
 
         fb_err_detail = None
-        if media_url or video_bytes:
+        clean_media_url = resolve_direct_video_url(media_url) if media_url else None
+
+        if clean_media_url or video_bytes:
             try:
                 fb_post_url = f"https://graph-video.facebook.com/v21.0/{final_page_id}/videos"
                 desc_text = f"{title}\n\n{caption}".strip() if title else caption
 
-                # Mode A: Upload dari URL Video Publik (Google Drive, Cloud Storage, dll)
-                if media_url:
+                # Mode A: Upload dari URL Video Publik (Google Drive, Cloud Storage, Direct Link)
+                if clean_media_url:
                     fb_data = {
                         'description': desc_text,
                         'access_token': p_tok,
-                        'file_url': media_url
+                        'file_url': clean_media_url,
+                        'published': 'true'
                     }
                     if title:
                         fb_data['title'] = title
                     fb_payload = urllib.parse.urlencode(fb_data).encode('utf-8')
                     req = urllib.request.Request(fb_post_url, data=fb_payload, method='POST')
-                    with urllib.request.urlopen(req, timeout=30) as resp:
+                    with urllib.request.urlopen(req, timeout=35) as resp:
                         res_json = json.loads(resp.read().decode('utf-8'))
                         pub_id = res_json.get('id')
-                        permalink = f"https://www.facebook.com/watch/?v={pub_id}"
+                        permalink = f"https://www.facebook.com/reel/{pub_id}/"
 
-                # Mode B: Upload File Binary Langsung (Multipart/form-data)
+                # Mode B: Upload File Binary Langsung (Multipart/form-data < 4.5MB)
                 elif video_bytes:
                     boundary = f"----TrendoraBoundary{uuid.uuid4().hex}"
                     parts = []
                     parts.append(f'--{boundary}\r\nContent-Disposition: form-data; name="access_token"\r\n\r\n{p_tok}\r\n'.encode('utf-8'))
                     parts.append(f'--{boundary}\r\nContent-Disposition: form-data; name="description"\r\n\r\n{desc_text}\r\n'.encode('utf-8'))
+                    parts.append(f'--{boundary}\r\nContent-Disposition: form-data; name="published"\r\n\r\ntrue\r\n'.encode('utf-8'))
                     if title:
                         parts.append(f'--{boundary}\r\nContent-Disposition: form-data; name="title"\r\n\r\n{title}\r\n'.encode('utf-8'))
                     parts.append(f'--{boundary}\r\nContent-Disposition: form-data; name="source"; filename="reel.mp4"\r\nContent-Type: video/mp4\r\n\r\n'.encode('utf-8'))
@@ -2587,36 +2612,37 @@ def studio_omnichannel_publish():
                         headers={'Content-Type': f'multipart/form-data; boundary={boundary}'},
                         method='POST'
                     )
-                    with urllib.request.urlopen(req, timeout=30) as resp:
+                    with urllib.request.urlopen(req, timeout=35) as resp:
                         res_json = json.loads(resp.read().decode('utf-8'))
                         pub_id = res_json.get('id')
-                        permalink = f"https://www.facebook.com/watch/?v={pub_id}"
+                        permalink = f"https://www.facebook.com/reel/{pub_id}/"
             except urllib.error.HTTPError as he:
                 try:
                     err_b = json.loads(he.read().decode('utf-8'))
                     fb_err_detail = err_b.get('error', {}).get('message') or err_b.get('error', {}).get('error_user_msg')
                 except Exception:
-                    fb_err_detail = f"HTTP {he.code} dari Meta Graph API"
+                    fb_err_detail = f"HTTP {he.code} dari Meta Graph Video API"
                 print(f"[Facebook Studio Publish HTTPError]: {he.code} {fb_err_detail}")
             except Exception as e:
                 fb_err_detail = str(e)
                 print(f"[Facebook Studio Publish Exception]: {e}")
+        else:
+            fb_err_detail = "Berkas video atau URL video tidak ditemukan dalam permintaan."
 
+        # Jika Facebook tidak berhasil mempublikasikan, JANGAN kembalikan status palsu!
         if not pub_id:
-            if fb_err_detail:
-                return jsonify({
-                    "success": False,
-                    "message": f"Gagal mempublikasikan ke Facebook: {fb_err_detail}"
-                }), 400
-            pub_id = f"fb_reel_{uuid.uuid4().hex[:12]}"
-            permalink = f"https://www.facebook.com/watch/?v={pub_id}"
+            err_msg = fb_err_detail or "Facebook menolak permintaan unggahan. Pastikan format berkas video (.mp4) atau link video dapat diakses publik."
+            return jsonify({
+                "success": False,
+                "message": f"Gagal mempublikasikan ke Facebook Reels: {err_msg}"
+            }), 400
 
         publish_results['facebook'] = {
             "status": "SUCCESS",
             "id": pub_id,
             "permalink": permalink,
             "page_id": final_page_id,
-            "type": "Reels / Video Post"
+            "type": "Facebook Reels"
         }
 
     # 2. INSTAGRAM REELS
