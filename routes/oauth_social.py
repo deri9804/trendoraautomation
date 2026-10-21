@@ -2863,6 +2863,8 @@ def studio_omnichannel_publish():
         "target_name": target_name,
         "publish_id": pub_id,
         "permalink": permalink,
+        "page_id": final_page_id if platform == 'facebook' else None,
+        "page_url": f"https://www.facebook.com/{final_page_id}/videos" if (platform == 'facebook' and final_page_id) else None,
         "timestamp": now_str,
         "message": f"Konten berhasil dipublikasikan ke {target_name or platform.capitalize()}!",
         "anti_duplicate_shield": enable_spinner,

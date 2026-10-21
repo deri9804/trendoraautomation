@@ -2915,6 +2915,11 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
               <span id="studioSuccessOpenBtnText">Buka Halaman / Postingan</span>
             </a>
             
+            <a id="btnOpenFbPageProfile" href="https://www.facebook.com/" target="_blank" rel="noopener noreferrer" class="btn-secondary" style="display: none; text-decoration: none; font-size: 13px; padding: 12px; align-items: center; justify-content: center; gap: 8px;">
+              <span>📘</span>
+              <span>Buka Tab Video Halaman Facebook</span>
+            </a>
+
             <button type="button" class="btn-secondary" style="font-size: 13px; padding: 12px;" onclick="closeTiktokSuccessModal()">
               Tutup &amp; Buat Postingan Baru
             </button>
@@ -5367,11 +5372,21 @@ ${data.hashtags}`;
 
             if (timeSpan) timeSpan.innerText = new Date().toLocaleString('id-ID');
 
+            const pageLinkBtn = document.getElementById('btnOpenFbPageProfile');
+            if (pageLinkBtn) {
+              if (platform === 'facebook' && (data.page_url || data.page_id)) {
+                pageLinkBtn.href = data.page_url || ('https://www.facebook.com/' + data.page_id + '/videos');
+                pageLinkBtn.style.display = 'flex';
+              } else {
+                pageLinkBtn.style.display = 'none';
+              }
+            }
+
             if (openLink) {
               if (data.permalink) {
                 openLink.href = data.permalink;
               } else if (platform === 'facebook') {
-                openLink.href = 'https://www.facebook.com/';
+                openLink.href = data.page_url || 'https://www.facebook.com/';
               } else if (platform === 'instagram') {
                 openLink.href = 'https://www.instagram.com/';
               } else if (platform === 'youtube') {
@@ -5381,8 +5396,8 @@ ${data.hashtags}`;
               }
             }
 
-            if (openText) openText.innerText = `🚀 Buka di ${pTitleMap[platform] || 'Platform'}`;
-            if (openIcon) openIcon.innerText = platform === 'facebook' ? '📘' : (platform === 'instagram' ? '📸' : (platform === 'youtube' ? '▶️' : '🎵'));
+            if (openText) openText.innerText = platform === 'facebook' ? '🚀 Tonton Reel di Facebook' : `🚀 Buka di ${pTitleMap[platform] || 'Platform'}`;
+            if (openIcon) openIcon.innerText = platform === 'facebook' ? '🎬' : (platform === 'instagram' ? '📸' : (platform === 'youtube' ? '▶️' : '🎵'));
 
             successModal.style.display = 'flex';
           } else {

@@ -47,22 +47,14 @@ def spin_video_file(video_bytes, account_id=None, variation_index=0):
     acc_salt_bytes = acc_salt_str.encode('utf-8')
     
     # 2. Format atom 'free' (4 bytes panjang atom + 4 bytes 'free' + payload)
+    # PENTING: Ditempel di akhir file (trailing atom) agar TIDAK merusak chunk offsets
+    # (stco / co64) dalam kontainer MP4/MOV. Ini memastikan video 100% valid saat
+    # di-decode oleh server Meta, TikTok, dan YouTube.
     atom_length = len(acc_salt_bytes) + 8
     free_atom = struct.pack(">I", atom_length) + b"free" + acc_salt_bytes
 
-    # 3. Cari posisi yang aman untuk menyisipkan atom (setelah atom 'ftyp' atau di awal file)
-    insert_pos = 0
-    if len(video_bytes) >= 8:
-        # Cek ukuran atom pertama (biasanya ftyp)
-        first_box_size = struct.unpack(">I", video_bytes[0:4])[0]
-        first_box_type = video_bytes[4:8]
-        if first_box_type in [b"ftyp", b"moov", b"wide"] and 8 <= first_box_size < len(video_bytes):
-            insert_pos = first_box_size
-        else:
-            insert_pos = 16
-
-    # 4. Sisipkan atom 'free' ke dalam aliran byte video
-    spun_bytes = video_bytes[:insert_pos] + free_atom + video_bytes[insert_pos:]
+    # Sisipkan atom 'free' di akhir berkas kontainer (Safe Appending)
+    spun_bytes = video_bytes + free_atom
 
     # 5. Modifikasi atom 'mvhd' jika ada untuk mengacak creation_time (detik sejak 1904)
     # Standar QuickTime / MP4 creation_time adalah unsigned 32-bit integer sejak 1 Jan 1904
