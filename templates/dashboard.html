@@ -1536,17 +1536,17 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
             <!-- Status Koneksi Akun Dinamis (Meta FB, IG, YouTube, TikTok) -->
             <div id="studioConnBox" style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 12px 18px; text-align: right; min-width: 250px;">
               <div id="studioConnPlatformLabel" style="font-size: 11px; color: #9ca3af; margin-bottom: 4px; font-weight: 600;">Status Akun Meta / Facebook:</div>
-              <div id="studioConnStatusBadge" class="status-badge success" style="margin-bottom: 6px;">
-                ● Terhubung (Active)
+              <div id="studioConnStatusBadge" class="status-badge failed" style="margin-bottom: 6px;">
+                ○ Belum Terhubung
               </div>
-              <div id="studioCreatorCard" style="display: flex; align-items: center; justify-content: flex-end; gap: 8px; margin-top: 6px; padding-top: 6px; border-top: 1px solid rgba(255,255,255,0.06);">
-                <img id="studioCreatorAvatar" src="https://ui-avatars.com/api/?name=Trendora+Official&background=1877f2&color=fff" alt="Avatar" style="width: 26px; height: 26px; border-radius: 50%; border: 1px solid #1877f2; object-fit: cover;">
+              <div id="studioCreatorCard" style="display: none; align-items: center; justify-content: flex-end; gap: 8px; margin-top: 6px; padding-top: 6px; border-top: 1px solid rgba(255,255,255,0.06);">
+                <img id="studioCreatorAvatar" src="" alt="Avatar" style="width: 26px; height: 26px; border-radius: 50%; border: 1px solid #1877f2; object-fit: cover;">
                 <div style="text-align: right; line-height: 1.2;">
-                  <div id="studioCreatorNickname" style="font-size: 12px; font-weight: 700; color: #fff;">Trendora Automation Official</div>
-                  <div id="studioCreatorUsername" style="font-size: 10px; color: #94a3b8;">Facebook Page (Software &amp; AI)</div>
+                  <div id="studioCreatorNickname" style="font-size: 12px; font-weight: 700; color: #fff;">-</div>
+                  <div id="studioCreatorUsername" style="font-size: 10px; color: #94a3b8;">-</div>
                 </div>
               </div>
-              <div id="studioConnectBtnWrap" style="display: none; margin-top: 6px;">
+              <div id="studioConnectBtnWrap" style="display: block; margin-top: 6px;">
                 <button type="button" class="btn-secondary" id="btnStudioConnectAccount" style="font-size: 11px; padding: 6px 12px; color: #60a5fa; border-color: rgba(96,165,250,0.4);" onclick="handleConnectStudioPlatform()">
                   🔗 Hubungkan Akun
                 </button>
@@ -1920,8 +1920,7 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
                     </button>
                   </div>
                   <select id="studioFbPageSelect" style="width: 100%; background: #090d16; border: 1px solid rgba(255,255,255,0.12); color: #fff; padding: 12px 14px; border-radius: 12px; font-size: 13px; cursor: pointer;" onchange="handleStudioFbPageChange()">
-                    <option value="104928374829104" selected>Trendora Automation Official (Software &amp; Internet Technology)</option>
-                    <option value="108392019482019">Deri Pernandi Digital (Content Creator &amp; Entrepreneur)</option>
+                    <option value="">-- Belum ada Facebook Page terhubung --</option>
                   </select>
                   <p style="font-size: 11px; color: #94a3b8; margin: 6px 0 0 0;">
                     Video Reels akan dipublikasikan secara resmi ke Halaman Facebook yang Anda pilih melalui Graph API.
@@ -1949,7 +1948,7 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
                   <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 14px;">
                     <img id="studioIgAvatar" src="https://ui-avatars.com/api/?name=Trendora+Instagram&background=e1306c&color=fff" style="width: 34px; height: 34px; border-radius: 50%; border: 1.5px solid #e1306c;" alt="IG Avatar">
                     <div>
-                      <div id="studioIgAccountName" style="font-size: 13px; font-weight: 800; color: #fff;">@trendora.automation</div>
+                      <div id="studioIgAccountName" style="font-size: 13px; font-weight: 800; color: #fff;">Belum ada akun Instagram terhubung</div>
                       <div style="font-size: 11px; color: #94a3b8;">Instagram Professional Account (Content Publishing API)</div>
                     </div>
                   </div>
@@ -2303,7 +2302,7 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
             </div>
             <div style="display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 6px; margin-bottom: 6px;">
               <span style="color: #64748b;">Akun / Halaman Tujuan:</span>
-              <span id="studioSuccessDestination" style="color: #fff; font-weight: 600;">Trendora Automation Official</span>
+              <span id="studioSuccessDestination" style="color: #fff; font-weight: 600;">-</span>
             </div>
             <div style="display: flex; justify-content: space-between;">
               <span style="color: #64748b;">Waktu Publikasi:</span>
@@ -3428,7 +3427,9 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
       
       let isConn = false;
       if (pLower === 'facebook' || pLower === 'instagram') {
-        isConn = platforms.some(x => String(x).toLowerCase().includes('meta') || String(x).toLowerCase().includes('facebook') || String(x).toLowerCase().includes('instagram'));
+        const hasPlatform = platforms.some(x => String(x).toLowerCase().includes('meta') || String(x).toLowerCase().includes('facebook') || String(x).toLowerCase().includes('instagram'));
+        const hasAccounts = Array.isArray(window.studioMetaAccounts) && window.studioMetaAccounts.length > 0;
+        isConn = hasPlatform || hasAccounts;
       } else {
         isConn = platforms.some(x => String(x).toLowerCase().includes(pLower));
       }
@@ -3446,7 +3447,7 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
 
       if (label) label.innerText = `Status Akun ${pNames[p] || 'Sosial Media'}:`;
 
-      if (isConn || pLower === 'facebook' || pLower === 'instagram' || pLower === 'multi') {
+      if (isConn) {
         if (badge) {
           badge.className = 'status-badge success';
           badge.innerText = '● Terhubung (Active)';
@@ -3455,24 +3456,29 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
         if (card) card.style.display = 'flex';
 
         if (pLower === 'facebook') {
-          if (avatar) avatar.src = 'https://ui-avatars.com/api/?name=Trendora+Official&background=1877f2&color=fff';
-          if (nick) nick.innerText = 'Trendora Automation Official';
-          if (username) username.innerText = 'Facebook Page (Software & AI)';
+          const sel = document.getElementById('studioFbPageSelect');
+          const pageName = (sel && sel.selectedIndex >= 0 && sel.options[sel.selectedIndex] && sel.value) 
+            ? sel.options[sel.selectedIndex].text.split('(')[0].trim() 
+            : (window.studioMetaAccounts && window.studioMetaAccounts[0] ? window.studioMetaAccounts[0].name : 'Facebook Page Terhubung');
+          if (avatar) avatar.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(pageName)}&background=1877f2&color=fff`;
+          if (nick) nick.innerText = pageName;
+          if (username) username.innerText = 'Facebook Page (Active)';
         } else if (pLower === 'instagram') {
-          if (avatar) avatar.src = 'https://ui-avatars.com/api/?name=Trendora+Instagram&background=e1306c&color=fff';
-          if (nick) nick.innerText = 'trendora.automation';
+          const igUser = (window.studioMetaAccounts && window.studioMetaAccounts[0] && window.studioMetaAccounts[0].instagram_username) ? window.studioMetaAccounts[0].instagram_username : 'Instagram Professional';
+          if (avatar) avatar.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(igUser)}&background=e1306c&color=fff`;
+          if (nick) nick.innerText = igUser.startsWith('@') ? igUser : '@' + igUser;
           if (username) username.innerText = 'Instagram Professional Account';
         } else if (pLower === 'youtube') {
-          if (avatar) avatar.src = 'https://ui-avatars.com/api/?name=Trendora+YT&background=ff0000&color=fff';
-          if (nick) nick.innerText = 'Trendora Automation';
-          if (username) username.innerText = '@TrendoraAutomation (Channel)';
+          if (avatar) avatar.src = 'https://ui-avatars.com/api/?name=YouTube&background=ff0000&color=fff';
+          if (nick) nick.innerText = 'YouTube Channel Terhubung';
+          if (username) username.innerText = 'Channel YouTube Terhubung';
         } else if (pLower === 'tiktok') {
-          if (avatar) avatar.src = 'https://ui-avatars.com/api/?name=Trendora+TikTok&background=00f2fe&color=000';
-          if (nick) nick.innerText = 'Trendora Creator';
-          if (username) username.innerText = '@trendora.automation';
+          if (avatar) avatar.src = 'https://ui-avatars.com/api/?name=TikTok&background=00f2fe&color=000';
+          if (nick) nick.innerText = 'TikTok Creator Terhubung';
+          if (username) username.innerText = 'Akun TikTok Terhubung';
         } else {
-          if (avatar) avatar.src = 'https://ui-avatars.com/api/?name=Omni+Suite&background=38bdf8&color=fff';
-          if (nick) nick.innerText = 'Trendora Omnichannel Hub';
+          if (avatar) avatar.src = 'https://ui-avatars.com/api/?name=Omni&background=38bdf8&color=fff';
+          if (nick) nick.innerText = 'Omnichannel Suite Terhubung';
           if (username) username.innerText = 'Multi-Platform Sync Active';
         }
       } else {
@@ -3508,20 +3514,36 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
         const res = await fetch(getApiUrl(`/api/meta/accounts?email=${encodeURIComponent(email)}&api_key=${encodeURIComponent(apiKey)}`));
         if (res.ok) {
           const data = await res.json();
-          if (data.success && Array.isArray(data.accounts)) {
+          const sel = document.getElementById('studioFbPageSelect');
+          if (data.success && Array.isArray(data.accounts) && data.accounts.length > 0) {
             window.studioMetaAccounts = data.accounts;
-            const sel = document.getElementById('studioFbPageSelect');
             if (sel) {
               sel.innerHTML = data.accounts.map(acc => `
                 <option value="${acc.id}">${acc.name} (${acc.category || 'Page'})</option>
               `).join('');
             }
-            if (data.accounts.length > 0) {
-              const first = data.accounts[0];
-              const igName = document.getElementById('studioIgAccountName');
-              if (igName) igName.innerText = '@' + (first.instagram_username || 'trendora.automation').replace('@', '');
+            const first = data.accounts[0];
+            const igName = document.getElementById('studioIgAccountName');
+            if (igName) igName.innerText = '@' + (first.instagram_username || '').replace('@', '');
+            
+            // Tandai platform Meta aktif
+            if (window.currentUserData) {
+              if (!Array.isArray(window.currentUserData.connectedPlatforms)) window.currentUserData.connectedPlatforms = [];
+              if (!window.currentUserData.connectedPlatforms.includes('meta')) window.currentUserData.connectedPlatforms.push('meta');
+              if (!window.currentUserData.connectedPlatforms.includes('facebook')) window.currentUserData.connectedPlatforms.push('facebook');
             }
+            updateStudioStatus(window.currentStudioPlatform || 'facebook');
             if (isManual) alert('Daftar Halaman Meta Facebook berhasil disinkronkan!');
+          } else {
+            // Belum ada halaman Facebook terhubung
+            window.studioMetaAccounts = [];
+            if (sel) {
+              sel.innerHTML = '<option value="">-- Belum ada Facebook Page terhubung --</option>';
+            }
+            const igName = document.getElementById('studioIgAccountName');
+            if (igName) igName.innerText = 'Belum terhubung';
+            updateStudioStatus(window.currentStudioPlatform || 'facebook');
+            if (isManual) alert('Belum ada akun atau Halaman Facebook yang terhubung ke akun Anda.');
           }
         }
       } catch (e) {
@@ -3762,6 +3784,19 @@ ${data.hashtags}`;
       const notice = document.getElementById('tiktokShareNotice');
       const hasVideo = !!(window.selectedTiktokVideoFile || window.selectedTiktokVideoUrl);
       const platform = window.currentStudioPlatform || 'facebook';
+
+      if (platform === 'facebook') {
+        const pageSel = document.getElementById('studioFbPageSelect');
+        if (!pageSel || !pageSel.value) {
+          window.tiktokDisableReason = 'page_required';
+          if (btn) btn.disabled = true;
+          if (notice) {
+            notice.style.color = '#f59e0b';
+            notice.innerText = '⚠️ Silakan hubungkan akun Meta dan pilih Facebook Page tujuan terlebih dahulu.';
+          }
+          return false;
+        }
+      }
 
       if (!hasVideo) {
         window.tiktokDisableReason = 'no_video';
@@ -4078,13 +4113,16 @@ ${data.hashtags}`;
             if (pubIdSpan) pubIdSpan.innerText = data.publish_id || ('publish_' + Math.random().toString(36).substring(2, 9));
             if (destSpan) {
               if (platform === 'facebook') {
-                destSpan.innerText = 'Facebook Page: Trendora Automation Official';
+                const sel = document.getElementById('studioFbPageSelect');
+                const pName = (sel && sel.selectedIndex >= 0 && sel.value) ? sel.options[sel.selectedIndex].text : 'Facebook Page Terpilih';
+                destSpan.innerText = 'Facebook Page: ' + pName;
               } else if (platform === 'instagram') {
-                destSpan.innerText = 'Instagram Account: @trendora.automation';
+                const igName = document.getElementById('studioIgAccountName');
+                destSpan.innerText = 'Instagram: ' + (igName ? igName.innerText : 'Akun Terhubung');
               } else if (platform === 'youtube') {
-                destSpan.innerText = 'YouTube Channel: @TrendoraAutomation';
+                destSpan.innerText = 'YouTube Shorts Channel';
               } else if (platform === 'tiktok') {
-                destSpan.innerText = 'TikTok Account: @trendora.automation';
+                destSpan.innerText = 'TikTok Creator Account';
               } else {
                 destSpan.innerText = 'Multi-Platform Sync (Broadcast)';
               }

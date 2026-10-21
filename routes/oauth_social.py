@@ -2089,28 +2089,9 @@ def get_meta_accounts():
         except Exception as e:
             print(f"[Meta Accounts API Error]: {e}")
 
-    # Fallback default untuk memastikan tampilan studio selalu memiliki akun yang dapat dipilih saat demo screen recording Meta
-    if not accounts:
-        accounts = [
-            {
-                "id": "104928374829104",
-                "name": "Trendora Automation Official",
-                "category": "Software & Internet Technology",
-                "instagram_id": "17841405829102934",
-                "instagram_username": "trendora.automation"
-            },
-            {
-                "id": "108392019482019",
-                "name": "Deri Pernandi Digital",
-                "category": "Content Creator & Entrepreneur",
-                "instagram_id": "17841409281729381",
-                "instagram_username": "deripernandi.creator"
-            }
-        ]
-
     return jsonify({
         "success": True,
-        "is_connected": bool(meta_token),
+        "is_connected": bool(meta_token and len(accounts) > 0),
         "accounts": accounts
     })
 
