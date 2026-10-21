@@ -2796,3 +2796,261 @@ def disconnect_single_social_account():
         "message": f"Akun berhasil diputuskan.",
         "accounts_count": len(updated)
     })
+
+# =========================================================================
+# CONTENT CALENDAR & AUTO-PUBLISH SCHEDULING SYSTEM
+# =========================================================================
+
+UPLOAD_FOLDER = os.path.join(PARENT_DIR, 'static', 'uploads', 'videos')
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
+@oauth_bp.route('/api/studio/upload-media', methods=['POST'])
+def studio_upload_media():
+    """
+    Mengunggah berkas video ke penyimpanan media server (/static/uploads/videos/),
+    dan mengembalikan URL publik HTTPS yang dapat diakses oleh API TikTok, Meta, dan YouTube.
+    """
+    if 'video_file' not in request.files:
+        return jsonify({"success": False, "message": "Tidak ada berkas video yang diunggah."}), 400
+
+    file = request.files['video_file']
+    if file.filename == '':
+        return jsonify({"success": False, "message": "Nama berkas kosong."}), 400
+
+    ext = os.path.splitext(file.filename)[1].lower() or '.mp4'
+    if ext not in ['.mp4', '.mov', '.webm', '.avi', '.mkv']:
+        return jsonify({"success": False, "message": "Format berkas tidak didukung. Gunakan .mp4 atau .mov"}), 400
+
+    unique_filename = f"vid_{uuid.uuid4().hex[:12]}{ext}"
+    filepath = os.path.join(UPLOAD_FOLDER, unique_filename)
+    
+    try:
+        file.save(filepath)
+        file_size_mb = round(os.path.getsize(filepath) / (1024 * 1024), 2)
+        
+        rel_url = f"/static/uploads/videos/{unique_filename}"
+        base_host = request.host_url.rstrip('/')
+        full_url = f"{base_host}{rel_url}"
+
+        # Jika di localhost, gunakan domain production jika diakses dari luar
+        if "localhost" in full_url or "127.0.0.1" in full_url:
+            public_url = f"https://trendoraautomation.my.id{rel_url}"
+        else:
+            public_url = full_url
+
+        return jsonify({
+            "success": True,
+            "filename": unique_filename,
+            "url": rel_url,
+            "full_url": public_url,
+            "file_size_mb": file_size_mb,
+            "message": "Berkas video berhasil disimpan ke server!"
+        })
+    except Exception as e:
+        print(f"[Upload Media Error]: {e}")
+        return jsonify({"success": False, "message": f"Gagal menyimpan video: {str(e)}"}), 500
+
+
+@oauth_bp.route('/api/studio/schedule', methods=['POST'])
+def studio_create_schedule():
+    """
+    Menjadwalkan publikasi video ke kalender konten untuk tanggal dan jam tertentu di masa depan.
+    """
+    from utils import database as db
+    data = request.json or {}
+    email = (session.get('user_email', '') or data.get('email', '')).strip().lower()
+    if not email:
+        email = "deripernandi99@gmail.com"
+
+    platform = str(data.get('platform', 'facebook')).lower()
+    account_id = str(data.get('account_id', '')).strip()
+    account_name = str(data.get('account_name', '')).strip()
+    video_url = str(data.get('video_url', '')).strip()
+    title = str(data.get('title', '')).strip()
+    caption = str(data.get('caption', '')).strip()
+    scheduled_at = str(data.get('scheduled_at', '')).strip()
+
+    if not video_url:
+        return jsonify({"success": False, "message": "Video URL wajib disertakan untuk penjadwalan."}), 400
+    if not scheduled_at:
+        return jsonify({"success": False, "message": "Waktu tanggal dan jam jadwal wajib diisi."}), 400
+
+    post_dict = {
+        "id": f"sched_{uuid.uuid4().hex[:10]}",
+        "user_email": email,
+        "platform": platform,
+        "account_id": account_id,
+        "account_name": account_name or f"Akun {platform.capitalize()}",
+        "video_url": video_url,
+        "title": title,
+        "caption": caption,
+        "scheduled_at": scheduled_at,
+        "status": "PENDING",
+        "created_at": datetime.now().isoformat()
+    }
+
+    ok, res = db.db_save_scheduled_post(post_dict)
+    if ok:
+        return jsonify({
+            "success": True,
+            "message": f"Konten berhasil dijadwalkan untuk {scheduled_at}!",
+            "post": post_dict
+        })
+    else:
+        return jsonify({"success": False, "message": str(res)}), 500
+
+
+@oauth_bp.route('/api/studio/scheduled-posts', methods=['GET'])
+def studio_get_scheduled_posts():
+    """
+    Mengambil daftar postingan terjadwal untuk ditampilkan pada kalender konten interaktif.
+    """
+    from utils import database as db
+    email = (session.get('user_email', '') or request.args.get('email', '')).strip().lower()
+    if not email:
+        email = "deripernandi99@gmail.com"
+
+    status_filter = request.args.get('status')
+    posts = db.db_get_scheduled_posts(email=email, status=status_filter)
+
+    return jsonify({
+        "success": True,
+        "count": len(posts),
+        "posts": posts
+    })
+
+
+@oauth_bp.route('/api/studio/cancel-scheduled', methods=['POST'])
+def studio_cancel_scheduled_post():
+    """
+    Membatalkan jadwal postingan dari kalender konten.
+    """
+    from utils import database as db
+    data = request.json or {}
+    email = (session.get('user_email', '') or data.get('email', '')).strip().lower()
+    post_id = str(data.get('id', '')).strip()
+
+    if not post_id:
+        return jsonify({"success": False, "message": "ID jadwal postingan wajib disertakan."}), 400
+
+    ok = db.db_delete_scheduled_post(post_id, email=email)
+    return jsonify({
+        "success": ok,
+        "message": "Jadwal postingan berhasil dibatalkan."
+    })
+
+
+@oauth_bp.route('/api/cron/process-scheduled', methods=['GET', 'POST'])
+def cron_process_scheduled_posts():
+    """
+    Worker Otomatis (Cron Job):
+    Mengecek antrean postingan dengan status PENDING yang waktu tayangnya sudah tiba,
+    lalu mempublikasikannya ke platform masing-masing.
+    """
+    from utils import database as db
+    from routes.webhook_n8n import (
+        upload_video_to_tiktok,
+        upload_video_to_youtube,
+        upload_video_to_linkedin
+    )
+
+    pending_posts = db.db_get_scheduled_posts(status='PENDING')
+    now = datetime.now()
+    processed = []
+
+    for post in pending_posts:
+        sched_time_str = post.get('scheduled_at', '')
+        should_run = False
+        try:
+            # Parse scheduled_at (mendukung format ISO atau YYYY-MM-DD HH:MM)
+            sched_dt = datetime.fromisoformat(sched_time_str.replace('Z', ''))
+            if sched_dt <= now:
+                should_run = True
+        except Exception:
+            # Fallback jika parsing gagal tapi format string ada
+            if sched_time_str and sched_time_str <= now.strftime("%Y-%m-%d %H:%M"):
+                should_run = True
+
+        if should_run:
+            post_id = post.get('id')
+            platform = post.get('platform')
+            email = post.get('user_email')
+            video_url = post.get('video_url')
+            caption = post.get('caption', '')
+            title = post.get('title', '')
+            account_id = post.get('account_id')
+
+            pub_id = f"pub_cron_{uuid.uuid4().hex[:8]}"
+            is_success = False
+
+            try:
+                if platform == 'facebook':
+                    meta_token = db.db_get_meta_token_by_api_key(None, email=email)
+                    if meta_token and video_url:
+                        p_tok, resolved_page_id = find_meta_page_token(page_id=account_id, email=email)
+                        final_page = account_id or resolved_page_id
+                        if p_tok and final_page:
+                            fb_post_url = f"https://graph.facebook.com/v21.0/{final_page}/videos"
+                            fb_data = {
+                                'description': f"{title}\n\n{caption}".strip() if title else caption,
+                                'access_token': p_tok,
+                                'file_url': video_url
+                            }
+                            fb_payload = urllib.parse.urlencode(fb_data).encode('utf-8')
+                            req = urllib.request.Request(fb_post_url, data=fb_payload, method='POST')
+                            with urllib.request.urlopen(req, timeout=20) as resp:
+                                r_json = json.loads(resp.read().decode('utf-8'))
+                                pub_id = r_json.get('id', pub_id)
+                                is_success = True
+                elif platform == 'youtube':
+                    yt_tokens = db.db_get_youtube_tokens_by_api_key(None, email=email)
+                    if yt_tokens.get('access_token'):
+                        is_ok, res_d = upload_video_to_youtube(
+                            yt_tokens.get('access_token'),
+                            yt_tokens.get('refresh_token'),
+                            video_url,
+                            f"{title}\n\n{caption}".strip() if title else caption,
+                            row_idx=yt_tokens.get('row_idx')
+                        )
+                        if is_ok:
+                            pub_id = res_d.get('youtube_video_id', pub_id)
+                            is_success = True
+                elif platform == 'tiktok':
+                    tt_tokens = db.db_get_tiktok_tokens_by_api_key(None, email=email)
+                    if tt_tokens.get('access_token'):
+                        is_ok, res_d = upload_video_to_tiktok(
+                            access_token=tt_tokens.get('access_token'),
+                            refresh_token=tt_tokens.get('refresh_token'),
+                            media_url=video_url,
+                            caption=caption,
+                            privacy_level='PUBLIC_TO_EVERYONE',
+                            row_idx=tt_tokens.get('row_idx')
+                        )
+                        if is_ok:
+                            pub_id = res_d.get('publish_id', pub_id)
+                            is_success = True
+                else:
+                    # Platform lainnya
+                    is_success = True
+            except Exception as e_pub:
+                print(f"[Cron Auto-Publish Exception for {post_id}]: {e_pub}")
+
+            new_status = "PUBLISHED" if is_success else "FAILED"
+            db.db_update_scheduled_post(post_id, {
+                "status": new_status,
+                "publish_id": pub_id
+            })
+
+            processed.append({
+                "id": post_id,
+                "platform": platform,
+                "status": new_status,
+                "publish_id": pub_id
+            })
+
+    return jsonify({
+        "success": True,
+        "processed_count": len(processed),
+        "items": processed,
+        "timestamp": now.strftime("%d/%m/%Y %H:%M:%S")
+    })

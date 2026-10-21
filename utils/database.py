@@ -1,3 +1,4 @@
+from datetime import datetime
 import os
 import json
 import uuid
@@ -669,3 +670,188 @@ def db_get_social_account_token(email=None, api_key=None, platform=None, account
             return a
 
     return None
+
+# =========================================================================
+# SCHEDULED POSTS & CONTENT CALENDAR DATABASE ENGINE
+# =========================================================================
+
+def get_scheduled_sheet():
+    """Koneksi ke Google Sheets khusus tab 'ScheduledPosts'."""
+    if not HAS_GSPREAD:
+        return None
+    try:
+        scopes = ["https://www.googleapis.com/auth/spreadsheets"]
+        env_creds = config.GOOGLE_CREDS_JSON
+        
+        if env_creds:
+            if isinstance(env_creds, str):
+                clean_env = env_creds.strip()
+                if clean_env.startswith("'") and clean_env.endswith("'"): clean_env = clean_env[1:-1]
+                if clean_env.startswith('"') and clean_env.endswith('"'): clean_env = clean_env[1:-1]
+                try:
+                    creds_dict = json.loads(clean_env)
+                except json.JSONDecodeError:
+                    clean_env = clean_env.replace('\\n', '\n')
+                    creds_dict = json.loads(clean_env)
+            else:
+                creds_dict = env_creds
+
+            if isinstance(creds_dict, dict) and "private_key" in creds_dict:
+                creds_dict["private_key"] = creds_dict["private_key"].replace("\\n", "\n")
+
+            creds = Credentials.from_service_account_info(creds_dict, scopes=scopes)
+        else:
+            if not os.path.exists(config.SERVICE_ACCOUNT_FILE):
+                return None
+            creds = Credentials.from_service_account_file(config.SERVICE_ACCOUNT_FILE, scopes=scopes)
+
+        client = gspread.authorize(creds)
+        doc = client.open_by_key(config.GOOGLE_SHEET_ID)
+        
+        sheet = None
+        worksheets = doc.worksheets()
+        for s in worksheets:
+            s_title = s.title.lower()
+            if "schedule" in s_title or "jadwal" in s_title or "kalender" in s_title:
+                sheet = s
+                break
+        if not sheet:
+            sheet = doc.add_worksheet(title="ScheduledPosts", rows="2000", cols="12")
+            sheet.append_row([
+                "ID", "UserEmail", "Platform", "AccountID", "AccountName",
+                "VideoURL", "Title", "Caption", "ScheduledAt", "Status",
+                "PublishID", "CreatedAt"
+            ])
+            
+        return sheet
+    except Exception as e:
+        print(f"[GSheets ScheduledPosts Connection Error]: {e}")
+        return None
+
+# In-memory store fallback for scheduled posts
+SCHEDULED_POSTS_CACHE = []
+
+def db_save_scheduled_post(post_dict):
+    """Menyimpan jadwal postingan baru ke Google Sheets & Cache lokal."""
+    if not post_dict:
+        return False, "Data jadwal kosong."
+    
+    post_id = str(post_dict.get('id') or f"sched_{uuid.uuid4().hex[:10]}")
+    post_dict['id'] = post_id
+    post_dict['status'] = post_dict.get('status', 'PENDING')
+    now_str = datetime.now().isoformat()
+    post_dict['created_at'] = post_dict.get('created_at', now_str)
+
+    row_data = [
+        post_id,
+        str(post_dict.get('user_email', '')).strip().lower(),
+        str(post_dict.get('platform', 'facebook')).lower(),
+        str(post_dict.get('account_id', '')),
+        str(post_dict.get('account_name', '')),
+        str(post_dict.get('video_url', '')),
+        str(post_dict.get('title', '')),
+        str(post_dict.get('caption', '')),
+        str(post_dict.get('scheduled_at', '')),
+        post_dict['status'],
+        str(post_dict.get('publish_id', '')),
+        post_dict['created_at']
+    ]
+
+    sheet = get_scheduled_sheet()
+    if sheet:
+        try:
+            sheet.append_row(row_data)
+        except Exception as e:
+            print(f"[GSheet Save Scheduled Post Error]: {e}")
+
+    # Simpan ke cache memory
+    existing_idx = next((i for i, p in enumerate(SCHEDULED_POSTS_CACHE) if p.get('id') == post_id), -1)
+    if existing_idx >= 0:
+        SCHEDULED_POSTS_CACHE[existing_idx] = post_dict
+    else:
+        SCHEDULED_POSTS_CACHE.append(post_dict)
+
+    return True, post_dict
+
+def db_get_scheduled_posts(email=None, status=None):
+    """Mengambil daftar postingan terjadwal untuk user (atau semua jika email=None)."""
+    clean_email = str(email).strip().lower() if email else None
+    results = []
+
+    sheet = get_scheduled_sheet()
+    if sheet:
+        try:
+            all_rows = sheet.get_all_values()
+            if len(all_rows) > 1:
+                for idx, row in enumerate(all_rows[1:], start=2):
+                    if len(row) >= 10:
+                        p_email = str(row[1]).strip().lower()
+                        p_status = str(row[9]).strip().upper()
+                        
+                        if clean_email and p_email != clean_email:
+                            continue
+                        if status and p_status != str(status).strip().upper():
+                            continue
+
+                        results.append({
+                            "id": str(row[0]).strip(),
+                            "user_email": p_email,
+                            "platform": str(row[2]).strip().lower(),
+                            "account_id": str(row[3]).strip() if len(row) > 3 else "",
+                            "account_name": str(row[4]).strip() if len(row) > 4 else "",
+                            "video_url": str(row[5]).strip() if len(row) > 5 else "",
+                            "title": str(row[6]).strip() if len(row) > 6 else "",
+                            "caption": str(row[7]).strip() if len(row) > 7 else "",
+                            "scheduled_at": str(row[8]).strip() if len(row) > 8 else "",
+                            "status": p_status,
+                            "publish_id": str(row[10]).strip() if len(row) > 10 else "",
+                            "created_at": str(row[11]).strip() if len(row) > 11 else "",
+                            "row_idx": idx
+                        })
+        except Exception as e:
+            print(f"[GSheet Get Scheduled Posts Error]: {e}")
+
+    # Jika sheet kosong/gagal, ambil dari cache
+    if not results and SCHEDULED_POSTS_CACHE:
+        for p in SCHEDULED_POSTS_CACHE:
+            p_email = str(p.get('user_email', '')).lower()
+            p_status = str(p.get('status', '')).upper()
+            if clean_email and p_email != clean_email:
+                continue
+            if status and p_status != str(status).upper():
+                continue
+            results.append(p)
+
+    # Urutkan berdasarkan waktu scheduled_at
+    results.sort(key=lambda x: x.get('scheduled_at', ''), reverse=False)
+    return results
+
+def db_update_scheduled_post(post_id, updates_dict):
+    """Memperbarui status atau data postingan terjadwal (misal dari PENDING ke PUBLISHED)."""
+    if not post_id or not updates_dict:
+        return False
+    
+    sheet = get_scheduled_sheet()
+    if sheet:
+        try:
+            all_rows = sheet.get_all_values()
+            for idx, row in enumerate(all_rows[1:], start=2):
+                if len(row) >= 1 and str(row[0]).strip() == str(post_id).strip():
+                    if 'status' in updates_dict:
+                        sheet.update_cell(idx, 10, str(updates_dict['status']).upper())
+                    if 'publish_id' in updates_dict:
+                        sheet.update_cell(idx, 11, str(updates_dict['publish_id']))
+                    break
+        except Exception as e:
+            print(f"[GSheet Update Scheduled Post Error]: {e}")
+
+    for p in SCHEDULED_POSTS_CACHE:
+        if p.get('id') == post_id:
+            p.update(updates_dict)
+            break
+
+    return True
+
+def db_delete_scheduled_post(post_id, email=None):
+    """Membatalkan jadwal postingan (mengubah status menjadi CANCELLED)."""
+    return db_update_scheduled_post(post_id, {"status": "CANCELLED"})

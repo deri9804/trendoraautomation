@@ -792,6 +792,215 @@
     input:checked + .tiktok-slider:before {
       transform: translateX(20px);
     }
+  
+    /* ============================================================ */
+    /* CONTENT CALENDAR & AUTO-PUBLISHER STYLES                    */
+    /* ============================================================ */
+    .calendar-container {
+      background: rgba(15, 23, 42, 0.65);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 16px;
+      padding: 24px;
+      backdrop-filter: blur(12px);
+      margin-bottom: 24px;
+    }
+    .calendar-header-nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 16px;
+      margin-bottom: 20px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .calendar-month-title {
+      font-size: 20px;
+      font-weight: 800;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 220px;
+    }
+    .calendar-nav-btn {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      color: #fff;
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 14px;
+      transition: all 0.2s;
+    }
+    .calendar-nav-btn:hover {
+      background: rgba(56, 189, 248, 0.15);
+      border-color: #38bdf8;
+      color: #38bdf8;
+      transform: translateY(-1px);
+    }
+    .calendar-grid {
+      display: grid;
+      grid-template-columns: repeat(7, minmax(0, 1fr));
+      gap: 8px;
+    }
+    .calendar-day-header {
+      padding: 10px 4px;
+      text-align: center;
+      font-size: 11px;
+      font-weight: 800;
+      color: #94a3b8;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      background: rgba(255, 255, 255, 0.02);
+      border-radius: 8px;
+    }
+    .calendar-day-cell {
+      background: rgba(15, 23, 42, 0.45);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 10px;
+      min-height: 120px;
+      padding: 8px 6px;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      transition: all 0.2s ease;
+    }
+    .calendar-day-cell:hover {
+      border-color: rgba(56, 189, 248, 0.4);
+      background: rgba(15, 23, 42, 0.7);
+    }
+    .calendar-day-cell.other-month {
+      opacity: 0.35;
+      background: rgba(0, 0, 0, 0.2);
+    }
+    .calendar-day-cell.today {
+      border: 1px solid #38bdf8 !important;
+      background: rgba(56, 189, 248, 0.08) !important;
+      box-shadow: 0 0 15px rgba(56, 189, 248, 0.15);
+    }
+    .calendar-day-cell.today .calendar-day-num {
+      background: #38bdf8;
+      color: #070a13;
+      border-radius: 50%;
+      width: 22px;
+      height: 22px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+    }
+    .calendar-cell-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+    }
+    .calendar-day-num {
+      font-size: 12px;
+      font-weight: 700;
+      color: #cbd5e1;
+    }
+    .calendar-add-btn {
+      opacity: 0;
+      width: 18px;
+      height: 18px;
+      border-radius: 4px;
+      background: rgba(56, 189, 248, 0.2);
+      border: 1px solid rgba(56, 189, 248, 0.4);
+      color: #38bdf8;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .calendar-day-cell:hover .calendar-add-btn {
+      opacity: 1;
+    }
+    .calendar-add-btn:hover {
+      background: #38bdf8;
+      color: #000;
+    }
+    .calendar-badges-list {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      flex: 1;
+      overflow-y: auto;
+      max-height: 100px;
+    }
+    .calendar-event-badge {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 6px;
+      border-radius: 6px;
+      font-size: 10.5px;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      transition: all 0.18s;
+    }
+    .calendar-event-badge:hover {
+      transform: scale(1.02);
+      filter: brightness(1.15);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+    }
+    .cal-badge-tiktok {
+      background: rgba(0, 242, 254, 0.15);
+      border-color: rgba(0, 242, 254, 0.35);
+      color: #67e8f9;
+    }
+    .cal-badge-facebook {
+      background: rgba(24, 119, 242, 0.15);
+      border-color: rgba(24, 119, 242, 0.35);
+      color: #93c5fd;
+    }
+    .cal-badge-instagram {
+      background: rgba(225, 48, 108, 0.15);
+      border-color: rgba(225, 48, 108, 0.35);
+      color: #f472b6;
+    }
+    .cal-badge-youtube {
+      background: rgba(255, 0, 0, 0.15);
+      border-color: rgba(255, 0, 0, 0.35);
+      color: #fca5a5;
+    }
+    .cal-badge-twitter {
+      background: rgba(29, 161, 242, 0.15);
+      border-color: rgba(29, 161, 242, 0.35);
+      color: #7dd3fc;
+    }
+    .cal-badge-linkedin {
+      background: rgba(10, 102, 194, 0.15);
+      border-color: rgba(10, 102, 194, 0.35);
+      color: #93c5fd;
+    }
+    .cal-badge-threads {
+      background: rgba(255, 255, 255, 0.12);
+      border-color: rgba(255, 255, 255, 0.3);
+      color: #f8fafc;
+    }
+    .cal-status-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .cal-status-pending { background: #f59e0b; box-shadow: 0 0 6px #f59e0b; }
+    .cal-status-published { background: #10b981; box-shadow: 0 0 6px #10b981; }
+    .cal-status-failed { background: #ef4444; box-shadow: 0 0 6px #ef4444; }
+    .cal-status-cancelled { background: #64748b; }
+
   </style>
 </head>
 <body>
@@ -827,6 +1036,13 @@
             <svg class="menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm1 14.5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0zm1.75-6.75l-.5 2.5h-4.5l-.5-2.5a2.5 2.5 0 1 1 5.5 0z"/></svg>
             <span>Omnichannel AI Suite</span>
             <span class="menu-badge-new">PRO AI</span>
+          </button>
+        </li>
+                <li>
+          <button type="button" class="sidebar-tab-btn" data-tab="content-calendar" onclick="switchDashboardTab('content-calendar')">
+            <svg class="menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+            <span>Kalender Konten</span>
+            <span class="menu-badge-new" style="background: linear-gradient(135deg, #10b981, #059669);">AUTO</span>
           </button>
         </li>
         <li class="sidebar-has-submenu open" id="sidebarStudioMenuWrap">
@@ -1513,6 +1729,195 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
       <!-- TAB 5: OMNICHANNEL STUDIO PUBLISHER & POST     -->
       <!-- Memenuhi Meta Review, YouTube API, TikTok UX   -->
       <!-- ============================================== -->
+      
+      <!-- ============================================== -->
+      <!-- TAB: KALENDER KONTEN & AUTO-PUBLISHER          -->
+      <!-- ============================================== -->
+      <section id="tab-content-calendar" class="dash-tab-section">
+        <div class="dashboard-hero-card" style="display: block; margin-bottom: 25px;">
+          
+          <!-- Header Judul & Tombol Aksi Cepat -->
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 16px; margin-bottom: 24px; padding-bottom: 18px; border-bottom: 1px solid rgba(255,255,255,0.08);">
+            <div>
+              <div style="display: inline-flex; align-items: center; gap: 6px; background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.4); color: #34d399; padding: 4px 12px; border-radius: 12px; font-size: 11px; font-weight: 800; margin-bottom: 8px;">
+                <span>📅 AUTO-SCHEDULER &amp; CONTENT CALENDAR ENGINE</span>
+              </div>
+              <h2 style="font-size: 24px; color: #fff; margin-bottom: 6px; font-weight: 800; display: flex; align-items: center; gap: 10px;">
+                <span>🗓️ Kalender Konten &amp; Jadwal Auto-Publish</span>
+              </h2>
+              <p style="color: #9ca3af; font-size: 13px; margin: 0; max-width: 720px; line-height: 1.5;">
+                Rencanakan, kelola, dan publikasikan video Anda ke seluruh multi-akun sosial media secara terjadwal otomatis. Sistem akan memposting konten tepat di jam audiens Anda paling aktif tanpa perlu online manual.
+              </p>
+            </div>
+
+            <!-- Tombol Aksi Utama -->
+            <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+              <button type="button" onclick="openCalendarQuickScheduleModal()" style="padding: 10px 18px; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: #fff; border: none; border-radius: 10px; font-size: 13px; font-weight: 700; display: inline-flex; align-items: center; gap: 8px; cursor: pointer; box-shadow: 0 4px 15px rgba(16,185,129,0.3); transition: all 0.2s;">
+                <span>➕</span>
+                <span>Buat Jadwal Baru</span>
+              </button>
+              
+              <button type="button" id="btnManualTriggerCron" onclick="triggerCronProcessNow()" style="padding: 10px 16px; background: rgba(56, 189, 248, 0.12); border: 1px solid rgba(56, 189, 248, 0.35); color: #38bdf8; border-radius: 10px; font-size: 12.5px; font-weight: 700; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; transition: all 0.2s;">
+                <span id="cronTriggerIcon">⚡</span>
+                <span id="cronTriggerText">Cek &amp; Publish Sekarang</span>
+              </button>
+
+              <button type="button" onclick="loadCalendarPosts()" style="padding: 10px 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.12); color: #94a3b8; border-radius: 10px; font-size: 13px; cursor: pointer; transition: all 0.2s;" title="Segarkan Kalender">
+                🔄
+              </button>
+            </div>
+          </div>
+
+          <!-- KPI STATS CARDS -->
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; margin-bottom: 24px;">
+            <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(245, 158, 11, 0.25); border-radius: 12px; padding: 14px 16px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                <span style="font-size: 11.5px; color: #94a3b8; font-weight: 600;">MENUNGGU TAYANG</span>
+                <span style="font-size: 16px;">⏳</span>
+              </div>
+              <div id="calendarStatPending" style="font-size: 24px; font-weight: 800; color: #f59e0b;">0</div>
+              <div style="font-size: 11px; color: #64748b; margin-top: 2px;">Siap auto-publish</div>
+            </div>
+
+            <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(16, 185, 129, 0.25); border-radius: 12px; padding: 14px 16px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                <span style="font-size: 11.5px; color: #94a3b8; font-weight: 600;">BERHASIL TAYANG</span>
+                <span style="font-size: 16px;">✅</span>
+              </div>
+              <div id="calendarStatPublished" style="font-size: 24px; font-weight: 800; color: #10b981;">0</div>
+              <div style="font-size: 11px; color: #64748b; margin-top: 2px;">Telah dipublikasikan</div>
+            </div>
+
+            <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(56, 189, 248, 0.25); border-radius: 12px; padding: 14px 16px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                <span style="font-size: 11.5px; color: #94a3b8; font-weight: 600;">TOTAL ANTREAN</span>
+                <span style="font-size: 16px;">📊</span>
+              </div>
+              <div id="calendarStatTotal" style="font-size: 24px; font-weight: 800; color: #38bdf8;">0</div>
+              <div style="font-size: 11px; color: #64748b; margin-top: 2px;">Seluruh jadwal tersimpan</div>
+            </div>
+
+            <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(147, 51, 234, 0.25); border-radius: 12px; padding: 14px 16px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                <span style="font-size: 11.5px; color: #94a3b8; font-weight: 600;">WORKER ENGINE</span>
+                <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #10b981; box-shadow: 0 0 8px #10b981;"></span>
+              </div>
+              <div style="font-size: 18px; font-weight: 800; color: #c084fc; margin-top: 4px;">CRON READY</div>
+              <div style="font-size: 11px; color: #64748b; margin-top: 2px;">Auto-poll berkala</div>
+            </div>
+          </div>
+
+          <!-- INTERACTIVE MONTH CALENDAR WRAPPER -->
+          <div class="calendar-container">
+            
+            <!-- Controls Navigasi Bulan & Filter -->
+            <div class="calendar-header-nav">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <button type="button" class="calendar-nav-btn" onclick="changeCalendarMonth(-1)" title="Bulan Sebelumnya">◀</button>
+                <div class="calendar-month-title" id="calendarMonthTitleDisplay">Memuat...</div>
+                <button type="button" class="calendar-nav-btn" onclick="changeCalendarMonth(1)" title="Bulan Berikutnya">▶</button>
+                <button type="button" onclick="goToCalendarToday()" style="padding: 6px 12px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); color: #cbd5e1; border-radius: 8px; font-size: 11.5px; font-weight: 600; cursor: pointer; margin-left: 6px;">
+                  Hari Ini
+                </button>
+              </div>
+
+              <!-- Filter Platform & Status -->
+              <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                <select id="calendarFilterPlatform" onchange="renderContentCalendar()" style="background: #090d16; color: #fff; border: 1px solid rgba(255,255,255,0.12); border-radius: 8px; padding: 6px 10px; font-size: 12px;">
+                  <option value="">Semua Platform</option>
+                  <option value="tiktok">TikTok 🎵</option>
+                  <option value="facebook">Facebook 📘</option>
+                  <option value="instagram">Instagram 📸</option>
+                  <option value="youtube">YouTube ▶️</option>
+                  <option value="twitter">Twitter / X 🐦</option>
+                  <option value="linkedin">LinkedIn 💼</option>
+                  <option value="threads">Threads 🧵</option>
+                </select>
+
+                <select id="calendarFilterStatus" onchange="renderContentCalendar()" style="background: #090d16; color: #fff; border: 1px solid rgba(255,255,255,0.12); border-radius: 8px; padding: 6px 10px; font-size: 12px;">
+                  <option value="">Semua Status</option>
+                  <option value="PENDING">Menunggu (Pending)</option>
+                  <option value="PUBLISHED">Berhasil (Published)</option>
+                  <option value="FAILED">Gagal (Failed)</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Hari Dalam Seminggu Header -->
+            <div class="calendar-grid" style="margin-bottom: 8px;">
+              <div class="calendar-day-header">Senin</div>
+              <div class="calendar-day-header">Selasa</div>
+              <div class="calendar-day-header">Rabu</div>
+              <div class="calendar-day-header">Kamis</div>
+              <div class="calendar-day-header">Jumat</div>
+              <div class="calendar-day-header" style="color: #60a5fa;">Sabtu</div>
+              <div class="calendar-day-header" style="color: #f43f5e;">Minggu</div>
+            </div>
+
+            <!-- Grid Sel Kalender (Diisi secara dinamis oleh JS) -->
+            <div class="calendar-grid" id="calendarDayGrid">
+              <!-- Rendered by JS -->
+            </div>
+
+            <!-- Legenda Platform & Status -->
+            <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-top: 18px; padding-top: 14px; border-top: 1px solid rgba(255,255,255,0.06); font-size: 11px; color: #94a3b8;">
+              <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+                <span style="font-weight: 700; color: #cbd5e1;">Platform:</span>
+                <span style="display: inline-flex; align-items: center; gap: 4px;"><span style="width: 8px; height: 8px; border-radius: 2px; background: #00f2fe;"></span> TikTok</span>
+                <span style="display: inline-flex; align-items: center; gap: 4px;"><span style="width: 8px; height: 8px; border-radius: 2px; background: #1877f2;"></span> Facebook</span>
+                <span style="display: inline-flex; align-items: center; gap: 4px;"><span style="width: 8px; height: 8px; border-radius: 2px; background: #e1306c;"></span> Instagram</span>
+                <span style="display: inline-flex; align-items: center; gap: 4px;"><span style="width: 8px; height: 8px; border-radius: 2px; background: #ff0000;"></span> YouTube</span>
+              </div>
+              <div style="display: flex; align-items: center; gap: 12px;">
+                <span style="font-weight: 700; color: #cbd5e1;">Status:</span>
+                <span style="display: inline-flex; align-items: center; gap: 4px;"><span class="cal-status-dot cal-status-pending"></span> Pending (Menunggu)</span>
+                <span style="display: inline-flex; align-items: center; gap: 4px;"><span class="cal-status-dot cal-status-published"></span> Published (Sukses)</span>
+                <span style="display: inline-flex; align-items: center; gap: 4px;"><span class="cal-status-dot cal-status-failed"></span> Gagal</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- TABEL DAFTAR ANTREAN POSTINGAN TERJADWAL -->
+          <div style="background: rgba(15, 23, 42, 0.65); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 16px; padding: 22px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 16px;">
+              <div>
+                <h3 style="font-size: 16px; color: #fff; font-weight: 800; margin-bottom: 4px; display: flex; align-items: center; gap: 8px;">
+                  <span>📋 Antrean Publikasi Terjadwal</span>
+                </h3>
+                <p style="font-size: 12px; color: #94a3b8; margin: 0;">
+                  Daftar rinci seluruh konten yang telah dijadwalkan beserta status eksekusinya.
+                </p>
+              </div>
+              <div>
+                <input type="text" id="calendarQueueSearchInput" placeholder="Cari judul / akun..." oninput="renderCalendarQueueTable()" style="background: #090d16; color: #fff; border: 1px solid rgba(255,255,255,0.12); border-radius: 8px; padding: 6px 12px; font-size: 12px; width: 200px;" />
+              </div>
+            </div>
+
+            <div style="overflow-x: auto; background: rgba(0, 0, 0, 0.2); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 12px; padding: 4px; width: 100%;">
+              <table style="width: 100%; min-width: 750px; border-collapse: collapse; text-align: left;">
+                <thead>
+                  <tr style="border-bottom: 1px solid rgba(255,255,255,0.08); color: #94a3b8;">
+                    <th style="padding: 12px; font-size: 11.5px; font-weight: 600;">Jadwal Tayang (WIB)</th>
+                    <th style="padding: 12px; font-size: 11.5px; font-weight: 600;">Platform &amp; Akun</th>
+                    <th style="padding: 12px; font-size: 11.5px; font-weight: 600;">Konten &amp; Caption</th>
+                    <th style="padding: 12px; font-size: 11.5px; font-weight: 600;">Status</th>
+                    <th style="padding: 12px; font-size: 11.5px; font-weight: 600; text-align: right;">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody id="calendarQueueTableBody">
+                  <tr>
+                    <td colspan="5" style="padding: 28px; text-align: center; color: #6b7280; font-size: 12.5px;">
+                      ⏳ Memuat daftar postingan terjadwal...
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
       <section id="tab-tiktok-studio" class="dash-tab-section">
         <div class="dashboard-hero-card" style="display: block; margin-bottom: 30px;">
           
@@ -2366,6 +2771,44 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
                 </div>
               </div>
 
+              
+                <!-- 3. Scheduled Publishing Option -->
+                <div style="padding: 12px 14px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; margin-top: 12px;">
+                  <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                      <div style="font-size: 12.5px; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 6px;">
+                        <span>📅 Jadwalkan untuk Nanti (Auto-Publish)</span>
+                        <span style="font-size: 9px; background: #0284c7; color: #fff; padding: 1px 5px; border-radius: 4px;">KALENDER</span>
+                      </div>
+                      <div style="font-size: 11px; color: #94a3b8; margin-top: 2px;">
+                        Simpan ke antrean Kalender Konten dan posting otomatis di jam audiens paling aktif.
+                      </div>
+                    </div>
+                    <label class="tiktok-custom-switch">
+                      <input type="checkbox" id="studioScheduleToggle" onchange="handleStudioScheduleToggle(this.checked)">
+                      <span class="tiktok-slider"></span>
+                    </label>
+                  </div>
+                  <div id="studioSchedulePickerBox" style="display: none; margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.06);">
+                    <label style="display: block; font-size: 11.5px; color: #cbd5e1; font-weight: 600; margin-bottom: 6px;">
+                      Pilih Tanggal &amp; Waktu Tayang (WIB):
+                    </label>
+                    <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 8px;">
+                      <input type="datetime-local" id="studioScheduleDateTime" style="background: #090d16; color: #fff; border: 1px solid rgba(56,189,248,0.4); border-radius: 8px; padding: 8px 12px; font-size: 12.5px; flex: 1; min-width: 220px;" />
+                      <span style="font-size: 11px; color: #94a3b8;">Status: <strong style="color: #38bdf8;">Auto-Publish Queue</strong></span>
+                    </div>
+                    <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                      <span style="font-size: 10px; color: #94a3b8; align-self: center;">Rekomendasi Jam Ramai:</span>
+                      <button type="button" class="tiktok-hashtag-chip" style="font-size: 10px; padding: 2px 8px;" onclick="setStudioSchedulePreset(12, 0)">Siang 12:00</button>
+                      <button type="button" class="tiktok-hashtag-chip" style="font-size: 10px; padding: 2px 8px;" onclick="setStudioSchedulePreset(17, 30)">Sore 17:30</button>
+                      <button type="button" class="tiktok-hashtag-chip" style="font-size: 10px; padding: 2px 8px;" onclick="setStudioSchedulePreset(19, 30)">Malam 19:30</button>
+                      <button type="button" class="tiktok-hashtag-chip" style="font-size: 10px; padding: 2px 8px;" onclick="setStudioSchedulePreset(21, 0)">Malam 21:00</button>
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+
               <!-- TOMBOL UTAMA SUBMIT STUDIO PUBLISH (Dinamis Sesuai Platform) -->
               <div>
                 <div style="position: relative;" id="studioShareButtonContainer" onmouseenter="handleStudioShareHover(true)" onmouseleave="handleStudioShareHover(false)">
@@ -2480,6 +2923,151 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
         </div>
       </div>
 
+    
+  <!-- ============================================== -->
+  <!-- MODAL: DETAIL POSTINGAN KALENDER               -->
+  <!-- ============================================== -->
+  <div id="calendarPostDetailModal" style="display: none; position: fixed; inset: 0; z-index: 9999; background: rgba(9, 13, 22, 0.88); backdrop-filter: blur(8px); align-items: center; justify-content: center; padding: 20px;">
+    <div style="background: #0d1322; border: 1px solid rgba(56, 189, 248, 0.35); box-shadow: 0 0 50px rgba(56, 189, 248, 0.2); border-radius: 20px; max-width: 520px; width: 100%; padding: 28px; position: relative;">
+      
+      <button type="button" onclick="closeCalendarPostDetailModal()" style="position: absolute; top: 18px; right: 18px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); color: #cbd5e1; width: 32px; height: 32px; border-radius: 50%; font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center;">✕</button>
+
+      <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
+        <span id="calDetailPlatIcon" style="font-size: 28px;">📅</span>
+        <div>
+          <h3 id="calDetailTitle" style="font-size: 18px; color: #fff; font-weight: 800; margin: 0;">Detail Jadwal Konten</h3>
+          <span id="calDetailStatusBadge" style="display: inline-block; font-size: 10.5px; padding: 2px 8px; border-radius: 6px; font-weight: 700; margin-top: 4px;">PENDING</span>
+        </div>
+      </div>
+
+      <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 14px; margin-bottom: 16px; font-size: 12px; line-height: 1.8;">
+        <div style="display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 6px;">
+          <span style="color: #94a3b8;">Platform:</span>
+          <span id="calDetailPlatform" style="color: #fff; font-weight: 700;">TikTok</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.05); padding: 6px 0;">
+          <span style="color: #94a3b8;">Akun Tujuan:</span>
+          <span id="calDetailAccount" style="color: #38bdf8; font-weight: 600;">@username</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.05); padding: 6px 0;">
+          <span style="color: #94a3b8;">Jadwal Tayang:</span>
+          <span id="calDetailScheduledAt" style="color: #f59e0b; font-weight: 700;">-</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; padding-top: 6px;">
+          <span style="color: #94a3b8;">ID Jadwal:</span>
+          <span id="calDetailId" style="font-family: monospace; color: #94a3b8;">-</span>
+        </div>
+      </div>
+
+      <!-- Caption Box -->
+      <div style="margin-bottom: 16px;">
+        <label style="display: block; font-size: 11.5px; color: #94a3b8; font-weight: 600; margin-bottom: 6px;">Caption Konten:</label>
+        <div id="calDetailCaption" style="background: #090d16; border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; padding: 12px; font-size: 12px; color: #e2e8f0; max-height: 110px; overflow-y: auto; white-space: pre-wrap; line-height: 1.5;"></div>
+      </div>
+
+      <!-- Media Preview Link/Player -->
+      <div id="calDetailMediaWrap" style="margin-bottom: 20px;">
+        <label style="display: block; font-size: 11.5px; color: #94a3b8; font-weight: 600; margin-bottom: 6px;">Media Video:</label>
+        <div id="calDetailMediaContent" style="background: #090d16; border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; padding: 10px; font-size: 12px; color: #38bdf8;"></div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div style="display: flex; gap: 10px; justify-content: flex-end;">
+        <button type="button" id="calDetailBtnCancel" onclick="calDetailExecuteCancel()" style="padding: 10px 16px; background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.4); color: #f87171; border-radius: 10px; font-size: 12px; font-weight: 700; cursor: pointer;">
+          ❌ Batalkan Jadwal
+        </button>
+        <button type="button" onclick="closeCalendarPostDetailModal()" style="padding: 10px 20px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.15); color: #fff; border-radius: 10px; font-size: 12px; font-weight: 600; cursor: pointer;">
+          Tutup
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ============================================== -->
+  <!-- MODAL: BUAT JADWAL CEPAT (QUICK SCHEDULE)      -->
+  <!-- ============================================== -->
+  <div id="calendarQuickScheduleModal" style="display: none; position: fixed; inset: 0; z-index: 9999; background: rgba(9, 13, 22, 0.88); backdrop-filter: blur(8px); align-items: center; justify-content: center; padding: 20px;">
+    <div style="background: #0d1322; border: 1px solid rgba(16, 185, 129, 0.35); box-shadow: 0 0 50px rgba(16, 185, 129, 0.2); border-radius: 20px; max-width: 540px; width: 100%; padding: 28px; position: relative; max-height: 90vh; overflow-y: auto;">
+      
+      <button type="button" onclick="closeCalendarQuickScheduleModal()" style="position: absolute; top: 18px; right: 18px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); color: #cbd5e1; width: 32px; height: 32px; border-radius: 50%; font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center;">✕</button>
+
+      <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 18px;">
+        <span style="font-size: 26px;">🗓️</span>
+        <div>
+          <h3 style="font-size: 18px; color: #fff; font-weight: 800; margin: 0;">Jadwalkan Konten Baru</h3>
+          <p style="font-size: 12px; color: #94a3b8; margin: 2px 0 0 0;">Atur jadwal tayang otomatis ke akun sosial media Anda.</p>
+        </div>
+      </div>
+
+      <form id="formCalendarQuickSchedule" onsubmit="handleQuickScheduleSubmit(event)">
+        <!-- 1. Platform Selector -->
+        <div style="margin-bottom: 14px;">
+          <label style="display: block; font-size: 12px; color: #cbd5e1; font-weight: 700; margin-bottom: 6px;">Platform Tujuan:</label>
+          <select id="quickSchedulePlatform" onchange="handleQuickSchedulePlatformChange()" style="width: 100%; background: #090d16; color: #fff; border: 1px solid rgba(255,255,255,0.15); border-radius: 10px; padding: 10px 12px; font-size: 13px;">
+            <option value="tiktok">TikTok 🎵</option>
+            <option value="facebook">Facebook Reels &amp; Page 📘</option>
+            <option value="instagram">Instagram Reels 📸</option>
+            <option value="youtube">YouTube Shorts ▶️</option>
+            <option value="twitter">Twitter / X 🐦</option>
+            <option value="linkedin">LinkedIn 💼</option>
+            <option value="threads">Threads 🧵</option>
+          </select>
+        </div>
+
+        <!-- 2. Akun Selector -->
+        <div style="margin-bottom: 14px;">
+          <label style="display: block; font-size: 12px; color: #cbd5e1; font-weight: 700; margin-bottom: 6px;">Pilih Akun:</label>
+          <select id="quickScheduleAccount" style="width: 100%; background: #090d16; color: #fff; border: 1px solid rgba(255,255,255,0.15); border-radius: 10px; padding: 10px 12px; font-size: 13px;">
+            <option value="">-- Memuat akun... --</option>
+          </select>
+        </div>
+
+        <!-- 3. Berkas Video (Upload atau URL) -->
+        <div style="margin-bottom: 14px;">
+          <label style="display: block; font-size: 12px; color: #cbd5e1; font-weight: 700; margin-bottom: 6px;">Video (Unggah File atau Masukkan URL):</label>
+          <input type="file" id="quickScheduleVideoFile" accept="video/mp4,video/quicktime" style="width: 100%; background: #090d16; color: #fff; border: 1px solid rgba(255,255,255,0.15); border-radius: 10px; padding: 8px 10px; font-size: 12px; margin-bottom: 6px;" />
+          <input type="url" id="quickScheduleVideoUrl" placeholder="Atau paste URL video publik (https://...)" style="width: 100%; background: #090d16; color: #fff; border: 1px solid rgba(255,255,255,0.15); border-radius: 10px; padding: 8px 12px; font-size: 12px;" />
+        </div>
+
+        <!-- 4. Judul & Caption -->
+        <div id="quickScheduleTitleWrap" style="display: none; margin-bottom: 14px;">
+          <label style="display: block; font-size: 12px; color: #cbd5e1; font-weight: 700; margin-bottom: 6px;">Judul Video (YouTube):</label>
+          <input type="text" id="quickScheduleTitle" placeholder="Judul video YouTube Shorts..." style="width: 100%; background: #090d16; color: #fff; border: 1px solid rgba(255,255,255,0.15); border-radius: 10px; padding: 8px 12px; font-size: 12px;" />
+        </div>
+
+        <div style="margin-bottom: 14px;">
+          <label style="display: block; font-size: 12px; color: #cbd5e1; font-weight: 700; margin-bottom: 6px;">Deskripsi / Caption &amp; Hashtag:</label>
+          <textarea id="quickScheduleCaption" rows="3" placeholder="Tuliskan caption postingan..." style="width: 100%; background: #090d16; color: #fff; border: 1px solid rgba(255,255,255,0.15); border-radius: 10px; padding: 10px 12px; font-size: 12px; resize: vertical;"></textarea>
+        </div>
+
+        <!-- 5. Waktu Jadwal Tayang -->
+        <div style="margin-bottom: 18px;">
+          <label style="display: block; font-size: 12px; color: #cbd5e1; font-weight: 700; margin-bottom: 6px;">Tanggal &amp; Waktu Tayang (WIB):</label>
+          <input type="datetime-local" id="quickScheduleDateTime" required style="width: 100%; background: #090d16; color: #fff; border: 1px solid rgba(16,185,129,0.5); border-radius: 10px; padding: 10px 12px; font-size: 13px;" />
+        </div>
+
+        <!-- Auto-Video Spinner Checkbox -->
+        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 20px; background: rgba(255,255,255,0.02); padding: 8px 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.06);">
+          <input type="checkbox" id="quickScheduleEnableSpinner" checked style="accent-color: #10b981;" />
+          <label for="quickScheduleEnableSpinner" style="font-size: 11.5px; color: #cbd5e1; cursor: pointer;">
+            ⚡ Aktifkan Auto-Video Spinner (Unique File Hash anti-duplicate)
+          </label>
+        </div>
+
+        <div style="display: flex; gap: 10px; justify-content: flex-end;">
+          <button type="button" onclick="closeCalendarQuickScheduleModal()" style="padding: 10px 16px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); color: #cbd5e1; border-radius: 10px; font-size: 12.5px; font-weight: 600; cursor: pointer;">
+            Batal
+          </button>
+          <button type="submit" id="btnSubmitQuickSchedule" style="padding: 10px 22px; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: #fff; border: none; border-radius: 10px; font-size: 12.5px; font-weight: 700; cursor: pointer; box-shadow: 0 4px 15px rgba(16,185,129,0.3);">
+            💾 Simpan ke Kalender
+          </button>
+        </div>
+      </form>
+
+    </div>
+  </div>
+
     </main>
   </div>
 
@@ -2521,7 +3109,8 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
       }
       if (tabKey === 'studio') tabKey = 'tiktok-studio';
 
-      const allowedTabs = ['overview', 'integration', 'social', 'omnichannel', 'meta-suite', 'tiktok-studio', 'logs'];
+      if (tabKey === 'calendar') tabKey = 'content-calendar';
+      const allowedTabs = ['overview', 'integration', 'social', 'omnichannel', 'content-calendar', 'meta-suite', 'tiktok-studio', 'logs'];
       if (!allowedTabs.includes(tabKey)) tabKey = 'overview';
 
       document.querySelectorAll('.dash-tab-section').forEach(sec => {
@@ -2543,6 +3132,9 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
 
       if (tabKey === 'logs') {
         fetchAndRenderDashboardLogs(false);
+      }
+      if (tabKey === 'content-calendar') {
+        loadCalendarPosts();
       }
       if (tabKey === 'tiktok-studio') {
         const wrap = document.getElementById('sidebarStudioMenuWrap');
@@ -4348,6 +4940,27 @@ ${data.hashtags}`;
 
       const platform = window.currentStudioPlatform || 'facebook';
 
+      const isScheduled = document.getElementById('studioScheduleToggle') && document.getElementById('studioScheduleToggle').checked;
+      const scheduledDateTimeInput = document.getElementById('studioScheduleDateTime');
+      const scheduledAtVal = scheduledDateTimeInput ? scheduledDateTimeInput.value : '';
+
+      if (isScheduled) {
+        if (!scheduledAtVal) {
+          alert('Silakan tentukan tanggal dan jam publikasi terlebih dahulu.');
+          if (scheduledDateTimeInput) scheduledDateTimeInput.focus();
+          return;
+        }
+        const schedDate = new Date(scheduledAtVal);
+        if (isNaN(schedDate.getTime())) {
+          alert('Format tanggal atau jam jadwal tidak valid.');
+          return;
+        }
+        if (schedDate.getTime() < Date.now() - 60000) {
+          alert('Waktu jadwal publikasi harus di masa depan (tidak boleh di masa lalu).');
+          return;
+        }
+      }
+
       // Validasi khusus TikTok
       if (platform === 'tiktok') {
         const privacy = document.getElementById('tiktokPrivacySelect').value;
@@ -4411,6 +5024,97 @@ ${data.hashtags}`;
           }
         }
       }, 400);
+
+      if (isScheduled) {
+        try {
+          let finalVideoUrl = window.selectedTiktokVideoUrl || '';
+          if (window.selectedTiktokVideoFile) {
+            statusText.innerText = 'Tahap 1/2: Menyimpan video ke media storage...';
+            barFill.style.width = '30%';
+            pctText.innerText = '30%';
+
+            const upForm = new FormData();
+            upForm.append('file', window.selectedTiktokVideoFile);
+            upForm.append('email', email);
+            const upRes = await fetch(getApiUrl('/api/studio/upload-media'), {
+              method: 'POST',
+              headers: {
+                'X-User-Email': email,
+                'X-API-Key': apiKey
+              },
+              body: upForm
+            });
+            const upData = await upRes.json().catch(() => ({}));
+            if (!upRes.ok || !upData.success) {
+              throw new Error(upData.message || 'Gagal mengunggah berkas video ke server media.');
+            }
+            finalVideoUrl = upData.url;
+          }
+
+          statusText.innerText = 'Tahap 2/2: Mendaftarkan jadwal ke Kalender Konten...';
+          barFill.style.width = '75%';
+          pctText.innerText = '75%';
+
+          const selectMapSched = {
+            facebook: 'studioFbPageSelect',
+            instagram: 'studioIgAccountSelect',
+            youtube: 'studioYtAccountSelect',
+            tiktok: 'studioTiktokAccountSelect',
+            twitter: 'studioTwitterAccountSelect',
+            linkedin: 'studioLinkedinAccountSelect',
+            threads: 'studioThreadsAccountSelect'
+          };
+          const activeSelSched = selectMapSched[platform] ? document.getElementById(selectMapSched[platform]) : null;
+          const activeOptText = (activeSelSched && activeSelSched.selectedIndex >= 0 && activeSelSched.options[activeSelSched.selectedIndex]) ? activeSelSched.options[activeSelSched.selectedIndex].text : '';
+
+          const schedPayload = {
+            email: email,
+            api_key: apiKey,
+            platform: platform,
+            account_id: activeSelSched ? activeSelSched.value : '',
+            account_name: activeOptText,
+            video_url: finalVideoUrl,
+            title: title,
+            caption: caption,
+            scheduled_at: scheduledAtVal,
+            extra_params: {
+              enable_video_spinner: document.getElementById('studioEnableSpinner') ? document.getElementById('studioEnableSpinner').checked : true
+            }
+          };
+
+          const sRes = await fetch(getApiUrl('/api/studio/schedule'), {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-User-Email': email,
+              'X-API-Key': apiKey
+            },
+            body: JSON.stringify(schedPayload)
+          });
+
+          clearInterval(progressInterval);
+          barFill.style.width = '100%';
+          pctText.innerText = '100%';
+          statusText.innerText = 'Selesai! Jadwal berhasil didaftarkan.';
+
+          const sData = await sRes.json().catch(() => ({}));
+          setTimeout(() => {
+            progressModal.style.display = 'none';
+            if (sRes.ok && sData.success) {
+              alert(`🎉 Konten Berhasil Dijadwalkan!\n\nPlatform: ${platform.toUpperCase()}\nWaktu Tayang: ${scheduledAtVal}\n\nJadwal telah tercatat di Kalender Konten dan akan otomatis dipublikasikan.`);
+              switchDashboardTab('content-calendar');
+            } else {
+              alert(`Gagal menjadwalkan: ${sData.message || 'Terjadi kesalahan sistem'}`);
+            }
+          }, 350);
+          return;
+        } catch (schedErr) {
+          clearInterval(progressInterval);
+          progressModal.style.display = 'none';
+          alert(`Gagal memproses jadwal: ${schedErr.message || schedErr}`);
+          return;
+        }
+      }
 
       // Siapkan FormData
       const formData = new FormData();
@@ -5036,9 +5740,634 @@ ${err.message}`);
     }
 
     
+
+    /* ============================================================ */
+    /* INTERACTIVE CONTENT CALENDAR & AUTO-PUBLISHER JAVASCRIPT    */
+    /* ============================================================ */
+    window.calendarCurrentDate = new Date();
+    window.calendarPosts = [];
+    window.currentSelectedPostDetail = null;
+
+    const CALENDAR_MONTH_NAMES = [
+      'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+      'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+    ];
+
+    function handleStudioScheduleToggle(isChecked) {
+      const box = document.getElementById('studioSchedulePickerBox');
+      const btnText = document.getElementById('studioSubmitBtnText');
+      const btn = document.getElementById('btnShareToTiktok');
+      const dtInput = document.getElementById('studioScheduleDateTime');
+
+      if (box) box.style.display = isChecked ? 'block' : 'none';
+
+      if (isChecked) {
+        if (btnText) btnText.innerText = '📅 Jadwalkan Publikasi ke Kalender Konten';
+        if (btn) btn.style.background = 'linear-gradient(135deg, #10b981 0%, #059669 100%)';
+        if (dtInput && !dtInput.value) {
+          const d = new Date();
+          d.setHours(d.getHours() + 2);
+          d.setMinutes(0);
+          dtInput.value = formatDateTimeLocal(d);
+        }
+      } else {
+        if (btn) btn.style.background = '';
+        if (typeof updateStudioSubmitBtnText === 'function') {
+          updateStudioSubmitBtnText();
+        } else if (btnText) {
+          btnText.innerText = '🚀 Publikasikan Sekarang';
+        }
+      }
+    }
+
+    function setStudioSchedulePreset(hour, min) {
+      const dtInput = document.getElementById('studioScheduleDateTime');
+      if (!dtInput) return;
+      const d = new Date();
+      if (d.getHours() > hour || (d.getHours() === hour && d.getMinutes() >= min)) {
+        d.setDate(d.getDate() + 1);
+      }
+      d.setHours(hour, min, 0, 0);
+      dtInput.value = formatDateTimeLocal(d);
+    }
+
+    function formatDateTimeLocal(d) {
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const date = String(d.getDate()).padStart(2, '0');
+      const hours = String(d.getHours()).padStart(2, '0');
+      const minutes = String(d.getMinutes()).padStart(2, '0');
+      return `${year}-${month}-${date}T${hours}:${minutes}`;
+    }
+
+    async function loadCalendarPosts() {
+      try {
+        const { email } = getValidUserCredentials();
+        const res = await fetch(getApiUrl(`/api/studio/scheduled-posts?email=${encodeURIComponent(email)}`));
+        if (res.ok) {
+          const data = await res.json();
+          if (data.success && Array.isArray(data.posts)) {
+            window.calendarPosts = data.posts;
+          } else {
+            window.calendarPosts = [];
+          }
+        } else {
+          window.calendarPosts = [];
+        }
+      } catch (err) {
+        console.error('Error loading calendar posts:', err);
+        window.calendarPosts = [];
+      }
+
+      let pendingCount = 0;
+      let pubCount = 0;
+      window.calendarPosts.forEach(p => {
+        const st = (p.status || '').toUpperCase();
+        if (st === 'PENDING') pendingCount++;
+        else if (st === 'PUBLISHED') pubCount++;
+      });
+
+      const pElem = document.getElementById('calendarStatPending');
+      const pubElem = document.getElementById('calendarStatPublished');
+      const tElem = document.getElementById('calendarStatTotal');
+      if (pElem) pElem.innerText = pendingCount;
+      if (pubElem) pubElem.innerText = pubCount;
+      if (tElem) tElem.innerText = window.calendarPosts.length;
+
+      renderContentCalendar();
+      renderCalendarQueueTable();
+    }
+
+    function changeCalendarMonth(delta) {
+      window.calendarCurrentDate.setMonth(window.calendarCurrentDate.getMonth() + delta);
+      renderContentCalendar();
+    }
+
+    function goToCalendarToday() {
+      window.calendarCurrentDate = new Date();
+      renderContentCalendar();
+    }
+
+    function renderContentCalendar() {
+      const grid = document.getElementById('calendarDayGrid');
+      const titleDisplay = document.getElementById('calendarMonthTitleDisplay');
+      if (!grid) return;
+
+      const year = window.calendarCurrentDate.getFullYear();
+      const month = window.calendarCurrentDate.getMonth();
+
+      if (titleDisplay) {
+        titleDisplay.innerHTML = `<span>${CALENDAR_MONTH_NAMES[month]} ${year}</span>`;
+      }
+
+      const filterPlat = (document.getElementById('calendarFilterPlatform') ? document.getElementById('calendarFilterPlatform').value : '').toLowerCase();
+      const filterStat = (document.getElementById('calendarFilterStatus') ? document.getElementById('calendarFilterStatus').value : '').toUpperCase();
+
+      const now = new Date();
+      const todayYear = now.getFullYear();
+      const todayMonth = now.getMonth();
+      const todayDate = now.getDate();
+
+      let firstDayIndex = new Date(year, month, 1).getDay();
+      firstDayIndex = (firstDayIndex + 6) % 7;
+
+      const daysInMonth = new Date(year, month + 1, 0).getDate();
+      const daysInPrevMonth = new Date(year, month, 0).getDate();
+
+      let html = '';
+
+      // Trailing previous month days
+      for (let i = firstDayIndex - 1; i >= 0; i--) {
+        const prevDate = daysInPrevMonth - i;
+        html += `
+          <div class="calendar-day-cell other-month">
+            <div class="calendar-cell-top">
+              <span class="calendar-day-num">${prevDate}</span>
+            </div>
+          </div>
+        `;
+      }
+
+      // Current month days
+      for (let day = 1; day <= daysInMonth; day++) {
+        const isToday = (year === todayYear && month === todayMonth && day === todayDate);
+        const yyyy = year;
+        const mm = String(month + 1).padStart(2, '0');
+        const dd = String(day).padStart(2, '0');
+        const dateStr = `${yyyy}-${mm}-${dd}`;
+
+        const dayPosts = window.calendarPosts.filter(p => {
+          if (!p.scheduled_at) return false;
+          const pDate = p.scheduled_at.substring(0, 10);
+          if (pDate !== dateStr) return false;
+          if (filterPlat && (p.platform || '').toLowerCase() !== filterPlat) return false;
+          if (filterStat && (p.status || '').toUpperCase() !== filterStat) return false;
+          return true;
+        });
+
+        let badgesHtml = '';
+        const maxBadges = 3;
+        const visibleBadges = dayPosts.slice(0, maxBadges);
+
+        visibleBadges.forEach(post => {
+          const plat = (post.platform || 'tiktok').toLowerCase();
+          const platBadgeClass = `cal-badge-${plat}` || 'cal-badge-tiktok';
+          const platIcon = plat === 'tiktok' ? '🎵' : (plat === 'facebook' ? '📘' : (plat === 'instagram' ? '📸' : (plat === 'youtube' ? '▶️' : (plat === 'twitter' ? '🐦' : (plat === 'linkedin' ? '💼' : '🧵')))));
+          
+          let timeStr = '';
+          if (post.scheduled_at && post.scheduled_at.length >= 16) {
+            timeStr = post.scheduled_at.substring(11, 16);
+          }
+
+          const postStatus = (post.status || 'PENDING').toLowerCase();
+          const dotClass = `cal-status-${postStatus}` || 'cal-status-pending';
+
+          const label = post.title || post.caption || post.account_name || 'Konten Video';
+          const truncatedLabel = label.length > 14 ? label.substring(0, 14) + '...' : label;
+
+          badgesHtml += `
+            <div class="calendar-event-badge ${platBadgeClass}" onclick="openCalendarPostDetailModal('${encodeURIComponent(post.id)}')" title="${post.title || post.caption || ''} (${post.status})">
+              <span class="cal-status-dot ${dotClass}"></span>
+              <span>${platIcon}</span>
+              <span style="font-weight: 700;">${timeStr}</span>
+              <span style="overflow: hidden; text-overflow: ellipsis;">${truncatedLabel}</span>
+            </div>
+          `;
+        });
+
+        if (dayPosts.length > maxBadges) {
+          const extra = dayPosts.length - maxBadges;
+          badgesHtml += `
+            <div style="font-size: 10px; color: #38bdf8; text-align: center; cursor: pointer; padding: 2px;" onclick="filterCalendarQueueByDate('${dateStr}')">
+              +${extra} lainnya...
+            </div>
+          `;
+        }
+
+        html += `
+          <div class="calendar-day-cell ${isToday ? 'today' : ''}" id="calCell-${dateStr}">
+            <div class="calendar-cell-top">
+              <span class="calendar-day-num">${day}</span>
+              <button type="button" class="calendar-add-btn" onclick="openCalendarQuickScheduleModal('${dateStr}')" title="Tambah Jadwal di tanggal ${day}">+</button>
+            </div>
+            <div class="calendar-badges-list">
+              ${badgesHtml}
+            </div>
+          </div>
+        `;
+      }
+
+      const totalCells = firstDayIndex + daysInMonth;
+      const remainingCells = (totalCells <= 35) ? (35 - totalCells) : (42 - totalCells);
+
+      for (let nextDay = 1; nextDay <= remainingCells; nextDay++) {
+        html += `
+          <div class="calendar-day-cell other-month">
+            <div class="calendar-cell-top">
+              <span class="calendar-day-num">${nextDay}</span>
+            </div>
+          </div>
+        `;
+      }
+
+      grid.innerHTML = html;
+    }
+
+    function renderCalendarQueueTable() {
+      const tbody = document.getElementById('calendarQueueTableBody');
+      const search = (document.getElementById('calendarQueueSearchInput') ? document.getElementById('calendarQueueSearchInput').value : '').toLowerCase().trim();
+      const filterPlat = (document.getElementById('calendarFilterPlatform') ? document.getElementById('calendarFilterPlatform').value : '').toLowerCase();
+      const filterStat = (document.getElementById('calendarFilterStatus') ? document.getElementById('calendarFilterStatus').value : '').toUpperCase();
+
+      if (!tbody) return;
+
+      let list = window.calendarPosts || [];
+
+      list = [...list].sort((a, b) => {
+        const da = new Date(a.scheduled_at || 0).getTime();
+        const db = new Date(b.scheduled_at || 0).getTime();
+        return da - db;
+      });
+
+      if (search) {
+        list = list.filter(p => {
+          return (p.title || '').toLowerCase().includes(search) ||
+                 (p.caption || '').toLowerCase().includes(search) ||
+                 (p.account_name || '').toLowerCase().includes(search) ||
+                 (p.platform || '').toLowerCase().includes(search);
+        });
+      }
+
+      if (filterPlat) {
+        list = list.filter(p => (p.platform || '').toLowerCase() === filterPlat);
+      }
+
+      if (filterStat) {
+        list = list.filter(p => (p.status || '').toUpperCase() === filterStat);
+      }
+
+      if (list.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="5" style="padding: 32px; text-align: center; color: #6b7280; font-size: 13px;">
+              📭 Belum ada jadwal postingan yang cocok. Klik tombol <strong>+ Buat Jadwal Baru</strong> untuk menambahkan!
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      tbody.innerHTML = list.map(item => {
+        const plat = (item.platform || 'tiktok').toLowerCase();
+        const platIcon = plat === 'tiktok' ? '🎵' : (plat === 'facebook' ? '📘' : (plat === 'instagram' ? '📸' : (plat === 'youtube' ? '▶️' : (plat === 'twitter' ? '🐦' : (plat === 'linkedin' ? '💼' : '🧵')))));
+        const st = (item.status || 'PENDING').toUpperCase();
+
+        let badgeStyle = 'background: rgba(245,158,11,0.15); color: #f59e0b; border: 1px solid rgba(245,158,11,0.3);';
+        let statusText = '⏳ MENUNGGU (PENDING)';
+        if (st === 'PUBLISHED') {
+          badgeStyle = 'background: rgba(16,185,129,0.15); color: #10b981; border: 1px solid rgba(16,185,129,0.3);';
+          statusText = '✅ SUKSES (PUBLISHED)';
+        } else if (st === 'FAILED') {
+          badgeStyle = 'background: rgba(239,68,68,0.15); color: #ef4444; border: 1px solid rgba(239,68,68,0.3);';
+          statusText = '❌ GAGAL';
+        } else if (st === 'CANCELLED') {
+          badgeStyle = 'background: rgba(100,116,139,0.15); color: #94a3b8; border: 1px solid rgba(100,116,139,0.3);';
+          statusText = 'DIBATALKAN';
+        }
+
+        const dateStr = item.scheduled_at || '-';
+        const titleStr = item.title ? `<strong>${item.title}</strong><br>` : '';
+        const captionPreview = item.caption ? (item.caption.length > 55 ? item.caption.substring(0, 55) + '...' : item.caption) : '<span style="color: #64748b;">(Tanpa caption)</span>';
+        const canCancel = (st === 'PENDING');
+
+        return `
+          <tr style="border-bottom: 1px solid rgba(255,255,255,0.04); font-size: 12px; transition: background 0.15s;" onmouseenter="this.style.background='rgba(255,255,255,0.02)'" onmouseleave="this.style.background='transparent'">
+            <td style="padding: 12px; color: #f59e0b; font-weight: 600; white-space: nowrap;">
+              📅 ${dateStr}
+            </td>
+            <td style="padding: 12px; white-space: nowrap;">
+              <span style="font-size: 14px; margin-right: 4px;">${platIcon}</span>
+              <strong style="color: #fff; text-transform: capitalize;">${plat}</strong>
+              <div style="font-size: 11px; color: #38bdf8;">${item.account_name || '@akun'}</div>
+            </td>
+            <td style="padding: 12px; max-width: 280px; color: #cbd5e1; line-height: 1.4;">
+              ${titleStr}${captionPreview}
+            </td>
+            <td style="padding: 12px; white-space: nowrap;">
+              <span style="padding: 3px 8px; border-radius: 6px; font-size: 10px; font-weight: 700; ${badgeStyle}">
+                ${statusText}
+              </span>
+            </td>
+            <td style="padding: 12px; text-align: right; white-space: nowrap;">
+              <button type="button" onclick="openCalendarPostDetailModal('${encodeURIComponent(item.id)}')" style="padding: 5px 10px; background: rgba(56,189,248,0.1); border: 1px solid rgba(56,189,248,0.3); color: #38bdf8; border-radius: 6px; font-size: 11px; cursor: pointer; margin-right: 4px;">
+                👁️ Detail
+              </button>
+              ${canCancel ? `
+                <button type="button" onclick="calDetailExecuteCancel('${encodeURIComponent(item.id)}')" style="padding: 5px 10px; background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.3); color: #f87171; border-radius: 6px; font-size: 11px; cursor: pointer;">
+                  ❌ Batalkan
+                </button>
+              ` : ''}
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function openCalendarPostDetailModal(postId) {
+      const decodedId = decodeURIComponent(postId);
+      const post = (window.calendarPosts || []).find(p => p.id === decodedId);
+      if (!post) return;
+
+      window.currentSelectedPostDetail = post;
+
+      const plat = (post.platform || 'tiktok').toLowerCase();
+      const platIcons = { tiktok: '🎵', facebook: '📘', instagram: '📸', youtube: '▶️', twitter: '🐦', linkedin: '💼', threads: '🧵' };
+
+      const iconElem = document.getElementById('calDetailPlatIcon');
+      const titleElem = document.getElementById('calDetailTitle');
+      const badgeElem = document.getElementById('calDetailStatusBadge');
+      const platElem = document.getElementById('calDetailPlatform');
+      const accElem = document.getElementById('calDetailAccount');
+      const schedElem = document.getElementById('calDetailScheduledAt');
+      const idElem = document.getElementById('calDetailId');
+      const capElem = document.getElementById('calDetailCaption');
+      const mediaElem = document.getElementById('calDetailMediaContent');
+      const cancelBtn = document.getElementById('calDetailBtnCancel');
+
+      if (iconElem) iconElem.innerText = platIcons[plat] || '📅';
+      if (titleElem) titleElem.innerText = post.title || `Postingan ${plat.toUpperCase()}`;
+      if (platElem) platElem.innerText = plat.toUpperCase();
+      if (accElem) accElem.innerText = post.account_name || post.account_id || '(Akun Utama)';
+      if (schedElem) schedElem.innerText = post.scheduled_at || '-';
+      if (idElem) idElem.innerText = post.id || '-';
+      if (capElem) capElem.innerText = post.caption || '(Tidak ada caption)';
+
+      const st = (post.status || 'PENDING').toUpperCase();
+      if (badgeElem) {
+        badgeElem.innerText = st;
+        badgeElem.style.background = st === 'PUBLISHED' ? '#059669' : (st === 'FAILED' ? '#dc2626' : '#d97706');
+        badgeElem.style.color = '#fff';
+      }
+
+      if (cancelBtn) {
+        cancelBtn.style.display = (st === 'PENDING') ? 'inline-block' : 'none';
+      }
+
+      if (mediaElem) {
+        if (post.video_url) {
+          mediaElem.innerHTML = `
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px;">
+              <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 320px; font-family: monospace; font-size: 11px;">${post.video_url}</span>
+              <a href="${post.video_url}" target="_blank" style="padding: 4px 10px; background: rgba(56,189,248,0.2); border: 1px solid rgba(56,189,248,0.4); color: #38bdf8; border-radius: 6px; text-decoration: none; font-size: 11px; font-weight: 700; flex-shrink: 0;">
+                ▶ Putar Video
+              </a>
+            </div>
+          `;
+        } else {
+          mediaElem.innerHTML = `<span style="color: #64748b;">(Tidak ada video url tersimpan)</span>`;
+        }
+      }
+
+      const modal = document.getElementById('calendarPostDetailModal');
+      if (modal) modal.style.display = 'flex';
+    }
+
+    function closeCalendarPostDetailModal() {
+      const modal = document.getElementById('calendarPostDetailModal');
+      if (modal) modal.style.display = 'none';
+      window.currentSelectedPostDetail = null;
+    }
+
+    async function calDetailExecuteCancel(optionalId) {
+      const targetId = optionalId ? decodeURIComponent(optionalId) : (window.currentSelectedPostDetail ? window.currentSelectedPostDetail.id : null);
+      if (!targetId) return;
+
+      if (!confirm('Yakin ingin membatalkan jadwal postingan ini?')) return;
+
+      try {
+        const { email, apiKey } = getValidUserCredentials();
+        const res = await fetch(getApiUrl('/api/studio/cancel-scheduled'), {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-User-Email': email,
+            'X-API-Key': apiKey
+          },
+          body: JSON.stringify({ id: targetId, email: email })
+        });
+        const data = await res.json().catch(() => ({}));
+        if (res.ok && data.success) {
+          alert('✅ Jadwal postingan berhasil dibatalkan.');
+          closeCalendarPostDetailModal();
+          loadCalendarPosts();
+        } else {
+          alert(`Gagal membatalkan jadwal: ${data.message || 'Terjadi kesalahan sistem'}`);
+        }
+      } catch (err) {
+        alert('Terjadi kesalahan jaringan saat membatalkan jadwal.');
+      }
+    }
+
+    function filterCalendarQueueByDate(dateStr) {
+      const searchInput = document.getElementById('calendarQueueSearchInput');
+      if (searchInput) {
+        searchInput.value = dateStr;
+        renderCalendarQueueTable();
+        searchInput.scrollIntoView({ behavior: 'smooth' });
+      }
+    }
+
+    async function triggerCronProcessNow() {
+      const btn = document.getElementById('btnManualTriggerCron');
+      const icon = document.getElementById('cronTriggerIcon');
+      const text = document.getElementById('cronTriggerText');
+      if (btn) btn.disabled = true;
+      if (icon) icon.innerText = '⏳';
+      if (text) text.innerText = 'Memeriksa antrean...';
+
+      try {
+        const { email, apiKey } = getValidUserCredentials();
+        const res = await fetch(getApiUrl('/api/cron/process-scheduled'), {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-User-Email': email,
+            'X-API-Key': apiKey
+          }
+        });
+        const data = await res.json().catch(() => ({}));
+        if (res.ok && data.success) {
+          alert(`⚡ Sinkronisasi Auto-Publish Selesai!\n\nJumlah postingan diproses: ${data.processed || 0}`);
+          loadCalendarPosts();
+        } else {
+          alert(`Worker selesai dengan pesan: ${data.message || 'Tidak ada postingan yang jatuh tempo.'}`);
+        }
+      } catch (e) {
+        alert('Gagal menghubungi worker cron auto-publish.');
+      } finally {
+        if (btn) btn.disabled = false;
+        if (icon) icon.innerText = '⚡';
+        if (text) text.innerText = 'Cek & Publish Sekarang';
+      }
+    }
+
+    function openCalendarQuickScheduleModal(prefillDateStr) {
+      const modal = document.getElementById('calendarQuickScheduleModal');
+      const dtInput = document.getElementById('quickScheduleDateTime');
+      
+      if (dtInput) {
+        if (prefillDateStr) {
+          dtInput.value = `${prefillDateStr}T12:00`;
+        } else {
+          const d = new Date();
+          d.setHours(d.getHours() + 2);
+          d.setMinutes(0);
+          dtInput.value = formatDateTimeLocal(d);
+        }
+      }
+
+      handleQuickSchedulePlatformChange();
+      if (modal) modal.style.display = 'flex';
+    }
+
+    function closeCalendarQuickScheduleModal() {
+      const modal = document.getElementById('calendarQuickScheduleModal');
+      if (modal) modal.style.display = 'none';
+      const form = document.getElementById('formCalendarQuickSchedule');
+      if (form) form.reset();
+    }
+
+    function handleQuickSchedulePlatformChange() {
+      const platSelect = document.getElementById('quickSchedulePlatform');
+      const accSelect = document.getElementById('quickScheduleAccount');
+      const titleWrap = document.getElementById('quickScheduleTitleWrap');
+
+      if (!platSelect || !accSelect) return;
+      const plat = platSelect.value;
+
+      if (titleWrap) {
+        titleWrap.style.display = (plat === 'youtube') ? 'block' : 'none';
+      }
+
+      const byPlat = {};
+      if (window.cachedSocialAccounts && Array.isArray(window.cachedSocialAccounts)) {
+        window.cachedSocialAccounts.forEach(acc => {
+          const p = (acc.platform || '').toLowerCase();
+          if (!byPlat[p]) byPlat[p] = [];
+          byPlat[p].push(acc);
+        });
+      }
+
+      const list = byPlat[plat] || [];
+      if (list.length > 0) {
+        accSelect.innerHTML = list.map(acc => `
+          <option value="${acc.id}">
+            ${acc.name} (${acc.username || plat})
+          </option>
+        `).join('');
+      } else {
+        accSelect.innerHTML = `<option value="">-- Belum ada akun ${plat.toUpperCase()} terhubung --</option>`;
+      }
+    }
+
+    async function handleQuickScheduleSubmit(e) {
+      e.preventDefault();
+      const plat = document.getElementById('quickSchedulePlatform').value;
+      const accSel = document.getElementById('quickScheduleAccount');
+      const fileInput = document.getElementById('quickScheduleVideoFile');
+      const urlInput = document.getElementById('quickScheduleVideoUrl');
+      const titleInput = document.getElementById('quickScheduleTitle');
+      const capInput = document.getElementById('quickScheduleCaption');
+      const dtInput = document.getElementById('quickScheduleDateTime');
+      const spinnerElem = document.getElementById('quickScheduleEnableSpinner');
+      const btn = document.getElementById('btnSubmitQuickSchedule');
+
+      const file = fileInput && fileInput.files ? fileInput.files[0] : null;
+      const videoUrl = urlInput ? urlInput.value.trim() : '';
+
+      if (!file && !videoUrl) {
+        alert('Harap pilih berkas video atau masukkan URL video publik.');
+        return;
+      }
+
+      if (!dtInput || !dtInput.value) {
+        alert('Silakan tentukan tanggal dan jam publikasi.');
+        return;
+      }
+
+      const { email, apiKey } = getValidUserCredentials();
+      const originalBtnText = btn ? btn.innerHTML : '';
+      if (btn) {
+        btn.disabled = true;
+        btn.innerText = '⏳ Mengunggah & Menjadwalkan...';
+      }
+
+      try {
+        let finalUrl = videoUrl;
+        if (file) {
+          const upForm = new FormData();
+          upForm.append('file', file);
+          upForm.append('email', email);
+          const upRes = await fetch(getApiUrl('/api/studio/upload-media'), {
+            method: 'POST',
+            headers: { 'X-User-Email': email, 'X-API-Key': apiKey },
+            body: upForm
+          });
+          const upData = await upRes.json().catch(() => ({}));
+          if (!upRes.ok || !upData.success) {
+            throw new Error(upData.message || 'Gagal mengunggah video ke server media.');
+          }
+          finalUrl = upData.url;
+        }
+
+        const activeOptText = (accSel && accSel.selectedIndex >= 0 && accSel.options[accSel.selectedIndex]) ? accSel.options[accSel.selectedIndex].text : '';
+
+        const payload = {
+          email: email,
+          api_key: apiKey,
+          platform: plat,
+          account_id: accSel ? accSel.value : '',
+          account_name: activeOptText,
+          video_url: finalUrl,
+          title: titleInput ? titleInput.value.trim() : '',
+          caption: capInput ? capInput.value.trim() : '',
+          scheduled_at: dtInput.value,
+          extra_params: {
+            enable_video_spinner: spinnerElem && spinnerElem.checked ? true : false
+          }
+        };
+
+        const res = await fetch(getApiUrl('/api/studio/schedule'), {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-User-Email': email,
+            'X-API-Key': apiKey
+          },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json().catch(() => ({}));
+
+        if (res.ok && data.success) {
+          alert('🎉 Jadwal Konten Berhasil Disimpan ke Kalender!');
+          closeCalendarQuickScheduleModal();
+          loadCalendarPosts();
+        } else {
+          alert(`Gagal menyimpan jadwal: ${data.message || 'Terjadi kesalahan sistem'}`);
+        }
+      } catch (err) {
+        alert(`Gagal: ${err.message || err}`);
+      } finally {
+        if (btn) {
+          btn.disabled = false;
+          btn.innerHTML = originalBtnText;
+        }
+      }
+    }
+
     document.addEventListener('DOMContentLoaded', async () => {
       const currentHash = window.location.hash.replace('#tab-', '').replace('#section-', '').replace('#', '');
-      if (['overview', 'integration', 'webhook', 'social', 'meta-suite', 'meta', 'tiktok-studio', 'studio', 'logs'].includes(currentHash)) {
+      if (['overview', 'integration', 'webhook', 'social', 'meta-suite', 'meta', 'tiktok-studio', 'studio', 'logs', 'content-calendar', 'calendar'].includes(currentHash)) {
         switchDashboardTab(currentHash);
       } else {
         switchDashboardTab('overview');
