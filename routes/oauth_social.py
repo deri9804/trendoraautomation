@@ -5,7 +5,7 @@ PARENT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if PARENT_DIR not in sys.path:
     sys.path.insert(0, PARENT_DIR)
 
-from flask import Blueprint, request, jsonify, session, Response
+from flask import Blueprint, request, jsonify, session, Response, send_from_directory, abort
 import urllib.request
 import urllib.parse
 import urllib.error
@@ -2801,8 +2801,25 @@ def disconnect_single_social_account():
 # CONTENT CALENDAR & AUTO-PUBLISH SCHEDULING SYSTEM
 # =========================================================================
 
-UPLOAD_FOLDER = os.path.join(PARENT_DIR, 'static', 'uploads', 'videos')
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+try:
+    UPLOAD_FOLDER = os.path.join(PARENT_DIR, 'static', 'uploads', 'videos')
+    os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+except Exception:
+    UPLOAD_FOLDER = os.path.join('/tmp', 'videos')
+    try:
+        os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+    except Exception:
+        pass
+
+@oauth_bp.route('/static/uploads/videos/<path:filename>')
+def serve_uploaded_video(filename):
+    """Melayani akses berkas video statis baik di lokal maupun di serverless /tmp."""
+    if os.path.exists(os.path.join(UPLOAD_FOLDER, filename)):
+        return send_from_directory(UPLOAD_FOLDER, filename)
+    tmp_path = os.path.join('/tmp', 'videos', filename)
+    if os.path.exists(tmp_path):
+        return send_from_directory('/tmp/videos', filename)
+    abort(404)
 
 @oauth_bp.route('/api/studio/upload-media', methods=['POST'])
 def studio_upload_media():
