@@ -3133,6 +3133,9 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
       if (tabKey === 'logs') {
         fetchAndRenderDashboardLogs(false);
       }
+      if (tabKey === 'social') {
+        loadSocialAccountsData();
+      }
       if (tabKey === 'content-calendar') {
         loadCalendarPosts();
       }
@@ -3708,6 +3711,70 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
 
       container.innerHTML = htmlOutput;
     }
+
+    async function handleConnectSocial(platform, authEndpoint) {
+      if (window.currentUserData && window.currentUserData.isExpired && !window.currentUserData.isPaid) {
+        redirectToPricingOrUpgrade();
+        return;
+      }
+
+      const { email, apiKey } = getValidUserCredentials();
+      try {
+        const fullUrl = getApiUrl(`${authEndpoint}?email=${encodeURIComponent(email)}&api_key=${encodeURIComponent(apiKey)}`);
+        const res = await fetch(fullUrl);
+        const data = await res.json().catch(() => ({}));
+        
+        if (res.ok && data.success && data.url) {
+          const width = 640, height = 750;
+          const left = Math.max(0, Math.round((window.screen.width - width) / 2));
+          const top = Math.max(0, Math.round((window.screen.height - height) / 2));
+          const authWin = window.open(
+            data.url, 
+            'SocialAuthWindow', 
+            `width=${width},height=${height},top=${top},left=${left},scrollbars=yes,status=1,resizable=yes`
+          );
+
+          if (!authWin || authWin.closed || typeof authWin.closed === 'undefined') {
+            if (confirm(`Jendela pop-up login diblokir browser. Apakah Anda ingin membuka otorisasi ${platform.toUpperCase()} di tab baru?`)) {
+              window.open(data.url, '_blank');
+            }
+            return;
+          }
+
+          const pollTimer = setInterval(async () => {
+            try {
+              if (authWin.closed) {
+                clearInterval(pollTimer);
+                setTimeout(async () => {
+                  await verifyUserSession();
+                  await loadSocialAccountsData();
+                  if (typeof fetchStudioMetaAccounts === 'function') fetchStudioMetaAccounts();
+                  if (typeof loadCalendarPosts === 'function') loadCalendarPosts();
+                }, 1000);
+              }
+            } catch (e) {
+              clearInterval(pollTimer);
+            }
+          }, 1500);
+
+        } else {
+          alert(data.message || `Gagal membuka otorisasi akun ${platform}.`);
+        }
+      } catch (err) {
+        console.error("Connect Social Error:", err);
+        alert(`Gagal menghubungi server untuk otorisasi ${platform}.`);
+      }
+    }
+
+    window.addEventListener('message', async (event) => {
+      if (event.data && (event.data.type === 'OAUTH_SUCCESS' || event.data.type === 'OAUTH_CALLBACK')) {
+        console.log('OAuth Success received:', event.data);
+        await verifyUserSession();
+        await loadSocialAccountsData();
+        if (typeof fetchStudioMetaAccounts === 'function') fetchStudioMetaAccounts();
+        if (typeof loadCalendarPosts === 'function') loadCalendarPosts();
+      }
+    });
 
     async function handleDisconnectSingleAccount(platform, accountId) {
       if (!confirm(`Apakah Anda yakin ingin memutuskan akun ini dari ${platform}?`)) return;
@@ -6374,6 +6441,7 @@ ${err.message}`);
       }
 
       await verifyUserSession();
+      loadSocialAccountsData();
       fetchAndRenderDashboardLogs();
       fetchStudioMetaAccounts();
       
