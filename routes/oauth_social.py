@@ -345,7 +345,8 @@ def get_meta_auth_url():
         "redirect_uri": redirect_uri,
         "state": state,
         "scope": scopes,
-        "response_type": "code"
+        "response_type": "code",
+        "auth_type": "rerequest"
     }
     base_url = "https://www.facebook.com/v18.0/dialog/oauth"
     full_url = f"{base_url}?{urllib.parse.urlencode(params)}"
