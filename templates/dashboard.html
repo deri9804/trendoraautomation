@@ -382,6 +382,174 @@
       100% { box-shadow: 0 0 0 0 rgba(236, 72, 153, 0); }
     }
 
+
+    /* OMNICHANNEL STUDIO PUBLISHER & DIRECT POST */
+    .studio-platform-selector-bar {
+      display: flex;
+      gap: 10px;
+      overflow-x: auto;
+      padding: 4px 2px 16px 2px;
+      margin-bottom: 24px;
+      scrollbar-width: thin;
+      -webkit-overflow-scrolling: touch;
+    }
+    .studio-plat-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+      padding: 10px 18px;
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.09);
+      color: #94a3b8;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .studio-plat-btn:hover {
+      background: rgba(255, 255, 255, 0.08);
+      border-color: rgba(255, 255, 255, 0.22);
+      color: #fff;
+      transform: translateY(-2px);
+    }
+    .studio-plat-btn.active[data-platform="facebook"] {
+      background: rgba(24, 119, 242, 0.18);
+      border-color: #1877f2;
+      color: #60a5fa;
+      box-shadow: 0 0 24px rgba(24, 119, 242, 0.35);
+    }
+    .studio-plat-btn.active[data-platform="instagram"] {
+      background: linear-gradient(135deg, rgba(225, 48, 108, 0.22) 0%, rgba(131, 58, 180, 0.22) 100%);
+      border-color: #e1306c;
+      color: #f472b6;
+      box-shadow: 0 0 24px rgba(225, 48, 108, 0.35);
+    }
+    .studio-plat-btn.active[data-platform="youtube"] {
+      background: rgba(255, 0, 0, 0.18);
+      border-color: #ff0000;
+      color: #f87171;
+      box-shadow: 0 0 24px rgba(255, 0, 0, 0.35);
+    }
+    .studio-plat-btn.active[data-platform="tiktok"] {
+      background: rgba(0, 242, 254, 0.15);
+      border-color: #00f2fe;
+      color: #38bdf8;
+      box-shadow: 0 0 24px rgba(0, 242, 254, 0.35), 0 0 24px rgba(254, 44, 85, 0.25);
+    }
+    .studio-plat-btn.active[data-platform="twitter"] {
+      background: rgba(29, 161, 242, 0.18);
+      border-color: #1da1f2;
+      color: #38bdf8;
+      box-shadow: 0 0 24px rgba(29, 161, 242, 0.35);
+    }
+    .studio-plat-btn.active[data-platform="linkedin"] {
+      background: rgba(10, 102, 194, 0.18);
+      border-color: #0a66c2;
+      color: #60a5fa;
+      box-shadow: 0 0 24px rgba(10, 102, 194, 0.35);
+    }
+    .studio-plat-btn.active[data-platform="threads"] {
+      background: rgba(255, 255, 255, 0.15);
+      border-color: #ffffff;
+      color: #ffffff;
+      box-shadow: 0 0 24px rgba(255, 255, 255, 0.25);
+    }
+    .studio-plat-btn.active[data-platform="multi"] {
+      background: linear-gradient(135deg, rgba(168, 85, 247, 0.25) 0%, rgba(236, 72, 153, 0.25) 100%);
+      border-color: #a855f7;
+      color: #f472b6;
+      box-shadow: 0 0 25px rgba(168, 85, 247, 0.45);
+    }
+
+    /* PHONE OVERLAYS (Facebook, Instagram, YouTube, TikTok) */
+    .studio-phone-overlay-wrap {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      z-index: 15;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 38px 14px 18px 14px;
+      color: #ffffff;
+      text-shadow: 0 1px 4px rgba(0,0,0,0.85);
+      border-radius: 24px;
+    }
+    .phone-overlay-layer {
+      display: none;
+      height: 100%;
+      flex-direction: column;
+      justify-content: space-between;
+      position: relative;
+    }
+    .phone-overlay-side-icons {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+      position: absolute;
+      right: 4px;
+      bottom: 65px;
+    }
+    .phone-overlay-icon-btn {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+      font-size: 10px;
+      font-weight: 700;
+      color: #fff;
+    }
+    .phone-overlay-icon-btn svg {
+      filter: drop-shadow(0 2px 5px rgba(0,0,0,0.9));
+    }
+    @keyframes spinDisc {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+    .phone-rotating-disc {
+      animation: spinDisc 4s linear infinite;
+    }
+
+    /* SUBMIT BUTTON THEMES */
+    .btn-submit-facebook {
+      background: #1877f2 !important;
+      border-color: #2563eb !important;
+      box-shadow: 0 0 25px rgba(24, 119, 242, 0.5) !important;
+    }
+    .btn-submit-instagram {
+      background: linear-gradient(135deg, #833ab4 0%, #fd1d1d 50%, #fcb045 100%) !important;
+      border-color: #e1306c !important;
+      box-shadow: 0 0 25px rgba(225, 48, 108, 0.5) !important;
+    }
+    .btn-submit-youtube {
+      background: #ff0000 !important;
+      border-color: #dc2626 !important;
+      box-shadow: 0 0 25px rgba(255, 0, 0, 0.5) !important;
+    }
+    .btn-submit-twitter {
+      background: #000000 !important;
+      border-color: #1da1f2 !important;
+      box-shadow: 0 0 25px rgba(29, 161, 242, 0.4) !important;
+    }
+    .btn-submit-linkedin {
+      background: #0a66c2 !important;
+      border-color: #0284c7 !important;
+      box-shadow: 0 0 25px rgba(10, 102, 194, 0.5) !important;
+    }
+    .btn-submit-threads {
+      background: #111827 !important;
+      border-color: #ffffff !important;
+      box-shadow: 0 0 25px rgba(255, 255, 255, 0.3) !important;
+    }
+    .btn-submit-multi {
+      background: linear-gradient(135deg, #a855f7 0%, #ec4899 50%, #3b82f6 100%) !important;
+      border-color: #c084fc !important;
+      box-shadow: 0 0 30px rgba(168, 85, 247, 0.6) !important;
+    }
+
     /* TIKTOK STUDIO STYLES (Memenuhi TikTok UX Guidelines) */
     .tiktok-studio-grid {
       display: grid;
@@ -1165,48 +1333,83 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
         </div>
       </section>
 
+      
       <!-- ============================================== -->
-      <!-- TAB 5: SHARE TO TIKTOK STUDIO                  -->
-      <!-- Memenuhi TikTok UX Guidelines Poin 3 & Poin 4  -->
+      <!-- TAB 5: OMNICHANNEL STUDIO PUBLISHER & POST     -->
+      <!-- Memenuhi Meta Review, YouTube API, TikTok UX   -->
       <!-- ============================================== -->
       <section id="tab-tiktok-studio" class="dash-tab-section">
         <div class="dashboard-hero-card" style="display: block; margin-bottom: 30px;">
           
-          <!-- Header Judul & Status Akun -->
+          <!-- PLATFORM SELECTOR TABS BAR -->
+          <div class="studio-platform-selector-bar" id="studioPlatformSelectorBar">
+            <button type="button" class="studio-plat-btn active" data-platform="facebook" onclick="switchStudioPlatform('facebook')">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="#1877f2"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+              <span>Facebook (Reels &amp; Page)</span>
+            </button>
+            <button type="button" class="studio-plat-btn" data-platform="instagram" onclick="switchStudioPlatform('instagram')">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="#e1306c"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
+              <span>Instagram (Reels)</span>
+            </button>
+            <button type="button" class="studio-plat-btn" data-platform="youtube" onclick="switchStudioPlatform('youtube')">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="#ff0000"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
+              <span>YouTube (Shorts)</span>
+            </button>
+            <button type="button" class="studio-plat-btn" data-platform="tiktok" onclick="switchStudioPlatform('tiktok')">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64c.29 0 .58.04.86.11V9.4a6.33 6.33 0 0 0-.86-.06 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.34-6.34V8.42a8.27 8.27 0 0 0 4.77 1.48V6.45c-.34 0-.68-.08-1-.24z" fill="#00f2fe"/><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64c.29 0 .58.04.86.11V9.4a6.33 6.33 0 0 0-.86-.06 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.34-6.34V8.42a8.27 8.27 0 0 0 4.77 1.48V6.45c-.34 0-.68-.08-1-.24z" fill="#fe2c55" style="mix-blend-mode: screen;"/></svg>
+              <span>TikTok (Direct Post)</span>
+            </button>
+            <button type="button" class="studio-plat-btn" data-platform="twitter" onclick="switchStudioPlatform('twitter')">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="#1da1f2"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+              <span>Twitter / X</span>
+            </button>
+            <button type="button" class="studio-plat-btn" data-platform="linkedin" onclick="switchStudioPlatform('linkedin')">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="#0a66c2"><path d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14m-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.28 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93h2.75M6.46 10.9v8.37H9.2V10.9H6.46M7.83 6.2a1.64 1.64 0 0 0-1.66 1.64 1.63 1.63 0 0 0 1.66 1.63 1.63 1.63 0 0 0 1.64-1.63A1.64 1.64 0 0 0 7.83 6.2z"/></svg>
+              <span>LinkedIn</span>
+            </button>
+            <button type="button" class="studio-plat-btn" data-platform="threads" onclick="switchStudioPlatform('threads')">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="#ffffff"><path d="M12.186 24C5.452 24 .183 18.736.183 12.012S5.452.024 12.186.024c3.42 0 6.55 1.392 8.814 3.92l-2.678 2.056c-1.62-1.824-3.876-2.82-6.136-2.82-4.912 0-8.91 3.992-8.91 8.832 0 4.84 3.998 8.832 8.91 8.832 3.12 0 5.48-1.456 6.58-4.048h-6.58v-3.152h9.72c.112.56.168 1.152.168 1.768 0 6.32-4.408 11.592-9.982 11.592z"/></svg>
+              <span>Threads</span>
+            </button>
+            <button type="button" class="studio-plat-btn studio-plat-multi" data-platform="multi" onclick="switchStudioPlatform('multi')">
+              <span style="font-size: 15px;">⚡</span>
+              <span>Multi-Broadcast (Omnichannel)</span>
+            </button>
+          </div>
+
+          <!-- Header Judul & Status Akun Dinamis -->
           <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 16px; margin-bottom: 24px; padding-bottom: 18px; border-bottom: 1px solid rgba(255,255,255,0.08);">
             <div>
-              <div style="display: inline-flex; align-items: center; gap: 6px; background: rgba(0, 242, 254, 0.12); border: 1px solid rgba(0, 242, 254, 0.3); color: #00f2fe; padding: 4px 12px; border-radius: 12px; font-size: 11px; font-weight: 800; margin-bottom: 8px;">
-                <span>TIKTOK CONTENT SHARING & DIRECT POST STUDIO</span>
+              <div id="studioHeaderBadgeWrap" style="display: inline-flex; align-items: center; gap: 6px; background: rgba(24, 119, 242, 0.12); border: 1px solid rgba(24, 119, 242, 0.35); color: #60a5fa; padding: 4px 12px; border-radius: 12px; font-size: 11px; font-weight: 800; margin-bottom: 8px;">
+                <span id="studioHeaderBadge">FACEBOOK CONTENT SHARING &amp; REELS STUDIO</span>
               </div>
-              <h2 style="font-size: 24px; color: #fff; margin-bottom: 6px; font-weight: 800; display: flex; align-items: center; gap: 10px;">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64c.29 0 .58.04.86.11V9.4a6.33 6.33 0 0 0-.86-.06 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.34-6.34V8.42a8.27 8.27 0 0 0 4.77 1.48V6.45c-.34 0-.68-.08-1-.24z" fill="#00f2fe"/>
-                  <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64c.29 0 .58.04.86.11V9.4a6.33 6.33 0 0 0-.86-.06 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.34-6.34V8.42a8.27 8.27 0 0 0 4.77 1.48V6.45c-.34 0-.68-.08-1-.24z" fill="#fe2c55" style="mix-blend-mode: screen;"/>
-                </svg>
-                Direct Share to TikTok
+              <h2 id="studioHeaderTitle" style="font-size: 24px; color: #fff; margin-bottom: 6px; font-weight: 800; display: flex; align-items: center; gap: 10px;">
+                <span id="studioHeaderIcon">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="#1877f2"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+                </span>
+                <span id="studioHeaderTitleText">Direct Share to Facebook Reels</span>
               </h2>
-              <p style="color: #9ca3af; font-size: 13px; margin: 0; max-width: 650px;">
-                Pilih video, lihat pratinjau langsung di pemutar vertikal 9:16, kustomisasi judul &amp; privasi, lalu bagikan secara resmi ke akun TikTok Anda.
+              <p id="studioHeaderSubtitle" style="color: #9ca3af; font-size: 13px; margin: 0; max-width: 680px;">
+                Pilih video, lihat pratinjau langsung di smartphone vertikal 9:16, optimasi dengan AI Hook &amp; Caption, lalu bagikan secara resmi ke Facebook Page &amp; Reels Anda.
               </p>
             </div>
 
-            <!-- Status Koneksi Akun TikTok & Info Creator (Poin 1 Content Sharing Guidelines) -->
-            <div id="studioTiktokConnBox" style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 12px 18px; text-align: right; min-width: 250px;">
-              <div style="font-size: 11px; color: #9ca3af; margin-bottom: 4px; font-weight: 600;">Status Akun TikTok:</div>
-              <div id="studioTiktokStatusBadge" class="status-badge pending" style="margin-bottom: 6px;">
-                Memeriksa Akun...
+            <!-- Status Koneksi Akun Dinamis (Meta FB, IG, YouTube, TikTok) -->
+            <div id="studioConnBox" style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 12px 18px; text-align: right; min-width: 250px;">
+              <div id="studioConnPlatformLabel" style="font-size: 11px; color: #9ca3af; margin-bottom: 4px; font-weight: 600;">Status Akun Meta / Facebook:</div>
+              <div id="studioConnStatusBadge" class="status-badge success" style="margin-bottom: 6px;">
+                ● Terhubung (Active)
               </div>
-              <!-- Display Creator Nickname & Avatar as required by Point 1a -->
-              <div id="studioTiktokCreatorCard" style="display: none; align-items: center; justify-content: flex-end; gap: 8px; margin-top: 6px; padding-top: 6px; border-top: 1px solid rgba(255,255,255,0.06);">
-                <img id="studioTiktokAvatar" src="" alt="TikTok Creator Avatar" style="width: 26px; height: 26px; border-radius: 50%; border: 1px solid #00f2fe; object-fit: cover; display: none;">
+              <div id="studioCreatorCard" style="display: flex; align-items: center; justify-content: flex-end; gap: 8px; margin-top: 6px; padding-top: 6px; border-top: 1px solid rgba(255,255,255,0.06);">
+                <img id="studioCreatorAvatar" src="https://ui-avatars.com/api/?name=Trendora+Official&background=1877f2&color=fff" alt="Avatar" style="width: 26px; height: 26px; border-radius: 50%; border: 1px solid #1877f2; object-fit: cover;">
                 <div style="text-align: right; line-height: 1.2;">
-                  <div id="studioTiktokNickname" style="font-size: 12px; font-weight: 700; color: #fff;"></div>
-                  <div id="studioTiktokUsername" style="font-size: 10px; color: #94a3b8;"></div>
+                  <div id="studioCreatorNickname" style="font-size: 12px; font-weight: 700; color: #fff;">Trendora Automation Official</div>
+                  <div id="studioCreatorUsername" style="font-size: 10px; color: #94a3b8;">Facebook Page (Software &amp; AI)</div>
                 </div>
               </div>
-              <div id="studioConnectTiktokBtnWrap" style="display: none; margin-top: 6px;">
-                <button type="button" class="btn-secondary" style="font-size: 11px; padding: 6px 12px; color: #00f2fe; border-color: rgba(0,242,254,0.4);" onclick="handleConnectTiktokStudio()">
-                  🔗 Hubungkan Akun TikTok
+              <div id="studioConnectBtnWrap" style="display: none; margin-top: 6px;">
+                <button type="button" class="btn-secondary" id="btnStudioConnectAccount" style="font-size: 11px; padding: 6px 12px; color: #60a5fa; border-color: rgba(96,165,250,0.4);" onclick="handleConnectStudioPlatform()">
+                  🔗 Hubungkan Akun
                 </button>
               </div>
             </div>
@@ -1215,7 +1418,7 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
           <!-- Studio Two Columns Grid -->
           <div class="tiktok-studio-grid">
             
-            <!-- KOLOM KIRI: Pemilih Video & Pemutar Pratinjau 9:16 (Poin 3) -->
+            <!-- KOLOM KIRI: Pemilih Video & Pemutar Pratinjau 9:16 -->
             <div>
               <div style="margin-bottom: 14px;">
                 <div style="display: flex; gap: 8px; margin-bottom: 12px;">
@@ -1229,7 +1432,7 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
 
                 <!-- Input Box Mode File -->
                 <div id="boxVideoFileInput">
-                  <label for="tiktokVideoInput" style="display: block; border: 2px dashed rgba(0, 242, 254, 0.35); border-radius: 14px; padding: 20px 16px; text-align: center; cursor: pointer; background: rgba(0, 242, 254, 0.02); transition: all 0.2s;" ondragover="event.preventDefault(); this.style.borderColor='#00f2fe';" ondragleave="this.style.borderColor='rgba(0, 242, 254, 0.35)';" ondrop="handleTiktokVideoDrop(event)">
+                  <label for="tiktokVideoInput" style="display: block; border: 2px dashed rgba(56, 189, 248, 0.35); border-radius: 14px; padding: 20px 16px; text-align: center; cursor: pointer; background: rgba(56, 189, 248, 0.02); transition: all 0.2s;" ondragover="event.preventDefault(); this.style.borderColor='#38bdf8';" ondragleave="this.style.borderColor='rgba(56, 189, 248, 0.35)';" ondrop="handleTiktokVideoDrop(event)">
                     <div style="font-size: 28px; margin-bottom: 6px;">🎬</div>
                     <div style="color: #fff; font-size: 13px; font-weight: 700; margin-bottom: 4px;">Pilih Berkas Video (.MP4 / .MOV)</div>
                     <div style="color: #64748b; font-size: 11px;">Klik di sini atau geser file video (Maksimal 500MB)</div>
@@ -1248,8 +1451,8 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
                 </div>
               </div>
 
-              <!-- Smartphone Frame Pratinjau Video (Memenuhi Poin 3) -->
-              <div class="tiktok-phone-frame">
+              <!-- Smartphone Frame Pratinjau Video 9:16 dengan Overlay Interaktif Otentik -->
+              <div class="tiktok-phone-frame" style="position: relative;">
                 <div class="tiktok-phone-notch"></div>
                 
                 <!-- Video Element -->
@@ -1258,12 +1461,235 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
                 <!-- Placeholder saat belum ada video -->
                 <div id="tiktokPreviewPlaceholder" style="padding: 24px; text-align: center; color: #64748b;">
                   <div style="width: 60px; height: 60px; border-radius: 50%; background: rgba(255,255,255,0.05); display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; border: 1px solid rgba(255,255,255,0.1);">
-                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#00f2fe" stroke-width="2">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2">
                       <polygon points="5 3 19 12 5 21 5 3"></polygon>
                     </svg>
                   </div>
-                  <div style="font-size: 13px; font-weight: 700; color: #cbd5e1; margin-bottom: 6px;">Pratinjau Video TikTok</div>
-                  <div style="font-size: 11px; line-height: 1.5;">Pilih atau unggah file video di atas untuk melihat tampilan simulasi pemutar TikTok sebelum dibagikan.</div>
+                  <div id="studioPlaceholderTitle" style="font-size: 13px; font-weight: 700; color: #cbd5e1; margin-bottom: 6px;">Pratinjau Smartphone 9:16</div>
+                  <div style="font-size: 11px; line-height: 1.5;">Pilih atau unggah file video di atas untuk melihat simulasi pratinjau live sebelum dipublikasikan.</div>
+                </div>
+
+                <!-- OVERLAY SIMULASI PLATFORM (Meta FB, Instagram, YouTube, TikTok) -->
+                <div class="studio-phone-overlay-wrap" id="studioPhoneOverlayWrap">
+                  
+                  <!-- OVERLAY: FACEBOOK REELS -->
+                  <div class="phone-overlay-layer" id="overlay-facebook" style="display: flex;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; font-size: 12px; font-weight: 700;">
+                      <div style="display: flex; align-items: center; gap: 6px;">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="#1877f2"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+                        <span>Reels</span>
+                      </div>
+                      <span>📷</span>
+                    </div>
+
+                    <div class="phone-overlay-side-icons">
+                      <div class="phone-overlay-icon-btn">
+                        <span style="font-size: 20px;">👍</span>
+                        <span>14.2K</span>
+                      </div>
+                      <div class="phone-overlay-icon-btn">
+                        <span style="font-size: 20px;">💬</span>
+                        <span>380</span>
+                      </div>
+                      <div class="phone-overlay-icon-btn">
+                        <span style="font-size: 20px;">↗️</span>
+                        <span>1.2K</span>
+                      </div>
+                      <div class="phone-overlay-icon-btn">
+                        <span style="font-size: 18px;">⋯</span>
+                      </div>
+                    </div>
+
+                    <div style="text-align: left; padding-right: 50px;">
+                      <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+                        <img src="https://ui-avatars.com/api/?name=Trendora+Official&background=1877f2&color=fff" style="width: 28px; height: 28px; border-radius: 50%; border: 1.5px solid #1877f2;" alt="Page Avatar">
+                        <span style="font-size: 12px; font-weight: 800; color: #fff;">Trendora Official</span>
+                        <span style="background: #1877f2; color: #fff; font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 4px;">+ Ikuti</span>
+                      </div>
+                      <div id="studioPreviewCaptionFb" style="font-size: 11px; color: #f1f5f9; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin-bottom: 4px;">
+                        Video otomasi bisnis siap tayang di Facebook Reels 🚀 #TrendoraAutomation
+                      </div>
+                      <div style="font-size: 10px; color: #cbd5e1; display: flex; align-items: center; gap: 4px;">
+                        <span>🎵</span>
+                        <span>Audio Asli - Trendora Official</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- OVERLAY: INSTAGRAM REELS -->
+                  <div class="phone-overlay-layer" id="overlay-instagram" style="display: none;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; font-size: 13px; font-weight: 800;">
+                      <span>Reels</span>
+                      <div style="display: flex; gap: 10px;">
+                        <span>📷</span>
+                        <span>🔊</span>
+                      </div>
+                    </div>
+
+                    <div class="phone-overlay-side-icons">
+                      <div class="phone-overlay-icon-btn">
+                        <span style="font-size: 20px;">❤️</span>
+                        <span>48.3K</span>
+                      </div>
+                      <div class="phone-overlay-icon-btn">
+                        <span style="font-size: 20px;">💬</span>
+                        <span>924</span>
+                      </div>
+                      <div class="phone-overlay-icon-btn">
+                        <span style="font-size: 20px;">↗️</span>
+                        <span>2.4K</span>
+                      </div>
+                      <div class="phone-overlay-icon-btn">
+                        <span style="font-size: 18px;">⋯</span>
+                      </div>
+                      <div style="width: 24px; height: 24px; border: 2px solid #fff; border-radius: 6px; overflow: hidden; margin-top: 4px;">
+                        <img src="https://ui-avatars.com/api/?name=Music&background=000&color=fff" style="width: 100%; height: 100%; object-fit: cover;">
+                      </div>
+                    </div>
+
+                    <div style="text-align: left; padding-right: 50px;">
+                      <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+                        <img src="https://ui-avatars.com/api/?name=Trendora+Official&background=e1306c&color=fff" style="width: 26px; height: 26px; border-radius: 50%; border: 1.5px solid #e1306c;" alt="IG Avatar">
+                        <span style="font-size: 12px; font-weight: 800; color: #fff;">trendora.automation</span>
+                        <span style="color: #cbd5e1; font-size: 11px;">• Ikuti</span>
+                      </div>
+                      <div id="studioPreviewCaptionIg" style="font-size: 11px; color: #f1f5f9; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin-bottom: 4px;">
+                        Automate your growth with Trendora Instagram Reels ⚡ #ViralReels #AI
+                      </div>
+                      <div style="font-size: 10px; color: #cbd5e1; display: flex; align-items: center; gap: 4px;">
+                        <span>🎵</span>
+                        <span>Audio Asli • trendora.automation</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- OVERLAY: YOUTUBE SHORTS -->
+                  <div class="phone-overlay-layer" id="overlay-youtube" style="display: none;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                      <div style="display: flex; align-items: center; gap: 6px; background: rgba(0,0,0,0.5); padding: 2px 8px; border-radius: 12px;">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="#ff0000"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
+                        <span style="font-size: 11px; font-weight: 800; color: #fff;">Shorts</span>
+                      </div>
+                      <div style="display: flex; gap: 12px; font-size: 14px;">
+                        <span>🔍</span>
+                        <span>⋮</span>
+                      </div>
+                    </div>
+
+                    <div class="phone-overlay-side-icons">
+                      <div class="phone-overlay-icon-btn">
+                        <span style="font-size: 20px;">👍</span>
+                        <span>58K</span>
+                      </div>
+                      <div class="phone-overlay-icon-btn">
+                        <span style="font-size: 20px;">👎</span>
+                        <span>Dislike</span>
+                      </div>
+                      <div class="phone-overlay-icon-btn">
+                        <span style="font-size: 20px;">💬</span>
+                        <span>1.5K</span>
+                      </div>
+                      <div class="phone-overlay-icon-btn">
+                        <span style="font-size: 20px;">↗️</span>
+                        <span>Bagikan</span>
+                      </div>
+                      <div class="phone-overlay-icon-btn">
+                        <span style="font-size: 20px;">🔀</span>
+                        <span>Remix</span>
+                      </div>
+                      <div style="width: 26px; height: 26px; border-radius: 50%; background: #222; border: 2px solid #ff0000; overflow: hidden; margin-top: 4px;" class="phone-rotating-disc">
+                        <img src="https://ui-avatars.com/api/?name=YT&background=ff0000&color=fff" style="width: 100%; height: 100%;">
+                      </div>
+                    </div>
+
+                    <div style="text-align: left; padding-right: 50px;">
+                      <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+                        <img src="https://ui-avatars.com/api/?name=Trendora&background=ff0000&color=fff" style="width: 26px; height: 26px; border-radius: 50%;" alt="YT Channel">
+                        <span style="font-size: 12px; font-weight: 800; color: #fff;">@TrendoraAutomation</span>
+                        <span style="background: #ff0000; color: #fff; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 12px;">Subscribe</span>
+                      </div>
+                      <div id="studioPreviewTitleYt" style="font-size: 12px; font-weight: 700; color: #fff; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin-bottom: 4px;">
+                        Cara Otomasi YouTube Shorts dalam 3 Menit! #Shorts #Tech
+                      </div>
+                      <div style="font-size: 10px; color: #cbd5e1; display: flex; align-items: center; gap: 4px;">
+                        <span>🎵</span>
+                        <span>Suara Asli - Trendora Automation</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- OVERLAY: TIKTOK DIRECT POST -->
+                  <div class="phone-overlay-layer" id="overlay-tiktok" style="display: none;">
+                    <div style="display: flex; justify-content: center; gap: 14px; font-size: 13px; font-weight: 700;">
+                      <span style="color: #94a3b8;">Mengikuti</span>
+                      <span style="color: #fff; border-bottom: 2px solid #fff; padding-bottom: 2px;">Untuk Anda</span>
+                    </div>
+
+                    <div class="phone-overlay-side-icons">
+                      <div style="position: relative; margin-bottom: 4px;">
+                        <img src="https://ui-avatars.com/api/?name=Trendora&background=00f2fe&color=000" style="width: 32px; height: 32px; border-radius: 50%; border: 1.5px solid #fff;" alt="TikTok User">
+                        <div style="position: absolute; bottom: -4px; left: 50%; transform: translateX(-50%); background: #fe2c55; color: #fff; font-size: 9px; font-weight: 800; width: 14px; height: 14px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">+</div>
+                      </div>
+                      <div class="phone-overlay-icon-btn">
+                        <span style="font-size: 22px;">❤️</span>
+                        <span>128.4K</span>
+                      </div>
+                      <div class="phone-overlay-icon-btn">
+                        <span style="font-size: 22px;">💬</span>
+                        <span>3.8K</span>
+                      </div>
+                      <div class="phone-overlay-icon-btn">
+                        <span style="font-size: 22px;">🔖</span>
+                        <span>14.2K</span>
+                      </div>
+                      <div class="phone-overlay-icon-btn">
+                        <span style="font-size: 22px;">↗️</span>
+                        <span>6.1K</span>
+                      </div>
+                      <div style="width: 28px; height: 28px; border-radius: 50%; background: #111; border: 3px solid #222; overflow: hidden;" class="phone-rotating-disc">
+                        <div style="width: 100%; height: 100%; background: radial-gradient(circle, #00f2fe 20%, #111 60%);"></div>
+                      </div>
+                    </div>
+
+                    <div style="text-align: left; padding-right: 50px;">
+                      <div style="font-size: 13px; font-weight: 800; color: #fff; margin-bottom: 4px;">
+                        @trendora.automation
+                      </div>
+                      <div id="studioPreviewCaptionTt" style="font-size: 11px; color: #f1f5f9; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin-bottom: 6px;">
+                        Video konten TikTok otomatis via Trendora Direct Share API 🚀 #TrendoraAutomation #TikTokViral
+                      </div>
+                      <div style="font-size: 10px; color: #cbd5e1; display: flex; align-items: center; gap: 4px;">
+                        <span>🎵</span>
+                        <span>Musik Asli - Trendora Studio Official</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- OVERLAY: TWITTER / LINKEDIN / THREADS CARD -->
+                  <div class="phone-overlay-layer" id="overlay-social-card" style="display: none; justify-content: flex-end;">
+                    <div style="background: rgba(15, 23, 42, 0.88); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.15); border-radius: 14px; padding: 14px; text-align: left;">
+                      <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                        <img src="https://ui-avatars.com/api/?name=Trendora&background=38bdf8&color=fff" style="width: 28px; height: 28px; border-radius: 50%;" alt="Author">
+                        <div>
+                          <div style="font-size: 12px; font-weight: 800; color: #fff; display: flex; align-items: center; gap: 4px;">
+                            <span>Trendora Automation</span>
+                            <span style="color: #38bdf8; font-size: 11px;">✓</span>
+                          </div>
+                          <div id="studioCardAuthorHandle" style="font-size: 10px; color: #94a3b8;">@trendora_ai</div>
+                        </div>
+                      </div>
+                      <div id="studioPreviewCaptionCard" style="font-size: 11px; color: #e2e8f0; line-height: 1.5; margin-bottom: 8px; max-height: 80px; overflow-y: auto;">
+                        Konten video siap tayang dengan integrasi omnichannel otomatis ⚡
+                      </div>
+                      <div style="display: flex; justify-content: space-between; font-size: 10px; color: #94a3b8; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 6px;">
+                        <span>💬 42</span>
+                        <span>🔁 180</span>
+                        <span>❤️ 850</span>
+                        <span>📊 12.4K</span>
+                      </div>
+                    </div>
+                  </div>
+
                 </div>
               </div>
 
@@ -1275,171 +1701,405 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
               </div>
             </div>
 
-            <!-- KOLOM KANAN: Kustomisasi Konten & Tombol Resmi Share to TikTok (Poin 3) -->
+            <!-- KOLOM KANAN: Kustomisasi Konten & Kontrol Multi-Platform -->
             <div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.07); border-radius: 18px; padding: 24px;">
               
-              <!-- 1. Caption / Judul Postingan -->
+              <!-- 0. GEMINI 2.0 AI HOOK & CAPTION GENERATOR -->
+              <div style="background: linear-gradient(135deg, rgba(56, 189, 248, 0.08) 0%, rgba(168, 85, 247, 0.08) 100%); border: 1px solid rgba(56, 189, 248, 0.25); border-radius: 14px; padding: 14px 16px; margin-bottom: 20px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                  <div style="display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 800; color: #fff;">
+                    <span style="font-size: 16px;">✨</span>
+                    <span>Gemini AI Hook &amp; Caption Generator</span>
+                  </div>
+                  <span style="font-size: 10px; font-weight: 700; background: rgba(56, 189, 248, 0.2); color: #38bdf8; padding: 2px 8px; border-radius: 8px; border: 1px solid rgba(56, 189, 248, 0.3);">AI AUTO-HOOK</span>
+                </div>
+                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                  <input type="text" id="studioAiTopicInput" placeholder="Ketik topik video (contoh: Rahasia Otomasi Bisnis Online di 2026)..." style="flex: 1; min-width: 200px; background: #090d16; border: 1px solid rgba(255,255,255,0.14); color: #fff; padding: 10px 14px; border-radius: 10px; font-size: 13px;">
+                  <select id="studioAiToneSelect" style="background: #090d16; border: 1px solid rgba(255,255,255,0.14); color: #fff; padding: 10px 12px; border-radius: 10px; font-size: 12px; cursor: pointer;">
+                    <option value="viral">🔥 Viral &amp; High CTR</option>
+                    <option value="professional">💼 Profesional &amp; Bisnis</option>
+                    <option value="casual">☕ Santai &amp; Edukatif</option>
+                    <option value="sales">🎯 Hard Selling &amp; Promo</option>
+                  </select>
+                  <button type="button" id="btnStudioGenerateAi" class="btn-pink" style="font-size: 12px; padding: 10px 16px; font-weight: 700; display: flex; align-items: center; gap: 6px; white-space: nowrap;" onclick="generateStudioAICaption()">
+                    <span id="studioAiBtnIcon">⚡</span>
+                    <span id="studioAiBtnText">Buatkan Hook AI</span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- FIELD: JUDUL VIDEO KHUSUS YOUTUBE & FACEBOOK -->
+              <div id="studioBoxVideoTitle" style="display: none; margin-bottom: 20px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                  <label for="studioYtTitleInput" style="font-size: 13px; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 6px;">
+                    🏷️ Judul Video (Title) <span style="color: #ff0000;">*</span>
+                  </label>
+                  <span style="font-size: 11px; color: #64748b; font-family: monospace;">
+                    <span id="studioYtTitleCounter">0</span> / 100
+                  </span>
+                </div>
+                <input type="text" id="studioYtTitleInput" maxlength="100" placeholder="Masukkan judul menarik dengan Click-Through-Rate tinggi..." style="width: 100%; background: #090d16; border: 1px solid rgba(255,255,255,0.12); color: #fff; padding: 11px 14px; border-radius: 12px; font-size: 13px;" oninput="updateStudioTitleCounter()">
+              </div>
+
+              <!-- 1. Caption / Deskripsi Postingan (Universal) -->
               <div style="margin-bottom: 20px;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
                   <label for="tiktokCaptionInput" style="font-size: 13px; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 6px;">
                     📝 Deskripsi / Caption Video
                   </label>
                   <span style="font-size: 11px; color: #64748b; font-family: monospace;">
-                    <span id="tiktokCaptionCounter">0</span> / 2200
+                    <span id="tiktokCaptionCounter">0</span> / <span id="studioCaptionMaxLen">5000</span>
                   </span>
                 </div>
-                <textarea id="tiktokCaptionInput" rows="4" maxlength="2200" placeholder="Tulis caption menarik untuk video Anda... Sertakan hashtag untuk menjangkau audiens TikTok." style="width: 100%; background: #090d16; border: 1px solid rgba(255,255,255,0.12); color: #fff; padding: 12px 14px; border-radius: 12px; font-size: 13px; line-height: 1.6; resize: vertical;" oninput="updateTiktokCaptionCounter()"></textarea>
+                <textarea id="tiktokCaptionInput" rows="4" maxlength="5000" placeholder="Tulis caption menarik untuk video Anda... Sertakan hashtag untuk menjangkau audiens secara organik." style="width: 100%; background: #090d16; border: 1px solid rgba(255,255,255,0.12); color: #fff; padding: 12px 14px; border-radius: 12px; font-size: 13px; line-height: 1.6; resize: vertical;" oninput="updateStudioCaptionPreview()"></textarea>
                 
                 <!-- Quick Hashtag chips -->
                 <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; align-items: center;">
                   <span style="font-size: 11px; color: #64748b;">Hashtag Cepat:</span>
                   <button type="button" class="tiktok-hashtag-chip" onclick="appendTiktokHashtag('#TrendoraAutomation')">#TrendoraAutomation</button>
-                  <button type="button" class="tiktok-hashtag-chip" onclick="appendTiktokHashtag('#Automation')">#Automation</button>
-                  <button type="button" class="tiktok-hashtag-chip" onclick="appendTiktokHashtag('#Tech')">#Tech</button>
+                  <button type="button" class="tiktok-hashtag-chip" onclick="appendTiktokHashtag('#ReelsViral')">#ReelsViral</button>
+                  <button type="button" class="tiktok-hashtag-chip" onclick="appendTiktokHashtag('#Shorts')">#Shorts</button>
                   <button type="button" class="tiktok-hashtag-chip" onclick="appendTiktokHashtag('#TikTokViral')">#TikTokViral</button>
+                  <button type="button" class="tiktok-hashtag-chip" onclick="appendTiktokHashtag('#AI')">#AI</button>
                 </div>
               </div>
 
-              <!-- 2. Pengaturan Level Privasi (Poin 2 Content Sharing Guidelines) -->
-              <div style="margin-bottom: 20px;">
-                <label for="tiktokPrivacySelect" style="display: block; font-size: 13px; font-weight: 700; color: #fff; margin-bottom: 8px;">
-                  🔒 Level Privasi Postingan (Privacy Status) <span style="color: #fe2c55;">*</span>
-                </label>
-                <select id="tiktokPrivacySelect" style="width: 100%; background: #090d16; border: 1px solid rgba(255,255,255,0.12); color: #fff; padding: 12px 14px; border-radius: 12px; font-size: 13px; cursor: pointer;" onchange="handleTiktokPrivacyChange()">
-                  <option value="" disabled selected>-- Pilih Status Privasi (Select Privacy) --</option>
-                  <option value="PUBLIC_TO_EVERYONE">🌐 Public (Publik - Dapat dilihat semua pengguna)</option>
-                  <option value="MUTUAL_FOLLOW_FRIENDS">👥 Friends (Teman Saling Mengikuti / Mutual Friends)</option>
-                  <option value="SELF_ONLY" id="optPrivacySelfOnly">🔒 Only Me (Hanya Saya / Private Draft)</option>
-                </select>
-                <p id="tiktokPrivacyNote" style="font-size: 11px; color: #64748b; margin: 6px 0 0 0;">
-                  Pilihan privasi ini akan langsung diterapkan pada postingan video di akun TikTok Anda.
-                </p>
-              </div>
+              <!-- ============================================== -->
+              <!-- BLOK PENGATURAN PLATFORM SPESIFIK             -->
+              <!-- ============================================== -->
 
-              <!-- 3. Izin Interaksi Video (Poin 2c: Manual turned on, none checked by default) -->
-              <div style="margin-bottom: 22px; padding: 16px; background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.05); border-radius: 14px;">
-                <div style="font-size: 12px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px;">
-                  ⚙️ Pengaturan Interaksi TikTok (Interaction Settings)
+              <!-- A. PENGATURAN KHUSUS: FACEBOOK (REELS & PAGE) -->
+              <div id="studioFieldsFacebook" style="display: block;">
+                <!-- Pemilih Halaman Facebook (Penting untuk Meta App Review) -->
+                <div style="margin-bottom: 20px;">
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <label for="studioFbPageSelect" style="font-size: 13px; font-weight: 700; color: #fff;">
+                      📘 Pilih Facebook Page Tujuan <span style="color: #1877f2;">*</span>
+                    </label>
+                    <button type="button" style="background: none; border: none; color: #60a5fa; font-size: 11px; cursor: pointer; text-decoration: underline;" onclick="fetchStudioMetaAccounts(true)">
+                      🔄 Refresh Halaman
+                    </button>
+                  </div>
+                  <select id="studioFbPageSelect" style="width: 100%; background: #090d16; border: 1px solid rgba(255,255,255,0.12); color: #fff; padding: 12px 14px; border-radius: 12px; font-size: 13px; cursor: pointer;" onchange="handleStudioFbPageChange()">
+                    <option value="104928374829104" selected>Trendora Automation Official (Software &amp; Internet Technology)</option>
+                    <option value="108392019482019">Deri Pernandi Digital (Content Creator &amp; Entrepreneur)</option>
+                  </select>
+                  <p style="font-size: 11px; color: #94a3b8; margin: 6px 0 0 0;">
+                    Video Reels akan dipublikasikan secara resmi ke Halaman Facebook yang Anda pilih melalui Graph API.
+                  </p>
                 </div>
-                <div style="display: flex; flex-direction: column; gap: 12px;">
-                  <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <span style="font-size: 13px; color: #e2e8f0;">Izinkan Komentar (Allow Comments)</span>
-                    <label class="tiktok-custom-switch">
-                      <input type="checkbox" id="tiktokAllowComments">
-                      <span class="tiktok-slider"></span>
-                    </label>
-                  </div>
-                  <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <span style="font-size: 13px; color: #e2e8f0;">Izinkan Duet (Allow Duet)</span>
-                    <label class="tiktok-custom-switch">
-                      <input type="checkbox" id="tiktokAllowDuet">
-                      <span class="tiktok-slider"></span>
-                    </label>
-                  </div>
-                  <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <span style="font-size: 13px; color: #e2e8f0;">Izinkan Stitch (Allow Stitch)</span>
-                    <label class="tiktok-custom-switch">
-                      <input type="checkbox" id="tiktokAllowStitch">
-                      <span class="tiktok-slider"></span>
-                    </label>
-                  </div>
-                </div>
-              </div>
 
-              <!-- 4. Commercial Content Disclosure (Poin 3 Content Sharing Guidelines) -->
-              <div style="margin-bottom: 22px; padding: 16px 18px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.08); border-radius: 14px;">
-                <!-- Main Toggle Switch (Turned OFF by default) -->
-                <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 14px;">
-                  <div>
-                    <div style="font-size: 13px; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 8px;">
-                      <span>Commercial Content Disclosure</span>
-                    </div>
-                    <p style="font-size: 12px; color: #94a3b8; margin: 4px 0 0 0; line-height: 1.4;">
-                      Indicate whether this content promotes yourself, a brand, product or service
-                    </p>
-                  </div>
-                  <label class="tiktok-custom-switch" style="flex-shrink: 0;">
-                    <input type="checkbox" id="tiktokCommercialToggle" onchange="handleTiktokCommercialToggleChange()">
-                    <span class="tiktok-slider"></span>
+                <!-- Format Postingan Facebook -->
+                <div style="margin-bottom: 20px;">
+                  <label for="studioFbFormatSelect" style="display: block; font-size: 13px; font-weight: 700; color: #fff; margin-bottom: 8px;">
+                    🎯 Format Distribusi Konten Meta
                   </label>
+                  <select id="studioFbFormatSelect" style="width: 100%; background: #090d16; border: 1px solid rgba(255,255,255,0.12); color: #fff; padding: 12px 14px; border-radius: 12px; font-size: 13px;">
+                    <option value="reels" selected>🌟 Facebook Reels (Format Vertikal 9:16 - Jangkauan Organik Maksimal)</option>
+                    <option value="feed">📹 Video Feed Standar Halaman</option>
+                  </select>
                 </div>
+              </div>
 
-                <!-- Sub-options (Only visible when toggle is turned on) -->
-                <div id="tiktokCommercialOptionsContainer" style="display: none; margin-top: 16px; padding-top: 14px; border-top: 1px solid rgba(255,255,255,0.07);">
-                  <div style="font-size: 11px; font-weight: 600; color: #94a3b8; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px;">
-                    Select disclosure options:
+              <!-- B. PENGATURAN KHUSUS: INSTAGRAM REELS -->
+              <div id="studioFieldsInstagram" style="display: none;">
+                <div style="margin-bottom: 20px; padding: 16px; background: rgba(225, 48, 108, 0.06); border: 1px solid rgba(225, 48, 108, 0.2); border-radius: 14px;">
+                  <div style="font-size: 12px; font-weight: 700; color: #f472b6; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.5px;">
+                    📸 Akun Instagram Bisnis Terhubung
+                  </div>
+                  <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 14px;">
+                    <img id="studioIgAvatar" src="https://ui-avatars.com/api/?name=Trendora+Instagram&background=e1306c&color=fff" style="width: 34px; height: 34px; border-radius: 50%; border: 1.5px solid #e1306c;" alt="IG Avatar">
+                    <div>
+                      <div id="studioIgAccountName" style="font-size: 13px; font-weight: 800; color: #fff;">@trendora.automation</div>
+                      <div style="font-size: 11px; color: #94a3b8;">Instagram Professional Account (Content Publishing API)</div>
+                    </div>
                   </div>
 
-                  <div style="display: flex; flex-direction: column; gap: 10px;">
-                    <!-- Checkbox A: Your Brand -->
-                    <label id="tiktokLabelYourBrand" style="display: flex; align-items: flex-start; gap: 12px; padding: 12px 14px; border-radius: 10px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.07); cursor: pointer; transition: all 0.2s;">
-                      <input type="checkbox" id="tiktokCheckYourBrand" style="margin-top: 3px; accent-color: #00f2fe; width: 17px; height: 17px; cursor: pointer;" onchange="handleCommercialSelectionChange()">
+                  <div style="display: flex; flex-direction: column; gap: 12px; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 12px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
                       <div>
-                        <div style="font-size: 13px; font-weight: 700; color: #fff;">Your Brand</div>
-                        <div style="font-size: 11px; color: #94a3b8; line-height: 1.4; margin-top: 2px;">
-                          You are promoting yourself or your own business. This content will be classified as Brand Organic.
-                        </div>
+                        <div style="font-size: 13px; font-weight: 700; color: #fff;">Bagikan ke Feed Profil</div>
+                        <div style="font-size: 11px; color: #94a3b8;">Tampilkan Reels juga di kisi profil utama (Share to Feed)</div>
                       </div>
-                    </label>
-
-                    <!-- Checkbox B: Branded Content -->
-                    <label id="tiktokLabelBrandedContent" style="display: flex; align-items: flex-start; gap: 12px; padding: 12px 14px; border-radius: 10px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.07); cursor: pointer; transition: all 0.2s;">
-                      <input type="checkbox" id="tiktokCheckBrandedContent" style="margin-top: 3px; accent-color: #fe2c55; width: 17px; height: 17px; cursor: pointer;" onchange="handleCommercialSelectionChange()">
+                      <label class="tiktok-custom-switch">
+                        <input type="checkbox" id="studioIgShareToFeed" checked>
+                        <span class="tiktok-slider"></span>
+                      </label>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
                       <div>
-                        <div style="font-size: 13px; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 8px;">
-                          <span>Branded Content</span>
-                          <span id="brandedContentPrivacyBadge" style="font-size: 10px; font-weight: 600; padding: 1px 6px; border-radius: 4px; background: rgba(254, 44, 85, 0.15); color: #fe2c55; border: 1px solid rgba(254, 44, 85, 0.3);">Public / Friends Only</span>
-                        </div>
-                        <div style="font-size: 11px; color: #94a3b8; line-height: 1.4; margin-top: 2px;">
-                          You are promoting another brand or a third party. This content will be classified as Branded Content.
-                        </div>
+                        <div style="font-size: 13px; font-weight: 700; color: #fff;">Izinkan Pengguna Me-remix</div>
+                        <div style="font-size: 11px; color: #94a3b8;">Pengguna lain dapat membuat remix dari Reels ini</div>
                       </div>
-                    </label>
-                  </div>
-
-                  <!-- Prompt Banner (Promotional content or Paid partnership) -->
-                  <div id="tiktokCommercialNoticeBanner" style="display: none; margin-top: 12px; padding: 10px 14px; border-radius: 10px; font-size: 12px; font-weight: 600; align-items: center; gap: 8px;">
-                    <span id="tiktokCommercialNoticeIcon">🏷️</span>
-                    <span id="tiktokCommercialNoticeText"></span>
-                  </div>
-
-                  <!-- Warning when toggle is ON but neither is selected -->
-                  <div id="tiktokCommercialSelectionWarning" style="display: none; margin-top: 12px; padding: 10px 14px; border-radius: 10px; background: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.35); color: #fca5a5; font-size: 12px; font-weight: 600;">
-                    ⚠️ You need to indicate if your content promotes yourself, a third party, or both.
+                      <label class="tiktok-custom-switch">
+                        <input type="checkbox" id="studioIgAllowRemix" checked>
+                        <span class="tiktok-slider"></span>
+                      </label>
+                    </div>
                   </div>
                 </div>
               </div>
 
-              <!-- 5. Compliance Consent Declaration (Poin 4 Content Sharing Guidelines) -->
-              <div id="tiktokComplianceDeclarationBox" style="margin-bottom: 16px; padding: 12px 16px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; font-size: 12px; color: #cbd5e1; line-height: 1.5; text-align: left;">
-                <span id="tiktokComplianceText">
-                  By posting, you agree to TikTok's <a href="https://www.tiktok.com/legal/page/global/music-usage-confirmation/en" target="_blank" rel="noopener noreferrer" style="color: #00f2fe; text-decoration: underline; font-weight: 600;">Music Usage Confirmation</a>.
-                </span>
+              <!-- C. PENGATURAN KHUSUS: YOUTUBE SHORTS -->
+              <div id="studioFieldsYouTube" style="display: none;">
+                <!-- COPPA Audience Declaration (Wajib Syarat Google YouTube) -->
+                <div style="margin-bottom: 20px;">
+                  <label for="studioYtCoppaSelect" style="display: block; font-size: 13px; font-weight: 700; color: #fff; margin-bottom: 8px;">
+                    👶 Penentuan Audiens (COPPA Compliance) <span style="color: #ff0000;">*</span>
+                  </label>
+                  <select id="studioYtCoppaSelect" style="width: 100%; background: #090d16; border: 1px solid rgba(255,255,255,0.12); color: #fff; padding: 12px 14px; border-radius: 12px; font-size: 13px;">
+                    <option value="false" selected>Tidak, video ini tidak dibuat untuk anak-anak (Not Made for Kids)</option>
+                    <option value="true">Ya, video ini dibuat khusus untuk anak-anak (Made for Kids)</option>
+                  </select>
+                  <p style="font-size: 11px; color: #94a3b8; margin: 6px 0 0 0;">
+                    Diwajibkan oleh YouTube Data API v3 untuk perlindungan privasi anak-anak online.
+                  </p>
+                </div>
+
+                <!-- Visibilitas YouTube -->
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 20px;">
+                  <div>
+                    <label for="studioYtVisibilitySelect" style="display: block; font-size: 13px; font-weight: 700; color: #fff; margin-bottom: 8px;">
+                      👁️ Status Visibilitas
+                    </label>
+                    <select id="studioYtVisibilitySelect" style="width: 100%; background: #090d16; border: 1px solid rgba(255,255,255,0.12); color: #fff; padding: 12px 14px; border-radius: 12px; font-size: 13px;">
+                      <option value="public" selected>🌐 Publik (Dapat ditonton semua orang)</option>
+                      <option value="unlisted">🔗 Tidak Tercantum (Unlisted)</option>
+                      <option value="private">🔒 Pribadi (Private)</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label for="studioYtCategorySelect" style="display: block; font-size: 13px; font-weight: 700; color: #fff; margin-bottom: 8px;">
+                      📂 Kategori Video
+                    </label>
+                    <select id="studioYtCategorySelect" style="width: 100%; background: #090d16; border: 1px solid rgba(255,255,255,0.12); color: #fff; padding: 12px 14px; border-radius: 12px; font-size: 13px;">
+                      <option value="28" selected>Sains &amp; Teknologi</option>
+                      <option value="27">Pendidikan &amp; Tutorial</option>
+                      <option value="24">Hiburan &amp; Entertainment</option>
+                      <option value="22">Bisnis &amp; People/Blogs</option>
+                    </select>
+                  </div>
+                </div>
               </div>
 
-              <!-- 6. Tombol Resmi Branded "Share to TikTok" with Hover Tooltip -->
+              <!-- D. PENGATURAN KHUSUS: TIKTOK DIRECT POST -->
+              <div id="studioFieldsTikTok" style="display: none;">
+                <!-- 2. Pengaturan Level Privasi (Poin 2 Content Sharing Guidelines) -->
+                <div style="margin-bottom: 20px;">
+                  <label for="tiktokPrivacySelect" style="display: block; font-size: 13px; font-weight: 700; color: #fff; margin-bottom: 8px;">
+                    🔒 Level Privasi Postingan (Privacy Status) <span style="color: #fe2c55;">*</span>
+                  </label>
+                  <select id="tiktokPrivacySelect" style="width: 100%; background: #090d16; border: 1px solid rgba(255,255,255,0.12); color: #fff; padding: 12px 14px; border-radius: 12px; font-size: 13px; cursor: pointer;" onchange="handleTiktokPrivacyChange()">
+                    <option value="" disabled selected>-- Pilih Status Privasi (Select Privacy) --</option>
+                    <option value="PUBLIC_TO_EVERYONE">🌐 Public (Publik - Dapat dilihat semua pengguna)</option>
+                    <option value="MUTUAL_FOLLOW_FRIENDS">👥 Friends (Teman Saling Mengikuti / Mutual Friends)</option>
+                    <option value="SELF_ONLY" id="optPrivacySelfOnly">🔒 Only Me (Hanya Saya / Private Draft)</option>
+                  </select>
+                  <p id="tiktokPrivacyNote" style="font-size: 11px; color: #64748b; margin: 6px 0 0 0;">
+                    Pilihan privasi ini akan langsung diterapkan pada postingan video di akun TikTok Anda.
+                  </p>
+                </div>
+
+                <!-- 3. Izin Interaksi Video -->
+                <div style="margin-bottom: 22px; padding: 16px; background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.05); border-radius: 14px;">
+                  <div style="font-size: 12px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px;">
+                    ⚙️ Pengaturan Interaksi TikTok (Interaction Settings)
+                  </div>
+                  <div style="display: flex; flex-direction: column; gap: 12px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                      <span style="font-size: 13px; color: #e2e8f0;">Izinkan Komentar (Allow Comments)</span>
+                      <label class="tiktok-custom-switch">
+                        <input type="checkbox" id="tiktokAllowComments">
+                        <span class="tiktok-slider"></span>
+                      </label>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                      <span style="font-size: 13px; color: #e2e8f0;">Izinkan Duet (Allow Duet)</span>
+                      <label class="tiktok-custom-switch">
+                        <input type="checkbox" id="tiktokAllowDuet">
+                        <span class="tiktok-slider"></span>
+                      </label>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                      <span style="font-size: 13px; color: #e2e8f0;">Izinkan Stitch (Allow Stitch)</span>
+                      <label class="tiktok-custom-switch">
+                        <input type="checkbox" id="tiktokAllowStitch">
+                        <span class="tiktok-slider"></span>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- 4. Commercial Content Disclosure (Poin 3 Content Sharing Guidelines) -->
+                <div style="margin-bottom: 22px; padding: 16px 18px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.08); border-radius: 14px;">
+                  <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 14px;">
+                    <div>
+                      <div style="font-size: 13px; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 8px;">
+                        <span>Commercial Content Disclosure</span>
+                      </div>
+                      <p style="font-size: 12px; color: #94a3b8; margin: 4px 0 0 0; line-height: 1.4;">
+                        Indicate whether this content promotes yourself, a brand, product or service
+                      </p>
+                    </div>
+                    <label class="tiktok-custom-switch" style="flex-shrink: 0;">
+                      <input type="checkbox" id="tiktokCommercialToggle" onchange="handleTiktokCommercialToggleChange()">
+                      <span class="tiktok-slider"></span>
+                    </label>
+                  </div>
+
+                  <div id="tiktokCommercialOptionsContainer" style="display: none; margin-top: 16px; padding-top: 14px; border-top: 1px solid rgba(255,255,255,0.07);">
+                    <div style="font-size: 11px; font-weight: 600; color: #94a3b8; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px;">
+                      Select disclosure options:
+                    </div>
+
+                    <div style="display: flex; flex-direction: column; gap: 10px;">
+                      <label id="tiktokLabelYourBrand" style="display: flex; align-items: flex-start; gap: 12px; padding: 12px 14px; border-radius: 10px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.07); cursor: pointer; transition: all 0.2s;">
+                        <input type="checkbox" id="tiktokCheckYourBrand" style="margin-top: 3px; accent-color: #00f2fe; width: 17px; height: 17px; cursor: pointer;" onchange="handleCommercialSelectionChange()">
+                        <div>
+                          <div style="font-size: 13px; font-weight: 700; color: #fff;">Your Brand</div>
+                          <div style="font-size: 11px; color: #94a3b8; line-height: 1.4; margin-top: 2px;">
+                            You are promoting yourself or your own business. This content will be classified as Brand Organic.
+                          </div>
+                        </div>
+                      </label>
+
+                      <label id="tiktokLabelBrandedContent" style="display: flex; align-items: flex-start; gap: 12px; padding: 12px 14px; border-radius: 10px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.07); cursor: pointer; transition: all 0.2s;">
+                        <input type="checkbox" id="tiktokCheckBrandedContent" style="margin-top: 3px; accent-color: #fe2c55; width: 17px; height: 17px; cursor: pointer;" onchange="handleCommercialSelectionChange()">
+                        <div>
+                          <div style="font-size: 13px; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 8px;">
+                            <span>Branded Content</span>
+                            <span id="brandedContentPrivacyBadge" style="font-size: 10px; font-weight: 600; padding: 1px 6px; border-radius: 4px; background: rgba(254, 44, 85, 0.15); color: #fe2c55; border: 1px solid rgba(254, 44, 85, 0.3);">Public / Friends Only</span>
+                          </div>
+                          <div style="font-size: 11px; color: #94a3b8; line-height: 1.4; margin-top: 2px;">
+                            You are promoting another brand or a third party. This content will be classified as Branded Content.
+                          </div>
+                        </div>
+                      </label>
+                    </div>
+
+                    <div id="tiktokCommercialNoticeBanner" style="display: none; margin-top: 12px; padding: 10px 14px; border-radius: 10px; font-size: 12px; font-weight: 600; align-items: center; gap: 8px;">
+                      <span id="tiktokCommercialNoticeIcon">🏷️</span>
+                      <span id="tiktokCommercialNoticeText"></span>
+                    </div>
+
+                    <div id="tiktokCommercialSelectionWarning" style="display: none; margin-top: 12px; padding: 10px 14px; border-radius: 10px; background: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.35); color: #fca5a5; font-size: 12px; font-weight: 600;">
+                      ⚠️ You need to indicate if your content promotes yourself, a third party, or both.
+                    </div>
+                  </div>
+                </div>
+
+                <!-- 5. Compliance Consent Declaration -->
+                <div id="tiktokComplianceDeclarationBox" style="margin-bottom: 16px; padding: 12px 16px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; font-size: 12px; color: #cbd5e1; line-height: 1.5; text-align: left;">
+                  <span id="tiktokComplianceText">
+                    By posting, you agree to TikTok's <a href="https://www.tiktok.com/legal/page/global/music-usage-confirmation/en" target="_blank" rel="noopener noreferrer" style="color: #00f2fe; text-decoration: underline; font-weight: 600;">Music Usage Confirmation</a>.
+                  </span>
+                </div>
+              </div>
+
+              <!-- E. PENGATURAN KHUSUS: TWITTER / X -->
+              <div id="studioFieldsTwitter" style="display: none;">
+                <div style="margin-bottom: 20px;">
+                  <label for="studioTwitterReplySelect" style="display: block; font-size: 13px; font-weight: 700; color: #fff; margin-bottom: 8px;">
+                    💬 Siapa yang dapat membalas Tweet
+                  </label>
+                  <select id="studioTwitterReplySelect" style="width: 100%; background: #090d16; border: 1px solid rgba(255,255,255,0.12); color: #fff; padding: 12px 14px; border-radius: 12px; font-size: 13px;">
+                    <option value="everyone" selected>Semua orang (Everyone)</option>
+                    <option value="following">Akun yang Anda ikuti</option>
+                    <option value="mentioned">Hanya akun yang di-mention</option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- F. PENGATURAN KHUSUS: LINKEDIN -->
+              <div id="studioFieldsLinkedIn" style="display: none;">
+                <div style="margin-bottom: 20px;">
+                  <label for="studioLinkedinVisibilitySelect" style="display: block; font-size: 13px; font-weight: 700; color: #fff; margin-bottom: 8px;">
+                    💼 Visibilitas Postingan LinkedIn
+                  </label>
+                  <select id="studioLinkedinVisibilitySelect" style="width: 100%; background: #090d16; border: 1px solid rgba(255,255,255,0.12); color: #fff; padding: 12px 14px; border-radius: 12px; font-size: 13px;">
+                    <option value="PUBLIC" selected>🌐 Publik (Semua Pengguna LinkedIn)</option>
+                    <option value="CONNECTIONS">👥 Hanya Koneksi Tingkat 1</option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- G. PENGATURAN KHUSUS: THREADS -->
+              <div id="studioFieldsThreads" style="display: none;">
+                <div style="margin-bottom: 20px;">
+                  <label for="studioThreadsReplySelect" style="display: block; font-size: 13px; font-weight: 700; color: #fff; margin-bottom: 8px;">
+                    🧵 Kontrol Balasan Threads
+                  </label>
+                  <select id="studioThreadsReplySelect" style="width: 100%; background: #090d16; border: 1px solid rgba(255,255,255,0.12); color: #fff; padding: 12px 14px; border-radius: 12px; font-size: 13px;">
+                    <option value="everyone" selected>Semua orang</option>
+                    <option value="accounts_you_follow">Profil yang Anda ikuti</option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- H. PENGATURAN KHUSUS: MULTI-BROADCAST OMNICHANNEL -->
+              <div id="studioFieldsMulti" style="display: none;">
+                <div style="margin-bottom: 20px; padding: 16px; background: rgba(168, 85, 247, 0.08); border: 1px solid rgba(168, 85, 247, 0.25); border-radius: 14px;">
+                  <div style="font-size: 12px; font-weight: 700; color: #f472b6; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.5px;">
+                    ⚡ Pilih Platform Tujuan Sekaligus (Simultaneous Broadcast)
+                  </div>
+                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: #fff; cursor: pointer;">
+                      <input type="checkbox" name="multiPlatformPick" value="facebook" checked style="accent-color: #1877f2; width: 16px; height: 16px;">
+                      <span>📘 Facebook Reels</span>
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: #fff; cursor: pointer;">
+                      <input type="checkbox" name="multiPlatformPick" value="instagram" checked style="accent-color: #e1306c; width: 16px; height: 16px;">
+                      <span>📸 Instagram Reels</span>
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: #fff; cursor: pointer;">
+                      <input type="checkbox" name="multiPlatformPick" value="youtube" checked style="accent-color: #ff0000; width: 16px; height: 16px;">
+                      <span>▶️ YouTube Shorts</span>
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: #fff; cursor: pointer;">
+                      <input type="checkbox" name="multiPlatformPick" value="tiktok" checked style="accent-color: #00f2fe; width: 16px; height: 16px;">
+                      <span>🎵 TikTok Post</span>
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: #fff; cursor: pointer;">
+                      <input type="checkbox" name="multiPlatformPick" value="twitter" checked style="accent-color: #1da1f2; width: 16px; height: 16px;">
+                      <span>🐦 Twitter / X</span>
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: #fff; cursor: pointer;">
+                      <input type="checkbox" name="multiPlatformPick" value="linkedin" checked style="accent-color: #0a66c2; width: 16px; height: 16px;">
+                      <span>💼 LinkedIn</span>
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: #fff; cursor: pointer;">
+                      <input type="checkbox" name="multiPlatformPick" value="threads" checked style="accent-color: #ffffff; width: 16px; height: 16px;">
+                      <span>🧵 Threads</span>
+                    </label>
+                  </div>
+                  <p style="font-size: 11px; color: #cbd5e1; margin: 12px 0 0 0; line-height: 1.5;">
+                    Satu kali klik, video Anda akan langsung didistribusikan ke seluruh saluran sosial yang dicentang.
+                  </p>
+                </div>
+              </div>
+
+              <!-- TOMBOL UTAMA SUBMIT STUDIO PUBLISH (Dinamis Sesuai Platform) -->
               <div>
-                <div style="position: relative;" id="tiktokShareButtonContainer" onmouseenter="handleShareButtonHover(true)" onmouseleave="handleShareButtonHover(false)">
-                  <button type="button" id="btnShareToTiktok" class="btn-tiktok-share" onclick="handleShareToTiktokSubmit()">
-                    <!-- Logo Resmi TikTok SVG -->
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64c.29 0 .58.04.86.11V9.4a6.33 6.33 0 0 0-.86-.06 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.34-6.34V8.42a8.27 8.27 0 0 0 4.77 1.48V6.45c-.34 0-.68-.08-1-.24z" fill="#ffffff"/>
-                    </svg>
-                    <span>Share to TikTok</span>
+                <div style="position: relative;" id="studioShareButtonContainer" onmouseenter="handleStudioShareHover(true)" onmouseleave="handleStudioShareHover(false)">
+                  <button type="button" id="btnShareToTiktok" class="btn-tiktok-share btn-submit-facebook" onclick="handleStudioPublishSubmit()">
+                    <span id="studioSubmitBtnIcon">
+                      <svg width="22" height="22" viewBox="0 0 24 24" fill="#ffffff"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+                    </span>
+                    <span id="studioSubmitBtnText">🚀 Publikasikan ke Facebook Reels Sekarang</span>
                   </button>
 
                   <!-- Tooltip on hover when button is disabled -->
                   <div id="tiktokShareTooltip" style="display: none; position: absolute; bottom: calc(100% + 10px); left: 50%; transform: translateX(-50%); background: #1e293b; color: #f8fafc; padding: 8px 14px; border-radius: 8px; font-size: 12px; font-weight: 600; white-space: normal; width: max-content; max-width: 320px; text-align: center; box-shadow: 0 8px 24px rgba(0,0,0,0.6); border: 1px solid rgba(255,255,255,0.15); z-index: 100; pointer-events: none;">
-                    <span id="tiktokShareTooltipText">You need to indicate if your content promotes yourself, a third party, or both.</span>
+                    <span id="tiktokShareTooltipText">Silakan pilih atau unggah file video terlebih dahulu.</span>
                     <div style="position: absolute; top: 100%; left: 50%; transform: translateX(-50%); border-width: 6px; border-style: solid; border-color: #1e293b transparent transparent transparent;"></div>
                   </div>
                 </div>
                 
                 <div id="tiktokShareNotice" style="margin-top: 10px; font-size: 12px; color: #94a3b8; text-align: center; min-height: 18px;">
-                  ⚠️ Silakan pilih file video di atas sebelum membagikan ke TikTok.
+                  ⚠️ Silakan pilih file video di atas sebelum mempublikasikan.
                 </div>
                 <div style="margin-top: 6px; font-size: 11px; color: #64748b; text-align: center;">
-                  ℹ️ After posting, it may take a few minutes for the video to process and be visible on your TikTok profile.
+                  ℹ️ Setelah dipublikasikan, server platform akan memproses resolusi HD dan video akan segera tampil di feed profil Anda.
                 </div>
               </div>
 
@@ -1449,37 +2109,35 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
       </section>
 
       <!-- ============================================== -->
-      <!-- MODAL FEEDBACK PROSES UPLOAD TIKTOK (POIN 4)   -->
+      <!-- MODAL FEEDBACK PROSES UPLOAD OMNICHANNEL       -->
       <!-- ============================================== -->
       <div id="tiktokUploadProgressModal" style="display: none; position: fixed; inset: 0; z-index: 9999; background: rgba(9, 13, 22, 0.88); backdrop-filter: blur(8px); align-items: center; justify-content: center; padding: 20px;">
-        <div style="background: #0d1322; border: 1px solid rgba(0, 242, 254, 0.3); box-shadow: 0 0 40px rgba(0, 242, 254, 0.25); border-radius: 20px; max-width: 460px; width: 100%; padding: 32px 28px; text-align: center;">
+        <div style="background: #0d1322; border: 1px solid rgba(56, 189, 248, 0.35); box-shadow: 0 0 50px rgba(56, 189, 248, 0.25); border-radius: 20px; max-width: 480px; width: 100%; padding: 32px 28px; text-align: center;">
           
           <!-- Animated Spinner Icon -->
-          <div style="width: 70px; height: 70px; margin: 0 auto 20px; border-radius: 50%; border: 3px solid rgba(255,255,255,0.08); border-top-color: #00f2fe; border-bottom-color: #fe2c55; animation: spin 1.2s cubic-bezier(0.68, -0.55, 0.27, 1.55) infinite; display: flex; align-items: center; justify-content: center;">
-            <svg width="30" height="30" viewBox="0 0 24 24" fill="none">
-              <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64c.29 0 .58.04.86.11V9.4a6.33 6.33 0 0 0-.86-.06 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.34-6.34V8.42a8.27 8.27 0 0 0 4.77 1.48V6.45c-.34 0-.68-.08-1-.24z" fill="#ffffff"/>
-            </svg>
+          <div style="width: 70px; height: 70px; margin: 0 auto 20px; border-radius: 50%; border: 3px solid rgba(255,255,255,0.08); border-top-color: #1877f2; border-bottom-color: #e1306c; animation: spin 1.2s cubic-bezier(0.68, -0.55, 0.27, 1.55) infinite; display: flex; align-items: center; justify-content: center;">
+            <span id="studioProgressModalIcon" style="font-size: 26px;">🚀</span>
           </div>
 
-          <h3 style="font-size: 20px; color: #fff; font-weight: 800; margin-bottom: 8px;">Mengunggah ke TikTok...</h3>
+          <h3 id="studioProgressModalTitle" style="font-size: 20px; color: #fff; font-weight: 800; margin-bottom: 8px;">Mengunggah ke Facebook Reels...</h3>
           <p id="tiktokUploadStatusText" style="font-size: 13px; color: #94a3b8; min-height: 38px; line-height: 1.5; margin-bottom: 20px;">
             Mempersiapkan berkas video dan memvalidasi otorisasi akun...
           </p>
 
-          <!-- Progress Bar (Poin 4) -->
+          <!-- Progress Bar -->
           <div style="background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: 20px; height: 12px; width: 100%; overflow: hidden; margin-bottom: 12px; padding: 2px;">
-            <div id="tiktokProgressBarFill" style="height: 100%; width: 10%; background: linear-gradient(90deg, #00f2fe 0%, #fe2c55 100%); border-radius: 20px; transition: width 0.3s ease-out; box-shadow: 0 0 12px rgba(0, 242, 254, 0.6);"></div>
+            <div id="tiktokProgressBarFill" style="height: 100%; width: 15%; background: linear-gradient(90deg, #1877f2 0%, #00f2fe 50%, #e1306c 100%); border-radius: 20px; transition: width 0.3s ease-out; box-shadow: 0 0 12px rgba(56, 189, 248, 0.6);"></div>
           </div>
 
           <div style="display: flex; justify-content: space-between; font-size: 11px; color: #64748b; font-family: monospace;">
-            <span>TikTok Direct Chunk Upload</span>
-            <span id="tiktokProgressPercent" style="color: #00f2fe; font-weight: 700;">10%</span>
+            <span id="studioProgressStepText">Direct Cloud Publishing API</span>
+            <span id="tiktokProgressPercent" style="color: #38bdf8; font-weight: 700;">15%</span>
           </div>
         </div>
       </div>
 
       <!-- ============================================== -->
-      <!-- MODAL SUKSES PUBLISH TIKTOK (POIN 4)           -->
+      <!-- MODAL SUKSES PUBLISH OMNICHANNEL STUDIO        -->
       <!-- ============================================== -->
       <div id="tiktokSuccessModal" style="display: none; position: fixed; inset: 0; z-index: 9999; background: rgba(9, 13, 22, 0.88); backdrop-filter: blur(8px); align-items: center; justify-content: center; padding: 20px;">
         <div style="background: #0d1322; border: 1px solid rgba(52, 211, 153, 0.4); box-shadow: 0 0 50px rgba(52, 211, 153, 0.2); border-radius: 20px; max-width: 500px; width: 100%; padding: 32px 28px; text-align: center;">
@@ -1489,43 +2147,41 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
             <span style="font-size: 32px;">✅</span>
           </div>
 
-          <h3 style="font-size: 22px; color: #fff; font-weight: 800; margin-bottom: 6px;">Video Berhasil Dipublikasikan!</h3>
-          <p style="font-size: 13px; color: #94a3b8; margin-bottom: 20px; line-height: 1.5;">
-            Video Anda telah sukses terkirim dan dipublikasikan ke akun TikTok melalui Content Posting API.
+          <h3 id="studioSuccessModalTitle" style="font-size: 22px; color: #fff; font-weight: 800; margin-bottom: 6px;">Video Berhasil Dipublikasikan!</h3>
+          <p id="studioSuccessModalSubtitle" style="font-size: 13px; color: #94a3b8; margin-bottom: 20px; line-height: 1.5;">
+            Video Anda telah sukses diposting ke platform melalui otorisasi resmi API.
           </p>
 
-          <!-- Detail Status Box (Poin 4 Requirement) -->
+          <!-- Detail Status Box -->
           <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 16px; text-align: left; font-size: 12px; margin-bottom: 20px; line-height: 1.8;">
             <div style="display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 6px; margin-bottom: 6px;">
-              <span style="color: #64748b;">Publish ID:</span>
+              <span style="color: #64748b;">Target Platform:</span>
+              <span id="studioSuccessPlatformBadge" style="color: #60a5fa; font-weight: 700;">Facebook Reels</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 6px; margin-bottom: 6px;">
+              <span style="color: #64748b;">Publish ID / Media ID:</span>
               <span id="tiktokSuccessPublishId" style="color: #34d399; font-family: monospace; font-weight: 700;">-</span>
             </div>
             <div style="display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 6px; margin-bottom: 6px;">
-              <span style="color: #64748b;">Level Privasi:</span>
-              <span id="tiktokSuccessPrivacy" style="color: #fff; font-weight: 600;">Publik</span>
-            </div>
-            <div style="display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 6px; margin-bottom: 6px;">
-              <span style="color: #64748b;">Commercial Disclosure:</span>
-              <span id="tiktokSuccessCommercial" style="color: #00f2fe; font-weight: 600;">Non-Commercial</span>
+              <span style="color: #64748b;">Akun / Halaman Tujuan:</span>
+              <span id="studioSuccessDestination" style="color: #fff; font-weight: 600;">Trendora Automation Official</span>
             </div>
             <div style="display: flex; justify-content: space-between;">
-              <span style="color: #64748b;">Waktu Unggah:</span>
+              <span style="color: #64748b;">Waktu Publikasi:</span>
               <span id="tiktokSuccessTimestamp" style="color: #94a3b8;">-</span>
             </div>
           </div>
 
-          <!-- Explanation of Where Content Went & Processing Notification (Poin 4 & 5d) -->
-          <div style="background: rgba(56, 189, 248, 0.08); border-left: 3px solid #38bdf8; border-radius: 0 8px 8px 0; padding: 12px; text-align: left; font-size: 12px; color: #cbd5e1; line-height: 1.6; margin-bottom: 24px;">
-            📌 <strong>Lokasi Video:</strong> Video telah berhasil dikirim ke akun TikTok Anda. <em>Please note that after publishing, it may take a few minutes for the content to process and be visible on your TikTok profile.</em>
+          <!-- Explanation of Where Content Went -->
+          <div id="studioSuccessExplainBox" style="background: rgba(56, 189, 248, 0.08); border-left: 3px solid #38bdf8; border-radius: 0 8px 8px 0; padding: 12px; text-align: left; font-size: 12px; color: #cbd5e1; line-height: 1.6; margin-bottom: 24px;">
+            📌 <strong>Konfirmasi Publikasi:</strong> Video telah berhasil dikirim ke server platform. <em>Setelah dipublikasikan, sistem platform memerlukan beberapa detik untuk memproses resolusi video sebelum muncul di beranda publik.</em>
           </div>
 
           <!-- Action Buttons -->
           <div style="display: flex; gap: 10px; flex-direction: column;">
-            <a id="btnOpenTiktokProfile" href="https://www.tiktok.com/" target="_blank" rel="noopener noreferrer" class="btn-tiktok-share" style="text-decoration: none;">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64c.29 0 .58.04.86.11V9.4a6.33 6.33 0 0 0-.86-.06 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.34-6.34V8.42a8.27 8.27 0 0 0 4.77 1.48V6.45c-.34 0-.68-.08-1-.24z" fill="#ffffff"/>
-              </svg>
-              <span>🚀 Buka Profil Akun TikTok</span>
+            <a id="btnOpenTiktokProfile" href="https://www.facebook.com/" target="_blank" rel="noopener noreferrer" class="btn-tiktok-share btn-submit-facebook" style="text-decoration: none;">
+              <span id="studioSuccessOpenBtnIcon">🚀</span>
+              <span id="studioSuccessOpenBtnText">Buka Halaman / Postingan</span>
             </a>
             
             <button type="button" class="btn-secondary" style="font-size: 13px; padding: 12px;" onclick="closeTiktokSuccessModal()">
@@ -1594,7 +2250,8 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
         fetchAndRenderDashboardLogs(false);
       }
       if (tabKey === 'tiktok-studio') {
-        updateTiktokStudioStatus();
+        updateStudioStatus();
+        fetchStudioMetaAccounts();
       }
 
       try {
@@ -2312,10 +2969,467 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
 
     // =========================================================
     // JAVASCRIPT TIKTOK DIRECT POST & SHARE STUDIO (POIN 3 & 4)
+
     // =========================================================
+    // OMNICHANNEL STUDIO PUBLISHER & DIRECT POST LOGIC
+    // Mendukung Facebook Reels, Instagram Reels, YouTube Shorts,
+    // TikTok Direct Post, Twitter, LinkedIn, Threads, dan Multi-Broadcast.
+    // =========================================================
+
+    window.currentStudioPlatform = 'facebook';
     window.selectedTiktokVideoFile = null;
     window.selectedTiktokVideoUrl = null;
     window.tiktokSourceMode = 'file';
+    window.studioMetaAccounts = [];
+    window.tiktokDisableReason = 'no_video';
+
+    function switchStudioPlatform(platformKey) {
+      window.currentStudioPlatform = platformKey;
+
+      // 1. Update Platform Selector Buttons Active State
+      const buttons = document.querySelectorAll('.studio-plat-btn');
+      buttons.forEach(btn => {
+        if (btn.getAttribute('data-platform') === platformKey) {
+          btn.classList.add('active');
+        } else {
+          btn.classList.remove('active');
+        }
+      });
+
+      // 2. Update Header Badge, Title, Subtitle, & Icon
+      const badgeWrap = document.getElementById('studioHeaderBadgeWrap');
+      const badgeText = document.getElementById('studioHeaderBadge');
+      const titleText = document.getElementById('studioHeaderTitleText');
+      const titleIcon = document.getElementById('studioHeaderIcon');
+      const subtitle = document.getElementById('studioHeaderSubtitle');
+      const boxTitle = document.getElementById('studioBoxVideoTitle');
+      const submitBtn = document.getElementById('btnShareToTiktok');
+      const submitBtnText = document.getElementById('studioSubmitBtnText');
+      const submitBtnIcon = document.getElementById('studioSubmitBtnIcon');
+      const captionMaxLen = document.getElementById('studioCaptionMaxLen');
+
+      // Reset submit button classes
+      if (submitBtn) {
+        submitBtn.className = 'btn-tiktok-share';
+      }
+
+      // Hide all platform field blocks
+      const fieldBlocks = [
+        'studioFieldsFacebook', 'studioFieldsInstagram', 'studioFieldsYouTube',
+        'studioFieldsTikTok', 'studioFieldsTwitter', 'studioFieldsLinkedIn',
+        'studioFieldsThreads', 'studioFieldsMulti'
+      ];
+      fieldBlocks.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.style.display = 'none';
+      });
+
+      // Hide all phone overlays
+      const overlays = [
+        'overlay-facebook', 'overlay-instagram', 'overlay-youtube',
+        'overlay-tiktok', 'overlay-social-card'
+      ];
+      overlays.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.style.display = 'none';
+      });
+
+      // Platform specific customizations
+      if (platformKey === 'facebook') {
+        if (badgeWrap) {
+          badgeWrap.style.background = 'rgba(24, 119, 242, 0.12)';
+          badgeWrap.style.borderColor = 'rgba(24, 119, 242, 0.35)';
+          badgeWrap.style.color = '#60a5fa';
+        }
+        if (badgeText) badgeText.innerText = 'FACEBOOK CONTENT SHARING & REELS STUDIO';
+        if (titleText) titleText.innerText = 'Direct Share to Facebook Reels';
+        if (titleIcon) titleIcon.innerHTML = `<svg width="24" height="24" viewBox="0 0 24 24" fill="#1877f2"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>`;
+        if (subtitle) subtitle.innerText = 'Pilih video, lihat pratinjau live smartphone 9:16, optimasi dengan AI Hook & Caption, lalu bagikan secara resmi ke Facebook Page & Reels Anda.';
+        
+        const fbFields = document.getElementById('studioFieldsFacebook');
+        if (fbFields) fbFields.style.display = 'block';
+        const fbOverlay = document.getElementById('overlay-facebook');
+        if (fbOverlay) fbOverlay.style.display = 'flex';
+        if (boxTitle) boxTitle.style.display = 'block';
+        if (captionMaxLen) captionMaxLen.innerText = '5000';
+        if (submitBtn) submitBtn.classList.add('btn-submit-facebook');
+        if (submitBtnText) submitBtnText.innerText = '🚀 Publikasikan ke Facebook Reels Sekarang';
+        if (submitBtnIcon) submitBtnIcon.innerHTML = `<svg width="22" height="22" viewBox="0 0 24 24" fill="#fff"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>`;
+
+      } else if (platformKey === 'instagram') {
+        if (badgeWrap) {
+          badgeWrap.style.background = 'linear-gradient(135deg, rgba(225, 48, 108, 0.2) 0%, rgba(131, 58, 180, 0.2) 100%)';
+          badgeWrap.style.borderColor = 'rgba(225, 48, 108, 0.4)';
+          badgeWrap.style.color = '#f472b6';
+        }
+        if (badgeText) badgeText.innerText = 'INSTAGRAM CONTENT PUBLISHING & REELS STUDIO';
+        if (titleText) titleText.innerText = 'Direct Share to Instagram Reels';
+        if (titleIcon) titleIcon.innerHTML = `<svg width="24" height="24" viewBox="0 0 24 24" fill="#e1306c"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>`;
+        if (subtitle) subtitle.innerText = 'Publikasikan video vertikal berkualitas tinggi langsung ke akun Instagram Bisnis Anda melalui Meta Content Publishing API.';
+
+        const igFields = document.getElementById('studioFieldsInstagram');
+        if (igFields) igFields.style.display = 'block';
+        const igOverlay = document.getElementById('overlay-instagram');
+        if (igOverlay) igOverlay.style.display = 'flex';
+        if (boxTitle) boxTitle.style.display = 'none';
+        if (captionMaxLen) captionMaxLen.innerText = '2200';
+        if (submitBtn) submitBtn.classList.add('btn-submit-instagram');
+        if (submitBtnText) submitBtnText.innerText = '🚀 Publikasikan ke Instagram Reels Sekarang';
+        if (submitBtnIcon) submitBtnIcon.innerHTML = `📸`;
+
+      } else if (platformKey === 'youtube') {
+        if (badgeWrap) {
+          badgeWrap.style.background = 'rgba(255, 0, 0, 0.12)';
+          badgeWrap.style.borderColor = 'rgba(255, 0, 0, 0.35)';
+          badgeWrap.style.color = '#f87171';
+        }
+        if (badgeText) badgeText.innerText = 'YOUTUBE DATA API & SHORTS PUBLISHER';
+        if (titleText) titleText.innerText = 'Direct Share to YouTube Shorts';
+        if (titleIcon) titleIcon.innerHTML = `<svg width="24" height="24" viewBox="0 0 24 24" fill="#ff0000"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>`;
+        if (subtitle) subtitle.innerText = 'Unggah dan distribusikan YouTube Shorts dengan judul memikat, deklarasi audiens COPPA, dan visibilitas otomatis.';
+
+        const ytFields = document.getElementById('studioFieldsYouTube');
+        if (ytFields) ytFields.style.display = 'block';
+        const ytOverlay = document.getElementById('overlay-youtube');
+        if (ytOverlay) ytOverlay.style.display = 'flex';
+        if (boxTitle) boxTitle.style.display = 'block';
+        if (captionMaxLen) captionMaxLen.innerText = '5000';
+        if (submitBtn) submitBtn.classList.add('btn-submit-youtube');
+        if (submitBtnText) submitBtnText.innerText = '🚀 Publikasikan ke YouTube Shorts Sekarang';
+        if (submitBtnIcon) submitBtnIcon.innerHTML = `▶️`;
+
+      } else if (platformKey === 'tiktok') {
+        if (badgeWrap) {
+          badgeWrap.style.background = 'rgba(0, 242, 254, 0.12)';
+          badgeWrap.style.borderColor = 'rgba(0, 242, 254, 0.3)';
+          badgeWrap.style.color = '#00f2fe';
+        }
+        if (badgeText) badgeText.innerText = 'TIKTOK CONTENT SHARING & DIRECT POST STUDIO';
+        if (titleText) titleText.innerText = 'Direct Share to TikTok';
+        if (titleIcon) titleIcon.innerHTML = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64c.29 0 .58.04.86.11V9.4a6.33 6.33 0 0 0-.86-.06 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34-6.34V8.42a8.27 8.27 0 0 0 4.77 1.48V6.45c-.34 0-.68-.08-1-.24z" fill="#00f2fe"/><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64c.29 0 .58.04.86.11V9.4a6.33 6.33 0 0 0-.86-.06 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34-6.34V8.42a8.27 8.27 0 0 0 4.77 1.48V6.45c-.34 0-.68-.08-1-.24z" fill="#fe2c55" style="mix-blend-mode: screen;"/></svg>`;
+        if (subtitle) subtitle.innerText = 'Pilih video, lihat pratinjau langsung di pemutar vertikal 9:16, kustomisasi judul & privasi, lalu bagikan secara resmi ke akun TikTok Anda.';
+
+        const ttFields = document.getElementById('studioFieldsTikTok');
+        if (ttFields) ttFields.style.display = 'block';
+        const ttOverlay = document.getElementById('overlay-tiktok');
+        if (ttOverlay) ttOverlay.style.display = 'flex';
+        if (boxTitle) boxTitle.style.display = 'none';
+        if (captionMaxLen) captionMaxLen.innerText = '2200';
+        if (submitBtn) submitBtn.className = 'btn-tiktok-share';
+        if (submitBtnText) submitBtnText.innerText = 'Share to TikTok';
+        if (submitBtnIcon) submitBtnIcon.innerHTML = `<svg width="22" height="22" viewBox="0 0 24 24" fill="#fff"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64c.29 0 .58.04.86.11V9.4a6.33 6.33 0 0 0-.86-.06 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34-6.34V8.42a8.27 8.27 0 0 0 4.77 1.48V6.45c-.34 0-.68-.08-1-.24z" fill="#fff"/></svg>`;
+
+      } else if (platformKey === 'twitter') {
+        if (badgeWrap) {
+          badgeWrap.style.background = 'rgba(29, 161, 242, 0.12)';
+          badgeWrap.style.borderColor = 'rgba(29, 161, 242, 0.35)';
+          badgeWrap.style.color = '#38bdf8';
+        }
+        if (badgeText) badgeText.innerText = 'TWITTER / X API PUBLISHER';
+        if (titleText) titleText.innerText = 'Share Tweet to Twitter / X';
+        if (titleIcon) titleIcon.innerHTML = `<svg width="24" height="24" viewBox="0 0 24 24" fill="#1da1f2"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>`;
+        if (subtitle) subtitle.innerText = 'Publikasikan video cuplikan dan narasi tweet berbobot langsung ke lini masa akun Twitter / X Anda.';
+
+        const twFields = document.getElementById('studioFieldsTwitter');
+        if (twFields) twFields.style.display = 'block';
+        const cardOverlay = document.getElementById('overlay-social-card');
+        if (cardOverlay) cardOverlay.style.display = 'flex';
+        const handleCard = document.getElementById('studioCardAuthorHandle');
+        if (handleCard) handleCard.innerText = '@trendora_ai';
+        if (boxTitle) boxTitle.style.display = 'none';
+        if (captionMaxLen) captionMaxLen.innerText = '280';
+        if (submitBtn) submitBtn.classList.add('btn-submit-twitter');
+        if (submitBtnText) submitBtnText.innerText = '🚀 Publikasikan Tweet ke Twitter/X Sekarang';
+        if (submitBtnIcon) submitBtnIcon.innerHTML = `🐦`;
+
+      } else if (platformKey === 'linkedin') {
+        if (badgeWrap) {
+          badgeWrap.style.background = 'rgba(10, 102, 194, 0.12)';
+          badgeWrap.style.borderColor = 'rgba(10, 102, 194, 0.35)';
+          badgeWrap.style.color = '#60a5fa';
+        }
+        if (badgeText) badgeText.innerText = 'LINKEDIN UGC VIDEO & POST PUBLISHER';
+        if (titleText) titleText.innerText = 'Direct Share to LinkedIn';
+        if (titleIcon) titleIcon.innerHTML = `<svg width="24" height="24" viewBox="0 0 24 24" fill="#0a66c2"><path d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14m-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.28 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93h2.75M6.46 10.9v8.37H9.2V10.9H6.46M7.83 6.2a1.64 1.64 0 0 0-1.66 1.64 1.63 1.63 0 0 0 1.66 1.63 1.63 1.63 0 0 0 1.64-1.63A1.64 1.64 0 0 0 7.83 6.2z"/></svg>`;
+        if (subtitle) subtitle.innerText = 'Jangkau jaringan profesional dengan video edukatif dan artikel berkualitas melalui LinkedIn UGC API.';
+
+        const inFields = document.getElementById('studioFieldsLinkedIn');
+        if (inFields) inFields.style.display = 'block';
+        const cardOverlay = document.getElementById('overlay-social-card');
+        if (cardOverlay) cardOverlay.style.display = 'flex';
+        const handleCard = document.getElementById('studioCardAuthorHandle');
+        if (handleCard) handleCard.innerText = 'Trendora Automation • 1st';
+        if (boxTitle) boxTitle.style.display = 'none';
+        if (captionMaxLen) captionMaxLen.innerText = '3000';
+        if (submitBtn) submitBtn.classList.add('btn-submit-linkedin');
+        if (submitBtnText) submitBtnText.innerText = '🚀 Publikasikan ke LinkedIn Sekarang';
+        if (submitBtnIcon) submitBtnIcon.innerHTML = `💼`;
+
+      } else if (platformKey === 'threads') {
+        if (badgeWrap) {
+          badgeWrap.style.background = 'rgba(255, 255, 255, 0.12)';
+          badgeWrap.style.borderColor = 'rgba(255, 255, 255, 0.3)';
+          badgeWrap.style.color = '#fff';
+        }
+        if (badgeText) badgeText.innerText = 'THREADS CONTENT PUBLISHING STUDIO';
+        if (titleText) titleText.innerText = 'Direct Share to Threads';
+        if (titleIcon) titleIcon.innerHTML = `<svg width="24" height="24" viewBox="0 0 24 24" fill="#ffffff"><path d="M12.186 24C5.452 24 .183 18.736.183 12.012S5.452.024 12.186.024c3.42 0 6.55 1.392 8.814 3.92l-2.678 2.056c-1.62-1.824-3.876-2.82-6.136-2.82-4.912 0-8.91 3.992-8.91 8.832 0 4.84 3.998 8.832 8.91 8.832 3.12 0 5.48-1.456 6.58-4.048h-6.58v-3.152h9.72c.112.56.168 1.152.168 1.768 0 6.32-4.408 11.592-9.982 11.592z"/></svg>`;
+        if (subtitle) subtitle.innerText = 'Bagikan gagasan dan video menarik ke komunitas Threads dengan integrasi resmi Meta Threads API.';
+
+        const thFields = document.getElementById('studioFieldsThreads');
+        if (thFields) thFields.style.display = 'block';
+        const cardOverlay = document.getElementById('overlay-social-card');
+        if (cardOverlay) cardOverlay.style.display = 'flex';
+        const handleCard = document.getElementById('studioCardAuthorHandle');
+        if (handleCard) handleCard.innerText = '@trendora.automation';
+        if (boxTitle) boxTitle.style.display = 'none';
+        if (captionMaxLen) captionMaxLen.innerText = '500';
+        if (submitBtn) submitBtn.classList.add('btn-submit-threads');
+        if (submitBtnText) submitBtnText.innerText = '🚀 Publikasikan ke Threads Sekarang';
+        if (submitBtnIcon) submitBtnIcon.innerHTML = `🧵`;
+
+      } else if (platformKey === 'multi') {
+        if (badgeWrap) {
+          badgeWrap.style.background = 'linear-gradient(135deg, rgba(168, 85, 247, 0.25) 0%, rgba(236, 72, 153, 0.25) 100%)';
+          badgeWrap.style.borderColor = 'rgba(168, 85, 247, 0.5)';
+          badgeWrap.style.color = '#f472b6';
+        }
+        if (badgeText) badgeText.innerText = 'OMNICHANNEL MULTI-BROADCAST STUDIO';
+        if (titleText) titleText.innerText = 'Omnichannel Multi-Broadcast';
+        if (titleIcon) titleIcon.innerHTML = `<span style="font-size: 24px;">⚡</span>`;
+        if (subtitle) subtitle.innerText = 'Distribusikan 1 video secara serempak ke Facebook, Instagram, YouTube, TikTok, dan jaringan sosial lainnya dengan 1 kali klik.';
+
+        const multiFields = document.getElementById('studioFieldsMulti');
+        if (multiFields) multiFields.style.display = 'block';
+        const fbOverlay = document.getElementById('overlay-facebook');
+        if (fbOverlay) fbOverlay.style.display = 'flex';
+        if (boxTitle) boxTitle.style.display = 'block';
+        if (captionMaxLen) captionMaxLen.innerText = '2200';
+        if (submitBtn) submitBtn.classList.add('btn-submit-multi');
+        if (submitBtnText) submitBtnText.innerText = '⚡ Broadcast ke Semua Platform Terpilih';
+        if (submitBtnIcon) submitBtnIcon.innerHTML = `🚀`;
+      }
+
+      updateStudioStatus(platformKey);
+      updateStudioCaptionPreview();
+    }
+
+    async function updateStudioStatus(platformKey) {
+      const p = platformKey || window.currentStudioPlatform || 'facebook';
+      const label = document.getElementById('studioConnPlatformLabel');
+      const badge = document.getElementById('studioConnStatusBadge');
+      const card = document.getElementById('studioCreatorCard');
+      const avatar = document.getElementById('studioCreatorAvatar');
+      const nick = document.getElementById('studioCreatorNickname');
+      const username = document.getElementById('studioCreatorUsername');
+      const connectWrap = document.getElementById('studioConnectBtnWrap');
+
+      const platforms = (window.currentUserData && window.currentUserData.connectedPlatforms) || [];
+      const pLower = String(p).toLowerCase();
+      
+      let isConn = false;
+      if (pLower === 'facebook' || pLower === 'instagram') {
+        isConn = platforms.some(x => String(x).toLowerCase().includes('meta') || String(x).toLowerCase().includes('facebook') || String(x).toLowerCase().includes('instagram'));
+      } else {
+        isConn = platforms.some(x => String(x).toLowerCase().includes(pLower));
+      }
+
+      const pNames = {
+        facebook: 'Meta / Facebook Page',
+        instagram: 'Instagram Business',
+        youtube: 'YouTube Shorts',
+        tiktok: 'TikTok Creator',
+        twitter: 'Twitter / X',
+        linkedin: 'LinkedIn',
+        threads: 'Threads',
+        multi: 'Omnichannel Suite'
+      };
+
+      if (label) label.innerText = `Status Akun ${pNames[p] || 'Sosial Media'}:`;
+
+      if (isConn || pLower === 'facebook' || pLower === 'instagram' || pLower === 'multi') {
+        if (badge) {
+          badge.className = 'status-badge success';
+          badge.innerText = '● Terhubung (Active)';
+        }
+        if (connectWrap) connectWrap.style.display = 'none';
+        if (card) card.style.display = 'flex';
+
+        if (pLower === 'facebook') {
+          if (avatar) avatar.src = 'https://ui-avatars.com/api/?name=Trendora+Official&background=1877f2&color=fff';
+          if (nick) nick.innerText = 'Trendora Automation Official';
+          if (username) username.innerText = 'Facebook Page (Software & AI)';
+        } else if (pLower === 'instagram') {
+          if (avatar) avatar.src = 'https://ui-avatars.com/api/?name=Trendora+Instagram&background=e1306c&color=fff';
+          if (nick) nick.innerText = 'trendora.automation';
+          if (username) username.innerText = 'Instagram Professional Account';
+        } else if (pLower === 'youtube') {
+          if (avatar) avatar.src = 'https://ui-avatars.com/api/?name=Trendora+YT&background=ff0000&color=fff';
+          if (nick) nick.innerText = 'Trendora Automation';
+          if (username) username.innerText = '@TrendoraAutomation (Channel)';
+        } else if (pLower === 'tiktok') {
+          if (avatar) avatar.src = 'https://ui-avatars.com/api/?name=Trendora+TikTok&background=00f2fe&color=000';
+          if (nick) nick.innerText = 'Trendora Creator';
+          if (username) username.innerText = '@trendora.automation';
+        } else {
+          if (avatar) avatar.src = 'https://ui-avatars.com/api/?name=Omni+Suite&background=38bdf8&color=fff';
+          if (nick) nick.innerText = 'Trendora Omnichannel Hub';
+          if (username) username.innerText = 'Multi-Platform Sync Active';
+        }
+      } else {
+        if (badge) {
+          badge.className = 'status-badge failed';
+          badge.innerText = '○ Belum Terhubung';
+        }
+        if (connectWrap) connectWrap.style.display = 'block';
+        if (card) card.style.display = 'none';
+      }
+
+      validateStudioForm();
+    }
+
+    function handleConnectStudioPlatform() {
+      const p = window.currentStudioPlatform || 'facebook';
+      const endpoints = {
+        facebook: '/api/meta-auth-url',
+        instagram: '/api/meta-auth-url',
+        youtube: '/api/youtube-auth-url',
+        tiktok: '/api/tiktok-auth-url',
+        twitter: '/api/twitter-auth-url',
+        linkedin: '/api/linkedin-auth-url',
+        threads: '/api/threads-auth-url'
+      };
+      const authUrl = endpoints[p] || '/api/meta-auth-url';
+      handleConnectSocial(p, authUrl);
+    }
+
+    async function fetchStudioMetaAccounts(isManual = false) {
+      try {
+        const { email, apiKey } = getValidUserCredentials();
+        const res = await fetch(getApiUrl(`/api/meta/accounts?email=${encodeURIComponent(email)}&api_key=${encodeURIComponent(apiKey)}`));
+        if (res.ok) {
+          const data = await res.json();
+          if (data.success && Array.isArray(data.accounts)) {
+            window.studioMetaAccounts = data.accounts;
+            const sel = document.getElementById('studioFbPageSelect');
+            if (sel) {
+              sel.innerHTML = data.accounts.map(acc => `
+                <option value="${acc.id}">${acc.name} (${acc.category || 'Page'})</option>
+              `).join('');
+            }
+            if (data.accounts.length > 0) {
+              const first = data.accounts[0];
+              const igName = document.getElementById('studioIgAccountName');
+              if (igName) igName.innerText = '@' + (first.instagram_username || 'trendora.automation').replace('@', '');
+            }
+            if (isManual) alert('Daftar Halaman Meta Facebook berhasil disinkronkan!');
+          }
+        }
+      } catch (e) {
+        console.warn('Gagal memuat akun Meta:', e);
+      }
+    }
+
+    function handleStudioFbPageChange() {
+      const sel = document.getElementById('studioFbPageSelect');
+      if (!sel) return;
+      const selectedName = sel.options[sel.selectedIndex].text.split('(')[0].trim();
+      const nick = document.getElementById('studioCreatorNickname');
+      if (nick) nick.innerText = selectedName;
+      const previewCap = document.getElementById('studioPreviewCaptionFb');
+      if (previewCap) {
+        const authorSpans = document.querySelectorAll('#overlay-facebook span');
+        authorSpans.forEach(s => {
+          if (s.innerText.includes('Trendora Official')) s.innerText = selectedName;
+        });
+      }
+    }
+
+    function updateStudioCaptionPreview() {
+      const input = document.getElementById('tiktokCaptionInput');
+      const counter = document.getElementById('tiktokCaptionCounter');
+      if (!input) return;
+      const val = input.value;
+      if (counter) counter.innerText = val.length;
+
+      // Update phone overlay teasers
+      const capFb = document.getElementById('studioPreviewCaptionFb');
+      const capIg = document.getElementById('studioPreviewCaptionIg');
+      const capTt = document.getElementById('studioPreviewCaptionTt');
+      const capCard = document.getElementById('studioPreviewCaptionCard');
+      const textToDisplay = val.trim() || 'Video konten siap tayang dengan optimasi omnichannel otomatis 🚀';
+
+      if (capFb) capFb.innerText = textToDisplay;
+      if (capIg) capIg.innerText = textToDisplay;
+      if (capTt) capTt.innerText = textToDisplay;
+      if (capCard) capCard.innerText = textToDisplay;
+
+      validateStudioForm();
+    }
+
+    function updateStudioTitleCounter() {
+      const titleInput = document.getElementById('studioYtTitleInput');
+      const counter = document.getElementById('studioYtTitleCounter');
+      const ytPreview = document.getElementById('studioPreviewTitleYt');
+      if (!titleInput) return;
+      const val = titleInput.value;
+      if (counter) counter.innerText = val.length;
+      if (ytPreview) ytPreview.innerText = val.trim() || 'Video Shorts Siap Tayang! #Shorts #Tech';
+      validateStudioForm();
+    }
+
+    async function generateStudioAICaption() {
+      const topicInput = document.getElementById('studioAiTopicInput');
+      const toneSelect = document.getElementById('studioAiToneSelect');
+      const btn = document.getElementById('btnStudioGenerateAi');
+      const btnText = document.getElementById('studioAiBtnText');
+      const btnIcon = document.getElementById('studioAiBtnIcon');
+
+      const topic = (topicInput && topicInput.value.trim()) || 'Tips Otomatisasi Bisnis & Konten 2026';
+      const tone = (toneSelect && toneSelect.value) || 'viral';
+      const platform = window.currentStudioPlatform || 'facebook';
+
+      if (btn) btn.disabled = true;
+      if (btnText) btnText.innerText = 'Meracik AI Hook...';
+      if (btnIcon) btnIcon.innerText = '⏳';
+
+      try {
+        const res = await fetch(getApiUrl('/api/studio/generate-caption'), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ topic, tone, platform })
+        });
+        const data = await res.json();
+        if (data.success) {
+          const capInput = document.getElementById('tiktokCaptionInput');
+          if (capInput) {
+            capInput.value = data.full_text || `${data.hook}
+
+${data.caption}
+
+${data.hashtags}`;
+            capInput.style.borderColor = '#38bdf8';
+            setTimeout(() => { capInput.style.borderColor = 'rgba(255,255,255,0.12)'; }, 1500);
+          }
+
+          const ytInput = document.getElementById('studioYtTitleInput');
+          if (ytInput && data.title) {
+            ytInput.value = data.title;
+            updateStudioTitleCounter();
+          }
+
+          updateStudioCaptionPreview();
+        } else {
+          alert('Gagal menghasilkan AI Hook. Menggunakan template fallback.');
+        }
+      } catch (e) {
+        console.warn('AI Caption generation error:', e);
+      } finally {
+        if (btn) btn.disabled = false;
+        if (btnText) btnText.innerText = 'Buatkan Hook AI';
+        if (btnIcon) btnIcon.innerText = '⚡';
+      }
+    }
 
     function switchVideoSourceMode(mode) {
       window.tiktokSourceMode = mode;
@@ -2340,7 +3454,7 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
     function handleTiktokVideoDrop(e) {
       e.preventDefault();
       const dropzone = e.currentTarget;
-      dropzone.style.borderColor = 'rgba(0, 242, 254, 0.35)';
+      dropzone.style.borderColor = 'rgba(56, 189, 248, 0.35)';
       if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length > 0) {
         handleTiktokVideoFileSelected(e.dataTransfer.files);
       }
@@ -2350,15 +3464,12 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
       if (!files || files.length === 0) return;
       const file = files[0];
 
-      // Validasi format
       if (!file.type.startsWith('video/')) {
         alert('Harap pilih file video berformat MP4, MOV, atau WebM.');
         return;
       }
-
-      // Validasi ukuran (max 500MB)
       if (file.size > 500 * 1024 * 1024) {
-        alert('Ukuran video terlalu besar. Maksimal 500MB sesuai batas TikTok Direct Post.');
+        alert('Ukuran video terlalu besar. Maksimal 500MB.');
         return;
       }
 
@@ -2368,8 +3479,6 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
       const videoPlayer = document.getElementById('tiktokPreviewVideo');
       const placeholder = document.getElementById('tiktokPreviewPlaceholder');
       const metaDisplay = document.getElementById('tiktokVideoMetaDisplay');
-      const btnShare = document.getElementById('btnShareToTiktok');
-      const notice = document.getElementById('tiktokShareNotice');
 
       const blobUrl = URL.createObjectURL(file);
       videoPlayer.src = blobUrl;
@@ -2380,15 +3489,19 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
       const sizeMb = (file.size / (1024 * 1024)).toFixed(1);
       metaDisplay.innerText = `${file.name} (${sizeMb} MB)`;
 
-      // Auto-isi caption jika masih kosong
       const captionInput = document.getElementById('tiktokCaptionInput');
       if (!captionInput.value.trim()) {
         const cleanName = file.name.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' ');
-        captionInput.value = `${cleanName} 🚀 #TrendoraAutomation #TikTokViral`;
-        updateTiktokCaptionCounter();
+        captionInput.value = `${cleanName} 🚀 #TrendoraAutomation #ReelsViral #Shorts`;
+      }
+      const titleInput = document.getElementById('studioYtTitleInput');
+      if (titleInput && !titleInput.value.trim()) {
+        titleInput.value = file.name.replace(/\.[^/.]+$/, '').replace(/[-_]/g, ' ').substring(0, 70);
+        updateStudioTitleCounter();
       }
 
-      validateTiktokForm();
+      updateStudioCaptionPreview();
+      validateStudioForm();
     }
 
     function handleLoadVideoFromUrl() {
@@ -2412,15 +3525,7 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
       videoPlayer.load();
 
       metaDisplay.innerText = `Online Video (${url.substring(0, 30)}...)`;
-      validateTiktokForm();
-    }
-
-    function updateTiktokCaptionCounter() {
-      const input = document.getElementById('tiktokCaptionInput');
-      const counter = document.getElementById('tiktokCaptionCounter');
-      if (input && counter) {
-        counter.innerText = input.value.length;
-      }
+      validateStudioForm();
     }
 
     function appendTiktokHashtag(tag) {
@@ -2428,18 +3533,12 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
       if (input) {
         if (!input.value.includes(tag)) {
           input.value = (input.value.trim() + ' ' + tag).trim();
-          updateTiktokCaptionCounter();
+          updateStudioCaptionPreview();
         }
       }
     }
 
-    // ==========================================
-    // TIKTOK UX GUIDELINES IMPLEMENTATION (Point 1 - 4)
-    // ==========================================
-
-    window.tiktokDisableReason = 'no_video';
-
-    function handleShareButtonHover(isHovering) {
+    function handleStudioShareHover(isHovering) {
       const btn = document.getElementById('btnShareToTiktok');
       const tooltip = document.getElementById('tiktokShareTooltip');
       const tooltipText = document.getElementById('tiktokShareTooltipText');
@@ -2459,100 +3558,60 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
       }
     }
 
-    function handleTiktokCommercialToggleChange() {
-      const toggle = document.getElementById('tiktokCommercialToggle');
-      const container = document.getElementById('tiktokCommercialOptionsContainer');
-      const brandOrganic = document.getElementById('tiktokCheckYourBrand');
-      const brandedContent = document.getElementById('tiktokCheckBrandedContent');
-      const noticeBanner = document.getElementById('tiktokCommercialNoticeBanner');
-      const warningBanner = document.getElementById('tiktokCommercialSelectionWarning');
-      const disclaimer = document.getElementById('tiktokComplianceText');
+    function validateStudioForm() {
+      const btn = document.getElementById('btnShareToTiktok');
+      const notice = document.getElementById('tiktokShareNotice');
+      const hasVideo = !!(window.selectedTiktokVideoFile || window.selectedTiktokVideoUrl);
+      const platform = window.currentStudioPlatform || 'facebook';
 
-      if (toggle.checked) {
-        container.style.display = 'block';
-        handleCommercialSelectionChange();
-      } else {
-        container.style.display = 'none';
-        brandOrganic.checked = false;
-        brandedContent.checked = false;
-        noticeBanner.style.display = 'none';
-        warningBanner.style.display = 'none';
+      if (!hasVideo) {
+        window.tiktokDisableReason = 'no_video';
+        if (btn) btn.disabled = true;
+        if (notice) {
+          notice.style.color = '#94a3b8';
+          notice.innerText = '⚠️ Silakan pilih berkas video di atas sebelum mempublikasikan.';
+        }
+        return false;
+      }
 
-        // Re-enable SELF_ONLY in privacy select if disabled
-        const optSelf = document.getElementById('optPrivacySelfOnly');
-        if (optSelf) {
-          optSelf.disabled = false;
-          optSelf.text = "🔒 Only Me (Hanya Saya / Private Draft)";
+      if (platform === 'tiktok') {
+        const commToggle = document.getElementById('tiktokCommercialToggle');
+        const brandOrganic = document.getElementById('tiktokCheckYourBrand') ? document.getElementById('tiktokCheckYourBrand').checked : false;
+        const brandContent = document.getElementById('tiktokCheckBrandedContent') ? document.getElementById('tiktokCheckBrandedContent').checked : false;
+        const privacySelect = document.getElementById('tiktokPrivacySelect');
+
+        if (commToggle && commToggle.checked && !brandOrganic && !brandContent) {
+          window.tiktokDisableReason = 'commercial_required';
+          if (btn) btn.disabled = true;
+          if (notice) {
+            notice.style.color = '#fca5a5';
+            notice.innerText = '⚠️ You need to indicate if your content promotes yourself, a third party, or both.';
+          }
+          return false;
         }
 
-        // Reset compliance declaration to default
-        disclaimer.innerHTML = 'By posting, you agree to TikTok\'s <a href="https://www.tiktok.com/legal/page/global/music-usage-confirmation/en" target="_blank" rel="noopener noreferrer" style="color: #00f2fe; text-decoration: underline; font-weight: 600;">Music Usage Confirmation</a>.';
-        
-        validateTiktokForm();
+        if (privacySelect && !privacySelect.value) {
+          window.tiktokDisableReason = 'privacy_required';
+          if (btn) btn.disabled = true;
+          if (notice) {
+            notice.style.color = '#f59e0b';
+            notice.innerText = '⚠️ Silakan pilih Status Privasi video TikTok terlebih dahulu.';
+          }
+          return false;
+        }
       }
+
+      window.tiktokDisableReason = null;
+      if (btn) btn.disabled = false;
+      if (notice) {
+        notice.style.color = '#34d399';
+        notice.innerText = `✅ Siap dipublikasikan ke ${platform.toUpperCase()}!`;
+      }
+      return true;
     }
 
-    function handleCommercialSelectionChange() {
-      const toggle = document.getElementById('tiktokCommercialToggle');
-      const brandOrganic = document.getElementById('tiktokCheckYourBrand').checked;
-      const brandedContent = document.getElementById('tiktokCheckBrandedContent').checked;
-      const noticeBanner = document.getElementById('tiktokCommercialNoticeBanner');
-      const noticeText = document.getElementById('tiktokCommercialNoticeText');
-      const warningBanner = document.getElementById('tiktokCommercialSelectionWarning');
-      const disclaimer = document.getElementById('tiktokComplianceText');
-      const privacySelect = document.getElementById('tiktokPrivacySelect');
-      const optSelf = document.getElementById('optPrivacySelfOnly');
-
-      // Point 3b: Privacy Management for Branded Content
-      if (brandedContent) {
-        if (optSelf) {
-          optSelf.disabled = true;
-          optSelf.text = "🔒 Only Me (Branded content visibility cannot be set to private)";
-        }
-        if (privacySelect && privacySelect.value === 'SELF_ONLY') {
-          privacySelect.value = 'PUBLIC_TO_EVERYONE';
-          alert('Branded content visibility cannot be set to private. Visibility has been automatically set to Public.');
-        }
-      } else {
-        if (optSelf) {
-          optSelf.disabled = false;
-          optSelf.text = "🔒 Only Me (Hanya Saya / Private Draft)";
-        }
-      }
-
-      // Point 3a: Dynamic Label Prompts
-      if (brandOrganic && !brandedContent) {
-        noticeBanner.style.display = 'flex';
-        noticeBanner.style.background = 'rgba(0, 242, 254, 0.12)';
-        noticeBanner.style.border = '1px solid rgba(0, 242, 254, 0.3)';
-        noticeBanner.style.color = '#00f2fe';
-        noticeText.innerText = "Your photo/video will be labeled as 'Promotional content'";
-      } else if (brandedContent) {
-        // Both or branded content only gets 'Paid partnership'
-        noticeBanner.style.display = 'flex';
-        noticeBanner.style.background = 'rgba(254, 44, 85, 0.12)';
-        noticeBanner.style.border = '1px solid rgba(254, 44, 85, 0.3)';
-        noticeBanner.style.color = '#fe2c55';
-        noticeText.innerText = "Your photo/video will be labeled as 'Paid partnership'";
-      } else {
-        noticeBanner.style.display = 'none';
-      }
-
-      // Warning when toggle ON but neither option selected
-      if (toggle.checked && !brandOrganic && !brandedContent) {
-        warningBanner.style.display = 'block';
-      } else {
-        warningBanner.style.display = 'none';
-      }
-
-      // Point 4: Dynamic Compliance Declaration
-      if (toggle.checked && brandedContent) {
-        disclaimer.innerHTML = 'By posting, you agree to TikTok\'s <a href="https://www.tiktok.com/legal/page/global/bc-policy/en" target="_blank" rel="noopener noreferrer" style="color: #00f2fe; text-decoration: underline; font-weight: 600;">Branded Content Policy</a> and <a href="https://www.tiktok.com/legal/page/global/music-usage-confirmation/en" target="_blank" rel="noopener noreferrer" style="color: #00f2fe; text-decoration: underline; font-weight: 600;">Music Usage Confirmation</a>.';
-      } else {
-        disclaimer.innerHTML = 'By posting, you agree to TikTok\'s <a href="https://www.tiktok.com/legal/page/global/music-usage-confirmation/en" target="_blank" rel="noopener noreferrer" style="color: #00f2fe; text-decoration: underline; font-weight: 600;">Music Usage Confirmation</a>.';
-      }
-
-      validateTiktokForm();
+    function validateTiktokForm() {
+      return validateStudioForm();
     }
 
     function handleTiktokPrivacyChange() {
@@ -2560,7 +3619,7 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
       const checkBranded = document.getElementById('tiktokCheckBrandedContent');
       const labelBranded = document.getElementById('tiktokLabelBrandedContent');
 
-      if (privacySelect.value === 'SELF_ONLY') {
+      if (privacySelect && privacySelect.value === 'SELF_ONLY') {
         if (checkBranded && checkBranded.checked) {
           checkBranded.checked = false;
           handleCommercialSelectionChange();
@@ -2577,159 +3636,159 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
           labelBranded.title = '';
         }
       }
-
-      validateTiktokForm();
+      validateStudioForm();
     }
 
-    function validateTiktokForm() {
-      const btnShare = document.getElementById('btnShareToTiktok');
-      const notice = document.getElementById('tiktokShareNotice');
-      const privacySelect = document.getElementById('tiktokPrivacySelect');
-      const commToggle = document.getElementById('tiktokCommercialToggle');
+    function handleTiktokCommercialToggleChange() {
+      const toggle = document.getElementById('tiktokCommercialToggle');
+      const container = document.getElementById('tiktokCommercialOptionsContainer');
+      const brandOrganic = document.getElementById('tiktokCheckYourBrand');
+      const brandedContent = document.getElementById('tiktokCheckBrandedContent');
+      const noticeBanner = document.getElementById('tiktokCommercialNoticeBanner');
+      const warningBanner = document.getElementById('tiktokCommercialSelectionWarning');
+      const disclaimer = document.getElementById('tiktokComplianceText');
+
+      if (toggle && toggle.checked) {
+        if (container) container.style.display = 'block';
+        handleCommercialSelectionChange();
+      } else {
+        if (container) container.style.display = 'none';
+        if (brandOrganic) brandOrganic.checked = false;
+        if (brandedContent) brandedContent.checked = false;
+        if (noticeBanner) noticeBanner.style.display = 'none';
+        if (warningBanner) warningBanner.style.display = 'none';
+        const optSelf = document.getElementById('optPrivacySelfOnly');
+        if (optSelf) {
+          optSelf.disabled = false;
+          optSelf.text = "🔒 Only Me (Hanya Saya / Private Draft)";
+        }
+        if (disclaimer) {
+          disclaimer.innerHTML = 'By posting, you agree to TikTok\'s <a href="https://www.tiktok.com/legal/page/global/music-usage-confirmation/en" target="_blank" rel="noopener noreferrer" style="color: #00f2fe; text-decoration: underline; font-weight: 600;">Music Usage Confirmation</a>.';
+        }
+        validateStudioForm();
+      }
+    }
+
+    function handleCommercialSelectionChange() {
+      const toggle = document.getElementById('tiktokCommercialToggle');
       const brandOrganic = document.getElementById('tiktokCheckYourBrand') ? document.getElementById('tiktokCheckYourBrand').checked : false;
       const brandedContent = document.getElementById('tiktokCheckBrandedContent') ? document.getElementById('tiktokCheckBrandedContent').checked : false;
+      const noticeBanner = document.getElementById('tiktokCommercialNoticeBanner');
+      const noticeText = document.getElementById('tiktokCommercialNoticeText');
+      const warningBanner = document.getElementById('tiktokCommercialSelectionWarning');
+      const disclaimer = document.getElementById('tiktokComplianceText');
+      const privacySelect = document.getElementById('tiktokPrivacySelect');
+      const optSelf = document.getElementById('optPrivacySelfOnly');
 
-      const hasVideo = !!(window.selectedTiktokVideoFile || window.selectedTiktokVideoUrl);
-      const hasPrivacy = privacySelect && !!privacySelect.value;
-      const isCommercialInvalid = commToggle && commToggle.checked && !brandOrganic && !brandedContent;
-
-      if (!hasVideo) {
-        window.tiktokDisableReason = 'no_video';
-        if (btnShare) btnShare.disabled = true;
-        if (notice) {
-          notice.style.color = '#94a3b8';
-          notice.innerText = '⚠️ Silakan pilih file video di atas sebelum membagikan ke TikTok.';
+      if (brandedContent) {
+        if (optSelf) {
+          optSelf.disabled = true;
+          optSelf.text = "🔒 Only Me (Branded content visibility cannot be set to private)";
         }
-        return false;
-      }
-
-      if (isCommercialInvalid) {
-        window.tiktokDisableReason = 'commercial_required';
-        if (btnShare) btnShare.disabled = true;
-        if (notice) {
-          notice.style.color = '#fca5a5';
-          notice.innerText = '⚠️ You need to indicate if your content promotes yourself, a third party, or both.';
+        if (privacySelect && privacySelect.value === 'SELF_ONLY') {
+          privacySelect.value = 'PUBLIC_TO_EVERYONE';
+          alert('Branded content visibility cannot be set to private. Visibility has been automatically set to Public.');
         }
-        return false;
-      }
-
-      if (!hasPrivacy) {
-        window.tiktokDisableReason = 'privacy_required';
-        if (btnShare) btnShare.disabled = true;
-        if (notice) {
-          notice.style.color = '#f59e0b';
-          notice.innerText = '⚠️ Silakan pilih Status Privasi video terlebih dahulu.';
+      } else {
+        if (optSelf) {
+          optSelf.disabled = false;
+          optSelf.text = "🔒 Only Me (Hanya Saya / Private Draft)";
         }
-        return false;
       }
 
-      window.tiktokDisableReason = null;
-      if (btnShare) btnShare.disabled = false;
-      if (notice) {
-        notice.style.color = '#34d399';
-        notice.innerText = '✅ Siap dibagikan ke akun TikTok Anda!';
+      if (brandOrganic && !brandedContent) {
+        if (noticeBanner) {
+          noticeBanner.style.display = 'flex';
+          noticeBanner.style.background = 'rgba(0, 242, 254, 0.12)';
+          noticeBanner.style.border = '1px solid rgba(0, 242, 254, 0.3)';
+          noticeBanner.style.color = '#00f2fe';
+        }
+        if (noticeText) noticeText.innerText = "Your photo/video will be labeled as 'Promotional content'";
+      } else if (brandedContent) {
+        if (noticeBanner) {
+          noticeBanner.style.display = 'flex';
+          noticeBanner.style.background = 'rgba(254, 44, 85, 0.12)';
+          noticeBanner.style.border = '1px solid rgba(254, 44, 85, 0.3)';
+          noticeBanner.style.color = '#fe2c55';
+        }
+        if (noticeText) noticeText.innerText = "Your photo/video will be labeled as 'Paid partnership'";
+      } else {
+        if (noticeBanner) noticeBanner.style.display = 'none';
       }
-      return true;
-    }
 
-    async function updateTiktokStudioStatus(connectedPlatforms) {
-      const platforms = connectedPlatforms || (window.currentUserData && window.currentUserData.connectedPlatforms) || [];
-      const isConnected = platforms.map(p => String(p).toLowerCase()).includes('tiktok');
+      if (toggle && toggle.checked && !brandOrganic && !brandedContent) {
+        if (warningBanner) warningBanner.style.display = 'block';
+      } else {
+        if (warningBanner) warningBanner.style.display = 'none';
+      }
 
-      const badge = document.getElementById('studioTiktokStatusBadge');
-      const connectBtnWrap = document.getElementById('studioConnectTiktokBtnWrap');
-      const creatorCard = document.getElementById('studioTiktokCreatorCard');
-      const creatorNickname = document.getElementById('studioTiktokNickname');
-      const creatorUsername = document.getElementById('studioTiktokUsername');
-      const creatorAvatar = document.getElementById('studioTiktokAvatar');
-
-      if (badge) {
-        if (isConnected) {
-          badge.className = 'status-badge success';
-          badge.innerText = '✅ Terhubung (TikTok Active)';
-          if (connectBtnWrap) connectBtnWrap.style.display = 'none';
-
-          // Ambil creator info dari TikTok API (Poin 1 Content Sharing Guidelines)
-          try {
-            const { email, apiKey } = getValidUserCredentials();
-            const res = await fetch(getApiUrl(`/api/tiktok/creator-info?email=${encodeURIComponent(email)}&api_key=${encodeURIComponent(apiKey)}`));
-            if (res.ok) {
-              const cData = await res.json();
-              if (cData.success && cData.creator) {
-                if (creatorCard) creatorCard.style.display = 'flex';
-                if (creatorNickname) creatorNickname.innerText = cData.creator.nickname || 'Deri Pernandi (Creator)';
-                if (creatorUsername) creatorUsername.innerText = cData.creator.username ? ('@' + cData.creator.username) : '@deripernandi';
-                if (cData.creator.avatar_url && creatorAvatar) {
-                  creatorAvatar.src = cData.creator.avatar_url;
-                  creatorAvatar.style.display = 'block';
-                }
-              }
-            }
-          } catch (e) {
-            if (creatorCard) creatorCard.style.display = 'flex';
-            if (creatorNickname) creatorNickname.innerText = (window.currentUserData && window.currentUserData.name) || 'Deri Pernandi (Creator)';
-            if (creatorUsername) creatorUsername.innerText = '@deripernandi';
-          }
-
+      if (disclaimer) {
+        if (toggle && toggle.checked && brandedContent) {
+          disclaimer.innerHTML = 'By posting, you agree to TikTok\'s <a href="https://www.tiktok.com/legal/page/global/bc-policy/en" target="_blank" rel="noopener noreferrer" style="color: #00f2fe; text-decoration: underline; font-weight: 600;">Branded Content Policy</a> and <a href="https://www.tiktok.com/legal/page/global/music-usage-confirmation/en" target="_blank" rel="noopener noreferrer" style="color: #00f2fe; text-decoration: underline; font-weight: 600;">Music Usage Confirmation</a>.';
         } else {
-          badge.className = 'status-badge failed';
-          badge.innerText = '❌ Belum Terhubung';
-          if (creatorCard) creatorCard.style.display = 'none';
-          if (connectBtnWrap) connectBtnWrap.style.display = 'block';
+          disclaimer.innerHTML = 'By posting, you agree to TikTok\'s <a href="https://www.tiktok.com/legal/page/global/music-usage-confirmation/en" target="_blank" rel="noopener noreferrer" style="color: #00f2fe; text-decoration: underline; font-weight: 600;">Music Usage Confirmation</a>.';
         }
       }
 
-      validateTiktokForm();
+      validateStudioForm();
     }
 
-    function handleConnectTiktokStudio() {
-      const { email } = getValidUserCredentials();
-      const popup = window.open(
-        getApiUrl(`/api/tiktok-auth-url?email=${encodeURIComponent(email)}`),
-        'tiktok_auth',
-        'width=600,height=750,scrollbars=yes,status=yes'
-      );
-    }
-
-    async function handleShareToTiktokSubmit() {
+    async function handleStudioPublishSubmit() {
       if (!window.selectedTiktokVideoFile && !window.selectedTiktokVideoUrl) {
-        alert('Harap pilih berkas video atau masukkan URL video sebelum membagikan.');
+        alert('Harap pilih berkas video atau masukkan URL video sebelum mempublikasikan.');
         return;
       }
 
-      const privacy = document.getElementById('tiktokPrivacySelect').value;
-      if (!privacy) {
-        alert('Silakan pilih Status Privasi video terlebih dahulu.');
-        return;
-      }
+      const platform = window.currentStudioPlatform || 'facebook';
 
-      const commToggle = document.getElementById('tiktokCommercialToggle').checked;
-      const brandOrganic = commToggle && document.getElementById('tiktokCheckYourBrand').checked;
-      const brandContent = commToggle && document.getElementById('tiktokCheckBrandedContent').checked;
-
-      if (commToggle && !brandOrganic && !brandContent) {
-        alert("You need to indicate if your content promotes yourself, a third party, or both.");
-        return;
+      // Validasi khusus TikTok
+      if (platform === 'tiktok') {
+        const privacy = document.getElementById('tiktokPrivacySelect').value;
+        if (!privacy) {
+          alert('Silakan pilih Status Privasi video terlebih dahulu.');
+          return;
+        }
+        const commToggle = document.getElementById('tiktokCommercialToggle').checked;
+        const brandOrganic = commToggle && document.getElementById('tiktokCheckYourBrand').checked;
+        const brandContent = commToggle && document.getElementById('tiktokCheckBrandedContent').checked;
+        if (commToggle && !brandOrganic && !brandContent) {
+          alert("You need to indicate if your content promotes yourself, a third party, or both.");
+          return;
+        }
       }
 
       const { email, apiKey } = getValidUserCredentials();
-      const caption = document.getElementById('tiktokCaptionInput').value.trim() || 'Video via Trendora Automation 🚀';
-      const allowComments = document.getElementById('tiktokAllowComments').checked;
-      const allowDuet = document.getElementById('tiktokAllowDuet').checked;
-      const allowStitch = document.getElementById('tiktokAllowStitch').checked;
+      const caption = document.getElementById('tiktokCaptionInput').value.trim() || 'Video via Trendora Omnichannel Studio 🚀';
+      const titleInput = document.getElementById('studioYtTitleInput');
+      const title = titleInput ? titleInput.value.trim() : '';
 
-      // 1. Tampilkan Modal Feedback Upload (Memenuhi Poin 4)
+      // Tampilkan Progress Modal dengan branding platform
       const progressModal = document.getElementById('tiktokUploadProgressModal');
+      const modalTitle = document.getElementById('studioProgressModalTitle');
+      const modalIcon = document.getElementById('studioProgressModalIcon');
       const statusText = document.getElementById('tiktokUploadStatusText');
       const barFill = document.getElementById('tiktokProgressBarFill');
       const pctText = document.getElementById('tiktokProgressPercent');
 
+      const pTitleMap = {
+        facebook: 'Facebook Reels',
+        instagram: 'Instagram Reels',
+        youtube: 'YouTube Shorts',
+        tiktok: 'TikTok Direct Post',
+        twitter: 'Twitter / X',
+        linkedin: 'LinkedIn',
+        threads: 'Threads',
+        multi: 'Omnichannel Suite'
+      };
+
+      if (modalTitle) modalTitle.innerText = `Mengunggah ke ${pTitleMap[platform] || 'Platform'}...`;
+      if (modalIcon) modalIcon.innerText = platform === 'facebook' ? '📘' : (platform === 'instagram' ? '📸' : (platform === 'youtube' ? '▶️' : (platform === 'tiktok' ? '🎵' : '🚀')));
+
       progressModal.style.display = 'flex';
       barFill.style.width = '15%';
       pctText.innerText = '15%';
-      statusText.innerText = 'Tahap 1/3: Membaca berkas video & memvalidasi parameter...';
+      statusText.innerText = 'Tahap 1/3: Memvalidasi berkas video & otorisasi akun...';
 
-      // Animasi progress dinamis
       let currentPct = 15;
       const progressInterval = setInterval(() => {
         if (currentPct < 85) {
@@ -2739,14 +3798,14 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
           pctText.innerText = `${currentPct}%`;
 
           if (currentPct > 35 && currentPct <= 65) {
-            statusText.innerText = 'Tahap 2/3: Menginisialisasi sesi posting TikTok API v2...';
+            statusText.innerText = `Tahap 2/3: Menginisialisasi session ${pTitleMap[platform]} API...`;
           } else if (currentPct > 65) {
-            statusText.innerText = 'Tahap 3/3: Mengunggah data video (binary chunks) ke cloud TikTok...';
+            statusText.innerText = 'Tahap 3/3: Mengunggah binary video chunks & memproses publikasi...';
           }
         }
       }, 400);
 
-      // 2. Siapkan FormData
+      // Siapkan FormData
       const formData = new FormData();
       if (window.selectedTiktokVideoFile) {
         formData.append('video_file', window.selectedTiktokVideoFile);
@@ -2755,16 +3814,38 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
       }
       formData.append('email', email);
       formData.append('api_key', apiKey);
+      formData.append('platform', platform);
+      formData.append('title', title);
       formData.append('caption', caption);
-      formData.append('privacy_level', privacy);
-      formData.append('disable_comment', allowComments ? 'false' : 'true');
-      formData.append('disable_duet', allowDuet ? 'false' : 'true');
-      formData.append('disable_stitch', allowStitch ? 'false' : 'true');
-      formData.append('brand_organic_toggle', brandOrganic ? 'true' : 'false');
-      formData.append('brand_content_toggle', brandContent ? 'true' : 'false');
+
+      if (platform === 'facebook') {
+        const pageSel = document.getElementById('studioFbPageSelect');
+        formData.append('page_id', pageSel ? pageSel.value : '');
+        const formatSel = document.getElementById('studioFbFormatSelect');
+        formData.append('format', formatSel ? formatSel.value : 'reels');
+      } else if (platform === 'instagram') {
+        const shareFeed = document.getElementById('studioIgShareToFeed');
+        formData.append('share_to_feed', shareFeed && shareFeed.checked ? 'true' : 'false');
+      } else if (platform === 'youtube') {
+        const coppaSel = document.getElementById('studioYtCoppaSelect');
+        formData.append('coppa_kids', coppaSel && coppaSel.value === 'true' ? 'true' : 'false');
+        const visSel = document.getElementById('studioYtVisibilitySelect');
+        formData.append('privacy_level', visSel ? visSel.value : 'public');
+      } else if (platform === 'tiktok') {
+        const privacy = document.getElementById('tiktokPrivacySelect').value;
+        const commToggle = document.getElementById('tiktokCommercialToggle').checked;
+        const brandOrganic = commToggle && document.getElementById('tiktokCheckYourBrand').checked;
+        const brandContent = commToggle && document.getElementById('tiktokCheckBrandedContent').checked;
+        formData.append('privacy_level', privacy);
+        formData.append('brand_organic_toggle', brandOrganic ? 'true' : 'false');
+        formData.append('brand_content_toggle', brandContent ? 'true' : 'false');
+      } else if (platform === 'multi') {
+        const checkedBoxes = document.querySelectorAll('input[name="multiPlatformPick"]:checked');
+        checkedBoxes.forEach(cb => formData.append('platforms', cb.value));
+      }
 
       try {
-        const res = await fetch(getApiUrl('/api/tiktok/direct-share'), {
+        const res = await fetch(getApiUrl('/api/studio/publish'), {
           method: 'POST',
           headers: {
             'X-User-Email': email,
@@ -2776,7 +3857,7 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
         clearInterval(progressInterval);
         barFill.style.width = '100%';
         pctText.innerText = '100%';
-        statusText.innerText = 'Selesai! Menyinkronkan respon dari server TikTok...';
+        statusText.innerText = 'Selesai! Menyinkronkan respon dari server platform...';
 
         const data = await res.json().catch(() => ({}));
 
@@ -2784,65 +3865,103 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
           progressModal.style.display = 'none';
 
           if (res.ok && data.success) {
-            // Tampilkan Modal Sukses (Memenuhi Poin 4)
+            // Tampilkan Modal Sukses
             const successModal = document.getElementById('tiktokSuccessModal');
+            const platBadge = document.getElementById('studioSuccessPlatformBadge');
             const pubIdSpan = document.getElementById('tiktokSuccessPublishId');
-            const privSpan = document.getElementById('tiktokSuccessPrivacy');
-            const commSpan = document.getElementById('tiktokSuccessCommercial');
+            const destSpan = document.getElementById('studioSuccessDestination');
             const timeSpan = document.getElementById('tiktokSuccessTimestamp');
+            const openLink = document.getElementById('btnOpenTiktokProfile');
+            const openIcon = document.getElementById('studioSuccessOpenBtnIcon');
+            const openText = document.getElementById('studioSuccessOpenBtnText');
 
-            pubIdSpan.innerText = data.publish_id || ('tt_publish_' + Math.random().toString(36).substring(2, 9));
-            privSpan.innerText = privacy === 'PUBLIC_TO_EVERYONE' ? '🌐 Publik (Semua Orang)' : (privacy === 'MUTUAL_FOLLOW_FRIENDS' ? '👥 Teman Saling Follow' : '🔒 Hanya Saya (Private)');
-            
-            if (commSpan) {
-              if (!commToggle) {
-                commSpan.innerText = 'Non-Commercial';
-                commSpan.style.color = '#94a3b8';
-              } else if (brandOrganic && brandContent) {
-                commSpan.innerText = 'Brand Organic & Branded Content (Paid partnership)';
-                commSpan.style.color = '#fe2c55';
-              } else if (brandContent) {
-                commSpan.innerText = 'Branded Content (Paid partnership)';
-                commSpan.style.color = '#fe2c55';
+            if (platBadge) platBadge.innerText = data.target_name || pTitleMap[platform] || 'Facebook Reels';
+            if (pubIdSpan) pubIdSpan.innerText = data.publish_id || ('publish_' + Math.random().toString(36).substring(2, 9));
+            if (destSpan) {
+              if (platform === 'facebook') {
+                destSpan.innerText = 'Facebook Page: Trendora Automation Official';
+              } else if (platform === 'instagram') {
+                destSpan.innerText = 'Instagram Account: @trendora.automation';
+              } else if (platform === 'youtube') {
+                destSpan.innerText = 'YouTube Channel: @TrendoraAutomation';
+              } else if (platform === 'tiktok') {
+                destSpan.innerText = 'TikTok Account: @trendora.automation';
               } else {
-                commSpan.innerText = 'Your Brand (Promotional content)';
-                commSpan.style.color = '#00f2fe';
+                destSpan.innerText = 'Multi-Platform Sync (Broadcast)';
               }
             }
 
-            timeSpan.innerText = new Date().toLocaleString('id-ID');
+            if (timeSpan) timeSpan.innerText = new Date().toLocaleString('id-ID');
+
+            if (openLink) {
+              if (data.permalink) {
+                openLink.href = data.permalink;
+              } else if (platform === 'facebook') {
+                openLink.href = 'https://www.facebook.com/';
+              } else if (platform === 'instagram') {
+                openLink.href = 'https://www.instagram.com/';
+              } else if (platform === 'youtube') {
+                openLink.href = 'https://www.youtube.com/';
+              } else {
+                openLink.href = 'https://www.tiktok.com/';
+              }
+            }
+
+            if (openText) openText.innerText = `🚀 Buka di ${pTitleMap[platform] || 'Platform'}`;
+            if (openIcon) openIcon.innerText = platform === 'facebook' ? '📘' : (platform === 'instagram' ? '📸' : (platform === 'youtube' ? '▶️' : '🎵'));
+
             successModal.style.display = 'flex';
           } else {
-            const errMsg = data.message || 'Gagal mempublikasikan video ke TikTok.';
-            alert(`⚠️ Gagal Mengunggah ke TikTok:\n\n${errMsg}`);
+            const errMsg = data.message || 'Gagal mempublikasikan video.';
+            alert(`⚠️ Gagal Mengunggah ke ${pTitleMap[platform] || 'Platform'}:
+
+${errMsg}`);
           }
         }, 600);
 
       } catch (err) {
         clearInterval(progressInterval);
         progressModal.style.display = 'none';
-        alert(`⚠️ Terjadi kesalahan koneksi saat mengunggah video:\n${err.message}`);
+        alert(`⚠️ Terjadi kesalahan koneksi saat memproses video:
+${err.message}`);
       }
+    }
+
+    function handleShareToTiktokSubmit() {
+      return handleStudioPublishSubmit();
     }
 
     function closeTiktokSuccessModal() {
       const modal = document.getElementById('tiktokSuccessModal');
       if (modal) modal.style.display = 'none';
-      // Reset video preview & controls
       window.selectedTiktokVideoFile = null;
       window.selectedTiktokVideoUrl = null;
-      document.getElementById('tiktokVideoInput').value = '';
-      document.getElementById('tiktokMediaUrlInput').value = '';
-      document.getElementById('tiktokPreviewVideo').style.display = 'none';
-      document.getElementById('tiktokPreviewPlaceholder').style.display = 'block';
-      document.getElementById('tiktokVideoMetaDisplay').innerText = 'Belum ada video dipilih';
-      document.getElementById('tiktokCommercialToggle').checked = false;
-      handleTiktokCommercialToggleChange();
-      document.getElementById('tiktokPrivacySelect').value = '';
-      validateTiktokForm();
+      const fileInput = document.getElementById('tiktokVideoInput');
+      const urlInput = document.getElementById('tiktokMediaUrlInput');
+      if (fileInput) fileInput.value = '';
+      if (urlInput) urlInput.value = '';
+      const videoPlayer = document.getElementById('tiktokPreviewVideo');
+      const placeholder = document.getElementById('tiktokPreviewPlaceholder');
+      if (videoPlayer) videoPlayer.style.display = 'none';
+      if (placeholder) placeholder.style.display = 'block';
+      const metaDisplay = document.getElementById('tiktokVideoMetaDisplay');
+      if (metaDisplay) metaDisplay.innerText = 'Belum ada video dipilih';
+
+      const commToggle = document.getElementById('tiktokCommercialToggle');
+      if (commToggle) {
+        commToggle.checked = false;
+        handleTiktokCommercialToggleChange();
+      }
+      validateStudioForm();
     }
 
-    // Tangkap sinyal OAuth sukses dari jendela popup
+    // Alias untuk backward compatibility
+    window.updateTiktokStudioStatus = function(platforms) {
+      updateStudioStatus(window.currentStudioPlatform || 'facebook');
+    };
+
+
+        // Tangkap sinyal OAuth sukses dari jendela popup
     window.addEventListener('message', async (event) => {
       if (event.data && (
         event.data.type === 'OAUTH_SUCCESS' || 
@@ -3291,6 +4410,7 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
 
       await verifyUserSession();
       fetchAndRenderDashboardLogs();
+      fetchStudioMetaAccounts();
       
       setInterval(() => {
         const activeLogTab = document.querySelector('#tab-logs.active-tab');
