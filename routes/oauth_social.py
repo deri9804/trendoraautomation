@@ -376,6 +376,140 @@ def get_meta_auth_url():
     full_url = f"{base_url}?{urllib.parse.urlencode(params)}"
     return jsonify({"success": True, "url": full_url})
 
+def sync_instagram_accounts_for_page(page_id, page_token, page_name=""):
+    """
+    Mengekstrak dan mengambil profil Instagram yang terhubung ke Facebook Page.
+    Mendukung 3 skema Meta Graph API:
+    1. instagram_business_account (Akun Bisnis/Kreator langsung)
+    2. connected_instagram_account (Akun terhubung via Meta Accounts Center)
+    3. page_backed_instagram_accounts (Akun Instagram yang dibackup oleh Page)
+    """
+    found_accounts = []
+    seen_ig_ids = set()
+
+    fields = "instagram_business_account{id,username,name,profile_picture_url},connected_instagram_account{id,username,name,profile_picture_url},page_backed_instagram_accounts{id,username,name,profile_picture_url}"
+    url = f"https://graph.facebook.com/v21.0/{page_id}?fields={fields}&access_token={page_token}"
+
+    try:
+        req = urllib.request.Request(url, headers={"User-Agent": "Trendora-Automation/1.0"})
+        with urllib.request.urlopen(req, timeout=12) as resp:
+            data = json.loads(resp.read().decode('utf-8'))
+
+            # 1. Cek instagram_business_account
+            ig_biz = data.get('instagram_business_account')
+            if ig_biz and isinstance(ig_biz, dict) and ig_biz.get('id'):
+                ig_id = str(ig_biz.get('id')).strip()
+                if ig_id not in seen_ig_ids:
+                    seen_ig_ids.add(ig_id)
+                    found_accounts.append({
+                        "id": ig_id,
+                        "name": ig_biz.get('name') or f"IG: {page_name}",
+                        "username": '@' + str(ig_biz.get('username') or page_name.lower().replace(' ', '')).replace('@', ''),
+                        "avatar_url": ig_biz.get('profile_picture_url') or '',
+                        "access_token": page_token
+                    })
+
+            # 2. Cek connected_instagram_account
+            ig_conn = data.get('connected_instagram_account')
+            if ig_conn and isinstance(ig_conn, dict) and ig_conn.get('id'):
+                ig_id = str(ig_conn.get('id')).strip()
+                if ig_id not in seen_ig_ids:
+                    seen_ig_ids.add(ig_id)
+                    found_accounts.append({
+                        "id": ig_id,
+                        "name": ig_conn.get('name') or f"IG: {page_name}",
+                        "username": '@' + str(ig_conn.get('username') or page_name.lower().replace(' ', '')).replace('@', ''),
+                        "avatar_url": ig_conn.get('profile_picture_url') or '',
+                        "access_token": page_token
+                    })
+
+            # 3. Cek page_backed_instagram_accounts
+            ig_backed = data.get('page_backed_instagram_accounts')
+            backed_list = []
+            if isinstance(ig_backed, dict):
+                backed_list = ig_backed.get('data', [])
+            elif isinstance(ig_backed, list):
+                backed_list = ig_backed
+
+            for b in backed_list:
+                if isinstance(b, dict) and b.get('id'):
+                    ig_id = str(b.get('id')).strip()
+                    if ig_id not in seen_ig_ids:
+                        seen_ig_ids.add(ig_id)
+                        ig_name = b.get('name') or f"IG: {page_name}"
+                        ig_uname = b.get('username') or page_name.lower().replace(' ', '')
+                        ig_pic = b.get('profile_picture_url') or ''
+
+                        # Ambil profil detail jika username atau profile picture belum lengkap
+                        if not ig_pic or not b.get('username'):
+                            try:
+                                ig_info_url = f"https://graph.facebook.com/v21.0/{ig_id}?fields=id,username,name,profile_picture_url&access_token={page_token}"
+                                with urllib.request.urlopen(urllib.request.Request(ig_info_url), timeout=8) as r_ig:
+                                    ig_detail = json.loads(r_ig.read().decode('utf-8'))
+                                    ig_name = ig_detail.get('name') or ig_name
+                                    ig_uname = ig_detail.get('username') or ig_uname
+                                    ig_pic = ig_detail.get('profile_picture_url') or ig_pic
+                            except Exception:
+                                pass
+
+                        found_accounts.append({
+                            "id": ig_id,
+                            "name": ig_name,
+                            "username": '@' + str(ig_uname).replace('@', ''),
+                            "avatar_url": ig_pic,
+                            "access_token": page_token
+                        })
+    except Exception as e:
+        print(f"[Instagram Page Link Discovery Error for {page_id}]: {e}")
+
+    return found_accounts
+
+
+def db_sync_instagram_from_connected_facebook_pages(email):
+    """
+    Menyinkronkan akun Instagram untuk user yang sudah memiliki Facebook Page terhubung.
+    Mengecek Facebook Pages di database user, mendeteksi Instagram terkait via Meta API,
+    dan otomatis menyimpannya ke Social Accounts Registry.
+    """
+    if not email:
+        return []
+    clean_email = str(email).strip().lower()
+
+    all_social = db.db_get_social_accounts(email=clean_email)
+    existing_ig_ids = {str(a.get('id', '')).strip() for a in all_social if str(a.get('platform', '')).lower() in ['instagram', 'ig']}
+
+    fb_pages = [a for a in all_social if str(a.get('platform', '')).lower() in ['facebook', 'fb', 'facebook_page'] and str(a.get('id', '')) != 'meta_primary']
+
+    newly_added = []
+    for page in fb_pages:
+        page_id = page.get('id')
+        page_token = page.get('access_token')
+        page_name = page.get('name', 'Facebook Page')
+
+        if not page_id or not page_token:
+            continue
+
+        ig_accounts = sync_instagram_accounts_for_page(page_id, page_token, page_name)
+        for ig in ig_accounts:
+            if ig['id'] not in existing_ig_ids:
+                save_data = {
+                    "id": ig['id'],
+                    "platform": "instagram",
+                    "name": ig['name'],
+                    "username": ig['username'],
+                    "avatar_url": ig['avatar_url'],
+                    "access_token": ig['access_token'],
+                    "connected_at": datetime.now().isoformat()
+                }
+                success, _ = db.db_save_social_account(clean_email, save_data)
+                if success:
+                    existing_ig_ids.add(ig['id'])
+                    newly_added.append(save_data)
+                    print(f"[Auto-Sync Instagram]: Berhasil mendaftarkan Instagram '{ig['name']}' ({ig['username']}) untuk {clean_email}")
+
+    return newly_added
+
+
 @oauth_bp.route('/auth/meta/callback', methods=['GET'])
 def meta_callback():
     code = request.args.get('code')
@@ -435,8 +569,15 @@ def meta_callback():
                 # 2. Ambil Daftar Halaman Facebook milik User (/me/accounts)
                 final_token = long_lived_token
                 try:
-                    acc_url = f"https://graph.facebook.com/v21.0/me/accounts?fields=id,name,access_token,category,instagram_business_account&access_token={long_lived_token}"
-                    with urllib.request.urlopen(urllib.request.Request(acc_url), timeout=12) as acc_resp:
+                    acc_url = (
+                        f"https://graph.facebook.com/v21.0/me/accounts?"
+                        f"fields=id,name,access_token,category,"
+                        f"instagram_business_account{{id,username,name,profile_picture_url}},"
+                        f"connected_instagram_account{{id,username,name,profile_picture_url}},"
+                        f"page_backed_instagram_accounts{{id,username,name,profile_picture_url}}"
+                        f"&access_token={long_lived_token}"
+                    )
+                    with urllib.request.urlopen(urllib.request.Request(acc_url), timeout=15) as acc_resp:
                         acc_data = json.loads(acc_resp.read().decode('utf-8'))
                         pages = acc_data.get('data', [])
                         if pages:
@@ -445,13 +586,7 @@ def meta_callback():
                             page_id = first_page.get('id')
                             if first_page.get('access_token'):
                                 final_token = first_page.get('access_token')
-                            
-                            ig_info = first_page.get('instagram_business_account')
-                            if ig_info:
-                                has_instagram = True
-                                print(f"[Meta Discovery]: Terhubung ke Page '{page_name}' (ID: {page_id}) & Instagram (ID: {ig_info.get('id')})")
-                            else:
-                                print(f"[Meta Discovery]: Terhubung ke Page '{page_name}' (ID: {page_id})")
+                            print(f"[Meta Discovery]: Ditemukan {len(pages)} Facebook Page untuk {email}")
                         else:
                             print(f"[Meta Warning]: User {email} tidak memiliki Facebook Page.")
                 except Exception as e_acc:
@@ -487,20 +622,20 @@ def meta_callback():
                             "connected_at": datetime.now().isoformat()
                         })
 
-                        ig_node = p.get('instagram_business_account')
-                        if ig_node and ig_node.get('id'):
-                            ig_id = ig_node.get('id')
-                            ig_user = ig_node.get('username') or ('@' + p_name.lower().replace(' ', ''))
-                            ig_pic = ig_node.get('profile_picture_url', '')
+                        # Ekstrak akun Instagram yang tertaut pada Facebook Page ini
+                        ig_list = sync_instagram_accounts_for_page(p_id, p_tok, p_name)
+                        for ig in ig_list:
+                            has_instagram = True
                             db.db_save_social_account(email, {
-                                "id": ig_id,
+                                "id": ig['id'],
                                 "platform": "instagram",
-                                "name": f"IG: {p_name}",
-                                "username": '@' + ig_user.replace('@', ''),
-                                "avatar_url": ig_pic,
-                                "access_token": p_tok,
+                                "name": ig['name'],
+                                "username": ig['username'],
+                                "avatar_url": ig['avatar_url'],
+                                "access_token": ig['access_token'],
                                 "connected_at": datetime.now().isoformat()
                             })
+                            print(f"[Meta Discovery]: Instagram terhubung '{ig['name']}' ({ig['username']}) - ID: {ig['id']}")
         except Exception as e:
             print("Meta OAuth Error:", e)
 
@@ -2234,18 +2369,36 @@ def get_meta_accounts():
         real_fb_pages = [a for a in fb_saved if str(a.get('id', '')) != 'meta_primary']
         active_fb_pages = real_fb_pages if real_fb_pages else fb_saved
 
+        ig_saved = [a for a in saved_accounts if str(a.get('platform', '')).lower() in ['instagram', 'ig']]
         for p in active_fb_pages:
             pid = str(p.get('id', '')).strip()
             if not pid or pid in seen_ids:
                 continue
             seen_ids.add(pid)
+
+            ig_id_val = p.get('instagram_id') or ''
+            ig_uname_val = p.get('instagram_username') or ''
+            if not ig_id_val and ig_saved:
+                p_name_clean = str(p.get('name', '')).lower().replace(' ', '')
+                matched_ig = None
+                for ig_item in ig_saved:
+                    ig_n = str(ig_item.get('name', '')).lower().replace(' ', '')
+                    ig_u = str(ig_item.get('username', '')).lower().replace('@', '').replace(' ', '')
+                    if p_name_clean in ig_n or p_name_clean in ig_u or ig_u in p_name_clean:
+                        matched_ig = ig_item
+                        break
+                if not matched_ig:
+                    matched_ig = ig_saved[0]
+                ig_id_val = matched_ig.get('id') or ''
+                ig_uname_val = matched_ig.get('username') or ''
+
             accounts.append({
                 "id": pid,
                 "name": p.get('name') or "Facebook Page",
                 "category": p.get('category') or p.get('username') or 'Page',
                 "access_token": p.get('access_token') or '',
-                "instagram_id": p.get('instagram_id') or '',
-                "instagram_username": p.get('instagram_username') or ('@' + str(p.get('name', '')).lower().replace(' ', '')),
+                "instagram_id": ig_id_val,
+                "instagram_username": ig_uname_val or ('@' + str(p.get('name', '')).lower().replace(' ', '')),
                 "avatar_url": p.get('avatar_url') or f"https://graph.facebook.com/v21.0/{pid}/picture?type=normal"
             })
     except Exception as e_reg:
@@ -2674,16 +2827,32 @@ def studio_omnichannel_publish():
         target_name = "Instagram Reels"
         meta_token = db.db_get_meta_token_by_api_key(api_key, email=email)
 
-        if meta_token and media_url:
+        # Cari akun Instagram tujuan dari registry
+        all_social = db.db_get_social_accounts(email=email)
+        ig_accounts = [a for a in all_social if str(a.get('platform', '')).lower() in ['instagram', 'ig']]
+        target_ig = None
+        if account_id:
+            for a in ig_accounts:
+                if str(a.get('id')).strip() == account_id:
+                    target_ig = a
+                    break
+        if not target_ig and ig_accounts:
+            target_ig = ig_accounts[0]
+
+        ig_user_id = target_ig.get('id') if target_ig else None
+        active_ig_token = (target_ig.get('access_token') if target_ig else None) or meta_token
+
+        if active_ig_token and media_url:
             try:
-                ig_info_url = f"https://graph.facebook.com/v21.0/me/accounts?fields=instagram_business_account&access_token={meta_token}"
-                with urllib.request.urlopen(urllib.request.Request(ig_info_url), timeout=12) as res_ig:
-                    ig_data = json.loads(res_ig.read().decode('utf-8'))
-                ig_user_id = None
-                for d in ig_data.get('data', []):
-                    if d.get('instagram_business_account', {}).get('id'):
-                        ig_user_id = d['instagram_business_account']['id']
-                        break
+                if not ig_user_id:
+                    ig_info_url = f"https://graph.facebook.com/v21.0/me/accounts?fields=instagram_business_account&access_token={active_ig_token}"
+                    with urllib.request.urlopen(urllib.request.Request(ig_info_url), timeout=12) as res_ig:
+                        ig_data = json.loads(res_ig.read().decode('utf-8'))
+                    for d in ig_data.get('data', []):
+                        if d.get('instagram_business_account', {}).get('id'):
+                            ig_user_id = d['instagram_business_account']['id']
+                            break
+
                 if ig_user_id:
                     ig_container_url = f"https://graph.facebook.com/v21.0/{ig_user_id}/media"
                     ig_payload = urllib.parse.urlencode({
@@ -2691,7 +2860,7 @@ def studio_omnichannel_publish():
                         'video_url': media_url,
                         'caption': caption,
                         'share_to_feed': str(share_to_feed).lower(),
-                        'access_token': meta_token
+                        'access_token': active_ig_token
                     }).encode('utf-8')
                     with urllib.request.urlopen(urllib.request.Request(ig_container_url, data=ig_payload, method='POST')) as res_cont:
                         cont_data = json.loads(res_cont.read().decode('utf-8'))
@@ -2700,7 +2869,7 @@ def studio_omnichannel_publish():
                         import time
                         time.sleep(3)
                         ig_publish_url = f"https://graph.facebook.com/v21.0/{ig_user_id}/media_publish"
-                        ig_pub_payload = urllib.parse.urlencode({'creation_id': creation_id, 'access_token': meta_token}).encode('utf-8')
+                        ig_pub_payload = urllib.parse.urlencode({'creation_id': creation_id, 'access_token': active_ig_token}).encode('utf-8')
                         with urllib.request.urlopen(urllib.request.Request(ig_publish_url, data=ig_pub_payload, method='POST')) as res_pub:
                             pub_data = json.loads(res_pub.read().decode('utf-8'))
                             pub_id = pub_data.get('id', creation_id)
@@ -2989,6 +3158,17 @@ def get_all_social_accounts():
     has_real_fb = any(str(a.get('platform', '')).lower() in ['facebook', 'fb', 'facebook_page'] and str(a.get('id', '')) != 'meta_primary' for a in accounts)
     if has_real_fb:
         accounts = [a for a in accounts if not (str(a.get('platform', '')).lower() in ['facebook', 'fb', 'facebook_page'] and str(a.get('id', '')) == 'meta_primary')]
+
+    # Auto-heal: Cek apakah user memiliki Facebook Pages tetapi akun Instagram belum tersinkronkan
+    has_fb_page = any(str(a.get('platform', '')).lower() in ['facebook', 'fb', 'facebook_page'] and str(a.get('id', '')) != 'meta_primary' for a in accounts)
+    has_ig = any(str(a.get('platform', '')).lower() in ['instagram', 'ig'] for a in accounts)
+    if has_fb_page and not has_ig:
+        try:
+            added = db_sync_instagram_from_connected_facebook_pages(email)
+            if added:
+                accounts = db.db_get_social_accounts(email=email, api_key=api_key)
+        except Exception as e_sync:
+            print("[Auto-heal Instagram in social_accounts error]:", e_sync)
 
     for acc in accounts:
         p = str(acc.get('platform', '')).lower()

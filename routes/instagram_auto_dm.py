@@ -291,6 +291,15 @@ def get_ig_auto_dm_settings_api():
     # Ambil daftar akun Instagram yang terhubung
     all_social = db.db_get_social_accounts(email=email)
     ig_accounts = [a for a in all_social if str(a.get('platform', '')).lower() in ['instagram', 'ig']]
+    if not ig_accounts:
+        try:
+            from routes.oauth_social import db_sync_instagram_from_connected_facebook_pages
+            added = db_sync_instagram_from_connected_facebook_pages(email)
+            if added:
+                all_social = db.db_get_social_accounts(email=email)
+                ig_accounts = [a for a in all_social if str(a.get('platform', '')).lower() in ['instagram', 'ig']]
+        except Exception as e_heal:
+            print(f"[Instagram Auto DM Heal Error]: {e_heal}")
 
     custom_sheet_id = settings.get('custom_sheet_id', '').strip()
     user_sheet_url = f"https://docs.google.com/spreadsheets/d/{custom_sheet_id}/edit" if custom_sheet_id else ""

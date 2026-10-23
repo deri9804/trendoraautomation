@@ -7041,9 +7041,10 @@ ${err.message}`);
 
       if (accTitle && accSub) {
         if (igAccounts.length > 0) {
-          const firstIg = igAccounts[0];
-          accTitle.innerHTML = `Akun Instagram Terhubung: <strong style="color: #38bdf8;">${firstIg.username || firstIg.name}</strong> <span style="font-size:10px; color:#34d399; background:rgba(16,185,129,0.15); padding:2px 6px; border-radius:4px; margin-left:6px;">● Siap Digunakan</span>`;
-          accSub.innerText = `ID: ${firstIg.id || 'N/A'} • Siap memproses webhook komentar dan mengirim auto DM via Meta Graph API v21.0`;
+          const names = igAccounts.map(a => a.username || a.name).join(', ');
+          const ids = igAccounts.map(a => a.id).join(', ');
+          accTitle.innerHTML = `Akun Instagram Terhubung: <strong style="color: #38bdf8;">${names}</strong> <span style="font-size:10px; color:#34d399; background:rgba(16,185,129,0.15); padding:2px 6px; border-radius:4px; margin-left:6px;">● ${igAccounts.length > 1 ? igAccounts.length + ' Akun Aktif' : 'Siap Digunakan'}</span>`;
+          accSub.innerText = `ID: ${ids} • Siap memproses webhook komentar dan mengirim auto DM via Meta Graph API v21.0`;
         } else {
           accTitle.innerHTML = `<span style="color: #f59e0b;">⚠️ Belum Ada Akun Instagram Terhubung</span>`;
           accSub.innerHTML = `Silakan hubungkan akun Facebook Page &amp; Instagram Bisnis Anda di tab <strong>Akun Sosial Media</strong> agar bot dapat bekerja.`;
