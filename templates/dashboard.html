@@ -1995,6 +1995,11 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
                 <span id="igAutoDmMasterStatusText">Bot: AKTIF</span>
               </button>
 
+              <button type="button" id="btnScanIgCommentsNow" onclick="triggerScanInstagramCommentsNow()" style="padding: 10px 16px; background: linear-gradient(135deg, rgba(225,48,108,0.2), rgba(168,85,247,0.2)); border: 1px solid rgba(225,48,108,0.45); color: #f472b6; border-radius: 10px; font-size: 13px; font-weight: 700; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; transition: all 0.2s;" title="Pindai dan balas komentar baru sekarang secara instan">
+                <span id="scanIgCommentsIcon">⚡</span>
+                <span id="scanIgCommentsText">Scan Komentar Sekarang</span>
+              </button>
+
               <button type="button" onclick="loadInstagramAutoDmSettings()" style="padding: 10px 14px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.12); color: #94a3b8; border-radius: 10px; font-size: 13px; cursor: pointer; transition: all 0.2s;" title="Segarkan Data">
                 🔄 Segarkan
               </button>
@@ -7564,6 +7569,51 @@ ${err.message}`);
     // Attach all functions explicitly to global window object
     window.switchInstagramAutoDmMode = switchInstagramAutoDmMode;
     window.toggleInstagramAutoDmMaster = toggleInstagramAutoDmMaster;
+    async function triggerScanInstagramCommentsNow(isSilent = false) {
+      const { email, apiKey } = getValidUserCredentials();
+      const btn = document.getElementById('btnScanIgCommentsNow');
+      const text = document.getElementById('scanIgCommentsText');
+      const icon = document.getElementById('scanIgCommentsIcon');
+      if (!isSilent) {
+        if (btn) btn.disabled = true;
+        if (text) text.innerText = 'Memindai postingan...';
+        if (icon) icon.innerText = '⏳';
+      }
+
+      try {
+        const res = await fetch(getApiUrl(`/api/instagram-auto-dm/scan-now?email=${encodeURIComponent(email)}&api_key=${encodeURIComponent(apiKey)}`), {
+          method: 'POST'
+        });
+        const d = await res.json();
+        if (d.success && d.result) {
+          const count = d.result.processed_count || 0;
+          if (count > 0) {
+            showNotification(`⚡ Berhasil membalas ${count} komentar baru & mengirim DM otomatis!`, 'success');
+            await loadInstagramAutoDmSettings();
+          } else if (!isSilent) {
+            showNotification('Semua komentar terbaru sudah dibalas. Tidak ada komentar baru.', 'info');
+          }
+        }
+      } catch (e) {
+        if (!isSilent) showNotification('Kendala saat memindai: ' + e, 'error');
+      } finally {
+        if (!isSilent) {
+          if (btn) btn.disabled = false;
+          if (text) text.innerText = 'Scan Komentar Sekarang';
+          if (icon) icon.innerText = '⚡';
+        }
+      }
+    }
+
+    // Auto-scanner background loop every 25 seconds when on instagram-auto-dm tab
+    setInterval(() => {
+      const activeTab = document.querySelector('#tab-instagram-auto-dm.active-tab');
+      if (activeTab && typeof triggerScanInstagramCommentsNow === 'function') {
+        triggerScanInstagramCommentsNow(true);
+      }
+    }, 25000);
+
+    window.triggerScanInstagramCommentsNow = triggerScanInstagramCommentsNow;
     window.loadInstagramAutoDmSettings = loadInstagramAutoDmSettings;
     window.saveInstagramAutoDmRuleFromForm = saveInstagramAutoDmRuleFromForm;
     window.deleteInstagramAutoDmRule = deleteInstagramAutoDmRule;

@@ -281,6 +281,170 @@ def instagram_webhook():
 # DASHBOARD CONFIGURATION APIS
 # =========================================================================
 
+def poll_recent_instagram_comments(email):
+    """
+    Memeriksa postingan/Reels terbaru akun Instagram milik user,
+    mendeteksi komentar baru yang belum diproses, dan mengeksekusi
+    Balasan Komentar Publik + Pesan DM Privat sesuai aturan aktif.
+    Berfungsi sebagai Fallback Handal jika Meta App masih dalam Development Mode.
+    """
+    clean_email = str(email).strip().lower()
+    settings = db.db_get_ig_auto_dm_settings(clean_email)
+    if not settings.get('is_enabled', False):
+        return False, "Bot Instagram Auto DM sedang non-aktif"
+
+    all_social = db.db_get_social_accounts(clean_email)
+    ig_accounts = [a for a in all_social if str(a.get('platform', '')).lower() in ['instagram', 'ig']]
+    if not ig_accounts:
+        return False, "Belum ada akun Instagram yang terhubung"
+
+    source_mode = settings.get('source_mode', 'dashboard')
+    if source_mode == 'spreadsheet':
+        rules = db.db_get_ig_auto_dm_rules_from_sheet(clean_email, sheet_id=settings.get('custom_sheet_id'))
+    else:
+        rules = settings.get('rules', [])
+
+    if not rules:
+        return False, f"Tidak ada aturan aktif di mode {source_mode}"
+
+    total_processed = 0
+    results = []
+
+    for acc in ig_accounts:
+        ig_user_id = acc.get('id')
+        access_token = acc.get('access_token')
+        if not ig_user_id or not access_token:
+            continue
+
+        try:
+            # Ambil 5 postingan/Reels terbaru
+            media_url = f"https://graph.facebook.com/v21.0/{ig_user_id}/media?fields=id,caption,timestamp&limit=5&access_token={access_token}"
+            req_m = urllib.request.Request(media_url, headers={"User-Agent": "Trendora-Automation/1.0"})
+            with urllib.request.urlopen(req_m, timeout=10) as resp_m:
+                m_data = json.loads(resp_m.read().decode('utf-8'))
+                media_list = m_data.get('data', [])
+
+            for m in media_list:
+                mid = m.get('id')
+                c_url = f"https://graph.facebook.com/v21.0/{mid}/comments?fields=id,text,from,timestamp&limit=25&access_token={access_token}"
+                req_c = urllib.request.Request(c_url, headers={"User-Agent": "Trendora-Automation/1.0"})
+                with urllib.request.urlopen(req_c, timeout=10) as resp_c:
+                    c_data = json.loads(resp_c.read().decode('utf-8'))
+                    comments = c_data.get('data', [])
+
+                for c in comments:
+                    comment_id = str(c.get('id', '')).strip()
+                    comment_text = (c.get('text') or '').strip()
+                    from_user = c.get('from', {})
+                    commenter_id = str(from_user.get('id', '')).strip()
+                    commenter_username = (from_user.get('username') or '').strip()
+
+                    if not comment_id or not comment_text:
+                        continue
+                    if commenter_id and commenter_id == ig_user_id:
+                        continue
+                    if is_comment_processed(comment_id):
+                        continue
+
+                    # Evaluasi keyword
+                    matched_rule = None
+                    clean_text = comment_text.lower()
+                    for r in rules:
+                        if not r.get('is_active', True):
+                            continue
+                        kw = str(r.get('keyword', '')).strip().lower()
+                        if not kw:
+                            continue
+                        m_type = str(r.get('match_type', 'contains')).lower()
+                        if kw in ['*', 'all', 'semua']:
+                            matched_rule = r
+                            break
+                        elif m_type == 'exact' and clean_text == kw:
+                            matched_rule = r
+                            break
+                        elif m_type != 'exact' and kw in clean_text:
+                            matched_rule = r
+                            break
+
+                    if not matched_rule:
+                        continue
+
+                    mark_comment_processed(comment_id)
+
+                    dm_template = matched_rule.get('dm_reply', '').strip()
+                    comment_template = matched_rule.get('comment_reply', '').strip()
+                    if commenter_username:
+                        dm_template = dm_template.replace('{username}', f"@{commenter_username}")
+                        comment_template = comment_template.replace('{username}', f"@{commenter_username}")
+
+                    # Eksekusi Public Reply
+                    comm_ok = False
+                    if comment_template:
+                        comm_ok, _ = send_instagram_public_reply(comment_id, comment_template, access_token)
+
+                    # Eksekusi Private DM
+                    dm_ok = False
+                    if dm_template:
+                        dm_ok, _ = send_instagram_private_reply(ig_user_id, comment_id, dm_template, access_token)
+
+                    db.db_record_ig_auto_dm_stat(clean_email, dm_success=dm_ok, reply_success=comm_ok)
+                    db.db_log_ig_auto_dm_event(clean_email, {
+                        "comment_id": comment_id,
+                        "commenter_username": commenter_username,
+                        "comment_text": comment_text,
+                        "keyword_matched": matched_rule.get('keyword'),
+                        "source_mode": source_mode,
+                        "dm_success": dm_ok,
+                        "reply_success": comm_ok,
+                        "timestamp": datetime.now().isoformat()
+                    })
+
+                    total_processed += 1
+                    results.append({
+                        "comment_id": comment_id,
+                        "username": commenter_username,
+                        "text": comment_text,
+                        "dm_sent": dm_ok,
+                        "reply_sent": comm_ok
+                    })
+        except Exception as e_poll:
+            print(f"[IG Poll Error for {ig_user_id}]: {e_poll}")
+
+    return True, {"processed_count": total_processed, "items": results}
+
+
+@ig_auto_dm_bp.route('/api/instagram-auto-dm/scan-now', methods=['POST', 'GET'])
+def scan_ig_comments_now():
+    """
+    Memicu pemindaian komentar Instagram secara instan (On-Demand & Auto-Polling).
+    Berguna saat Meta App masih dalam Development Mode atau ketika webhook Meta tertunda.
+    """
+    session_email = session.get('user_email', '').strip().lower()
+    api_key = (request.headers.get('X-API-Key') or request.args.get('api_key') or '').strip()
+    email = session_email or request.args.get('email', '').strip().lower()
+    if not email and request.is_json:
+        email = (request.json.get('email') or '').strip().lower()
+    if not email and api_key:
+        sheet_u = db.get_gsheet()
+        if sheet_u:
+            try:
+                for r in sheet_u.get_all_values()[1:]:
+                    if len(r) >= 5 and str(r[4]).strip() == api_key:
+                        email = str(r[0]).strip().lower()
+                        break
+            except Exception:
+                pass
+    if not email:
+        email = "deripernandi99@gmail.com"
+
+    success, data = poll_recent_instagram_comments(email)
+    return jsonify({
+        "success": success,
+        "email": email,
+        "result": data
+    })
+
+
 @ig_auto_dm_bp.route('/api/instagram-auto-dm/settings', methods=['GET'])
 def get_ig_auto_dm_settings_api():
     """
