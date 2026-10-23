@@ -1022,15 +1022,7 @@ def db_ensure_ig_auto_dm_worksheet_template(email, sheet_id=None):
         clean_email = (email or 'user@trendora.com').strip().lower()
         now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         
-        if len(rows) <= 1:
-            samples = [
-                [clean_email, "MAU", "contains", "Halo kak! Linknya sudah kami kirimkan ke DM kamu ya, cek inbox kamu sekarang 😊✨", "Hai kak! Ini dia link akses yang kamu minta: https://trendoraautomation.my.id 🔥 Jangan lupa follow akun kami ya!", "AKTIF", "Keyword default MAU", now_str],
-                [clean_email, "LINK", "contains", "Siap kak, linknya sudah meluncur ke DM kamu! Cek sekarang ya 🙏", "Halo! Terima kasih atas minatnya. Ini link langsungnya: https://trendoraautomation.my.id", "AKTIF", "Keyword default LINK", now_str],
-                [clean_email, "INFO", "contains", "Informasi lengkapnya sudah kami DM ya kak, silahkan dicek inboxnya ✨", "Halo kak! Informasi detail & cara pendaftarannya bisa dicek di: https://trendoraautomation.my.id", "AKTIF", "Keyword default INFO", now_str],
-                [clean_email, "HARGA", "contains", "Halo kak, rincian harganya sudah kami kirim ke DM ya! 🏷️", "Halo kak! Rincian paket & promo hari ini mulai dari Rp 99.000. Cek katalognya di sini: https://trendoraautomation.my.id", "AKTIF", "Keyword default HARGA", now_str]
-            ]
-            for row in samples:
-                sheet.append_row(row)
+        # Tab worksheet Instagram_Auto_DM siap digunakan tanpa data dummy
         return True, "Tab Instagram_Auto_DM siap digunakan."
     except Exception as e:
         return False, str(e)
@@ -1093,24 +1085,7 @@ def db_get_ig_auto_dm_settings(email):
         "source_mode": "dashboard",
         "sheet_tab": "Instagram_Auto_DM",
         "custom_sheet_id": "",
-        "rules": [
-            {
-                "id": "rule_1",
-                "keyword": "MAU",
-                "match_type": "contains",
-                "comment_reply": "Halo kak! Linknya sudah kami kirimkan ke DM kamu ya, cek inbox kamu sekarang 😊✨",
-                "dm_reply": "Hai kak! Ini dia link akses yang kamu minta: https://trendoraautomation.my.id 🔥 Jangan lupa follow akun kami ya!",
-                "is_active": True
-            },
-            {
-                "id": "rule_2",
-                "keyword": "LINK",
-                "match_type": "contains",
-                "comment_reply": "Siap kak, linknya sudah meluncur ke DM kamu! Cek sekarang ya 🙏",
-                "dm_reply": "Halo! Terima kasih atas minatnya. Ini link langsungnya: https://trendoraautomation.my.id",
-                "is_active": True
-            }
-        ],
+        "rules": [],
         "stats": {
             "total_comments_detected": 0,
             "total_dm_sent": 0,
