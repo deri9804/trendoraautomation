@@ -39,6 +39,11 @@ def add_security_headers(response):
     # Batasi CORS untuk headers yang diizinkan
     response.headers['Access-Control-Allow-Headers'] = 'Content-Type,Authorization,X-API-Key'
     response.headers['Access-Control-Allow-Methods'] = 'GET,PUT,POST,DELETE,OPTIONS'
+    # Cegah browser caching untuk dashboard agar perubahan live selalu terupdate
+    if request.path in ['/dashboard', '/', '/api/instagram-auto-dm/settings']:
+        response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+        response.headers['Pragma'] = 'no-cache'
+        response.headers['Expires'] = '0'
     return response
 
 @app.errorhandler(404)

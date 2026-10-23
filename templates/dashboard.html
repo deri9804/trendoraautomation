@@ -2015,7 +2015,7 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
                   <div style="font-size: 15px; font-weight: 800; color: #fff; display: flex; align-items: center; gap: 8px;">
                     <span>🎛️ Mode 1: Dashboard Builder</span>
                   </div>
-                  <input type="radio" name="ig_source_mode" id="radioModeDashboard" value="dashboard" checked onchange="switchInstagramAutoDmMode('dashboard')" onclick="event.stopPropagation(); switchInstagramAutoDmMode('dashboard')" style="accent-color: #38bdf8; width: 20px; height: 20px; cursor: pointer;">
+                  <input type="radio" name="ig_source_mode" id="radioModeDashboard" value="dashboard" checked style="pointer-events: none; accent-color: #38bdf8; width: 20px; height: 20px;">
                 </div>
                 <p style="color: #94a3b8; font-size: 12px; margin: 0; line-height: 1.5;">
                   Atur daftar kata kunci pemicu, balasan komentar, dan isi pesan DM langsung dari formulir interaktif di dashboard Trendora ini. Praktis dan cepat.
@@ -2031,7 +2031,7 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
                   <div style="font-size: 15px; font-weight: 800; color: #fff; display: flex; align-items: center; gap: 8px;">
                     <span>📊 Mode 2: Google Spreadsheet Sync</span>
                   </div>
-                  <input type="radio" name="ig_source_mode" id="radioModeSpreadsheet" value="spreadsheet" onchange="switchInstagramAutoDmMode('spreadsheet')" onclick="event.stopPropagation(); switchInstagramAutoDmMode('spreadsheet')" style="accent-color: #10b981; width: 20px; height: 20px; cursor: pointer;">
+                  <input type="radio" name="ig_source_mode" id="radioModeSpreadsheet" value="spreadsheet" style="pointer-events: none; accent-color: #10b981; width: 20px; height: 20px;">
                 </div>
                 <p style="color: #94a3b8; font-size: 12px; margin: 0; line-height: 1.5;">
                   Atur puluhan hingga ratusan kata kunci secara fleksibel langsung di tab <strong>Instagram_Auto_DM</strong> pada Google Sheets Anda. Bot akan membaca baris sheet secara real-time!
@@ -6874,6 +6874,25 @@ ${err.message}`);
     // INSTAGRAM COMMENT-TO-DM AUTORESPONDER SCRIPT
     // =========================================================================
     let currentIgAutoDmData = null;
+
+    function showNotification(msg, type = 'info') {
+      let toast = document.getElementById('trendoraGlobalToast');
+      if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'trendoraGlobalToast';
+        toast.style.cssText = 'position:fixed;bottom:25px;right:25px;z-index:999999;padding:12px 20px;border-radius:10px;font-size:13px;font-weight:700;color:#fff;box-shadow:0 8px 30px rgba(0,0,0,0.6);transition:all 0.3s ease;display:none;';
+        document.body.appendChild(toast);
+      }
+      toast.style.background = (type === 'error') ? 'linear-gradient(135deg, #ef4444, #dc2626)' : 'linear-gradient(135deg, #10b981, #059669)';
+      toast.innerText = msg;
+      toast.style.display = 'block';
+      toast.style.opacity = '1';
+      clearTimeout(toast._timer);
+      toast._timer = setTimeout(() => {
+        toast.style.opacity = '0';
+        setTimeout(() => { toast.style.display = 'none'; }, 300);
+      }, 3500);
+    }
 
     async function loadInstagramAutoDmSettings() {
       const { email, apiKey } = getValidUserCredentials();
