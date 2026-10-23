@@ -362,7 +362,7 @@ def get_meta_auth_url():
 
     redirect_uri = "https://trendoraautomation.my.id/auth/meta/callback"
     state = f"{uuid.uuid4().hex[:8]}|{email}"
-    scopes = "pages_show_list,pages_read_engagement,pages_manage_posts,pages_manage_engagement,pages_read_user_content,read_insights,instagram_basic,instagram_content_publish"
+    scopes = "pages_show_list,pages_read_engagement,pages_manage_posts,pages_manage_engagement,pages_read_user_content,read_insights,instagram_basic,instagram_content_publish,instagram_manage_comments,instagram_manage_messages,pages_messaging"
     
     params = {
         "client_id": config.META_CLIENT_ID,

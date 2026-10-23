@@ -947,3 +947,299 @@ def db_update_scheduled_post(post_id, updates_dict):
 def db_delete_scheduled_post(post_id, email=None):
     """Membatalkan jadwal postingan (mengubah status menjadi CANCELLED)."""
     return db_update_scheduled_post(post_id, {"status": "CANCELLED"})
+
+
+# =========================================================================
+# INSTAGRAM COMMENT-TO-DM AUTORESPONDER (MANYCHAT ENGINE)
+# =========================================================================
+
+def get_instagram_auto_dm_sheet(sheet_id=None):
+    """Koneksi ke Google Sheets khusus tab 'Instagram_Auto_DM'."""
+    if not HAS_GSPREAD:
+        return None
+    try:
+        scopes = ["https://www.googleapis.com/auth/spreadsheets"]
+        env_creds = config.GOOGLE_CREDS_JSON
+        
+        if env_creds:
+            if isinstance(env_creds, str):
+                clean_env = env_creds.strip()
+                if clean_env.startswith("'") and clean_env.endswith("'"): clean_env = clean_env[1:-1]
+                if clean_env.startswith('"') and clean_env.endswith('"'): clean_env = clean_env[1:-1]
+                try: creds_dict = json.loads(clean_env)
+                except json.JSONDecodeError:
+                    clean_env = clean_env.replace('\\n', '\n')
+                    creds_dict = json.loads(clean_env)
+            else: creds_dict = env_creds
+            if isinstance(creds_dict, dict) and "private_key" in creds_dict:
+                creds_dict["private_key"] = creds_dict["private_key"].replace("\\n", "\n")
+            creds = Credentials.from_service_account_info(creds_dict, scopes=scopes)
+        else:
+            if not os.path.exists(config.SERVICE_ACCOUNT_FILE): return None
+            creds = Credentials.from_service_account_file(config.SERVICE_ACCOUNT_FILE, scopes=scopes)
+
+        client = gspread.authorize(creds)
+        target_id = sheet_id or config.GOOGLE_SHEET_ID
+        doc = client.open_by_key(target_id)
+        
+        target_sheet = None
+        for s in doc.worksheets():
+            if s.title.lower() in ["instagram_auto_dm", "instagramautodm", "ig_auto_dm", "autodm"]:
+                target_sheet = s
+                break
+        if not target_sheet:
+            target_sheet = doc.add_worksheet(title="Instagram_Auto_DM", rows="500", cols="8")
+            target_sheet.append_row(["Email", "Trigger_Keyword", "Match_Type", "Comment_Reply", "DM_Reply", "Status", "Catatan", "Updated_At"])
+        return target_sheet
+    except Exception as e:
+        print(f"[GSheets IG Auto DM Connection Error]: {e}")
+        return None
+
+def db_ensure_ig_auto_dm_worksheet_template(email, sheet_id=None):
+    sheet = get_instagram_auto_dm_sheet(sheet_id=sheet_id)
+    if not sheet:
+        return False, "Gagal menghubungkan ke Google Sheets."
+    try:
+        rows = sheet.get_all_values()
+        clean_email = (email or 'user@trendora.com').strip().lower()
+        now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        
+        if len(rows) <= 1:
+            samples = [
+                [clean_email, "MAU", "contains", "Halo kak! Linknya sudah kami kirimkan ke DM kamu ya, cek inbox kamu sekarang 😊✨", "Hai kak! Ini dia link akses yang kamu minta: https://trendoraautomation.my.id 🔥 Jangan lupa follow akun kami ya!", "AKTIF", "Keyword default MAU", now_str],
+                [clean_email, "LINK", "contains", "Siap kak, linknya sudah meluncur ke DM kamu! Cek sekarang ya 🙏", "Halo! Terima kasih atas minatnya. Ini link langsungnya: https://trendoraautomation.my.id", "AKTIF", "Keyword default LINK", now_str],
+                [clean_email, "INFO", "contains", "Informasi lengkapnya sudah kami DM ya kak, silahkan dicek inboxnya ✨", "Halo kak! Informasi detail & cara pendaftarannya bisa dicek di: https://trendoraautomation.my.id", "AKTIF", "Keyword default INFO", now_str],
+                [clean_email, "HARGA", "contains", "Halo kak, rincian harganya sudah kami kirim ke DM ya! 🏷️", "Halo kak! Rincian paket & promo hari ini mulai dari Rp 99.000. Cek katalognya di sini: https://trendoraautomation.my.id", "AKTIF", "Keyword default HARGA", now_str]
+            ]
+            for row in samples:
+                sheet.append_row(row)
+        return True, "Tab Instagram_Auto_DM siap digunakan."
+    except Exception as e:
+        return False, str(e)
+
+def db_get_ig_auto_dm_rules_from_sheet(email, sheet_id=None):
+    sheet = get_instagram_auto_dm_sheet(sheet_id=sheet_id)
+    if not sheet:
+        return []
+    try:
+        clean_email = (email or '').strip().lower()
+        rows = sheet.get_all_values()
+        if len(rows) <= 1:
+            return []
+        
+        rules = []
+        for idx, r in enumerate(rows[1:], start=2):
+            if len(r) < 5:
+                continue
+            row_email = (r[0] or '').strip().lower()
+            if row_email and clean_email and row_email != clean_email:
+                continue
+            
+            kw = (r[1] or '').strip()
+            if not kw:
+                continue
+            
+            m_type = (r[2] or 'contains').strip().lower()
+            if m_type not in ['exact', 'contains']:
+                m_type = 'contains'
+                
+            comm_reply = (r[3] or '').strip()
+            dm_reply = (r[4] or '').strip()
+            status_raw = (r[5] or 'AKTIF').strip().upper() if len(r) > 5 else 'AKTIF'
+            is_active = status_raw in ['AKTIF', 'ACTIVE', 'TRUE', '1', 'ON']
+            notes = (r[6] or '').strip() if len(r) > 6 else ''
+            
+            rules.append({
+                "id": f"sheet_row_{idx}",
+                "keyword": kw,
+                "match_type": m_type,
+                "comment_reply": comm_reply,
+                "dm_reply": dm_reply,
+                "is_active": is_active,
+                "notes": notes,
+                "source": "spreadsheet",
+                "row_index": idx
+            })
+        return rules
+    except Exception as e:
+        print(f"[GSheets Parse IG Rules Error]: {e}")
+        return []
+
+def db_get_ig_auto_dm_settings(email):
+    clean_email = str(email).strip().lower() if email else None
+    if not clean_email:
+        return {}
+
+    default_settings = {
+        "is_enabled": False,
+        "source_mode": "dashboard",
+        "sheet_tab": "Instagram_Auto_DM",
+        "custom_sheet_id": "",
+        "rules": [
+            {
+                "id": "rule_1",
+                "keyword": "MAU",
+                "match_type": "contains",
+                "comment_reply": "Halo kak! Linknya sudah kami kirimkan ke DM kamu ya, cek inbox kamu sekarang 😊✨",
+                "dm_reply": "Hai kak! Ini dia link akses yang kamu minta: https://trendoraautomation.my.id 🔥 Jangan lupa follow akun kami ya!",
+                "is_active": True
+            },
+            {
+                "id": "rule_2",
+                "keyword": "LINK",
+                "match_type": "contains",
+                "comment_reply": "Siap kak, linknya sudah meluncur ke DM kamu! Cek sekarang ya 🙏",
+                "dm_reply": "Halo! Terima kasih atas minatnya. Ini link langsungnya: https://trendoraautomation.my.id",
+                "is_active": True
+            }
+        ],
+        "stats": {
+            "total_comments_detected": 0,
+            "total_dm_sent": 0,
+            "total_replies_sent": 0,
+            "last_activity": ""
+        }
+    }
+
+    if clean_email in config.user_2fa_store and 'ig_auto_dm' in config.user_2fa_store[clean_email]:
+        return config.user_2fa_store[clean_email]['ig_auto_dm']
+
+    sheet = get_gsheet()
+    if sheet:
+        try:
+            all_values = get_all_sheet_values(sheet)
+            for idx in range(len(all_values)-1, 0, -1):
+                row = all_values[idx]
+                if len(row) > 0 and str(row[0]).strip().lower() == clean_email:
+                    if len(row) >= 17 and row[16].strip():
+                        parsed = json.loads(row[16].strip())
+                        if isinstance(parsed, dict):
+                            merged = default_settings.copy()
+                            merged.update(parsed)
+                            if clean_email not in config.user_2fa_store:
+                                config.user_2fa_store[clean_email] = {}
+                            config.user_2fa_store[clean_email]['ig_auto_dm'] = merged
+                            return merged
+                    break
+        except Exception as e:
+            print(f"[GSheet Read IG Auto DM Error]: {e}")
+
+    return default_settings
+
+def db_save_ig_auto_dm_settings(email, settings_dict):
+    clean_email = str(email).strip().lower() if email else None
+    if not clean_email or not isinstance(settings_dict, dict):
+        return False, "Data pengaturan tidak valid."
+
+    sheet = get_gsheet()
+    target_row_idx = None
+    if sheet:
+        try:
+            all_values = get_all_sheet_values(sheet)
+            if len(all_values) > 0 and len(all_values[0]) < 17:
+                try:
+                    sheet.update_cell(1, 17, "InstagramAutoDM_JSON")
+                except Exception:
+                    pass
+
+            for idx in range(len(all_values)-1, 0, -1):
+                row = all_values[idx]
+                if len(row) > 0 and str(row[0]).strip().lower() == clean_email:
+                    target_row_idx = idx + 1
+                    break
+        except Exception as e:
+            print(f"[GSheet Find Row IG Auto DM Error]: {e}")
+
+    if clean_email not in config.user_2fa_store:
+        config.user_2fa_store[clean_email] = {}
+    config.user_2fa_store[clean_email]['ig_auto_dm'] = settings_dict
+
+    if sheet and target_row_idx:
+        try:
+            json_str = json.dumps(settings_dict, ensure_ascii=False)
+            batch_updates = [
+                {'range': f'Q{target_row_idx}', 'values': [[json_str]]}
+            ]
+            sheet.batch_update(batch_updates)
+            invalidate_sheet_cache()
+            return True, "Pengaturan Instagram Auto DM berhasil disimpan."
+        except Exception as e:
+            print(f"[GSheet Save IG Auto DM Error]: {e}")
+            return False, str(e)
+
+    return True, "Tersimpan di sesi server."
+
+def db_find_user_by_instagram_id(ig_id):
+    clean_id = str(ig_id).strip()
+    sheet = get_gsheet()
+    if not sheet or not clean_id:
+        return None
+    try:
+        all_values = get_all_sheet_values(sheet)
+        for idx in range(len(all_values)-1, 0, -1):
+            row = all_values[idx]
+            email = str(row[0]).strip().lower() if len(row) > 0 else ""
+            if not email:
+                continue
+
+            if len(row) >= 16 and row[15].strip():
+                try:
+                    accs = json.loads(row[15].strip())
+                    for a in accs:
+                        a_plat = str(a.get('platform', '')).lower()
+                        a_id = str(a.get('id', '')).strip()
+                        if a_plat in ['instagram', 'facebook'] and (a_id == clean_id or clean_id in a_id):
+                            return {
+                                "email": email,
+                                "access_token": a.get('access_token', ''),
+                                "account": a
+                            }
+                except Exception:
+                    pass
+
+            if len(row) >= 10 and row[9].strip():
+                return {
+                    "email": email,
+                    "access_token": row[9].strip(),
+                    "account": {"id": clean_id, "platform": "instagram"}
+                }
+    except Exception as e:
+        print(f"[GSheet Find User By IG Error]: {e}")
+    return None
+
+def db_record_ig_auto_dm_stat(email, dm_success=True, reply_success=True):
+    try:
+        settings = db_get_ig_auto_dm_settings(email)
+        stats = settings.get('stats', {})
+        stats['total_comments_detected'] = stats.get('total_comments_detected', 0) + 1
+        if dm_success:
+            stats['total_dm_sent'] = stats.get('total_dm_sent', 0) + 1
+        if reply_success:
+            stats['total_replies_sent'] = stats.get('total_replies_sent', 0) + 1
+        stats['last_activity'] = datetime.now().isoformat()
+        settings['stats'] = stats
+        db_save_ig_auto_dm_settings(email, settings)
+    except Exception as e:
+        print(f"[Record IG Stat Error]: {e}")
+
+def db_log_ig_auto_dm_event(email, log_info):
+    try:
+        sheet = get_logs_sheet()
+        if sheet:
+            now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            log_id = f"IG_DM_{uuid.uuid4().hex[:8]}"
+            details = f"Commenter: @{log_info.get('commenter_username')} | Keyword: {log_info.get('keyword_matched')} | Mode: {log_info.get('source_mode')} | DM: {'OK' if log_info.get('dm_success') else 'FAIL'} | Reply: {'OK' if log_info.get('reply_success') else 'FAIL'}"
+            sheet.append_row([
+                now_str,
+                log_id,
+                email,
+                "Instagram",
+                "SUCCESS" if (log_info.get('dm_success') or log_info.get('reply_success')) else "FAILED",
+                details,
+                f"Auto DM Comment-to-DM ({log_info.get('source_mode')})",
+                "",
+                log_info.get('comment_text', '')[:100],
+                ""
+            ])
+    except Exception as e:
+        print(f"[Log IG Event Error]: {e}")

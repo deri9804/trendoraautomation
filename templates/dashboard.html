@@ -1045,6 +1045,13 @@
             <span class="menu-badge-new" style="background: linear-gradient(135deg, #10b981, #059669);">AUTO</span>
           </button>
         </li>
+        <li>
+          <button type="button" class="sidebar-tab-btn" data-tab="instagram-auto-dm" onclick="switchDashboardTab('instagram-auto-dm')">
+            <svg class="menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
+            <span>Instagram Auto DM</span>
+            <span class="menu-badge-new" style="background: linear-gradient(135deg, #e1306c, #f77737);">BOT</span>
+          </button>
+        </li>
         <li class="sidebar-has-submenu open" id="sidebarStudioMenuWrap">
           <button type="button" class="sidebar-tab-btn" data-tab="tiktok-studio" onclick="handleStudioSidebarClick(event)">
             <svg class="menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"><polygon points="23 7 16 12 23 17 23 7"></polygon><rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect></svg>
@@ -1912,6 +1919,354 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
                   </tr>
                 </tbody>
               </table>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      
+      <!-- ============================================== -->
+      <!-- TAB: INSTAGRAM COMMENT-TO-DM AUTORESPONDER     -->
+      <!-- ============================================== -->
+      <section id="tab-instagram-auto-dm" class="dash-tab-section">
+        <div class="dashboard-hero-card" style="display: block; margin-bottom: 25px;">
+          
+          <!-- Header Judul & Master Toggle -->
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 16px; margin-bottom: 24px; padding-bottom: 18px; border-bottom: 1px solid rgba(255,255,255,0.08);">
+            <div>
+              <div style="display: inline-flex; align-items: center; gap: 6px; background: linear-gradient(135deg, rgba(225, 48, 108, 0.15), rgba(247, 119, 55, 0.15)); border: 1px solid rgba(225, 48, 108, 0.4); color: #f43f5e; padding: 4px 12px; border-radius: 12px; font-size: 11px; font-weight: 800; margin-bottom: 8px;">
+                <span>💬 META GRAPH API v21.0 • COMMENT-TO-DM AUTORESPONDER</span>
+              </div>
+              <h2 style="font-size: 24px; color: #fff; margin-bottom: 6px; font-weight: 800; display: flex; align-items: center; gap: 10px;">
+                <span>🤖 Instagram Auto DM &amp; Comment Responder</span>
+              </h2>
+              <p style="color: #9ca3af; font-size: 13px; margin: 0; max-width: 760px; line-height: 1.5;">
+                Otomatisasi interaksi audiens ala <strong>ManyChat</strong>. Sistem akan membalas komentar publik dan langsung mengirimkan pesan DM privat seketika saat audiens mengomentari postingan atau Reels Instagram Anda. Dukungan penuh pengaturan via <strong>Dashboard</strong> atau <strong>Google Spreadsheet</strong>.
+              </p>
+            </div>
+
+            <!-- Master Switch & Refresh Button -->
+            <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+              <button type="button" id="btnToggleIgAutoDmMaster" onclick="toggleInstagramAutoDmMaster()" style="padding: 10px 18px; background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.4); color: #34d399; border-radius: 10px; font-size: 13px; font-weight: 800; display: inline-flex; align-items: center; gap: 8px; cursor: pointer; transition: all 0.2s;">
+                <span id="igAutoDmMasterStatusDot" style="width: 8px; height: 8px; border-radius: 50%; background: #34d399; box-shadow: 0 0 8px #34d399;"></span>
+                <span id="igAutoDmMasterStatusText">Bot: AKTIF</span>
+              </button>
+
+              <button type="button" onclick="loadInstagramAutoDmSettings()" style="padding: 10px 14px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.12); color: #94a3b8; border-radius: 10px; font-size: 13px; cursor: pointer; transition: all 0.2s;" title="Segarkan Data">
+                🔄 Segarkan
+              </button>
+            </div>
+          </div>
+
+          <!-- Status Akun Instagram Terhubung -->
+          <div id="igAutoDmAccountNotice" style="background: rgba(225, 48, 108, 0.08); border: 1px solid rgba(225, 48, 108, 0.25); border-radius: 12px; padding: 12px 18px; margin-bottom: 22px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <span style="font-size: 22px;">📷</span>
+              <div>
+                <div style="font-size: 13px; font-weight: 700; color: #fff;" id="igAutoDmConnectedAccountTitle">Mengecek akun Instagram...</div>
+                <div style="font-size: 11.5px; color: #94a3b8;" id="igAutoDmConnectedAccountSub">Akun profesional Instagram yang terhubung ke Facebook Page Anda.</div>
+              </div>
+            </div>
+            <div>
+              <button type="button" class="btn-secondary" style="font-size: 11px; padding: 6px 12px;" onclick="switchDashboardTab('social')">
+                🔗 Kelola Akun Medsos
+              </button>
+            </div>
+          </div>
+
+          <!-- Counter Statistik -->
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; margin-bottom: 24px;">
+            <div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.07); border-radius: 12px; padding: 16px;">
+              <div style="font-size: 11px; color: #94a3b8; font-weight: 700; text-transform: uppercase; margin-bottom: 6px;">Total Komentar Terdeteksi</div>
+              <div style="font-size: 24px; font-weight: 800; color: #38bdf8;" id="statIgTotalComments">0</div>
+              <div style="font-size: 10.5px; color: #64748b; margin-top: 4px;">Komentar masuk di postingan</div>
+            </div>
+
+            <div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.07); border-radius: 12px; padding: 16px;">
+              <div style="font-size: 11px; color: #94a3b8; font-weight: 700; text-transform: uppercase; margin-bottom: 6px;">Total Auto DM Terkirim</div>
+              <div style="font-size: 24px; font-weight: 800; color: #34d399;" id="statIgTotalDmSent">0</div>
+              <div style="font-size: 10.5px; color: #64748b; margin-top: 4px;">Pesan privat via Private Replies</div>
+            </div>
+
+            <div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.07); border-radius: 12px; padding: 16px;">
+              <div style="font-size: 11px; color: #94a3b8; font-weight: 700; text-transform: uppercase; margin-bottom: 6px;">Balasan Komentar Publik</div>
+              <div style="font-size: 24px; font-weight: 800; color: #f43f5e;" id="statIgTotalRepliesSent">0</div>
+              <div style="font-size: 10.5px; color: #64748b; margin-top: 4px;">Reply publik di kolom komentar</div>
+            </div>
+
+            <div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.07); border-radius: 12px; padding: 16px;">
+              <div style="font-size: 11px; color: #94a3b8; font-weight: 700; text-transform: uppercase; margin-bottom: 6px;">Mode Konfigurasi</div>
+              <div style="font-size: 18px; font-weight: 800; color: #c084fc; text-transform: uppercase;" id="statIgSourceModeBadge">DASHBOARD</div>
+              <div style="font-size: 10.5px; color: #64748b; margin-top: 4px;" id="statIgSourceModeSub">Aturan diatur via web dashboard</div>
+            </div>
+          </div>
+
+          <!-- DUAL-MODE SELECTOR: DASHBOARD vs SPREADSHEET -->
+          <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.09); border-radius: 16px; padding: 20px; margin-bottom: 25px;">
+            <div style="font-size: 14px; font-weight: 800; color: #fff; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+              <span>🎯 Pilih Sumber Pengaturan Aturan (Trigger &amp; Balasan):</span>
+            </div>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px;">
+              <!-- Option 1: Dashboard Mode -->
+              <div id="cardModeDashboard" onclick="switchInstagramAutoDmMode('dashboard')" style="border: 2px solid #38bdf8; background: rgba(56, 189, 248, 0.08); border-radius: 14px; padding: 18px; cursor: pointer; transition: all 0.25s;">
+                <div style="display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 8px;">
+                  <div style="font-size: 15px; font-weight: 800; color: #fff; display: flex; align-items: center; gap: 8px;">
+                    <span>🎛️ Mode 1: Dashboard Builder</span>
+                  </div>
+                  <input type="radio" name="ig_source_mode" id="radioModeDashboard" value="dashboard" checked style="accent-color: #38bdf8; width: 18px; height: 18px; cursor: pointer;">
+                </div>
+                <p style="color: #94a3b8; font-size: 12px; margin: 0; line-height: 1.5;">
+                  Atur daftar kata kunci pemicu, balasan komentar, dan isi pesan DM langsung dari formulir interaktif di dashboard Trendora ini. Praktis dan cepat.
+                </p>
+                <div style="margin-top: 12px; display: inline-flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 700; color: #38bdf8;" id="badgeActiveDashboardMode">
+                  <span>● Sedang Aktif</span>
+                </div>
+              </div>
+
+              <!-- Option 2: Spreadsheet Mode -->
+              <div id="cardModeSpreadsheet" onclick="switchInstagramAutoDmMode('spreadsheet')" style="border: 1px solid rgba(255,255,255,0.1); background: rgba(255, 255, 255, 0.02); border-radius: 14px; padding: 18px; cursor: pointer; transition: all 0.25s;">
+                <div style="display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 8px;">
+                  <div style="font-size: 15px; font-weight: 800; color: #fff; display: flex; align-items: center; gap: 8px;">
+                    <span>📊 Mode 2: Google Spreadsheet Sync</span>
+                  </div>
+                  <input type="radio" name="ig_source_mode" id="radioModeSpreadsheet" value="spreadsheet" style="accent-color: #10b981; width: 18px; height: 18px; cursor: pointer;">
+                </div>
+                <p style="color: #94a3b8; font-size: 12px; margin: 0; line-height: 1.5;">
+                  Atur puluhan hingga ratusan kata kunci secara fleksibel langsung di tab <strong>Instagram_Auto_DM</strong> pada Google Sheets Anda. Bot akan membaca baris sheet secara real-time!
+                </p>
+                <div style="margin-top: 12px; display: inline-flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 700; color: #10b981; display: none;" id="badgeActiveSpreadsheetMode">
+                  <span>● Sedang Aktif</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- KONTEN MODE 1: DASHBOARD BUILDER -->
+          <div id="wrapModeDashboardContent" style="display: block;">
+            <!-- Form Tambah Aturan Baru -->
+            <div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 20px; margin-bottom: 22px;">
+              <h3 style="font-size: 15px; color: #fff; margin-bottom: 14px; font-weight: 700; display: flex; align-items: center; gap: 8px;">
+                <span>➕ Tambah / Perbarui Aturan Kata Kunci (Dashboard)</span>
+              </h3>
+
+              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; margin-bottom: 16px;">
+                <div>
+                  <label style="display: block; font-size: 11.5px; color: #94a3b8; margin-bottom: 6px; font-weight: 700;">
+                    Kata Kunci Pemicu (Trigger Keyword):
+                  </label>
+                  <input type="text" id="formIgKeyword" class="input-field" placeholder="Contoh: MAU, LINK, INFO, HARGA, atau ketik * untuk semua komentar" style="width: 100%; font-size: 13px;">
+                  <span style="font-size: 10.5px; color: #64748b; margin-top: 4px; display: block;">Tidak sensitif huruf besar/kecil (case-insensitive). Ketik <code>*</code> jika ingin membalas semua komentar.</span>
+                </div>
+
+                <div>
+                  <label style="display: block; font-size: 11.5px; color: #94a3b8; margin-bottom: 6px; font-weight: 700;">
+                    Tipe Pencocokan Kata (Match Type):
+                  </label>
+                  <select id="formIgMatchType" class="input-field" style="width: 100%; font-size: 13px;">
+                    <option value="contains">Mengandung Kata (Contains) — Contoh komentar "mau linknya" cocok dengan "mau"</option>
+                    <option value="exact">Sama Persis (Exact) — Hanya cocok jika komentar persis satu kata tersebut</option>
+                  </select>
+                </div>
+              </div>
+
+              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; margin-bottom: 16px;">
+                <div>
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                    <label style="font-size: 11.5px; color: #94a3b8; font-weight: 700;">1. Teks Balasan di Kolom Komentar Publik:</label>
+                    <span style="font-size: 10px; color: #38bdf8; cursor: pointer;" onclick="insertVariableToField('formIgCommentReply', '{username}')">+ Variabel {username}</span>
+                  </div>
+                  <textarea id="formIgCommentReply" class="input-field" rows="3" placeholder="Contoh: Halo kak {username}! Link rahasianya sudah kami kirimkan ke DM kamu ya, cek inbox kamu sekarang 😊✨" style="width: 100%; font-size: 12.5px; line-height: 1.4;"></textarea>
+                  <span style="font-size: 10.5px; color: #64748b; margin-top: 4px; display: block;">Balasan ini akan muncul secara publik membalas komentar audiens di Reels / Postingan.</span>
+                </div>
+
+                <div>
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                    <label style="font-size: 11.5px; color: #94a3b8; font-weight: 700;">2. Teks Isi Pesan Otomatis (Auto DM Privat):</label>
+                    <span style="font-size: 10px; color: #34d399; cursor: pointer;" onclick="insertVariableToField('formIgDmReply', '{username}')">+ Variabel {username}</span>
+                  </div>
+                  <textarea id="formIgDmReply" class="input-field" rows="3" placeholder="Contoh: Hai {username}! Terima kasih sudah komen di reels kami. Ini dia link akses eksklusif kamu: https://trendoraautomation.my.id 🔥 Jangan lupa follow kami ya!" style="width: 100%; font-size: 12.5px; line-height: 1.4;"></textarea>
+                  <span style="font-size: 10.5px; color: #64748b; margin-top: 4px; display: block;">Pesan ini akan otomatis dikirimkan langsung ke inbox DM pengomentar via Meta Private Reply.</span>
+                </div>
+              </div>
+
+              <div style="display: flex; justify-content: flex-end; gap: 10px;">
+                <button type="button" class="btn-pink" onclick="saveInstagramAutoDmRuleFromForm()" style="font-size: 12.5px; padding: 10px 22px; font-weight: 700;">
+                  💾 Simpan Aturan ke Dashboard
+                </button>
+              </div>
+            </div>
+
+            <!-- Tabel Aturan Dashboard -->
+            <div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 18px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+                <h4 style="font-size: 14px; color: #fff; margin: 0; font-weight: 700;">📋 Daftar Aturan Aktif di Dashboard</h4>
+                <span style="font-size: 11px; color: #94a3b8;" id="txtDashboardRulesCount">0 Aturan Terpasang</span>
+              </div>
+
+              <div style="overflow-x: auto;">
+                <table style="width: 100%; border-collapse: collapse; font-size: 12px; text-align: left;">
+                  <thead>
+                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.1); color: #94a3b8;">
+                      <th style="padding: 10px 12px;">KATA KUNCI</th>
+                      <th style="padding: 10px 12px;">TIPE MATCH</th>
+                      <th style="padding: 10px 12px;">BALASAN KOMENTAR PUBLIK</th>
+                      <th style="padding: 10px 12px;">PESAN AUTO DM</th>
+                      <th style="padding: 10px 12px; text-align: center;">STATUS</th>
+                      <th style="padding: 10px 12px; text-align: center;">AKSI</th>
+                    </tr>
+                  </thead>
+                  <tbody id="tbodyDashboardRulesList">
+                    <tr><td colspan="6" style="text-align: center; padding: 20px; color: #64748b;">Belum ada aturan di Dashboard. Tambahkan aturan lewat form di atas.</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- KONTEN MODE 2: SPREADSHEET SYNC -->
+          <div id="wrapModeSpreadsheetContent" style="display: none;">
+            <div style="background: rgba(16, 185, 129, 0.05); border: 1px solid rgba(16, 185, 129, 0.25); border-radius: 14px; padding: 20px; margin-bottom: 22px;">
+              <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 16px; margin-bottom: 16px;">
+                <div>
+                  <h3 style="font-size: 15px; color: #fff; margin-bottom: 4px; font-weight: 700; display: flex; align-items: center; gap: 8px;">
+                    <span>📊 Sinkronisasi Aturan via Google Spreadsheet</span>
+                  </h3>
+                  <p style="color: #9ca3af; font-size: 12.5px; margin: 0; line-height: 1.5;">
+                    Data aturan kata kunci &amp; pesan balasan dibaca langsung dari tab <strong>Instagram_Auto_DM</strong> di Google Sheets Anda. Anda dapat mengedit, menambah baris, atau mematikan kata kunci kapan saja melalui Google Spreadsheet tanpa perlu membuka dashboard.
+                  </p>
+                </div>
+
+                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                  <button type="button" class="btn-secondary" onclick="createInstagramAutoDmSheetTemplate()" style="font-size: 12px; padding: 8px 14px; border-color: rgba(16,185,129,0.4); color: #34d399;">
+                    📥 Buat / Reset Tab Template di Sheet
+                  </button>
+                  <button type="button" class="btn-pink" onclick="syncInstagramAutoDmFromSheet()" style="font-size: 12px; padding: 8px 16px;">
+                    🔄 Sinkronkan Data dari Sheet Sekarang
+                  </button>
+                </div>
+              </div>
+
+              <!-- Status Info Box -->
+              <div style="background: rgba(0,0,0,0.25); border-radius: 10px; padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+                <div style="font-size: 12px; color: #e2e8f0;">
+                  <span>Nama Tab Worksheet: <strong style="color: #38bdf8;">Instagram_Auto_DM</strong></span>
+                  <span style="margin: 0 10px; color: #475569;">|</span>
+                  <span id="txtSheetSyncStatusMsg" style="color: #34d399;">Memeriksa status spreadsheet...</span>
+                </div>
+                <div style="font-size: 11.5px; color: #94a3b8;">
+                  Status Baris: <strong id="txtSheetRulesCount" style="color: #fff;">0</strong> Aturan Aktif
+                </div>
+              </div>
+            </div>
+
+            <!-- Tabel Live Rules dari Spreadsheet -->
+            <div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 18px; margin-bottom: 22px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+                <h4 style="font-size: 14px; color: #fff; margin: 0; font-weight: 700;">📑 Pratinjau Aturan yang Ditarik dari Spreadsheet</h4>
+                <button type="button" class="btn-secondary" style="font-size: 11px; padding: 4px 10px;" onclick="syncInstagramAutoDmFromSheet()">
+                  Refresh Preview
+                </button>
+              </div>
+
+              <div style="overflow-x: auto;">
+                <table style="width: 100%; border-collapse: collapse; font-size: 12px; text-align: left;">
+                  <thead>
+                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.1); color: #94a3b8;">
+                      <th style="padding: 10px 12px;">BARIS #</th>
+                      <th style="padding: 10px 12px;">KATA KUNCI</th>
+                      <th style="padding: 10px 12px;">TIPE MATCH</th>
+                      <th style="padding: 10px 12px;">BALASAN KOMENTAR PUBLIK</th>
+                      <th style="padding: 10px 12px;">PESAN AUTO DM</th>
+                      <th style="padding: 10px 12px; text-align: center;">STATUS DI SHEET</th>
+                    </tr>
+                  </thead>
+                  <tbody id="tbodySpreadsheetRulesList">
+                    <tr><td colspan="6" style="text-align: center; padding: 20px; color: #64748b;">Memuat data dari Google Spreadsheet...</td></tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <!-- Format Guide Table -->
+              <div style="margin-top: 18px; padding-top: 14px; border-top: 1px dashed rgba(255,255,255,0.1); font-size: 11.5px; color: #94a3b8; line-height: 1.6;">
+                <strong style="color: #fff;">💡 Panduan Kolom Spreadsheet (Tab: <code>Instagram_Auto_DM</code>):</strong><br>
+                • <strong>Kolom A (Email)</strong>: Email akun Anda di Trendora.<br>
+                • <strong>Kolom B (Trigger_Keyword)</strong>: Kata pemicu (contoh: <code>MAU</code>, <code>LINK</code>, <code>INFO</code>, atau <code>*</code> untuk semua).<br>
+                • <strong>Kolom C (Match_Type)</strong>: Isi <code>contains</code> (mengandung kata) atau <code>exact</code> (sama persis).<br>
+                • <strong>Kolom D (Comment_Reply)</strong>: Balasan publik yang dikirim ke kolom komentar.<br>
+                • <strong>Kolom E (DM_Reply)</strong>: Pesan privat yang dikirimkan ke DM pengomentar (bisa gunakan <code>{username}</code>).<br>
+                • <strong>Kolom F (Status)</strong>: Tulis <code>AKTIF</code> untuk menyalakan atau <code>NONAKTIF</code> untuk mematikan kata kunci tersebut.
+              </div>
+            </div>
+          </div>
+
+          <!-- INTERACTIVE SIMULATOR / TESTER -->
+          <div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 20px; margin-bottom: 22px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+              <h3 style="font-size: 14.5px; color: #fff; margin: 0; font-weight: 700; display: flex; align-items: center; gap: 8px;">
+                <span>🧪 Simulator Uji Coba Respon Bot (Test Trigger)</span>
+              </h3>
+              <span style="font-size: 11px; color: #94a3b8;">Uji coba instan tanpa perlu berkomentar di Instagram sungguhan</span>
+            </div>
+
+            <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 14px;">
+              <input type="text" id="simCommentInput" class="input-field" placeholder="Ketik contoh komentar audiens, misal: 'halo kak mau link rahasianya dong'" style="flex: 1; min-width: 280px; font-size: 13px;">
+              <button type="button" class="btn-pink" onclick="runInstagramAutoDmTestSimulation()" style="font-size: 12px; padding: 8px 18px; font-weight: 700;">
+                ⚡ Uji Simulasi
+              </button>
+            </div>
+
+            <!-- Hasil Simulasi Preview -->
+            <div id="simResultBox" style="display: none; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 16px;">
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
+                <div style="font-size: 12px; font-weight: 700; color: #fff;" id="simMatchStatus">Status Kecocokan: Match!</div>
+                <div style="font-size: 11px; color: #c084fc;" id="simRuleSource">Sumber Aturan: DASHBOARD</div>
+              </div>
+
+              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px;">
+                <div style="background: rgba(255,255,255,0.03); border-radius: 8px; padding: 12px; border-left: 3px solid #38bdf8;">
+                  <div style="font-size: 10.5px; color: #38bdf8; font-weight: 700; margin-bottom: 4px; text-transform: uppercase;">Pratinjau Balasan Komentar Publik:</div>
+                  <div style="font-size: 12px; color: #e2e8f0; line-height: 1.4;" id="simCommentPreview">-</div>
+                </div>
+
+                <div style="background: rgba(255,255,255,0.03); border-radius: 8px; padding: 12px; border-left: 3px solid #34d399;">
+                  <div style="font-size: 10.5px; color: #34d399; font-weight: 700; margin-bottom: 4px; text-transform: uppercase;">Pratinjau Pesan Masuk ke DM:</div>
+                  <div style="font-size: 12px; color: #e2e8f0; line-height: 1.4;" id="simDmPreview">-</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- META DEVELOPER WEBHOOK CONFIGURATION INFO -->
+          <div style="background: rgba(56, 189, 248, 0.04); border: 1px solid rgba(56, 189, 248, 0.2); border-radius: 14px; padding: 18px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;">
+              <div style="font-size: 13.5px; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 8px;">
+                <span>🔗 Informasi Endpoint Webhook Meta (Untuk Registrasi di Meta App)</span>
+              </div>
+              <span style="font-size: 11px; color: #38bdf8; background: rgba(56,189,248,0.1); padding: 3px 8px; border-radius: 6px;">Meta Graph API v21.0</span>
+            </div>
+            
+            <p style="font-size: 12px; color: #94a3b8; margin: 0 0 14px 0; line-height: 1.5;">
+              Jika belum didaftarkan di Meta Developer Portal, masukkan URL Webhook dan Token Verifikasi di bawah ini pada menu <strong>Webhooks &gt; Instagram &gt; Subscriptions (Comments)</strong>:
+            </p>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 12px;">
+              <div style="background: rgba(0,0,0,0.25); border-radius: 8px; padding: 10px 14px; display: flex; align-items: center; justify-content: space-between;">
+                <div>
+                  <div style="font-size: 10px; color: #94a3b8; text-transform: uppercase; font-weight: 700;">Callback Webhook URL:</div>
+                  <div style="font-size: 12px; color: #38bdf8; font-family: monospace;" id="txtMetaWebhookUrl">https://trendoraautomation.my.id/api/webhook/instagram</div>
+                </div>
+                <button type="button" class="btn-secondary" style="font-size: 10px; padding: 4px 8px;" onclick="copyTextToClipboard('https://trendoraautomation.my.id/api/webhook/instagram')">📋 Salin</button>
+              </div>
+
+              <div style="background: rgba(0,0,0,0.25); border-radius: 8px; padding: 10px 14px; display: flex; align-items: center; justify-content: space-between;">
+                <div>
+                  <div style="font-size: 10px; color: #94a3b8; text-transform: uppercase; font-weight: 700;">Verify Token:</div>
+                  <div style="font-size: 12px; color: #34d399; font-family: monospace;" id="txtMetaWebhookVerifyToken">trendora_meta_secret_123</div>
+                </div>
+                <button type="button" class="btn-secondary" style="font-size: 10px; padding: 4px 8px;" onclick="copyTextToClipboard('trendora_meta_secret_123')">📋 Salin</button>
+              </div>
             </div>
           </div>
 
@@ -3115,7 +3470,7 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
       if (tabKey === 'studio') tabKey = 'tiktok-studio';
 
       if (tabKey === 'calendar') tabKey = 'content-calendar';
-      const allowedTabs = ['overview', 'integration', 'social', 'omnichannel', 'content-calendar', 'meta-suite', 'tiktok-studio', 'logs'];
+      const allowedTabs = ['overview', 'integration', 'social', 'omnichannel', 'content-calendar', 'instagram-auto-dm', 'meta-suite', 'tiktok-studio', 'logs'];
       if (!allowedTabs.includes(tabKey)) tabKey = 'overview';
 
       document.querySelectorAll('.dash-tab-section').forEach(sec => {
@@ -3143,6 +3498,9 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
       }
       if (tabKey === 'content-calendar') {
         loadCalendarPosts();
+      }
+      if (tabKey === 'instagram-auto-dm') {
+        loadInstagramAutoDmSettings();
       }
       if (tabKey === 'tiktok-studio') {
         const wrap = document.getElementById('sidebarStudioMenuWrap');
@@ -6524,7 +6882,7 @@ ${err.message}`);
 
     document.addEventListener('DOMContentLoaded', async () => {
       const currentHash = window.location.hash.replace('#tab-', '').replace('#section-', '').replace('#', '');
-      if (['overview', 'integration', 'webhook', 'social', 'meta-suite', 'meta', 'tiktok-studio', 'studio', 'logs', 'content-calendar', 'calendar'].includes(currentHash)) {
+      if (['overview', 'integration', 'webhook', 'social', 'meta-suite', 'meta', 'tiktok-studio', 'studio', 'logs', 'content-calendar', 'calendar', 'instagram-auto-dm', 'auto-dm'].includes(currentHash)) {
         switchDashboardTab(currentHash);
       } else {
         switchDashboardTab('overview');
@@ -6541,6 +6899,428 @@ ${err.message}`);
           fetchAndRenderDashboardLogs(false);
         }
       }, 30000);
+
+    // =========================================================================
+    // INSTAGRAM COMMENT-TO-DM AUTORESPONDER SCRIPT
+    // =========================================================================
+    let currentIgAutoDmData = null;
+
+    async function loadInstagramAutoDmSettings() {
+      const { email, apiKey } = getValidUserCredentials();
+      try {
+        const res = await fetch(getApiUrl(`/api/instagram-auto-dm/settings?email=${encodeURIComponent(email)}&api_key=${encodeURIComponent(apiKey)}`));
+        if (!res.ok) return;
+        const data = await res.json();
+        if (data.success) {
+          currentIgAutoDmData = data;
+          renderInstagramAutoDmUI(data);
+        }
+      } catch (e) {
+        console.error('Error loading IG Auto DM settings:', e);
+      }
+    }
+
+    function renderInstagramAutoDmUI(data) {
+      const isEnabled = !!data.is_enabled;
+      const masterBtn = document.getElementById('btnToggleIgAutoDmMaster');
+      const dot = document.getElementById('igAutoDmMasterStatusDot');
+      const text = document.getElementById('igAutoDmMasterStatusText');
+
+      if (masterBtn && dot && text) {
+        if (isEnabled) {
+          masterBtn.style.background = 'rgba(16, 185, 129, 0.15)';
+          masterBtn.style.borderColor = 'rgba(16, 185, 129, 0.4)';
+          masterBtn.style.color = '#34d399';
+          dot.style.background = '#34d399';
+          dot.style.boxShadow = '0 0 8px #34d399';
+          text.innerText = 'Bot: AKTIF';
+        } else {
+          masterBtn.style.background = 'rgba(239, 68, 68, 0.12)';
+          masterBtn.style.borderColor = 'rgba(239, 68, 68, 0.35)';
+          masterBtn.style.color = '#f87171';
+          dot.style.background = '#f87171';
+          dot.style.boxShadow = 'none';
+          text.innerText = 'Bot: NONAKTIF';
+        }
+      }
+
+      const accTitle = document.getElementById('igAutoDmConnectedAccountTitle');
+      const accSub = document.getElementById('igAutoDmConnectedAccountSub');
+      const igAccounts = data.connected_instagram_accounts || [];
+
+      if (accTitle && accSub) {
+        if (igAccounts.length > 0) {
+          const firstIg = igAccounts[0];
+          accTitle.innerHTML = `Akun Instagram Terhubung: <strong style="color: #38bdf8;">${firstIg.username || firstIg.name}</strong> <span style="font-size:10px; color:#34d399; background:rgba(16,185,129,0.15); padding:2px 6px; border-radius:4px; margin-left:6px;">● Siap Digunakan</span>`;
+          accSub.innerText = `ID: ${firstIg.id || 'N/A'} • Siap memproses webhook komentar dan mengirim auto DM via Meta Graph API v21.0`;
+        } else {
+          accTitle.innerHTML = `<span style="color: #f59e0b;">⚠️ Belum Ada Akun Instagram Terhubung</span>`;
+          accSub.innerHTML = `Silakan hubungkan akun Facebook Page &amp; Instagram Bisnis Anda di tab <strong>Akun Sosial Media</strong> agar bot dapat bekerja.`;
+        }
+      }
+
+      const stats = data.stats || {};
+      const elTotComm = document.getElementById('statIgTotalComments');
+      const elTotDm = document.getElementById('statIgTotalDmSent');
+      const elTotRepl = document.getElementById('statIgTotalRepliesSent');
+      const elModeBadge = document.getElementById('statIgSourceModeBadge');
+      const elModeSub = document.getElementById('statIgSourceModeSub');
+
+      if (elTotComm) elTotComm.innerText = stats.total_comments_detected || 0;
+      if (elTotDm) elTotDm.innerText = stats.total_dm_sent || 0;
+      if (elTotRepl) elTotRepl.innerText = stats.total_replies_sent || 0;
+
+      const sourceMode = data.source_mode || 'dashboard';
+      if (elModeBadge) elModeBadge.innerText = sourceMode.toUpperCase();
+      if (elModeSub) elModeSub.innerText = sourceMode === 'spreadsheet' ? 'Dibaca dari tab Google Sheets' : 'Diatur dari form dashboard';
+
+      updateModeVisuals(sourceMode);
+      renderDashboardRulesTable(data.dashboard_rules || []);
+      renderSpreadsheetRulesTable(data.spreadsheet_rules || [], data.sheet_status_message);
+    }
+
+    function updateModeVisuals(mode) {
+      const cardDash = document.getElementById('cardModeDashboard');
+      const cardSheet = document.getElementById('cardModeSpreadsheet');
+      const radioDash = document.getElementById('radioModeDashboard');
+      const radioSheet = document.getElementById('radioModeSpreadsheet');
+      const badgeDash = document.getElementById('badgeActiveDashboardMode');
+      const badgeSheet = document.getElementById('badgeActiveSpreadsheetMode');
+      const wrapDash = document.getElementById('wrapModeDashboardContent');
+      const wrapSheet = document.getElementById('wrapModeSpreadsheetContent');
+
+      if (mode === 'spreadsheet') {
+        if (cardDash) { cardDash.style.borderColor = 'rgba(255,255,255,0.1)'; cardDash.style.background = 'rgba(255,255,255,0.02)'; }
+        if (cardSheet) { cardSheet.style.borderColor = '#10b981'; cardSheet.style.background = 'rgba(16, 185, 129, 0.08)'; }
+        if (radioDash) radioDash.checked = false;
+        if (radioSheet) radioSheet.checked = true;
+        if (badgeDash) badgeDash.style.display = 'none';
+        if (badgeSheet) badgeSheet.style.display = 'inline-flex';
+        if (wrapDash) wrapDash.style.display = 'none';
+        if (wrapSheet) wrapSheet.style.display = 'block';
+      } else {
+        if (cardDash) { cardDash.style.borderColor = '#38bdf8'; cardDash.style.background = 'rgba(56, 189, 248, 0.08)'; }
+        if (cardSheet) { cardSheet.style.borderColor = 'rgba(255,255,255,0.1)'; cardSheet.style.background = 'rgba(255,255,255,0.02)'; }
+        if (radioDash) radioDash.checked = true;
+        if (radioSheet) radioSheet.checked = false;
+        if (badgeDash) badgeDash.style.display = 'inline-flex';
+        if (badgeSheet) badgeSheet.style.display = 'none';
+        if (wrapDash) wrapDash.style.display = 'block';
+        if (wrapSheet) wrapSheet.style.display = 'none';
+      }
+    }
+
+    async function switchInstagramAutoDmMode(newMode) {
+      updateModeVisuals(newMode);
+      const elModeBadge = document.getElementById('statIgSourceModeBadge');
+      const elModeSub = document.getElementById('statIgSourceModeSub');
+      if (elModeBadge) elModeBadge.innerText = newMode.toUpperCase();
+      if (elModeSub) elModeSub.innerText = newMode === 'spreadsheet' ? 'Dibaca dari tab Google Sheets' : 'Diatur dari form dashboard';
+
+      const { email, apiKey } = getValidUserCredentials();
+      try {
+        const res = await fetch(getApiUrl('/api/instagram-auto-dm/settings'), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-API-Key': apiKey },
+          body: JSON.stringify({ email, source_mode: newMode })
+        });
+        const d = await res.json();
+        if (d.success) {
+          if (newMode === 'spreadsheet') {
+            syncInstagramAutoDmFromSheet();
+          }
+        }
+      } catch (e) {
+        console.error('Error switching mode:', e);
+      }
+    }
+
+    async function toggleInstagramAutoDmMaster() {
+      if (!currentIgAutoDmData) return;
+      const newStatus = !currentIgAutoDmData.is_enabled;
+      const { email, apiKey } = getValidUserCredentials();
+
+      try {
+        const res = await fetch(getApiUrl('/api/instagram-auto-dm/settings'), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-API-Key': apiKey },
+          body: JSON.stringify({ email, is_enabled: newStatus })
+        });
+        const d = await res.json();
+        if (d.success) {
+          currentIgAutoDmData.is_enabled = newStatus;
+          renderInstagramAutoDmUI(currentIgAutoDmData);
+          showNotification(`Status Bot berhasil diubah ke: ${newStatus ? 'AKTIF' : 'NONAKTIF'}`);
+        }
+      } catch (e) {
+        alert('Gagal mengubah status bot: ' + e);
+      }
+    }
+
+    function renderDashboardRulesTable(rules) {
+      const tbody = document.getElementById('tbodyDashboardRulesList');
+      const countEl = document.getElementById('txtDashboardRulesCount');
+      if (countEl) countEl.innerText = `${rules.length} Aturan Terpasang`;
+
+      if (!tbody) return;
+      if (!rules || rules.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 20px; color: #64748b;">Belum ada aturan di Dashboard. Tambahkan aturan lewat form di atas.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = rules.map((r, i) => `
+        <tr style="border-bottom: 1px solid rgba(255,255,255,0.05); transition: background 0.2s;">
+          <td style="padding: 10px 12px; font-weight: 700; color: #fff;">
+            <span style="background: rgba(56,189,248,0.15); border: 1px solid rgba(56,189,248,0.3); color: #38bdf8; padding: 3px 8px; border-radius: 6px; font-family: monospace;">${r.keyword}</span>
+          </td>
+          <td style="padding: 10px 12px; color: #94a3b8; font-size: 11px;">
+            ${r.match_type === 'exact' ? 'Sama Persis (Exact)' : 'Mengandung Kata (Contains)'}
+          </td>
+          <td style="padding: 10px 12px; color: #e2e8f0; max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+            ${r.comment_reply || '<span style="color:#64748b;">(Tanpa balasan komentar)</span>'}
+          </td>
+          <td style="padding: 10px 12px; color: #34d399; max-width: 250px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+            ${r.dm_reply || '<span style="color:#64748b;">-</span>'}
+          </td>
+          <td style="padding: 10px 12px; text-align: center;">
+            <span style="font-size: 10.5px; padding: 2px 8px; border-radius: 4px; font-weight: 700; ${r.is_active !== false ? 'background: rgba(16,185,129,0.15); color: #34d399;' : 'background: rgba(239,68,68,0.15); color: #f87171;'}">
+              ${r.is_active !== false ? 'AKTIF' : 'NONAKTIF'}
+            </span>
+          </td>
+          <td style="padding: 10px 12px; text-align: center;">
+            <button type="button" style="background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.25); color: #f87171; font-size: 11px; cursor: pointer; padding: 4px 8px; border-radius: 6px;" onclick="deleteInstagramAutoDmRule('${r.id || i}')">
+              Hapus
+            </button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    function renderSpreadsheetRulesTable(rules, statusMsg) {
+      const tbody = document.getElementById('tbodySpreadsheetRulesList');
+      const countEl = document.getElementById('txtSheetRulesCount');
+      const msgEl = document.getElementById('txtSheetSyncStatusMsg');
+
+      if (countEl) countEl.innerText = rules.length;
+      if (msgEl && statusMsg) msgEl.innerText = statusMsg;
+
+      if (!tbody) return;
+      if (!rules || rules.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 20px; color: #64748b;">Tidak ada baris aturan aktif di tab 'Instagram_Auto_DM' Google Spreadsheet. Klik tombol 'Buat / Reset Tab Template' di atas untuk mengisinya dengan contoh data.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = rules.map((r, i) => `
+        <tr style="border-bottom: 1px solid rgba(255,255,255,0.05);">
+          <td style="padding: 10px 12px; color: #94a3b8; font-family: monospace;">Row ${r.row_index || (i+2)}</td>
+          <td style="padding: 10px 12px; font-weight: 700; color: #fff;">
+            <span style="background: rgba(16,185,129,0.15); border: 1px solid rgba(16,185,129,0.3); color: #34d399; padding: 3px 8px; border-radius: 6px; font-family: monospace;">${r.keyword}</span>
+          </td>
+          <td style="padding: 10px 12px; color: #94a3b8; font-size: 11px;">${r.match_type}</td>
+          <td style="padding: 10px 12px; color: #e2e8f0; max-width: 220px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+            ${r.comment_reply || '-'}
+          </td>
+          <td style="padding: 10px 12px; color: #38bdf8; max-width: 260px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+            ${r.dm_reply || '-'}
+          </td>
+          <td style="padding: 10px 12px; text-align: center;">
+            <span style="font-size: 10.5px; padding: 2px 8px; border-radius: 4px; font-weight: 700; ${r.is_active ? 'background: rgba(16,185,129,0.15); color: #34d399;' : 'background: rgba(239,68,68,0.15); color: #f87171;'}">
+              ${r.is_active ? 'AKTIF' : 'NONAKTIF'}
+            </span>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    async function saveInstagramAutoDmRuleFromForm() {
+      const kwInput = document.getElementById('formIgKeyword');
+      const typeSelect = document.getElementById('formIgMatchType');
+      const commentInput = document.getElementById('formIgCommentReply');
+      const dmInput = document.getElementById('formIgDmReply');
+
+      const kw = (kwInput ? kwInput.value : '').trim();
+      const mType = typeSelect ? typeSelect.value : 'contains';
+      const commentText = (commentInput ? commentInput.value : '').trim();
+      const dmText = (dmInput ? dmInput.value : '').trim();
+
+      if (!kw) {
+        alert('Silakan masukkan Kata Kunci Pemicu (Trigger Keyword).');
+        if (kwInput) kwInput.focus();
+        return;
+      }
+      if (!dmText && !commentText) {
+        alert('Silakan isi minimal Pesan DM Otomatis atau Balasan Komentar Publik.');
+        return;
+      }
+
+      const existingRules = (currentIgAutoDmData && currentIgAutoDmData.dashboard_rules) ? [...currentIgAutoDmData.dashboard_rules] : [];
+      const existingIndex = existingRules.findIndex(r => r.keyword.toLowerCase() === kw.toLowerCase());
+      const newRule = {
+        id: 'rule_' + Date.now(),
+        keyword: kw,
+        match_type: mType,
+        comment_reply: commentText,
+        dm_reply: dmText,
+        is_active: true
+      };
+
+      if (existingIndex >= 0) {
+        existingRules[existingIndex] = newRule;
+      } else {
+        existingRules.push(newRule);
+      }
+
+      const { email, apiKey } = getValidUserCredentials();
+      try {
+        const res = await fetch(getApiUrl('/api/instagram-auto-dm/settings'), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-API-Key': apiKey },
+          body: JSON.stringify({ email, rules: existingRules })
+        });
+        const d = await res.json();
+        if (d.success) {
+          if (currentIgAutoDmData) currentIgAutoDmData.dashboard_rules = existingRules;
+          renderDashboardRulesTable(existingRules);
+          if (kwInput) kwInput.value = '';
+          if (commentInput) commentInput.value = '';
+          if (dmInput) dmInput.value = '';
+          showNotification('Aturan kata kunci berhasil disimpan!');
+        } else {
+          alert('Gagal menyimpan: ' + d.message);
+        }
+      } catch (e) {
+        alert('Terjadi kesalahan: ' + e);
+      }
+    }
+
+    async function deleteInstagramAutoDmRule(ruleId) {
+      if (!confirm('Yakin ingin menghapus aturan kata kunci ini?')) return;
+      const existingRules = (currentIgAutoDmData && currentIgAutoDmData.dashboard_rules) ? [...currentIgAutoDmData.dashboard_rules] : [];
+      const updated = existingRules.filter((r, i) => r.id !== ruleId && String(i) !== String(ruleId));
+
+      const { email, apiKey } = getValidUserCredentials();
+      try {
+        const res = await fetch(getApiUrl('/api/instagram-auto-dm/settings'), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-API-Key': apiKey },
+          body: JSON.stringify({ email, rules: updated })
+        });
+        const d = await res.json();
+        if (d.success) {
+          if (currentIgAutoDmData) currentIgAutoDmData.dashboard_rules = updated;
+          renderDashboardRulesTable(updated);
+          showNotification('Aturan berhasil dihapus!');
+        }
+      } catch (e) {
+        alert('Gagal menghapus aturan: ' + e);
+      }
+    }
+
+    async function createInstagramAutoDmSheetTemplate() {
+      if (!confirm('Buat atau reset tab template "Instagram_Auto_DM" di Google Sheets Anda dengan contoh data?')) return;
+      const { email, apiKey } = getValidUserCredentials();
+      try {
+        const res = await fetch(getApiUrl('/api/instagram-auto-dm/create-sheet-template'), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-API-Key': apiKey },
+          body: JSON.stringify({ email })
+        });
+        const d = await res.json();
+        if (d.success) {
+          alert('Sukses! ' + d.message);
+          syncInstagramAutoDmFromSheet();
+        } else {
+          alert('Gagal membuat template: ' + d.message);
+        }
+      } catch (e) {
+        alert('Kesalahan koneksi: ' + e);
+      }
+    }
+
+    async function syncInstagramAutoDmFromSheet() {
+      const { email, apiKey } = getValidUserCredentials();
+      const statusEl = document.getElementById('txtSheetSyncStatusMsg');
+      if (statusEl) statusEl.innerText = 'Menyinkronkan data dari spreadsheet...';
+
+      try {
+        const res = await fetch(getApiUrl('/api/instagram-auto-dm/sync-sheet'), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-API-Key': apiKey },
+          body: JSON.stringify({ email })
+        });
+        const d = await res.json();
+        if (d.success) {
+          renderSpreadsheetRulesTable(d.rules || [], d.message);
+          showNotification(d.message);
+        }
+      } catch (e) {
+        if (statusEl) statusEl.innerText = 'Gagal sinkron: ' + e;
+      }
+    }
+
+    async function runInstagramAutoDmTestSimulation() {
+      const input = document.getElementById('simCommentInput');
+      const commentText = (input ? input.value : '').trim();
+      if (!commentText) {
+        alert('Silakan ketik contoh komentar yang ingin diuji coba.');
+        if (input) input.focus();
+        return;
+      }
+
+      const resultBox = document.getElementById('simResultBox');
+      const statusEl = document.getElementById('simMatchStatus');
+      const sourceEl = document.getElementById('simRuleSource');
+      const commPrev = document.getElementById('simCommentPreview');
+      const dmPrev = document.getElementById('simDmPreview');
+
+      const { email, apiKey } = getValidUserCredentials();
+      try {
+        const res = await fetch(getApiUrl('/api/instagram-auto-dm/test-trigger'), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-API-Key': apiKey },
+          body: JSON.stringify({ email, comment_text: commentText, sample_username: 'budi_audiens' })
+        });
+        const d = await res.json();
+        if (resultBox) resultBox.style.display = 'block';
+
+        if (d.success && d.matched) {
+          if (statusEl) statusEl.innerHTML = `<span style="color:#34d399;">✅ Cocok dengan Kata Kunci: <strong>${d.keyword}</strong></span>`;
+          if (sourceEl) sourceEl.innerText = `Sumber Aturan: ${d.source_mode.toUpperCase()}`;
+          if (commPrev) commPrev.innerText = d.comment_reply_preview || '(Tidak ada balasan komentar)';
+          if (dmPrev) dmPrev.innerText = d.dm_reply_preview || '(Tidak ada pesan DM)';
+        } else {
+          if (statusEl) statusEl.innerHTML = `<span style="color:#f87171;">❌ Tidak Ada Kata Kunci yang Cocok</span>`;
+          if (sourceEl) sourceEl.innerText = `Mode Aktif: ${(d.source_mode || 'dashboard').toUpperCase()}`;
+          if (commPrev) commPrev.innerText = 'Bot tidak membalas komentar ini karena tidak ada kata kunci yang cocok.';
+          if (dmPrev) dmPrev.innerText = 'Pesan DM tidak akan dikirimkan.';
+        }
+      } catch (e) {
+        alert('Simulasi gagal: ' + e);
+      }
+    }
+
+    function insertVariableToField(fieldId, variableText) {
+      const el = document.getElementById(fieldId);
+      if (!el) return;
+      const start = el.selectionStart || el.value.length;
+      const end = el.selectionEnd || el.value.length;
+      el.value = el.value.substring(0, start) + variableText + el.value.substring(end);
+      el.focus();
+      el.selectionStart = el.selectionEnd = start + variableText.length;
+    }
+
+    function copyTextToClipboard(text) {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(() => {
+          showNotification('Berhasil disalin ke clipboard!');
+        }).catch(() => {
+          prompt('Salin teks berikut:', text);
+        });
+      } else {
+        prompt('Salin teks berikut:', text);
+      }
+    }
+
     });
   </script>
 
