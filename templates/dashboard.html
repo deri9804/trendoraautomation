@@ -6869,6 +6869,7 @@ ${err.message}`);
           fetchAndRenderDashboardLogs(false);
         }
       }, 30000);
+    });
 
     // =========================================================================
     // INSTAGRAM COMMENT-TO-DM AUTORESPONDER SCRIPT
@@ -7337,7 +7338,18 @@ ${err.message}`);
       }
     }
 
-    });
+    // Attach all functions explicitly to global window object
+    window.switchInstagramAutoDmMode = switchInstagramAutoDmMode;
+    window.toggleInstagramAutoDmMaster = toggleInstagramAutoDmMaster;
+    window.loadInstagramAutoDmSettings = loadInstagramAutoDmSettings;
+    window.saveInstagramAutoDmRuleFromForm = saveInstagramAutoDmRuleFromForm;
+    window.deleteInstagramAutoDmRule = deleteInstagramAutoDmRule;
+    window.createInstagramAutoDmSheetTemplate = createInstagramAutoDmSheetTemplate;
+    window.syncInstagramAutoDmFromSheet = syncInstagramAutoDmFromSheet;
+    window.runInstagramAutoDmTestSimulation = runInstagramAutoDmTestSimulation;
+    window.insertVariableToField = insertVariableToField;
+    window.copyTextToClipboard = copyTextToClipboard;
+    window.showNotification = showNotification;
   </script>
 
   <script src="{{ url_for('static', filename='js/ui.js') }}"></script>
