@@ -497,11 +497,13 @@ def db_get_social_accounts(email=None, api_key=None):
     if not accounts and target_row:
         # TikTok (cols 6,7,8)
         if len(target_row) > 6 and target_row[6].strip():
+            fallback_name = clean_email.split('@')[0].capitalize() if clean_email else "Akun TikTok"
+            fallback_user = f"@{clean_email.split('@')[0]}" if clean_email else "@tiktok_user"
             accounts.append({
                 "id": target_row[7].strip() if len(target_row) > 7 and target_row[7].strip() else "tiktok_primary",
                 "platform": "tiktok",
-                "name": "TikTok Creator",
-                "username": "@creator.tiktok",
+                "name": fallback_name,
+                "username": fallback_user,
                 "avatar_url": "",
                 "access_token": target_row[6].strip(),
                 "refresh_token": target_row[8].strip() if len(target_row) > 8 else "",
@@ -648,25 +650,30 @@ def db_save_social_account(email, account_dict):
     
     if sheet and target_row_idx:
         try:
-            sheet.update_cell(target_row_idx, 16, json_str)
+            batch_updates = [
+                {'range': f'P{target_row_idx}', 'values': [[json_str]]}
+            ]
             
             # Sync juga ke kolom legacy untuk primary/latest account per platform
             token = account_dict.get('access_token', '')
             if platform == 'tiktok':
-                if token: sheet.update_cell(target_row_idx, 7, token)
-                if account_dict.get('open_id'): sheet.update_cell(target_row_idx, 8, account_dict.get('open_id'))
-                if account_dict.get('refresh_token'): sheet.update_cell(target_row_idx, 9, account_dict.get('refresh_token'))
+                op_id = account_dict.get('open_id', '')
+                ref_tok = account_dict.get('refresh_token', '')
+                batch_updates.append({'range': f'G{target_row_idx}:I{target_row_idx}', 'values': [[token, op_id, ref_tok]]})
             elif platform in ['facebook', 'instagram', 'meta']:
-                if token: sheet.update_cell(target_row_idx, 10, token)
+                if token: batch_updates.append({'range': f'J{target_row_idx}', 'values': [[token]]})
             elif platform == 'linkedin':
-                if token: sheet.update_cell(target_row_idx, 11, token)
+                if token: batch_updates.append({'range': f'K{target_row_idx}', 'values': [[token]]})
             elif platform == 'youtube':
-                if token: sheet.update_cell(target_row_idx, 12, token)
-                if account_dict.get('refresh_token'): sheet.update_cell(target_row_idx, 13, account_dict.get('refresh_token'))
+                ref_tok = account_dict.get('refresh_token', '')
+                batch_updates.append({'range': f'L{target_row_idx}:M{target_row_idx}', 'values': [[token, ref_tok]]})
             elif platform == 'threads':
-                if token: sheet.update_cell(target_row_idx, 14, token)
+                if token: batch_updates.append({'range': f'N{target_row_idx}', 'values': [[token]]})
             elif platform in ['twitter', 'x']:
-                if token: sheet.update_cell(target_row_idx, 15, token)
+                if token: batch_updates.append({'range': f'O{target_row_idx}', 'values': [[token]]})
+
+            sheet.batch_update(batch_updates)
+            invalidate_sheet_cache()
         except Exception as e:
             print(f"[GSheet Save Social Account Error]: {e}")
 

@@ -188,45 +188,67 @@ def tiktok_callback():
                 open_id = res_data.get('open_id')
                 refresh_token = res_data.get('refresh_token')
                 
-                sheet = db.get_gsheet()
-                if sheet and access_token:
-                    all_vals = sheet.get_all_values()
-                    for idx in range(len(all_vals)-1, 0, -1):
-                        row = all_vals[idx]
-                        if len(row) > 0 and str(row[0]).strip().lower() == email.lower():
-                            row_idx = idx + 1
-                            sheet.update_cell(row_idx, 7, access_token)
-                            sheet.update_cell(row_idx, 8, open_id)
-                            sheet.update_cell(row_idx, 9, refresh_token)
-                            break
-                    
-                    # Simpan ke Multi-Account Social Registry
-                    tt_disp = "TikTok Creator"
-                    tt_user = "@creator.tiktok"
-                    tt_avatar = ""
-                    try:
-                        u_url = "https://open.tiktokapis.com/v2/user/info/?fields=open_id,union_id,avatar_url,display_name,username"
-                        u_req = urllib.request.Request(u_url, headers={"Authorization": f"Bearer {access_token}"})
-                        with urllib.request.urlopen(u_req, timeout=8) as u_resp:
-                            u_data = json.loads(u_resp.read().decode('utf-8'))
-                            u_node = u_data.get('data', {}).get('user', {})
-                            if u_node.get('display_name'): tt_disp = u_node.get('display_name')
-                            if u_node.get('username'): tt_user = "@" + u_node.get('username').replace('@', '')
-                            if u_node.get('avatar_url'): tt_avatar = u_node.get('avatar_url')
-                    except Exception as e_info:
-                        print("[TikTok User Info Error]:", e_info)
-                    
-                    db.db_save_social_account(email, {
-                        "id": open_id,
-                        "platform": "tiktok",
-                        "name": tt_disp,
-                        "username": tt_user,
-                        "avatar_url": tt_avatar,
-                        "access_token": access_token,
-                        "refresh_token": refresh_token,
-                        "open_id": open_id,
-                        "connected_at": datetime.now().isoformat()
-                    })
+                # Simpan ke Multi-Account Social Registry
+                tt_disp = ""
+                tt_user = ""
+                tt_avatar = ""
+                
+                # 1. Ambil data profil & username via TikTok Content Posting API (v2)
+                try:
+                    c_url = "https://open.tiktokapis.com/v2/post/publish/creator_info/query/"
+                    c_req = urllib.request.Request(
+                        c_url,
+                        data=b"{}",
+                        headers={
+                            "Authorization": f"Bearer {access_token}",
+                            "Content-Type": "application/json; charset=UTF-8"
+                        },
+                        method="POST"
+                    )
+                    with urllib.request.urlopen(c_req, timeout=10) as c_resp:
+                        c_data = json.loads(c_resp.read().decode('utf-8'))
+                        node = c_data.get('data', {})
+                        if node.get('creator_nickname'):
+                            tt_disp = node.get('creator_nickname').strip()
+                        if node.get('creator_username'):
+                            tt_user = "@" + node.get('creator_username').replace('@', '').strip()
+                        if node.get('creator_avatar_url'):
+                            tt_avatar = node.get('creator_avatar_url').strip()
+                except Exception as e_c:
+                    print("[TikTok Creator Info Query Error]:", e_c)
+
+                # 2. Lengkapi melalui User Info API (v2) dengan field yang diizinkan user.info.basic
+                try:
+                    u_url = "https://open.tiktokapis.com/v2/user/info/?fields=open_id,union_id,avatar_url,avatar_large_url,display_name"
+                    u_req = urllib.request.Request(u_url, headers={"Authorization": f"Bearer {access_token}"})
+                    with urllib.request.urlopen(u_req, timeout=10) as u_resp:
+                        u_data = json.loads(u_resp.read().decode('utf-8'))
+                        u_node = u_data.get('data', {}).get('user', {})
+                        if not tt_disp and u_node.get('display_name'):
+                            tt_disp = u_node.get('display_name').strip()
+                        if not tt_avatar:
+                            tt_avatar = u_node.get('avatar_large_url') or u_node.get('avatar_url') or ""
+                except Exception as e_u:
+                    print("[TikTok User Info Error]:", e_u)
+
+                # 3. Fallback cerdas jika nama/username belum terdeteksi (tanpa dummy @creator.tiktok)
+                if not tt_disp:
+                    tt_disp = email.split('@')[0].capitalize() if email else "Akun TikTok"
+                if not tt_user:
+                    clean_handle = tt_disp.lower().replace(' ', '_')
+                    tt_user = f"@{clean_handle}"
+
+                db.db_save_social_account(email, {
+                    "id": open_id,
+                    "platform": "tiktok",
+                    "name": tt_disp,
+                    "username": tt_user,
+                    "avatar_url": tt_avatar,
+                    "access_token": access_token,
+                    "refresh_token": refresh_token,
+                    "open_id": open_id,
+                    "connected_at": datetime.now().isoformat()
+                })
         except Exception as e:
             print("TikTok OAuth Error:", e)
 
@@ -1890,7 +1912,7 @@ def get_youtube_auth_url():
         "client_id": config.GOOGLE_CLIENT_ID or "DUMMY_ID",
         "redirect_uri": "https://trendoraautomation.my.id/auth/youtube/callback",
         "response_type": "code",
-        "scope": "https://www.googleapis.com/auth/youtube.upload",
+        "scope": "https://www.googleapis.com/auth/youtube.upload https://www.googleapis.com/auth/youtube.readonly",
         "access_type": "offline",
         "prompt": "consent",
         "state": state
