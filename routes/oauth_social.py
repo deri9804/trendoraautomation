@@ -2696,7 +2696,7 @@ def studio_omnichannel_publish():
             "shared_to_feed": share_to_feed
         }
 
-    # 3. YOUTUBE SHORTS
+    # 3. YOUTUBE SHORTS (YouTube Data API v3 Resumable Upload)
     elif platform == 'youtube':
         target_name = "YouTube Shorts"
         yt_tokens = db.db_get_youtube_tokens_by_api_key(api_key, email=email)
@@ -2704,19 +2704,42 @@ def studio_omnichannel_publish():
         yt_refresh = yt_tokens.get('refresh_token')
         yt_row = yt_tokens.get('row_idx')
 
+        if not yt_access and not yt_refresh:
+            return jsonify({
+                "success": False,
+                "message": "Akun YouTube Shorts belum terhubung. Silakan hubungkan Channel YouTube Anda terlebih dahulu di menu Akun Sosial Media."
+            }), 400
+
         full_caption = f"{title}\n\n{caption}".strip() if title else caption
-        if yt_access or yt_refresh:
-            try:
-                is_ok, res_dict = upload_video_to_youtube(yt_access, yt_refresh, media_url, full_caption, row_idx=yt_row)
-                if is_ok:
-                    pub_id = res_dict.get('youtube_video_id')
-                    permalink = res_dict.get('video_url', f"https://youtu.be/{pub_id}")
-            except Exception as e:
-                print(f"[YouTube Studio Publish Exception]: {e}")
+        clean_media_url = resolve_direct_video_url(media_url) if media_url else None
+
+        yt_err_detail = None
+        try:
+            is_ok, res_dict = upload_video_to_youtube(
+                access_token=yt_access,
+                refresh_token=yt_refresh,
+                media_url=clean_media_url,
+                caption=full_caption,
+                row_idx=yt_row,
+                video_bytes=video_bytes,
+                privacy_status=privacy_level.lower() if privacy_level in ['public', 'unlisted', 'private'] else 'public',
+                coppa_kids=coppa_kids
+            )
+            if is_ok:
+                pub_id = res_dict.get('youtube_video_id')
+                permalink = res_dict.get('video_url', f"https://youtube.com/shorts/{pub_id}")
+            else:
+                yt_err_detail = res_dict.get('youtube_error')
+        except Exception as e:
+            yt_err_detail = str(e)
+            print(f"[YouTube Studio Publish Exception]: {e}")
 
         if not pub_id:
-            pub_id = f"yt_{uuid.uuid4().hex[:10]}"
-            permalink = f"https://youtube.com/shorts/{pub_id}"
+            err_msg = yt_err_detail or "Gagal mengunggah video ke YouTube Shorts. Pastikan format video (.mp4) valid dan izin upload YouTube telah disetujui."
+            return jsonify({
+                "success": False,
+                "message": err_msg
+            }), 400
 
         publish_results['youtube'] = {
             "status": "SUCCESS",

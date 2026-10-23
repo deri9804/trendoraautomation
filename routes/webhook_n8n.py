@@ -340,7 +340,7 @@ def upload_video_to_linkedin(access_token, media_url, caption):
     except Exception as e:
         return False, {"linkedin_error": f"[LinkedIn Error] {str(e)}"}
 
-def upload_video_to_youtube(access_token, refresh_token, media_url, caption, row_idx=None):
+def upload_video_to_youtube(access_token, refresh_token, media_url, caption, row_idx=None, video_bytes=None, privacy_status="public", coppa_kids=False):
     if not access_token and refresh_token:
         access_token = refresh_youtube_token(refresh_token, row_idx)
     if not access_token:
@@ -356,8 +356,8 @@ def upload_video_to_youtube(access_token, refresh_token, media_url, caption, row
                 "categoryId": "22"
             },
             "status": {
-                "privacyStatus": "public",
-                "selfDeclaredMadeForKids": False
+                "privacyStatus": privacy_status if privacy_status in ["public", "unlisted", "private"] else "public",
+                "selfDeclaredMadeForKids": bool(coppa_kids)
             }
         }
         init_req = urllib.request.Request(
@@ -370,33 +370,38 @@ def upload_video_to_youtube(access_token, refresh_token, media_url, caption, row
             },
             method='POST'
         )
-        with urllib.request.urlopen(init_req) as init_resp:
+        with urllib.request.urlopen(init_req, timeout=30) as init_resp:
             upload_session_url = init_resp.headers.get('Location')
 
         if not upload_session_url:
             return False, {"youtube_error": "Gagal mendapatkan upload session URL dari YouTube API."}
 
-        req_video = urllib.request.Request(media_url, headers={'User-Agent': 'TRENDORA-Automation/1.0'})
-        with urllib.request.urlopen(req_video) as v_resp:
-            video_bytes = v_resp.read()
+        v_data = video_bytes
+        if not v_data and media_url:
+            req_video = urllib.request.Request(media_url, headers={'User-Agent': 'TRENDORA-Automation/1.0'})
+            with urllib.request.urlopen(req_video, timeout=40) as v_resp:
+                v_data = v_resp.read()
+
+        if not v_data:
+            return False, {"youtube_error": "Berkas video atau URL video tidak ditemukan untuk diunggah ke YouTube."}
 
         up_req = urllib.request.Request(
             upload_session_url,
-            data=video_bytes,
+            data=v_data,
             headers={
                 "Authorization": f"Bearer {tok}",
                 "Content-Type": "video/mp4",
-                "Content-Length": str(len(video_bytes))
+                "Content-Length": str(len(v_data))
             },
             method='PUT'
         )
-        with urllib.request.urlopen(up_req) as up_res:
+        with urllib.request.urlopen(up_req, timeout=60) as up_res:
             res_json = json.loads(up_res.read().decode('utf-8'))
             video_id = res_json.get('id')
             return True, {
                 "youtube_status": "Video sukses diunggah ke YouTube!",
                 "youtube_video_id": video_id,
-                "video_url": f"https://youtu.be/{video_id}"
+                "video_url": f"https://youtube.com/shorts/{video_id}"
             }
 
     try:
