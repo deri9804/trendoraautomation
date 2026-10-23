@@ -979,7 +979,10 @@ def get_instagram_auto_dm_sheet(sheet_id=None):
             creds = Credentials.from_service_account_file(config.SERVICE_ACCOUNT_FILE, scopes=scopes)
 
         client = gspread.authorize(creds)
-        target_id = sheet_id or config.GOOGLE_SHEET_ID
+        raw_target = str(sheet_id or config.GOOGLE_SHEET_ID or '').strip()
+        if '/d/' in raw_target:
+            raw_target = raw_target.split('/d/')[1].split('/')[0].split('?')[0].strip()
+        target_id = raw_target or config.GOOGLE_SHEET_ID
         doc = client.open_by_key(target_id)
         
         target_sheet = None

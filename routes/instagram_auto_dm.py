@@ -301,13 +301,23 @@ def get_ig_auto_dm_settings_api():
     except Exception as e_sheet:
         sheet_status_msg = f"Kendala membaca spreadsheet: {e_sheet}"
 
+    custom_sheet_id = settings.get('custom_sheet_id', '').strip()
+    default_sheet_id = getattr(config, 'GOOGLE_SHEET_ID', '1P0zTEwtMmWfxhHAY6-QbQd5to6Id1rzazgel-PiSJwI')
+    active_sheet_id = custom_sheet_id or default_sheet_id
+    active_sheet_url = f"https://docs.google.com/spreadsheets/d/{active_sheet_id}/edit"
+    service_account_email = "trendoraautomation@websitetrendora.iam.gserviceaccount.com"
+
     return jsonify({
         "success": True,
         "email": email,
         "is_enabled": settings.get('is_enabled', False),
         "source_mode": source_mode,
         "sheet_tab": settings.get('sheet_tab', 'Instagram_Auto_DM'),
-        "custom_sheet_id": settings.get('custom_sheet_id', ''),
+        "custom_sheet_id": custom_sheet_id,
+        "default_sheet_id": default_sheet_id,
+        "active_sheet_id": active_sheet_id,
+        "active_sheet_url": active_sheet_url,
+        "service_account_email": service_account_email,
         "dashboard_rules": settings.get('rules', []),
         "spreadsheet_rules": sheet_rules,
         "sheet_status_message": sheet_status_msg,
@@ -343,7 +353,10 @@ def save_ig_auto_dm_settings_api():
     if 'sheet_tab' in data:
         current['sheet_tab'] = str(data['sheet_tab']).strip()
     if 'custom_sheet_id' in data:
-        current['custom_sheet_id'] = str(data['custom_sheet_id']).strip()
+        raw_sheet = str(data['custom_sheet_id']).strip()
+        if '/d/' in raw_sheet:
+            raw_sheet = raw_sheet.split('/d/')[1].split('/')[0].split('?')[0].strip()
+        current['custom_sheet_id'] = raw_sheet
     if 'rules' in data and isinstance(data['rules'], list):
         current['rules'] = data['rules']
 
@@ -363,8 +376,10 @@ def create_ig_auto_dm_sheet_template():
     data = request.json or {}
     email = session_email or data.get('email', '').strip().lower() or "deripernandi99@gmail.com"
 
-    ok, msg = db.db_ensure_ig_auto_dm_worksheet_template(email)
-    rules = db.db_get_ig_auto_dm_rules_from_sheet(email) if ok else []
+    settings = db.db_get_ig_auto_dm_settings(email)
+    sheet_id = settings.get('custom_sheet_id') or None
+    ok, msg = db.db_ensure_ig_auto_dm_worksheet_template(email, sheet_id=sheet_id)
+    rules = db.db_get_ig_auto_dm_rules_from_sheet(email, sheet_id=sheet_id) if ok else []
 
     return jsonify({
         "success": ok,
@@ -383,7 +398,10 @@ def sync_ig_auto_dm_sheet():
     email = session_email or data.get('email', '').strip().lower() or "deripernandi99@gmail.com"
 
     settings = db.db_get_ig_auto_dm_settings(email)
-    sheet_id = settings.get('custom_sheet_id') or None
+    raw_sheet = data.get('custom_sheet_id') or settings.get('custom_sheet_id') or None
+    if raw_sheet and '/d/' in str(raw_sheet):
+        raw_sheet = str(raw_sheet).split('/d/')[1].split('/')[0].split('?')[0].strip()
+    sheet_id = raw_sheet or None
     rules = db.db_get_ig_auto_dm_rules_from_sheet(email, sheet_id=sheet_id)
 
     return jsonify({
