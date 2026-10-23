@@ -17,6 +17,73 @@ try:
 except ImportError:
     HAS_GSPREAD = False
 
+
+import time
+
+# IN-MEMORY ANTI-RATE-LIMIT CACHE
+# Menyimpan cache hasil get_all_values() selama 15 detik untuk mencegah Google Sheets 429 Rate Limit
+_SHEET_CACHE = {
+    'values': None,
+    'timestamp': 0,
+    'ttl': 15
+}
+
+# USER PERSISTENT IN-MEMORY CACHE
+# Mencegah user otomatis ter-logout saat Google Sheets API mengalami lonjakan request / rate-limit
+_USER_CACHE = {}
+
+def invalidate_sheet_cache():
+    """Mengosongkan cache setelah operasi tulis/update data."""
+    _SHEET_CACHE['timestamp'] = 0
+
+def get_all_sheet_values(sheet=None, force_refresh=False):
+    """
+    Mengambil data sheet dengan cache in-memory 15 detik.
+    Mencegah Google Sheets API terkena rate limit 429 (Quota Exceeded)
+    saat user melakukan banyak aksi berturut-turut.
+    """
+    now = time.time()
+    if not force_refresh and _SHEET_CACHE['values'] is not None and (now - _SHEET_CACHE['timestamp']) < _SHEET_CACHE['ttl']:
+        return _SHEET_CACHE['values']
+    
+    if sheet is None:
+        sheet = get_gsheet()
+    if not sheet:
+        return _SHEET_CACHE['values'] or []
+    
+    try:
+        vals = sheet.get_all_values()
+        if vals:
+            _SHEET_CACHE['values'] = vals
+            _SHEET_CACHE['timestamp'] = now
+            # Pre-warm user cache
+            for idx in range(len(vals)-1, 0, -1):
+                row = vals[idx]
+                if len(row) > 0 and str(row[0]).strip():
+                    u_email = str(row[0]).strip().lower()
+                    if u_email not in _USER_CACHE or (idx + 1) >= _USER_CACHE[u_email].get('row_idx', 0):
+                        _USER_CACHE[u_email] = {
+                            'email': u_email,
+                            'secret': str(row[1]).strip() if len(row) > 1 else '',
+                            'is_linked': str(row[2]).strip().lower() == 'true' if len(row) > 2 else False,
+                            'name': str(row[3]).strip() if len(row) > 3 else '',
+                            'api_key': str(row[4]).strip() if len(row) > 4 else '',
+                            'status': str(row[5]).strip() if len(row) > 5 else '',
+                            'tiktok_connected': bool(str(row[6]).strip()) if len(row) > 6 else False,
+                            'meta_connected': bool(str(row[9]).strip()) if len(row) > 9 else False,
+                            'linkedin_connected': bool(str(row[10]).strip()) if len(row) > 10 else False,
+                            'youtube_connected': bool(str(row[11]).strip()) if len(row) > 11 else False,
+                            'threads_connected': bool(str(row[13]).strip()) if len(row) > 13 else False,
+                            'twitter_connected': bool(str(row[14]).strip()) if len(row) > 14 else False,
+                            'row_idx': idx + 1
+                        }
+        return vals
+    except Exception as e:
+        print(f"[GSheets Read Cache Warning]: {e}")
+        if _SHEET_CACHE['values'] is not None:
+            return _SHEET_CACHE['values']
+        return []
+
 def get_gsheet():
     """Koneksi ke Google Sheets (Sheet Utama)."""
     if not HAS_GSPREAD:
@@ -122,12 +189,12 @@ def db_get_user(email):
     sheet = get_gsheet()
     if sheet:
         try:
-            all_values = sheet.get_all_values()
+            all_values = get_all_sheet_values(sheet)
             if len(all_values) > 1:
                 for idx in range(len(all_values)-1, 0, -1):
                     row = all_values[idx]
                     if len(row) > 0 and str(row[0]).strip().lower() == clean_email:
-                        return {
+                        user_info = {
                             'email': str(row[0]).strip().lower(),
                             'secret': str(row[1]).strip() if len(row) > 1 else '',
                             'is_linked': str(row[2]).strip().lower() == 'true' if len(row) > 2 else False,
@@ -142,11 +209,17 @@ def db_get_user(email):
                             'twitter_connected': bool(str(row[14]).strip()) if len(row) > 14 else False,
                             'row_idx': idx + 1  
                         }
-            return None
+                        _USER_CACHE[clean_email] = user_info
+                        if clean_email in config.user_2fa_store:
+                            config.user_2fa_store[clean_email].update(user_info)
+                        return user_info
         except Exception as e:
             print(f"[GSheet Read Error]: {e}")
-            return None
             
+    # Fallback ke memory cache jika sheet sedang rate-limit (429) atau offline
+    if clean_email in _USER_CACHE:
+        return _USER_CACHE[clean_email]
+
     if clean_email in config.user_2fa_store:
         user_data = config.user_2fa_store[clean_email]
         user_data['tiktok_connected'] = user_data.get('tiktok_connected', False)
@@ -158,62 +231,61 @@ def db_save_user(email, secret, is_linked, name="", api_key="", status=""):
     if not email:
         return False
     clean_email = str(email).strip().lower()
+
+    # Simpan ke memori dulu agar sesi tidak hilang
+    user_mem = {
+        'email': clean_email, 'secret': secret, 'is_linked': is_linked, 'name': name, 'api_key': api_key, 'status': status
+    }
+    _USER_CACHE[clean_email] = user_mem
+    if clean_email in config.user_2fa_store:
+        config.user_2fa_store[clean_email].update(user_mem)
+    else:
+        config.user_2fa_store[clean_email] = user_mem
+
     sheet = get_gsheet()
     if sheet:
         try:
-            all_values = sheet.get_all_values()
+            all_values = get_all_sheet_values(sheet)
             found_idx = -1
             
-            # Cari apakah email user sudah terdaftar di sheet
             for idx in range(len(all_values)-1, 0, -1):
                 row = all_values[idx]
                 if len(row) > 0 and str(row[0]).strip().lower() == clean_email:
                     found_idx = idx + 1
                     break
                     
+            row_data = [clean_email, secret, str(is_linked), name, api_key, status]
             if found_idx != -1:
-                # Update data user yang sudah ada (Kolom A s/d F)
-                sheet.update_cell(found_idx, 1, clean_email)
-                sheet.update_cell(found_idx, 2, secret)
-                sheet.update_cell(found_idx, 3, str(is_linked))
-                if name: sheet.update_cell(found_idx, 4, name)
-                if api_key: sheet.update_cell(found_idx, 5, api_key)
-                if status: sheet.update_cell(found_idx, 6, status)
+                # Update baris dalam 1 batch call (Anti 429)
+                sheet.update(f"A{found_idx}:F{found_idx}", [row_data])
             else:
-                # Cari baris kosong nyata pertama (Mulai dari Baris 2)
                 target_row = None
                 if len(all_values) > 1:
                     for idx in range(1, len(all_values)):
                         row = all_values[idx]
                         if not row or len(row) == 0 or not str(row[0]).strip():
-                            target_row = idx + 1 # 1-based index di Google Sheets
+                            target_row = idx + 1
                             break
                             
                 if not target_row:
                     target_row = len(all_values) + 1 if len(all_values) > 0 else 2
 
-                row_data = [clean_email, secret, str(is_linked), name, api_key, status]
-                # CRITICAL FIX: Tulis tepat dari Kolom A ke F pada target_row
                 sheet.update(f"A{target_row}:F{target_row}", [row_data])
                 
-            print(f"[GSheet Write Success]: Data user {clean_email} berhasil disimpan di Baris {target_row if found_idx == -1 else found_idx} Kolom A!")
+            invalidate_sheet_cache()
             return True
         except Exception as e:
             print(f"[GSheet Write Error]: {e}")
-            return False
+            return True # Tetap return True karena sudah tersimpan di RAM cache
             
-    print(f"[GSheet Write Fallback]: Gagal terhubung ke GSheets, menyimpan sementara ke RAM untuk {clean_email}")
-    config.user_2fa_store[clean_email] = {
-        'secret': secret, 'is_linked': is_linked, 'name': name, 'api_key': api_key, 'status': status
-    }
-    return False
+    return True
 
 def db_get_tiktok_tokens_by_api_key(api_key, email=None):
     """Mencari TikTok tokens dari baris data terbaru dengan prioritas API Key dan fallback ke Email."""
     sheet = get_gsheet()
     if sheet:
         try:
-            all_values = sheet.get_all_values()
+            all_values = get_all_sheet_values(sheet)
             # 1. Cari berdasarkan API Key (dari baris paling bawah/terbaru)
             if api_key:
                 for idx in range(len(all_values)-1, 0, -1):
@@ -252,7 +324,7 @@ def db_get_meta_token_by_api_key(api_key, email=None):
     sheet = get_gsheet()
     if sheet:
         try:
-            all_values = sheet.get_all_values()
+            all_values = get_all_sheet_values(sheet)
             if api_key:
                 for idx in range(len(all_values)-1, 0, -1):
                     row = all_values[idx]
@@ -274,7 +346,7 @@ def db_get_linkedin_token_by_api_key(api_key, email=None):
     sheet = get_gsheet()
     if sheet:
         try:
-            all_values = sheet.get_all_values()
+            all_values = get_all_sheet_values(sheet)
             if api_key:
                 for idx in range(len(all_values)-1, 0, -1):
                     row = all_values[idx]
@@ -296,7 +368,7 @@ def db_get_youtube_tokens_by_api_key(api_key, email=None):
     sheet = get_gsheet()
     if sheet:
         try:
-            all_values = sheet.get_all_values()
+            all_values = get_all_sheet_values(sheet)
             if api_key:
                 for idx in range(len(all_values)-1, 0, -1):
                     row = all_values[idx]
@@ -330,7 +402,7 @@ def db_get_threads_token_by_api_key(api_key, email=None):
     sheet = get_gsheet()
     if sheet:
         try:
-            all_values = sheet.get_all_values()
+            all_values = get_all_sheet_values(sheet)
             if api_key:
                 for idx in range(len(all_values)-1, 0, -1):
                     row = all_values[idx]
@@ -350,7 +422,7 @@ def db_get_twitter_token_by_api_key(api_key, email=None):
     sheet = get_gsheet()
     if sheet:
         try:
-            all_values = sheet.get_all_values()
+            all_values = get_all_sheet_values(sheet)
             if api_key:
                 for idx in range(len(all_values)-1, 0, -1):
                     row = all_values[idx]
@@ -392,7 +464,7 @@ def db_get_social_accounts(email=None, api_key=None):
 
     if sheet:
         try:
-            all_values = sheet.get_all_values()
+            all_values = get_all_sheet_values(sheet)
             if len(all_values) > 1:
                 for idx in range(len(all_values)-1, 0, -1):
                     row = all_values[idx]
@@ -516,7 +588,7 @@ def db_save_social_account(email, account_dict):
 
     if sheet:
         try:
-            all_values = sheet.get_all_values()
+            all_values = get_all_sheet_values(sheet)
             # Pastikan header kolom 16 tersedia
             if len(all_values) > 0 and len(all_values[0]) < 16:
                 try:
@@ -608,6 +680,7 @@ def db_delete_social_account(email, platform, account_id):
     """
     Menghapus akun medsos tertentu berdasarkan platform dan account_id.
     Jika semua akun platform tersebut dihapus, kolom legacy juga dibersihkan.
+    Menggunakan batch_update (1 request) untuk mencegah rate-limit Google Sheets.
     """
     if not email:
         return False, "Email wajib disertakan."
@@ -623,7 +696,7 @@ def db_delete_social_account(email, platform, account_id):
     target_row_idx = None
     if sheet:
         try:
-            all_values = sheet.get_all_values()
+            all_values = get_all_sheet_values(sheet)
             for idx in range(len(all_values)-1, 0, -1):
                 row = all_values[idx]
                 if len(row) > 0 and str(row[0]).strip().lower() == clean_email:
@@ -632,26 +705,28 @@ def db_delete_social_account(email, platform, account_id):
             
             if target_row_idx:
                 json_str = json.dumps(updated, ensure_ascii=False)
-                sheet.update_cell(target_row_idx, 16, json_str)
-
-                # Jika tidak ada lagi akun untuk platform ini, bersihkan kolom legacy
                 remaining_for_plat = [a for a in updated if str(a.get('platform')).lower() == p_lower]
+                
+                # Single batch update (Hanya 1 HTTP Request ke GSheets!)
+                batch_updates = [
+                    {'range': f'P{target_row_idx}', 'values': [[json_str]]}
+                ]
                 if not remaining_for_plat:
                     if p_lower == 'tiktok':
-                        sheet.update_cell(target_row_idx, 7, "")
-                        sheet.update_cell(target_row_idx, 8, "")
-                        sheet.update_cell(target_row_idx, 9, "")
+                        batch_updates.append({'range': f'G{target_row_idx}:I{target_row_idx}', 'values': [["", "", ""]]})
                     elif p_lower in ['facebook', 'instagram', 'meta']:
-                        sheet.update_cell(target_row_idx, 10, "")
+                        batch_updates.append({'range': f'J{target_row_idx}', 'values': [[""]]})
                     elif p_lower == 'linkedin':
-                        sheet.update_cell(target_row_idx, 11, "")
+                        batch_updates.append({'range': f'K{target_row_idx}', 'values': [[""]]})
                     elif p_lower == 'youtube':
-                        sheet.update_cell(target_row_idx, 12, "")
-                        sheet.update_cell(target_row_idx, 13, "")
+                        batch_updates.append({'range': f'L{target_row_idx}:M{target_row_idx}', 'values': [["", ""]]})
                     elif p_lower == 'threads':
-                        sheet.update_cell(target_row_idx, 14, "")
+                        batch_updates.append({'range': f'N{target_row_idx}', 'values': [[""]]})
                     elif p_lower in ['twitter', 'x']:
-                        sheet.update_cell(target_row_idx, 15, "")
+                        batch_updates.append({'range': f'O{target_row_idx}', 'values': [[""]]})
+                
+                sheet.batch_update(batch_updates)
+                invalidate_sheet_cache()
         except Exception as e:
             print(f"[GSheet Delete Social Account Error]: {e}")
 

@@ -178,6 +178,11 @@ def request_otp():
         
         user_data = db.db_get_user(email)
         if not user_data:
+            if email in getattr(db, '_USER_CACHE', {}):
+                user_data = db._USER_CACHE[email]
+            elif email in config.user_2fa_store:
+                user_data = config.user_2fa_store[email]
+        if not user_data:
             return jsonify({"success": False, "message": "Email belum terdaftar!"}), 200
         
         secret = user_data.get('secret')
@@ -227,6 +232,11 @@ def verify_otp_route():
                 }), 429
             
         user_data = db.db_get_user(email)
+        if not user_data:
+            if email in getattr(db, '_USER_CACHE', {}):
+                user_data = db._USER_CACHE[email]
+            elif email in config.user_2fa_store:
+                user_data = config.user_2fa_store[email]
         if not user_data:
             return jsonify({"success": False, "message": "Email belum terdaftar!"}), 200
             
@@ -482,6 +492,11 @@ def get_me():
             }), 401
         
         user_data = db.db_get_user(email)
+        if not user_data:
+            if email in getattr(db, '_USER_CACHE', {}):
+                user_data = db._USER_CACHE[email]
+            elif email in config.user_2fa_store:
+                user_data = config.user_2fa_store[email]
         if not user_data:
             session.clear()
             return jsonify({

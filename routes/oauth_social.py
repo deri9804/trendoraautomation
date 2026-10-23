@@ -107,21 +107,23 @@ def disconnect_social():
 
             if found_idx != -1:
                 p = platform.lower()
+                batch_updates = []
                 if p == 'tiktok':
-                    sheet.update_cell(found_idx, 7, "")
-                    sheet.update_cell(found_idx, 8, "")
-                    sheet.update_cell(found_idx, 9, "")
+                    batch_updates.append({'range': f'G{found_idx}:I{found_idx}', 'values': [["", "", ""]]})
                 elif p in ['facebook', 'instagram']:
-                    sheet.update_cell(found_idx, 10, "")
+                    batch_updates.append({'range': f'J{found_idx}', 'values': [[""]]})
                 elif p == 'linkedin':
-                    sheet.update_cell(found_idx, 11, "")
+                    batch_updates.append({'range': f'K{found_idx}', 'values': [[""]]})
                 elif p == 'youtube':
-                    sheet.update_cell(found_idx, 12, "")
-                    sheet.update_cell(found_idx, 13, "")
+                    batch_updates.append({'range': f'L{found_idx}:M{found_idx}', 'values': [["", ""]]})
                 elif p == 'threads':
-                    sheet.update_cell(found_idx, 14, "")
+                    batch_updates.append({'range': f'N{found_idx}', 'values': [[""]]})
                 elif p in ['twitter', 'x']:
-                    sheet.update_cell(found_idx, 15, "")
+                    batch_updates.append({'range': f'O{found_idx}', 'values': [[""]]})
+                
+                if batch_updates:
+                    sheet.batch_update(batch_updates)
+                    db.invalidate_sheet_cache()
                 
                 return jsonify({"success": True, "message": f"Berhasil menghapus token {platform}"})
         except Exception as e:
