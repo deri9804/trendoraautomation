@@ -362,7 +362,7 @@ def get_meta_auth_url():
 
     redirect_uri = "https://trendoraautomation.my.id/auth/meta/callback"
     state = f"{uuid.uuid4().hex[:8]}|{email}"
-    scopes = "pages_show_list,pages_read_engagement,pages_manage_posts,pages_manage_engagement,pages_read_user_content,read_insights,instagram_basic,instagram_content_publish,instagram_manage_comments,instagram_manage_messages,pages_messaging"
+    scopes = "pages_show_list,pages_read_engagement,pages_manage_posts,pages_manage_engagement,pages_read_user_content,pages_manage_metadata,read_insights,instagram_basic,instagram_content_publish,instagram_manage_comments,instagram_manage_messages,pages_messaging"
     
     params = {
         "client_id": config.META_CLIENT_ID,
@@ -461,6 +461,19 @@ def sync_instagram_accounts_for_page(page_id, page_token, page_name=""):
                         })
     except Exception as e:
         print(f"[Instagram Page Link Discovery Error for {page_id}]: {e}")
+
+    # Otomatis daftarkan langganan webhook (subscribed_apps) untuk setiap akun Instagram yang ditemukan
+    for ig_acc in found_accounts:
+        ig_id = ig_acc.get('id')
+        if ig_id and page_token:
+            try:
+                sub_url = f"https://graph.facebook.com/v21.0/{ig_id}/subscribed_apps"
+                sub_payload = urllib.parse.urlencode({'subscribed_fields': 'comments,mentions,messages'}).encode('utf-8')
+                sub_req = urllib.request.Request(f"{sub_url}?access_token={page_token}", data=sub_payload, method='POST')
+                with urllib.request.urlopen(sub_req, timeout=10) as sub_res:
+                    print(f"[Meta IG Auto-Subscribe Webhook]: Subscribed IG {ig_id} -> {sub_res.read().decode('utf-8')}")
+            except Exception as e_sub:
+                print(f"[Meta IG Auto-Subscribe Webhook Error for {ig_id}]: {e_sub}")
 
     return found_accounts
 
@@ -715,25 +728,11 @@ def meta_webhook():
 
         # 2. Tangani event 'instagram' -> 'comments' & 'mentions' (Auto-Balas Komen Reels & Post Instagram)
         elif data.get('object') == 'instagram':
-            for entry in data.get('entry', []):
-                ig_user_id = str(entry.get('id', '')).strip()
-                for change in entry.get('changes', []):
-                    field = change.get('field')
-                    val = change.get('value', {})
-                    if field in ['comments', 'mentions']:
-                        comment_id = val.get('id')
-                        user_comment = str(val.get('text', '')).strip()
-                        sender = val.get('from', {})
-                        sender_username = str(sender.get('username') or 'Kak').strip()
-                        sender_id = str(sender.get('id', '')).strip()
-                        media = val.get('media', {})
-                        media_id = media.get('id')
-                        
-                        if sender_id and ig_user_id and sender_id == ig_user_id:
-                            continue
-                            
-                        if comment_id:
-                            auto_reply_to_instagram_comment(comment_id, sender_username, user_comment, media_id=media_id)
+            try:
+                from routes.instagram_auto_dm import handle_instagram_webhook_data
+                handle_instagram_webhook_data(data)
+            except Exception as e_ig:
+                print(f"[Meta Webhook Instagram Auto DM Error]: {e_ig}")
 
         # 3. Tangani event 'threads' -> 'replies' (Auto-Balas Komen Threads)
         elif data.get('object') == 'threads':

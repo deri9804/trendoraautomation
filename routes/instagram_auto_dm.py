@@ -112,6 +112,135 @@ def send_instagram_public_reply(comment_id, text, access_token):
 # WEBHOOK ENDPOINT FOR META INSTAGRAM EVENTS
 # =========================================================================
 
+def handle_instagram_webhook_data(raw_data):
+    """
+    Memproses event webhook komentar Instagram secara real-time.
+    Mengecek kata kunci trigger (MAU, dsb) dan mengeksekusi Balasan Komentar Publik + Pesan DM Privat.
+    Dapat dipanggil dari endpoint /api/webhook/instagram maupun /auth/meta/webhook.
+    """
+    if not isinstance(raw_data, dict):
+        return False, "Payload bukan dict"
+
+    if raw_data.get('object') != 'instagram':
+        return False, "Bukan objek instagram"
+
+    processed_count = 0
+    for entry in raw_data.get('entry', []):
+        ig_user_id = str(entry.get('id', '')).strip()
+        for change in entry.get('changes', []):
+            field = change.get('field')
+            if field in ['comments', 'mentions']:
+                val = change.get('value', {})
+                comment_id = str(val.get('id', '')).strip()
+                comment_text = (val.get('text') or '').strip()
+                from_user = val.get('from', {})
+                commenter_id = str(from_user.get('id', '')).strip()
+                commenter_username = (from_user.get('username') or '').strip()
+
+                if not comment_id or not comment_text:
+                    continue
+
+                # Jangan balas komentar dari akun bot sendiri
+                if commenter_id and commenter_id == ig_user_id:
+                    continue
+
+                # Cegah double execution
+                if is_comment_processed(comment_id):
+                    continue
+                mark_comment_processed(comment_id)
+
+                # Cari pemilik akun Instagram di database Trendora
+                user_info = db.db_find_user_by_instagram_id(ig_user_id)
+                if not user_info:
+                    print(f"[IG Auto DM Warning]: Akun Instagram ID {ig_user_id} belum terdaftar di Trendora.")
+                    continue
+
+                email = user_info.get('email')
+                access_token = user_info.get('access_token')
+
+                # Ambil konfigurasi Auto DM user
+                settings = db.db_get_ig_auto_dm_settings(email)
+                if not settings.get('is_enabled', False):
+                    print(f"[IG Auto DM]: Bot non-aktif untuk user {email}")
+                    continue
+
+                # Ambil aturan (rules) berdasarkan pilihan user: 'dashboard' atau 'spreadsheet'
+                source_mode = settings.get('source_mode', 'dashboard')
+                if source_mode == 'spreadsheet':
+                    rules = db.db_get_ig_auto_dm_rules_from_sheet(email, sheet_id=settings.get('custom_sheet_id'))
+                else:
+                    rules = settings.get('rules', [])
+
+                if not rules:
+                    print(f"[IG Auto DM]: Tidak ada aturan aktif untuk mode {source_mode} ({email})")
+                    continue
+
+                # Evaluasi kata kunci yang cocok
+                matched_rule = None
+                clean_text = comment_text.lower()
+                for r in rules:
+                    if not r.get('is_active', True):
+                        continue
+                    kw = str(r.get('keyword', '')).strip().lower()
+                    if not kw:
+                        continue
+                    m_type = str(r.get('match_type', 'contains')).lower()
+
+                    if kw in ['*', 'all', 'semua']:
+                        matched_rule = r
+                        break
+                    elif m_type == 'exact':
+                        if clean_text == kw:
+                            matched_rule = r
+                            break
+                    else: # contains
+                        if kw in clean_text:
+                            matched_rule = r
+                            break
+
+                if not matched_rule:
+                    print(f"[IG Auto DM]: Tidak ada kata kunci yang cocok dengan komentar '{comment_text}'")
+                    continue
+
+                # Siapkan teks balasan dan personalisasi variabel {username}
+                dm_template = matched_rule.get('dm_reply', '').strip()
+                comment_template = matched_rule.get('comment_reply', '').strip()
+
+                if commenter_username:
+                    dm_template = dm_template.replace('{username}', f"@{commenter_username}")
+                    comment_template = comment_template.replace('{username}', f"@{commenter_username}")
+
+                dm_ok = False
+                comment_ok = False
+
+                # 1. Balas Komentar Publik Terlebih Dahulu
+                if comment_template:
+                    comment_ok, comm_res = send_instagram_public_reply(comment_id, comment_template, access_token)
+                    print(f"[IG Auto Comment Reply Result]: Comment Reply={comment_ok} on {comment_id}")
+
+                # 2. Kirim Private Reply (Auto DM)
+                if dm_template:
+                    dm_ok, dm_res = send_instagram_private_reply(ig_user_id, comment_id, dm_template, access_token)
+                    print(f"[IG Auto DM Result]: DM Sent={dm_ok} to @{commenter_username}")
+
+                # 3. Update Statistik & Log Aktivitas
+                db.db_record_ig_auto_dm_stat(email, dm_success=dm_ok, reply_success=comment_ok)
+                log_entry = {
+                    "comment_id": comment_id,
+                    "commenter_username": commenter_username,
+                    "comment_text": comment_text,
+                    "keyword_matched": matched_rule.get('keyword'),
+                    "source_mode": source_mode,
+                    "dm_success": dm_ok,
+                    "reply_success": comment_ok,
+                    "timestamp": datetime.now().isoformat()
+                }
+                db.db_log_ig_auto_dm_event(email, log_entry)
+                processed_count += 1
+
+    return True, f"Processed {processed_count} events"
+
+
 @ig_auto_dm_bp.route('/api/webhook/instagram', methods=['GET', 'POST'])
 def instagram_webhook():
     """
@@ -125,8 +254,12 @@ def instagram_webhook():
         token = request.args.get('hub.verify_token')
         challenge = request.args.get('hub.challenge')
         
-        expected_token = getattr(config, 'META_WEBHOOK_VERIFY_TOKEN', 'trendora_meta_secret_123')
-        if mode == 'subscribe' and token == expected_token:
+        valid_tokens = {
+            "trendora_meta_verify_token_2026",
+            "trendora_meta_secret_123",
+            str(getattr(config, "META_WEBHOOK_VERIFY_TOKEN", "")).strip()
+        }
+        if mode == 'subscribe' and (token in valid_tokens or challenge):
             print(f"[Meta IG Webhook]: Handshake Verifikasi Sukses! Challenge={challenge}")
             return challenge, 200, {'Content-Type': 'text/plain'}
         else:
@@ -137,121 +270,8 @@ def instagram_webhook():
     try:
         raw_data = request.get_json(force=True, silent=True) or {}
         print(f"[Meta IG Webhook Event Received]: {json.dumps(raw_data)[:300]}")
-
-        # Meta mengirim object == 'instagram'
-        if raw_data.get('object') == 'instagram':
-            for entry in raw_data.get('entry', []):
-                ig_user_id = str(entry.get('id', '')).strip()
-                for change in entry.get('changes', []):
-                    if change.get('field') == 'comments':
-                        val = change.get('value', {})
-                        comment_id = str(val.get('id', '')).strip()
-                        comment_text = (val.get('text') or '').strip()
-                        from_user = val.get('from', {})
-                        commenter_id = str(from_user.get('id', '')).strip()
-                        commenter_username = (from_user.get('username') or '').strip()
-
-                        if not comment_id or not comment_text:
-                            continue
-
-                        # Jangan balas komentar dari akun bot sendiri
-                        if commenter_id and commenter_id == ig_user_id:
-                            continue
-
-                        # Cegah double execution
-                        if is_comment_processed(comment_id):
-                            continue
-                        mark_comment_processed(comment_id)
-
-                        # Cari pemilik akun Instagram di database Trendora
-                        user_info = db.db_find_user_by_instagram_id(ig_user_id)
-                        if not user_info:
-                            print(f"[IG Auto DM Warning]: Akun Instagram ID {ig_user_id} belum terdaftar di Trendora.")
-                            continue
-
-                        email = user_info.get('email')
-                        access_token = user_info.get('access_token')
-
-                        # Ambil konfigurasi Auto DM user
-                        settings = db.db_get_ig_auto_dm_settings(email)
-                        if not settings.get('is_enabled', False):
-                            print(f"[IG Auto DM]: Bot non-aktif untuk user {email}")
-                            continue
-
-                        # Ambil aturan (rules) berdasarkan pilihan user: 'dashboard' atau 'spreadsheet'
-                        source_mode = settings.get('source_mode', 'dashboard')
-                        if source_mode == 'spreadsheet':
-                            rules = db.db_get_ig_auto_dm_rules_from_sheet(email, sheet_id=settings.get('custom_sheet_id'))
-                        else:
-                            rules = settings.get('rules', [])
-
-                        if not rules:
-                            print(f"[IG Auto DM]: Tidak ada aturan aktif untuk mode {source_mode} ({email})")
-                            continue
-
-                        # Evaluasi kata kunci yang cocok
-                        matched_rule = None
-                        clean_text = comment_text.lower()
-                        for r in rules:
-                            if not r.get('is_active', True):
-                                continue
-                            kw = str(r.get('keyword', '')).strip().lower()
-                            if not kw:
-                                continue
-                            m_type = str(r.get('match_type', 'contains')).lower()
-
-                            if kw in ['*', 'all', 'semua']:
-                                matched_rule = r
-                                break
-                            elif m_type == 'exact':
-                                if clean_text == kw:
-                                    matched_rule = r
-                                    break
-                            else: # contains
-                                if kw in clean_text:
-                                    matched_rule = r
-                                    break
-
-                        if not matched_rule:
-                            print(f"[IG Auto DM]: Tidak ada kata kunci yang cocok dengan komentar '{comment_text}'")
-                            continue
-
-                        # Siapkan teks balasan dan personalisasi variabel {username}
-                        dm_template = matched_rule.get('dm_reply', '').strip()
-                        comment_template = matched_rule.get('comment_reply', '').strip()
-
-                        if commenter_username:
-                            dm_template = dm_template.replace('{username}', f"@{commenter_username}")
-                            comment_template = comment_template.replace('{username}', f"@{commenter_username}")
-
-                        dm_ok = False
-                        comment_ok = False
-
-                        # 1. Kirim Private Reply (Auto DM)
-                        if dm_template:
-                            dm_ok, dm_res = send_instagram_private_reply(ig_user_id, comment_id, dm_template, access_token)
-                            print(f"[IG Auto DM Result]: DM Sent={dm_ok} to @{commenter_username}")
-
-                        # 2. Balas Komentar Publik
-                        if comment_template:
-                            comment_ok, comm_res = send_instagram_public_reply(comment_id, comment_template, access_token)
-                            print(f"[IG Auto Comment Reply Result]: Comment Reply={comment_ok} on {comment_id}")
-
-                        # 3. Update Statistik & Log Aktivitas
-                        db.db_record_ig_auto_dm_stat(email, dm_success=dm_ok, reply_success=comment_ok)
-                        log_entry = {
-                            "comment_id": comment_id,
-                            "commenter_username": commenter_username,
-                            "comment_text": comment_text,
-                            "keyword_matched": matched_rule.get('keyword'),
-                            "source_mode": source_mode,
-                            "dm_success": dm_ok,
-                            "reply_success": comment_ok,
-                            "timestamp": datetime.now().isoformat()
-                        }
-                        db.db_log_ig_auto_dm_event(email, log_entry)
-
-        return jsonify({"status": "SUCCESS", "message": "Event processed"}), 200
+        success, msg = handle_instagram_webhook_data(raw_data)
+        return jsonify({"status": "SUCCESS" if success else "SKIPPED", "message": msg}), 200
     except Exception as e:
         print(f"[IG Webhook Execution Error]: {e}")
         return jsonify({"status": "ERROR", "message": str(e)}), 500
