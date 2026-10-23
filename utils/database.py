@@ -954,9 +954,26 @@ def db_delete_scheduled_post(post_id, email=None):
 # =========================================================================
 
 def get_instagram_auto_dm_sheet(sheet_id=None):
-    """Koneksi ke Google Sheets khusus tab 'Instagram_Auto_DM'."""
+    """
+    Koneksi ke Google Sheets pribadi milik user (khusus tab 'Instagram_Auto_DM').
+    PENTING: Tidak pernah menghubungkan ke database internal Trendora.
+    """
     if not HAS_GSPREAD:
         return None
+    if not sheet_id:
+        return None
+
+    raw_target = str(sheet_id).strip()
+    if '/d/' in raw_target:
+        raw_target = raw_target.split('/d/')[1].split('/')[0].split('?')[0].strip()
+    if not raw_target:
+        return None
+
+    # Mencegah ID database sistem Trendora terpakai
+    if raw_target == config.GOOGLE_SHEET_ID:
+        print("[Security Warning]: Menolak akses karena ID sama dengan database internal Trendora!")
+        return None
+
     try:
         scopes = ["https://www.googleapis.com/auth/spreadsheets"]
         env_creds = config.GOOGLE_CREDS_JSON
@@ -979,11 +996,7 @@ def get_instagram_auto_dm_sheet(sheet_id=None):
             creds = Credentials.from_service_account_file(config.SERVICE_ACCOUNT_FILE, scopes=scopes)
 
         client = gspread.authorize(creds)
-        raw_target = str(sheet_id or config.GOOGLE_SHEET_ID or '').strip()
-        if '/d/' in raw_target:
-            raw_target = raw_target.split('/d/')[1].split('/')[0].split('?')[0].strip()
-        target_id = raw_target or config.GOOGLE_SHEET_ID
-        doc = client.open_by_key(target_id)
+        doc = client.open_by_key(raw_target)
         
         target_sheet = None
         for s in doc.worksheets():
@@ -995,13 +1008,15 @@ def get_instagram_auto_dm_sheet(sheet_id=None):
             target_sheet.append_row(["Email", "Trigger_Keyword", "Match_Type", "Comment_Reply", "DM_Reply", "Status", "Catatan", "Updated_At"])
         return target_sheet
     except Exception as e:
-        print(f"[GSheets IG Auto DM Connection Error]: {e}")
+        print(f"[GSheets User IG Auto DM Error]: {e}")
         return None
 
 def db_ensure_ig_auto_dm_worksheet_template(email, sheet_id=None):
+    if not sheet_id:
+        return False, "Link Google Spreadsheet belum dimasukkan. Silakan tautkan Google Spreadsheet milik Anda terlebih dahulu."
     sheet = get_instagram_auto_dm_sheet(sheet_id=sheet_id)
     if not sheet:
-        return False, "Gagal menghubungkan ke Google Sheets."
+        return False, "Gagal mengakses Google Spreadsheet Anda. Pastikan file sheet telah dibagikan (Share) dengan akses Editor ke: trendoraautomation@websitetrendora.iam.gserviceaccount.com"
     try:
         rows = sheet.get_all_values()
         clean_email = (email or 'user@trendora.com').strip().lower()

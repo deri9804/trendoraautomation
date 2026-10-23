@@ -2127,26 +2127,24 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
 
           <!-- KONTEN MODE 2: SPREADSHEET SYNC -->
           <div id="wrapModeSpreadsheetContent" style="display: none;">
+            <!-- Header Kartu -->
             <div style="background: rgba(16, 185, 129, 0.05); border: 1px solid rgba(16, 185, 129, 0.25); border-radius: 14px; padding: 20px; margin-bottom: 20px;">
               <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 16px; margin-bottom: 16px;">
-                <div style="max-width: 580px;">
+                <div style="max-width: 600px;">
                   <h3 style="font-size: 15px; color: #fff; margin-bottom: 4px; font-weight: 700; display: flex; align-items: center; gap: 8px;">
-                    <span>📊 Sinkronisasi Aturan via Google Spreadsheet</span>
+                    <span>📊 Sinkronisasi Aturan via Google Spreadsheet Pribadi</span>
                   </h3>
                   <p style="color: #9ca3af; font-size: 12.5px; margin: 0; line-height: 1.5;">
-                    Data aturan kata kunci &amp; pesan balasan dibaca langsung dari tab <strong>Instagram_Auto_DM</strong> di Google Sheets. Anda dapat mengetik, menambah baris, atau mematikan kata kunci kapan saja via Spreadsheet tanpa perlu masuk dashboard.
+                    Tautkan file Google Spreadsheet dari akun Google Drive Anda sendiri. Data aturan kata kunci &amp; pesan balasan akan disinkronkan secara otomatis dari tab <strong>Instagram_Auto_DM</strong> pada sheet Anda.
                   </p>
                 </div>
 
                 <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
-                  <a id="btnOpenActiveGoogleSheet" href="https://docs.google.com/spreadsheets/d/1P0zTEwtMmWfxhHAY6-QbQd5to6Id1rzazgel-PiSJwI/edit" target="_blank" class="btn-primary" style="font-size: 12px; padding: 8px 16px; background: #10b981; border: none; color: #fff; text-decoration: none; border-radius: 8px; font-weight: 700; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 0 12px rgba(16, 185, 129, 0.3);">
-                    <span>🟢 Buka Google Spreadsheet di Tab Baru ↗</span>
-                  </a>
-                  <button type="button" class="btn-secondary" onclick="createInstagramAutoDmSheetTemplate()" style="font-size: 12px; padding: 8px 14px; border-color: rgba(16,185,129,0.4); color: #34d399;">
-                    📥 Buat / Reset Template
-                  </button>
                   <button type="button" class="btn-pink" onclick="syncInstagramAutoDmFromSheet()" style="font-size: 12px; padding: 8px 16px;">
-                    🔄 Sinkronkan Data Sekarang
+                    🔄 Sinkronkan Data dari Sheet
+                  </button>
+                  <button type="button" class="btn-secondary" onclick="createInstagramAutoDmSheetTemplate()" style="font-size: 12px; padding: 8px 14px; border-color: rgba(16,185,129,0.4); color: #34d399;">
+                    📥 Buat Format Template di Sheet Saya
                   </button>
                 </div>
               </div>
@@ -2154,60 +2152,68 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
               <!-- Status Info Box -->
               <div style="background: rgba(0,0,0,0.25); border-radius: 10px; padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
                 <div style="font-size: 12px; color: #e2e8f0; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-                  <span>Tab Worksheet: <strong style="color: #38bdf8;">Instagram_Auto_DM</strong></span>
+                  <span>Status Spreadsheet:</span>
+                  <span id="badgeActiveSheetStatus" style="font-size: 11px; background: rgba(239,68,68,0.15); color: #f87171; border: 1px solid rgba(239,68,68,0.3); padding: 2px 8px; border-radius: 4px; font-weight: 600;">Belum Ditautkan</span>
                   <span style="color: #475569;">|</span>
-                  <span id="txtSheetSyncStatusMsg" style="color: #34d399;">Memeriksa status spreadsheet...</span>
+                  <span id="txtSheetSyncStatusMsg" style="color: #94a3b8;">Menunggu penautan spreadsheet...</span>
                 </div>
                 <div style="font-size: 11.5px; color: #94a3b8;">
-                  Status Baris: <strong id="txtSheetRulesCount" style="color: #fff;">0</strong> Aturan Aktif
+                  Aturan Aktif: <strong id="txtSheetRulesCount" style="color: #fff;">0</strong>
                 </div>
               </div>
             </div>
 
-            <!-- KOTAK INPUT URL / ID GOOGLE SPREADSHEET -->
-            <div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 18px 20px; margin-bottom: 22px;">
-              <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 12px; margin-bottom: 12px;">
+            <!-- KOTAK INPUT TAUTAN GOOGLE SPREADSHEET USER -->
+            <div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 20px; margin-bottom: 22px;">
+              <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 12px; margin-bottom: 14px;">
                 <div>
-                  <h4 style="font-size: 13.5px; color: #fff; font-weight: 700; margin: 0 0 4px 0; display: flex; align-items: center; gap: 8px;">
-                    <span>📂 Input Link / ID Google Spreadsheet</span>
-                    <span id="badgeActiveSheetType" style="font-size: 10px; background: rgba(56,189,248,0.15); color: #38bdf8; border: 1px solid rgba(56,189,248,0.3); padding: 2px 8px; border-radius: 4px; font-weight: 600;">Spreadsheet Bawaan Trendora</span>
+                  <h4 style="font-size: 14px; color: #fff; font-weight: 700; margin: 0 0 4px 0; display: flex; align-items: center; gap: 8px;">
+                    <span>🔗 Tautkan Link Google Spreadsheet Anda</span>
                   </h4>
-                  <p style="font-size: 12px; color: #94a3b8; margin: 0; line-height: 1.5;">
-                    Anda dapat menggunakan Google Spreadsheet bawaan Trendora, atau menempelkan link Google Spreadsheet pribadi Anda di bawah ini:
+                  <p style="font-size: 12px; color: #9ca3af; margin: 0; line-height: 1.5;">
+                    Masukkan link Google Spreadsheet dari Google Drive pribadi Anda untuk dihubungkan ke bot:
                   </p>
                 </div>
-                <a id="btnExternalSheetLink" href="https://docs.google.com/spreadsheets/d/1P0zTEwtMmWfxhHAY6-QbQd5to6Id1rzazgel-PiSJwI/edit" target="_blank" style="font-size: 11.5px; color: #34d399; text-decoration: none; display: inline-flex; align-items: center; gap: 5px; background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.3); padding: 6px 12px; border-radius: 6px;">
-                  <span>🔗 Buka Spreadsheet Ini ↗</span>
-                </a>
+
+                <div id="wrapUserSheetActionButtons" style="display: none; gap: 8px; align-items: center;">
+                  <a id="btnOpenUserGoogleSheet" href="#" target="_blank" class="btn-primary" style="font-size: 11.5px; padding: 6px 12px; background: #10b981; border: none; color: #fff; text-decoration: none; border-radius: 6px; font-weight: 600; display: inline-flex; align-items: center; gap: 5px;">
+                    <span>↗ Buka Spreadsheet Saya</span>
+                  </a>
+                  <button type="button" class="btn-secondary" onclick="unlinkInstagramAutoDmSheet()" style="font-size: 11.5px; padding: 6px 12px; color: #f87171; border-color: rgba(239,68,68,0.3);">
+                    ✕ Putus Tautan
+                  </button>
+                </div>
               </div>
 
               <!-- Input Form Bar -->
-              <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 14px;">
-                <div style="flex: 1; min-width: 260px;">
-                  <input type="text" id="inputIgCustomSheetId" placeholder="Tempel URL atau ID Google Spreadsheet di sini (contoh: https://docs.google.com/spreadsheets/d/...)" style="width: 100%; background: rgba(0,0,0,0.35); border: 1px solid rgba(255,255,255,0.15); border-radius: 8px; padding: 10px 14px; font-size: 12px; color: #fff; outline: none; font-family: monospace;">
+              <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 16px;">
+                <div style="flex: 1; min-width: 280px;">
+                  <input type="text" id="inputIgCustomSheetId" placeholder="Tempel URL Google Spreadsheet pribadi Anda di sini (contoh: https://docs.google.com/spreadsheets/d/...)" style="width: 100%; background: rgba(0,0,0,0.35); border: 1px solid rgba(255,255,255,0.15); border-radius: 8px; padding: 11px 14px; font-size: 12.5px; color: #fff; outline: none; font-family: monospace;">
                 </div>
-                <button type="button" class="btn-pink" onclick="saveInstagramAutoDmCustomSheet()" style="font-size: 12px; padding: 10px 18px; white-space: nowrap;">
-                  💾 Simpan &amp; Hubungkan Sheet
-                </button>
-                <button type="button" class="btn-secondary" onclick="resetInstagramAutoDmToDefaultSheet()" style="font-size: 12px; padding: 10px 14px; white-space: nowrap; color: #94a3b8;">
-                  ↩ Gunakan Default
+                <button type="button" class="btn-pink" onclick="saveInstagramAutoDmCustomSheet()" style="font-size: 12.5px; padding: 11px 20px; white-space: nowrap; font-weight: 600;">
+                  💾 Simpan &amp; Tautkan Spreadsheet
                 </button>
               </div>
 
-              <!-- Panduan Akses / Sharing Box -->
-              <div style="background: rgba(56, 189, 248, 0.05); border: 1px dashed rgba(56, 189, 248, 0.25); border-radius: 10px; padding: 12px 16px; font-size: 11.5px; color: #cbd5e1; line-height: 1.6;">
-                <div style="display: flex; align-items: flex-start; gap: 8px;">
-                  <span style="color: #38bdf8; font-size: 14px; margin-top: 1px;">💡</span>
+              <!-- Langkah Menghubungkan (Instruksi Jelas) -->
+              <div style="background: rgba(56, 189, 248, 0.04); border: 1px dashed rgba(56, 189, 248, 0.25); border-radius: 10px; padding: 14px 16px; font-size: 12px; color: #cbd5e1; line-height: 1.6;">
+                <div style="display: flex; align-items: flex-start; gap: 10px;">
+                  <span style="color: #38bdf8; font-size: 16px; margin-top: 2px;">📋</span>
                   <div>
-                    <strong style="color: #fff;">Cara Penggunaan Spreadsheet:</strong><br>
-                    • <strong>Cara 1 (Paling Cepat):</strong> Anda tidak perlu repot membuat file baru. Cukup klik tombol hijau <strong style="color: #34d399;">"🟢 Buka Google Spreadsheet di Tab Baru"</strong> di atas. Buka tab <strong>Instagram_Auto_DM</strong>, lalu ketik kata kunci dan balasan Anda langsung di baris spreadsheet tersebut!<br>
-                    • <strong>Cara 2 (Gunakan Sheet Pribadi):</strong> Jika ingin memakai file Google Sheet di akun Google Drive Anda sendiri, tempelkan link file tersebut di kolom input di atas lalu klik <strong>"Simpan &amp; Hubungkan Sheet"</strong>. <em>PENTING:</em> Anda wajib membagikan (Share) file Google Sheet Anda dengan akses <strong>Editor</strong> ke email bot Trendora berikut:<br>
-                    <div style="margin-top: 6px; display: inline-flex; align-items: center; gap: 8px; background: rgba(0,0,0,0.5); padding: 5px 12px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.12);">
-                      <code id="txtIgServiceAccountEmail" style="color: #38bdf8; font-family: monospace; font-size: 11.5px;">trendoraautomation@websitetrendora.iam.gserviceaccount.com</code>
-                      <button type="button" onclick="copyServiceAccountEmail()" style="background: none; border: none; color: #34d399; cursor: pointer; font-size: 11px; padding: 2px 6px; text-decoration: underline; font-weight: 600;">
-                        📋 Salin Email
-                      </button>
-                    </div>
+                    <strong style="color: #fff; font-size: 12.5px;">3 Langkah Menautkan Google Spreadsheet Anda:</strong>
+                    <ol style="margin: 6px 0 0 16px; padding: 0;">
+                      <li>Buat file <strong>Google Spreadsheet baru</strong> di Google Drive milik Anda sendiri.</li>
+                      <li>
+                        Klik tombol <strong>Share (Bagikan)</strong> pada file Google Sheet Anda, lalu tambahkan email sistem Trendora berikut sebagai <strong>Editor</strong>:<br>
+                        <div style="margin: 6px 0; display: inline-flex; align-items: center; gap: 8px; background: rgba(0,0,0,0.5); padding: 5px 12px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.12);">
+                          <code id="txtIgServiceAccountEmail" style="color: #38bdf8; font-family: monospace; font-size: 11.5px;">trendoraautomation@websitetrendora.iam.gserviceaccount.com</code>
+                          <button type="button" onclick="copyServiceAccountEmail()" style="background: none; border: none; color: #34d399; cursor: pointer; font-size: 11px; padding: 2px 6px; text-decoration: underline; font-weight: 600;">
+                            📋 Salin Email
+                          </button>
+                        </div>
+                      </li>
+                      <li>Salin link URL Google Sheet Anda, tempelkan ke kolom input di atas, lalu klik <strong>"Simpan &amp; Tautkan Spreadsheet"</strong>. Sistem akan otomatis menyiapkan tab <strong>Instagram_Auto_DM</strong> beserta contoh format kata kunci di sheet Anda.</li>
+                    </ol>
                   </div>
                 </div>
               </div>
@@ -7016,31 +7022,38 @@ ${err.message}`);
       if (elModeBadge) elModeBadge.innerText = sourceMode.toUpperCase();
       if (elModeSub) elModeSub.innerText = sourceMode === 'spreadsheet' ? 'Dibaca dari tab Google Sheets' : 'Diatur dari form dashboard';
 
-      // Update custom sheet input & dynamic links
+      // Update user sheet link & UI status
+      const customSheetId = (data.custom_sheet_id || '').trim();
       const inputCustomSheet = document.getElementById('inputIgCustomSheetId');
       if (inputCustomSheet) {
-        inputCustomSheet.value = data.custom_sheet_id || '';
+        inputCustomSheet.value = customSheetId ? (data.user_sheet_url || `https://docs.google.com/spreadsheets/d/${customSheetId}/edit`) : '';
       }
-      const activeSheetUrl = data.active_sheet_url || (data.custom_sheet_id ? `https://docs.google.com/spreadsheets/d/${data.custom_sheet_id}/edit` : 'https://docs.google.com/spreadsheets/d/1P0zTEwtMmWfxhHAY6-QbQd5to6Id1rzazgel-PiSJwI/edit');
-      const btnOpenActive = document.getElementById('btnOpenActiveGoogleSheet');
-      if (btnOpenActive) btnOpenActive.href = activeSheetUrl;
-      const btnExternalLink = document.getElementById('btnExternalSheetLink');
-      if (btnExternalLink) btnExternalLink.href = activeSheetUrl;
 
-      const badgeSheetType = document.getElementById('badgeActiveSheetType');
-      if (badgeSheetType) {
-        if (data.custom_sheet_id) {
-          badgeSheetType.innerText = 'Spreadsheet Kustom Pribadi';
-          badgeSheetType.style.color = '#34d399';
-          badgeSheetType.style.borderColor = 'rgba(16,185,129,0.3)';
-          badgeSheetType.style.background = 'rgba(16,185,129,0.15)';
-        } else {
-          badgeSheetType.innerText = 'Spreadsheet Bawaan Trendora';
-          badgeSheetType.style.color = '#38bdf8';
-          badgeSheetType.style.borderColor = 'rgba(56,189,248,0.3)';
-          badgeSheetType.style.background = 'rgba(56,189,248,0.15)';
+      const userSheetUrl = data.user_sheet_url || (customSheetId ? `https://docs.google.com/spreadsheets/d/${customSheetId}/edit` : '');
+      const btnOpenUser = document.getElementById('btnOpenUserGoogleSheet');
+      const wrapActionBtns = document.getElementById('wrapUserSheetActionButtons');
+      const badgeStatus = document.getElementById('badgeActiveSheetStatus');
+
+      if (customSheetId) {
+        if (wrapActionBtns) wrapActionBtns.style.display = 'flex';
+        if (btnOpenUser) btnOpenUser.href = userSheetUrl;
+        if (badgeStatus) {
+          badgeStatus.innerText = '✓ Terhubung';
+          badgeStatus.style.background = 'rgba(16,185,129,0.15)';
+          badgeStatus.style.color = '#34d399';
+          badgeStatus.style.borderColor = 'rgba(16,185,129,0.3)';
+        }
+      } else {
+        if (wrapActionBtns) wrapActionBtns.style.display = 'none';
+        if (btnOpenUser) btnOpenUser.href = '#';
+        if (badgeStatus) {
+          badgeStatus.innerText = 'Belum Ditautkan';
+          badgeStatus.style.background = 'rgba(239,68,68,0.15)';
+          badgeStatus.style.color = '#f87171';
+          badgeStatus.style.borderColor = 'rgba(239,68,68,0.3)';
         }
       }
+
       const txtSaEmail = document.getElementById('txtIgServiceAccountEmail');
       if (txtSaEmail && data.service_account_email) {
         txtSaEmail.innerText = data.service_account_email;
@@ -7205,7 +7218,10 @@ ${err.message}`);
 
       if (!tbody) return;
       if (!rules || rules.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 20px; color: #64748b;">Tidak ada baris aturan aktif di tab 'Instagram_Auto_DM' Google Spreadsheet. Klik tombol 'Buat / Reset Tab Template' di atas untuk mengisinya dengan contoh data.</td></tr>`;
+        const isLinked = (currentIgAutoDmData && currentIgAutoDmData.custom_sheet_id);
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 24px; color: #64748b;">
+          ${isLinked ? 'Tidak ada baris aturan aktif di tab "Instagram_Auto_DM" spreadsheet Anda. Klik tombol "Buat Format Template di Sheet Saya" di atas untuk menambahkan contoh aturan.' : 'Belum ada Google Spreadsheet yang ditautkan. Silakan tautkan link spreadsheet pribadi Anda pada kolom di atas.'}
+        </td></tr>`;
         return;
       }
 
@@ -7319,7 +7335,8 @@ ${err.message}`);
       const input = document.getElementById('inputIgCustomSheetId');
       const rawVal = (input ? input.value : '').trim();
       if (!rawVal) {
-        alert('Silakan masukkan Link atau ID Google Spreadsheet, atau klik "Gunakan Default" jika ingin menggunakan spreadsheet bawaan.');
+        alert('Silakan tempelkan link URL Google Spreadsheet dari Google Drive pribadi Anda.');
+        if (input) input.focus();
         return;
       }
       const { email, apiKey } = getValidUserCredentials();
@@ -7332,19 +7349,19 @@ ${err.message}`);
         const d = await res.json();
         if (d.success) {
           if (currentIgAutoDmData) currentIgAutoDmData.custom_sheet_id = rawVal;
-          showNotification('Link Google Spreadsheet kustom berhasil disimpan!');
+          showNotification('Google Spreadsheet Anda berhasil ditautkan!');
           await createInstagramAutoDmSheetTemplate(false);
           loadInstagramAutoDmSettings();
         } else {
-          alert('Gagal menyimpan: ' + d.message);
+          alert('Gagal menautkan spreadsheet: ' + d.message);
         }
       } catch (e) {
         alert('Kesalahan koneksi: ' + e);
       }
     }
 
-    async function resetInstagramAutoDmToDefaultSheet() {
-      if (!confirm('Kembalikan ke Google Spreadsheet default bawaan Trendora?')) return;
+    async function unlinkInstagramAutoDmSheet() {
+      if (!confirm('Apakah Anda yakin ingin memutus tautan Google Spreadsheet Anda?')) return;
       const { email, apiKey } = getValidUserCredentials();
       try {
         const res = await fetch(getApiUrl('/api/instagram-auto-dm/settings'), {
@@ -7354,15 +7371,16 @@ ${err.message}`);
         });
         const d = await res.json();
         if (d.success) {
+          if (currentIgAutoDmData) currentIgAutoDmData.custom_sheet_id = '';
           const input = document.getElementById('inputIgCustomSheetId');
           if (input) input.value = '';
-          showNotification('Berhasil kembali ke Google Spreadsheet default Trendora!');
+          showNotification('Tautan Google Spreadsheet berhasil diputus.');
           loadInstagramAutoDmSettings();
         } else {
-          alert('Gagal reset: ' + d.message);
+          alert('Gagal memutus tautan: ' + d.message);
         }
       } catch (e) {
-        alert('Gagal reset: ' + e);
+        alert('Kesalahan koneksi: ' + e);
       }
     }
 
@@ -7371,17 +7389,21 @@ ${err.message}`);
       const email = emailEl ? emailEl.innerText.trim() : 'trendoraautomation@websitetrendora.iam.gserviceaccount.com';
       if (navigator.clipboard && navigator.clipboard.writeText) {
         navigator.clipboard.writeText(email).then(() => {
-          showNotification('Email bot Trendora berhasil disalin!');
+          showNotification('Email sistem bot Trendora berhasil disalin!');
         }).catch(() => {
-          prompt('Salin email bot berikut:', email);
+          prompt('Salin email sistem berikut:', email);
         });
       } else {
-        prompt('Salin email bot berikut:', email);
+        prompt('Salin email sistem berikut:', email);
       }
     }
 
     async function createInstagramAutoDmSheetTemplate(showPrompt = true) {
-      if (showPrompt && !confirm('Buat atau reset tab template "Instagram_Auto_DM" di Google Sheets Anda dengan contoh data?')) return;
+      if (!currentIgAutoDmData || !currentIgAutoDmData.custom_sheet_id) {
+        if (showPrompt) alert('Silakan masukkan dan simpan link Google Spreadsheet milik Anda terlebih dahulu.');
+        return;
+      }
+      if (showPrompt && !confirm('Buat format tab "Instagram_Auto_DM" di Google Sheets Anda dengan contoh aturan?')) return;
       const { email, apiKey } = getValidUserCredentials();
       try {
         const res = await fetch(getApiUrl('/api/instagram-auto-dm/create-sheet-template'), {
@@ -7394,7 +7416,7 @@ ${err.message}`);
           if (showPrompt) alert('Sukses! ' + d.message);
           syncInstagramAutoDmFromSheet();
         } else {
-          if (showPrompt) alert('Gagal membuat template: ' + d.message);
+          if (showPrompt) alert('Gagal: ' + d.message);
         }
       } catch (e) {
         if (showPrompt) alert('Kesalahan koneksi: ' + e);
@@ -7404,7 +7426,14 @@ ${err.message}`);
     async function syncInstagramAutoDmFromSheet() {
       const { email, apiKey } = getValidUserCredentials();
       const statusEl = document.getElementById('txtSheetSyncStatusMsg');
-      if (statusEl) statusEl.innerText = 'Menyinkronkan data dari spreadsheet...';
+
+      if (!currentIgAutoDmData || !currentIgAutoDmData.custom_sheet_id) {
+        if (statusEl) statusEl.innerText = 'Belum ada Google Spreadsheet yang ditautkan.';
+        alert('Silakan masukkan dan simpan link Google Spreadsheet milik Anda terlebih dahulu.');
+        return;
+      }
+
+      if (statusEl) statusEl.innerText = 'Menyinkronkan data dari spreadsheet Anda...';
 
       try {
         const res = await fetch(getApiUrl('/api/instagram-auto-dm/sync-sheet'), {
@@ -7416,6 +7445,9 @@ ${err.message}`);
         if (d.success) {
           renderSpreadsheetRulesTable(d.rules || [], d.message);
           showNotification(d.message);
+        } else {
+          if (statusEl) statusEl.innerText = d.message;
+          alert('Gagal sinkron: ' + d.message);
         }
       } catch (e) {
         if (statusEl) statusEl.innerText = 'Gagal sinkron: ' + e;
@@ -7492,7 +7524,7 @@ ${err.message}`);
     window.saveInstagramAutoDmRuleFromForm = saveInstagramAutoDmRuleFromForm;
     window.deleteInstagramAutoDmRule = deleteInstagramAutoDmRule;
     window.saveInstagramAutoDmCustomSheet = saveInstagramAutoDmCustomSheet;
-    window.resetInstagramAutoDmToDefaultSheet = resetInstagramAutoDmToDefaultSheet;
+    window.unlinkInstagramAutoDmSheet = unlinkInstagramAutoDmSheet;
     window.copyServiceAccountEmail = copyServiceAccountEmail;
     window.createInstagramAutoDmSheetTemplate = createInstagramAutoDmSheetTemplate;
     window.syncInstagramAutoDmFromSheet = syncInstagramAutoDmFromSheet;

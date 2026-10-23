@@ -292,20 +292,23 @@ def get_ig_auto_dm_settings_api():
     all_social = db.db_get_social_accounts(email=email)
     ig_accounts = [a for a in all_social if str(a.get('platform', '')).lower() in ['instagram', 'ig']]
 
-    # Jika mode spreadsheet aktif, ambil preview aturan langsung dari spreadsheet
+    custom_sheet_id = settings.get('custom_sheet_id', '').strip()
+    user_sheet_url = f"https://docs.google.com/spreadsheets/d/{custom_sheet_id}/edit" if custom_sheet_id else ""
+    service_account_email = "trendoraautomation@websitetrendora.iam.gserviceaccount.com"
+
     sheet_rules = []
     sheet_status_msg = ""
-    try:
-        sheet_rules = db.db_get_ig_auto_dm_rules_from_sheet(email, sheet_id=settings.get('custom_sheet_id'))
-        sheet_status_msg = f"{len(sheet_rules)} aturan aktif ditemukan di Google Spreadsheet."
-    except Exception as e_sheet:
-        sheet_status_msg = f"Kendala membaca spreadsheet: {e_sheet}"
-
-    custom_sheet_id = settings.get('custom_sheet_id', '').strip()
-    default_sheet_id = getattr(config, 'GOOGLE_SHEET_ID', '1P0zTEwtMmWfxhHAY6-QbQd5to6Id1rzazgel-PiSJwI')
-    active_sheet_id = custom_sheet_id or default_sheet_id
-    active_sheet_url = f"https://docs.google.com/spreadsheets/d/{active_sheet_id}/edit"
-    service_account_email = "trendoraautomation@websitetrendora.iam.gserviceaccount.com"
+    if custom_sheet_id:
+        try:
+            sheet_rules = db.db_get_ig_auto_dm_rules_from_sheet(email, sheet_id=custom_sheet_id)
+            if sheet_rules:
+                sheet_status_msg = f"{len(sheet_rules)} aturan aktif terhubung dari Google Spreadsheet Anda."
+            else:
+                sheet_status_msg = "Google Spreadsheet terhubung, tab Instagram_Auto_DM siap digunakan."
+        except Exception as e_sheet:
+            sheet_status_msg = f"Kendala membaca spreadsheet: {e_sheet}"
+    else:
+        sheet_status_msg = "Belum ada Google Spreadsheet yang ditautkan. Silakan tempelkan link spreadsheet Anda."
 
     return jsonify({
         "success": True,
@@ -314,9 +317,7 @@ def get_ig_auto_dm_settings_api():
         "source_mode": source_mode,
         "sheet_tab": settings.get('sheet_tab', 'Instagram_Auto_DM'),
         "custom_sheet_id": custom_sheet_id,
-        "default_sheet_id": default_sheet_id,
-        "active_sheet_id": active_sheet_id,
-        "active_sheet_url": active_sheet_url,
+        "user_sheet_url": user_sheet_url,
         "service_account_email": service_account_email,
         "dashboard_rules": settings.get('rules', []),
         "spreadsheet_rules": sheet_rules,
@@ -370,14 +371,24 @@ def save_ig_auto_dm_settings_api():
 @ig_auto_dm_bp.route('/api/instagram-auto-dm/create-sheet-template', methods=['POST'])
 def create_ig_auto_dm_sheet_template():
     """
-    Membuat tab 'Instagram_Auto_DM' secara otomatis di Google Spreadsheet dengan format standar dan contoh data.
+    Membuat tab 'Instagram_Auto_DM' secara otomatis di Google Spreadsheet pribadi milik user.
     """
     session_email = session.get('user_email', '').strip().lower()
     data = request.json or {}
     email = session_email or data.get('email', '').strip().lower() or "deripernandi99@gmail.com"
 
     settings = db.db_get_ig_auto_dm_settings(email)
-    sheet_id = settings.get('custom_sheet_id') or None
+    raw_sheet = data.get('custom_sheet_id') or settings.get('custom_sheet_id') or None
+    if raw_sheet and '/d/' in str(raw_sheet):
+        raw_sheet = str(raw_sheet).split('/d/')[1].split('/')[0].split('?')[0].strip()
+    sheet_id = raw_sheet or None
+
+    if not sheet_id:
+        return jsonify({
+            "success": False,
+            "message": "Silakan tempelkan dan simpan Link Google Spreadsheet milik Anda terlebih dahulu."
+        }), 400
+
     ok, msg = db.db_ensure_ig_auto_dm_worksheet_template(email, sheet_id=sheet_id)
     rules = db.db_get_ig_auto_dm_rules_from_sheet(email, sheet_id=sheet_id) if ok else []
 
@@ -391,7 +402,7 @@ def create_ig_auto_dm_sheet_template():
 @ig_auto_dm_bp.route('/api/instagram-auto-dm/sync-sheet', methods=['POST'])
 def sync_ig_auto_dm_sheet():
     """
-    Sinkronisasi manual untuk memverifikasi dan menarik data aturan terbaru dari Google Spreadsheet.
+    Sinkronisasi manual untuk memverifikasi dan menarik data aturan terbaru dari Google Spreadsheet user.
     """
     session_email = session.get('user_email', '').strip().lower()
     data = request.json or {}
@@ -402,11 +413,19 @@ def sync_ig_auto_dm_sheet():
     if raw_sheet and '/d/' in str(raw_sheet):
         raw_sheet = str(raw_sheet).split('/d/')[1].split('/')[0].split('?')[0].strip()
     sheet_id = raw_sheet or None
-    rules = db.db_get_ig_auto_dm_rules_from_sheet(email, sheet_id=sheet_id)
 
+    if not sheet_id:
+        return jsonify({
+            "success": False,
+            "message": "Belum ada Google Spreadsheet yang ditautkan. Silakan masukkan link spreadsheet Anda terlebih dahulu.",
+            "count": 0,
+            "rules": []
+        }), 400
+
+    rules = db.db_get_ig_auto_dm_rules_from_sheet(email, sheet_id=sheet_id)
     return jsonify({
         "success": True,
-        "message": f"Berhasil membaca {len(rules)} aturan aktif dari Google Spreadsheet!",
+        "message": f"Berhasil membaca {len(rules)} aturan aktif dari Google Spreadsheet Anda!",
         "count": len(rules),
         "rules": rules
     })
