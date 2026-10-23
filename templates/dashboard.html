@@ -2010,12 +2010,12 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
 
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px;">
               <!-- Option 1: Dashboard Mode -->
-              <div id="cardModeDashboard" onclick="switchInstagramAutoDmMode('dashboard')" style="border: 2px solid #38bdf8; background: rgba(56, 189, 248, 0.08); border-radius: 14px; padding: 18px; cursor: pointer; transition: all 0.25s;">
+              <div id="cardModeDashboard" onclick="switchInstagramAutoDmMode('dashboard')" style="border: 2px solid #38bdf8; background: rgba(56, 189, 248, 0.08); border-radius: 14px; padding: 18px; cursor: pointer; transition: all 0.25s; user-select: none;">
                 <div style="display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 8px;">
                   <div style="font-size: 15px; font-weight: 800; color: #fff; display: flex; align-items: center; gap: 8px;">
                     <span>🎛️ Mode 1: Dashboard Builder</span>
                   </div>
-                  <input type="radio" name="ig_source_mode" id="radioModeDashboard" value="dashboard" checked style="accent-color: #38bdf8; width: 18px; height: 18px; cursor: pointer;">
+                  <input type="radio" name="ig_source_mode" id="radioModeDashboard" value="dashboard" checked onchange="switchInstagramAutoDmMode('dashboard')" onclick="event.stopPropagation(); switchInstagramAutoDmMode('dashboard')" style="accent-color: #38bdf8; width: 20px; height: 20px; cursor: pointer;">
                 </div>
                 <p style="color: #94a3b8; font-size: 12px; margin: 0; line-height: 1.5;">
                   Atur daftar kata kunci pemicu, balasan komentar, dan isi pesan DM langsung dari formulir interaktif di dashboard Trendora ini. Praktis dan cepat.
@@ -2026,12 +2026,12 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
               </div>
 
               <!-- Option 2: Spreadsheet Mode -->
-              <div id="cardModeSpreadsheet" onclick="switchInstagramAutoDmMode('spreadsheet')" style="border: 1px solid rgba(255,255,255,0.1); background: rgba(255, 255, 255, 0.02); border-radius: 14px; padding: 18px; cursor: pointer; transition: all 0.25s;">
+              <div id="cardModeSpreadsheet" onclick="switchInstagramAutoDmMode('spreadsheet')" style="border: 1px solid rgba(255,255,255,0.1); background: rgba(255, 255, 255, 0.02); border-radius: 14px; padding: 18px; cursor: pointer; transition: all 0.25s; user-select: none;">
                 <div style="display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 8px;">
                   <div style="font-size: 15px; font-weight: 800; color: #fff; display: flex; align-items: center; gap: 8px;">
                     <span>📊 Mode 2: Google Spreadsheet Sync</span>
                   </div>
-                  <input type="radio" name="ig_source_mode" id="radioModeSpreadsheet" value="spreadsheet" style="accent-color: #10b981; width: 18px; height: 18px; cursor: pointer;">
+                  <input type="radio" name="ig_source_mode" id="radioModeSpreadsheet" value="spreadsheet" onchange="switchInstagramAutoDmMode('spreadsheet')" onclick="event.stopPropagation(); switchInstagramAutoDmMode('spreadsheet')" style="accent-color: #10b981; width: 20px; height: 20px; cursor: pointer;">
                 </div>
                 <p style="color: #94a3b8; font-size: 12px; margin: 0; line-height: 1.5;">
                   Atur puluhan hingga ratusan kata kunci secara fleksibel langsung di tab <strong>Instagram_Auto_DM</strong> pada Google Sheets Anda. Bot akan membaca baris sheet secara real-time!
@@ -6950,6 +6950,8 @@ ${err.message}`);
     }
 
     function updateModeVisuals(mode) {
+      const isSheet = (mode === 'spreadsheet');
+
       const cardDash = document.getElementById('cardModeDashboard');
       const cardSheet = document.getElementById('cardModeSpreadsheet');
       const radioDash = document.getElementById('radioModeDashboard');
@@ -6958,45 +6960,70 @@ ${err.message}`);
       const badgeSheet = document.getElementById('badgeActiveSpreadsheetMode');
       const wrapDash = document.getElementById('wrapModeDashboardContent');
       const wrapSheet = document.getElementById('wrapModeSpreadsheetContent');
+      const elModeBadge = document.getElementById('statIgSourceModeBadge');
+      const elModeSub = document.getElementById('statIgSourceModeSub');
 
-      if (mode === 'spreadsheet') {
-        if (cardDash) { cardDash.style.borderColor = 'rgba(255,255,255,0.1)'; cardDash.style.background = 'rgba(255,255,255,0.02)'; }
-        if (cardSheet) { cardSheet.style.borderColor = '#10b981'; cardSheet.style.background = 'rgba(16, 185, 129, 0.08)'; }
+      if (isSheet) {
+        if (cardDash) {
+          cardDash.style.borderColor = 'rgba(255,255,255,0.1)';
+          cardDash.style.background = 'rgba(255,255,255,0.02)';
+          cardDash.style.boxShadow = 'none';
+        }
+        if (cardSheet) {
+          cardSheet.style.borderColor = '#10b981';
+          cardSheet.style.background = 'rgba(16, 185, 129, 0.08)';
+          cardSheet.style.boxShadow = '0 0 15px rgba(16, 185, 129, 0.2)';
+        }
         if (radioDash) radioDash.checked = false;
         if (radioSheet) radioSheet.checked = true;
         if (badgeDash) badgeDash.style.display = 'none';
         if (badgeSheet) badgeSheet.style.display = 'inline-flex';
         if (wrapDash) wrapDash.style.display = 'none';
         if (wrapSheet) wrapSheet.style.display = 'block';
+        if (elModeBadge) elModeBadge.innerText = 'SPREADSHEET';
+        if (elModeSub) elModeSub.innerText = 'Dibaca dari tab Google Sheets';
       } else {
-        if (cardDash) { cardDash.style.borderColor = '#38bdf8'; cardDash.style.background = 'rgba(56, 189, 248, 0.08)'; }
-        if (cardSheet) { cardSheet.style.borderColor = 'rgba(255,255,255,0.1)'; cardSheet.style.background = 'rgba(255,255,255,0.02)'; }
+        if (cardDash) {
+          cardDash.style.borderColor = '#38bdf8';
+          cardDash.style.background = 'rgba(56, 189, 248, 0.08)';
+          cardDash.style.boxShadow = '0 0 15px rgba(56, 189, 248, 0.2)';
+        }
+        if (cardSheet) {
+          cardSheet.style.borderColor = 'rgba(255,255,255,0.1)';
+          cardSheet.style.background = 'rgba(255,255,255,0.02)';
+          cardSheet.style.boxShadow = 'none';
+        }
         if (radioDash) radioDash.checked = true;
         if (radioSheet) radioSheet.checked = false;
         if (badgeDash) badgeDash.style.display = 'inline-flex';
         if (badgeSheet) badgeSheet.style.display = 'none';
         if (wrapDash) wrapDash.style.display = 'block';
         if (wrapSheet) wrapSheet.style.display = 'none';
+        if (elModeBadge) elModeBadge.innerText = 'DASHBOARD';
+        if (elModeSub) elModeSub.innerText = 'Diatur dari form dashboard';
       }
     }
 
     async function switchInstagramAutoDmMode(newMode) {
-      updateModeVisuals(newMode);
-      const elModeBadge = document.getElementById('statIgSourceModeBadge');
-      const elModeSub = document.getElementById('statIgSourceModeSub');
-      if (elModeBadge) elModeBadge.innerText = newMode.toUpperCase();
-      if (elModeSub) elModeSub.innerText = newMode === 'spreadsheet' ? 'Dibaca dari tab Google Sheets' : 'Diatur dari form dashboard';
+      const mode = (newMode || 'dashboard').toLowerCase().trim();
+      if (currentIgAutoDmData) {
+        currentIgAutoDmData.source_mode = mode;
+      }
+      updateModeVisuals(mode);
 
       const { email, apiKey } = getValidUserCredentials();
       try {
         const res = await fetch(getApiUrl('/api/instagram-auto-dm/settings'), {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'X-API-Key': apiKey },
-          body: JSON.stringify({ email, source_mode: newMode })
+          body: JSON.stringify({ email, source_mode: mode })
         });
         const d = await res.json();
         if (d.success) {
-          if (newMode === 'spreadsheet') {
+          if (typeof showNotification === 'function') {
+            showNotification(`Mode pengaturan diubah ke: ${mode === 'spreadsheet' ? 'Google Spreadsheet' : 'Dashboard'}`);
+          }
+          if (mode === 'spreadsheet') {
             syncInstagramAutoDmFromSheet();
           }
         }
