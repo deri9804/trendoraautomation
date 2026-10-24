@@ -608,14 +608,24 @@ def db_save_social_account(email, account_dict):
             print(f"[GSheet Find Row Error]: {e}")
 
     # Tentukan limit akun berdasarkan paket user
-    plan_limit = 20
+    from routes.auth import check_user_trial_status
+    user_data = db_get_user(clean_email)
+    trial_info = check_user_trial_status(user_data) if user_data else {"is_paid": False}
+    is_trial = not trial_info.get("is_paid", False)
+
     status_lower = current_status.lower()
-    if 'creator' in status_lower:
-        plan_limit = 40
-    elif 'agency' in status_lower:
+    if is_trial:
+        plan_limit = 7
+    elif 'vvip' in status_lower:
+        plan_limit = 30
+    elif 'vip' in status_lower:
+        plan_limit = 20
+    elif 'starter' in status_lower:
+        plan_limit = 10
+    elif any(w in status_lower for w in ['admin', 'lifetime', 'unlimited']):
         plan_limit = 100
     else:
-        plan_limit = 20
+        plan_limit = 10
 
     # Ambil list akun eksisting
     existing_accounts = db_get_social_accounts(email=clean_email)
@@ -636,7 +646,11 @@ def db_save_social_account(email, account_dict):
         existing_accounts[found_idx].update(account_dict)
     else:
         # Check quota limit
-        if len(existing_accounts) >= plan_limit:
+        if is_trial:
+            plat_same = [a for a in existing_accounts if str(a.get('platform', '')).lower() == platform and str(a.get('id', '')) != 'meta_primary']
+            if len(plat_same) >= 1:
+                return False, f"Batas kuota Free Trial (1 profil per platform) untuk {platform.capitalize()} telah tercapai! Silakan upgrade ke paket Starter/VIP/VVIP untuk fitur Multi-Akun."
+        elif len(existing_accounts) >= plan_limit:
             return False, f"Batas kuota akun ({plan_limit} akun) untuk paket Anda telah tercapai! Silakan upgrade paket untuk menambah akun lebih banyak."
         existing_accounts.append(account_dict)
 

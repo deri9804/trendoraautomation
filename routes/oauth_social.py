@@ -22,13 +22,14 @@ from routes.auth import check_user_trial_status
 
 oauth_bp = Blueprint('oauth_social', __name__)
 
-def check_trial_social_limit(email=None):
+def check_trial_social_limit(email=None, platform=None):
     """
     Memeriksa batas kuota akun sosial media berdasarkan 4 paket resmi:
-    - Trial: (gratis) (7 Hari) (max 1 akun sosmed)
-    - Starter: (150.000) (30 hari) (max 10 akun sosmed)
-    - VIP: (300.000) (30 hari) (max 20 akun sosmed)
-    - VVIP: (500.000) (30 hari) (max 30 akun sosmed)
+    - Free Trial (7 Hari): Mengizinkan 1 Akun/Profil per masing-masing platform sosial media (TikTok, Facebook, Instagram, YouTube, Twitter/X, LinkedIn, Threads).
+    - Starter (150.000 / 30 hari): Maksimal 10 akun sosmed (bebas multi-akun di platform mana saja).
+    - VIP (300.000 / 30 hari): Maksimal 20 akun sosmed (bebas multi-akun).
+    - VVIP (500.000 / 30 hari): Maksimal 30 akun sosmed (bebas multi-akun).
+    - Admin / Unlimited: Hingga 100 akun.
     """
     if not email:
         email = session.get('user_email', '').strip().lower()
@@ -46,12 +47,25 @@ def check_trial_social_limit(email=None):
     saved_accounts = db.db_get_social_accounts(email=email)
     current_count = len(saved_accounts)
 
-    # 1. Pengguna Trial (Belum Berbayar)
+    target_plat = str(platform or '').strip().lower()
+    if target_plat in ['fb', 'facebook_page']: target_plat = 'facebook'
+    if target_plat in ['ig']: target_plat = 'instagram'
+    if target_plat in ['x']: target_plat = 'twitter'
+
+    # 1. Pengguna Free Trial (Belum Berbayar): 1 Profil per Platform Medsos
     if not trial_info.get("is_paid", False):
         if trial_info.get("is_expired", False):
             return False, "Masa Free Trial 7 Hari Anda telah habis. Silakan pilih paket Starter, VIP, atau VVIP untuk melanjutkan."
-        if current_count >= 1:
-            return False, "Batas Kuota Paket Trial Tercapai! Paket Free Trial dibatasi maksimal 1 akun sosial media. Silakan upgrade ke paket Starter (10 akun), VIP (20 akun), atau VVIP (30 akun)."
+        
+        if target_plat:
+            plat_accounts = [a for a in saved_accounts if str(a.get('platform', '')).lower() in [target_plat, target_plat[:2]]]
+            plat_accounts = [a for a in plat_accounts if str(a.get('id', '')) != 'meta_primary']
+            if len(plat_accounts) >= 1:
+                plat_label = target_plat.capitalize()
+                if target_plat == 'facebook': plat_label = 'Facebook Page'
+                elif target_plat == 'instagram': plat_label = 'Instagram'
+                elif target_plat == 'youtube': plat_label = 'YouTube Channel'
+                return False, f"Batas Kuota Free Trial Tercapai! Paket Free Trial mengizinkan 1 profil untuk setiap platform sosial media. Untuk menambahkan akun ke-2 {plat_label} (Multi-Akun / Ternak Akun), silakan upgrade ke paket Starter (10 akun), VIP (20 akun), atau VVIP (30 akun)."
         return True, ""
 
     # 2. Pengguna Berbayar (Starter / VIP / VVIP)
@@ -73,10 +87,6 @@ def check_trial_social_limit(email=None):
     if current_count >= max_allowed:
         return False, f"Batas Kuota Paket {plan_name} Tercapai! Paket Anda dibatasi maksimal {max_allowed} akun sosial media. Silakan upgrade paket untuk menautkan lebih banyak akun."
 
-    return True, ""
-
-def _legacy_check_trial_social_limit_removed():
-        
     return True, ""
 
 @oauth_bp.route('/api/disconnect-social', methods=['POST'])
@@ -145,7 +155,7 @@ def disconnect_social():
 @oauth_bp.route('/api/tiktok-auth-url', methods=['GET'])
 def get_tiktok_auth_url():
     email = (session.get('user_email', '') or request.args.get('email', '')).strip().lower()
-    can_connect, err_msg = check_trial_social_limit(email)
+    can_connect, err_msg = check_trial_social_limit(email, platform='tiktok')
     if not can_connect:
         return jsonify({"success": False, "message": err_msg}), 400
 
@@ -350,7 +360,8 @@ def get_tiktok_creator_info():
 @oauth_bp.route('/api/meta-auth-url', methods=['GET'])
 def get_meta_auth_url():
     email = (session.get('user_email', '') or request.args.get('email', '')).strip().lower()
-    can_connect, err_msg = check_trial_social_limit(email)
+    target_platform = request.args.get('platform', 'facebook').strip().lower()
+    can_connect, err_msg = check_trial_social_limit(email, platform=target_platform)
     if not can_connect:
         return jsonify({"success": False, "message": err_msg}), 400
 
@@ -1926,7 +1937,7 @@ def twitter_webhook():
 @oauth_bp.route('/api/twitter-auth-url', methods=['GET'])
 def get_twitter_auth_url():
     email = (session.get('user_email', '') or request.args.get('email', '')).strip().lower()
-    can_connect, err_msg = check_trial_social_limit(email)
+    can_connect, err_msg = check_trial_social_limit(email, platform='twitter')
     if not can_connect:
         return jsonify({"success": False, "message": err_msg}), 400
 
@@ -1987,7 +1998,7 @@ def twitter_callback():
 @oauth_bp.route('/api/linkedin-auth-url', methods=['GET'])
 def get_linkedin_auth_url():
     email = (session.get('user_email', '') or request.args.get('email', '')).strip().lower()
-    can_connect, err_msg = check_trial_social_limit(email)
+    can_connect, err_msg = check_trial_social_limit(email, platform='linkedin')
     if not can_connect:
         return jsonify({"success": False, "message": err_msg}), 400
 
@@ -2037,7 +2048,7 @@ def linkedin_callback():
 @oauth_bp.route('/api/youtube-auth-url', methods=['GET'])
 def get_youtube_auth_url():
     email = (session.get('user_email', '') or request.args.get('email', '')).strip().lower()
-    can_connect, err_msg = check_trial_social_limit(email)
+    can_connect, err_msg = check_trial_social_limit(email, platform='youtube')
     if not can_connect:
         return jsonify({"success": False, "message": err_msg}), 400
 
@@ -2138,7 +2149,7 @@ def youtube_callback():
 @oauth_bp.route('/api/threads-auth-url', methods=['GET'])
 def get_threads_auth_url():
     email = (session.get('user_email', '') or request.args.get('email', '')).strip().lower()
-    can_connect, err_msg = check_trial_social_limit(email)
+    can_connect, err_msg = check_trial_social_limit(email, platform='threads')
     if not can_connect:
         return jsonify({"success": False, "message": err_msg}), 400
 
@@ -3124,8 +3135,9 @@ def get_all_social_accounts():
     trial_info = check_user_trial_status(user) if user else {"is_paid": False, "is_expired": False}
     status = (user.get('status', '') if user else '').lower()
 
-    if not trial_info.get("is_paid", False):
-        plan_limit = 1
+    is_trial = not trial_info.get("is_paid", False)
+    if is_trial:
+        plan_limit = 7
         plan_name = "trial"
     elif 'vvip' in status:
         plan_limit = 30
@@ -3195,6 +3207,7 @@ def get_all_social_accounts():
         "count": len(accounts),
         "max_limit": plan_limit,
         "plan": plan_name,
+        "is_trial": is_trial,
         "by_platform": by_platform
     })
 

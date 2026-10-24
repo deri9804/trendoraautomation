@@ -4052,21 +4052,46 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
         { key: 'threads', name: 'Threads', icon: '🧵', authUrl: '/api/threads-auth-url', color: '#ffffff' }
       ];
 
+      const isTrial = (window.socialAccountsData && window.socialAccountsData.is_trial) || plan === 'trial';
       const isExpired = window.currentUserData && window.currentUserData.isExpired && !window.currentUserData.isPaid;
       const isQuotaFull = count >= maxLimit;
 
       // 1. Quota Progress Bar Header
+      let quotaTitleHtml = '';
+      let quotaSubHtml = '';
+      let progressPercent = 0;
+
+      if (isTrial) {
+        quotaTitleHtml = `
+          <span>📊 Kuota Akun Medsos:</span>
+          <span style="color: #38bdf8; background: rgba(56,189,248,0.15); padding: 3px 10px; border-radius: 8px; font-size: 14px; border: 1px solid rgba(56,189,248,0.3);">${count} / 7 Platform Terhubung</span>
+          <span style="font-size: 11px; color: #c084fc; border: 1px solid rgba(192,132,252,0.35); padding: 2px 8px; border-radius: 6px; text-transform: uppercase; font-weight: 700;">Paket FREE TRIAL (1 Akun / Platform)</span>
+        `;
+        quotaSubHtml = `
+          Paket Free Trial mengizinkan <strong>1 profil untuk setiap platform media sosial</strong> (TikTok, Facebook, Instagram, YouTube, dll). Upgrade ke Starter/VIP/VVIP untuk fitur Multi-Akun (kelola banyak akun di platform yang sama).
+        `;
+        progressPercent = Math.min(100, (count / 7) * 100);
+      } else {
+        quotaTitleHtml = `
+          <span>📊 Kuota Slot Akun Medsos:</span>
+          <span style="color: #38bdf8; background: rgba(56,189,248,0.15); padding: 3px 10px; border-radius: 8px; font-size: 14px; border: 1px solid rgba(56,189,248,0.3);">${count} / ${maxLimit} Slot Terpakai</span>
+          <span style="font-size: 11px; color: #c084fc; border: 1px solid rgba(192,132,252,0.35); padding: 2px 8px; border-radius: 6px; text-transform: uppercase; font-weight: 700;">Paket ${plan.toUpperCase()}</span>
+        `;
+        quotaSubHtml = `
+          Slot bebas dialokasikan: Anda bisa menghubungkan hingga <strong>${maxLimit} akun sekaligus</strong> (misal ${maxLimit} akun TikTok atau kombinasi platform lainnya).
+        `;
+        progressPercent = Math.min(100, (count / maxLimit) * 100);
+      }
+
       let htmlOutput = `
         <div style="grid-column: 1 / -1; background: linear-gradient(135deg, rgba(56, 189, 248, 0.08) 0%, rgba(168, 85, 247, 0.08) 100%); border: 1px solid rgba(56, 189, 248, 0.25); border-radius: 14px; padding: 18px 22px; margin-bottom: 8px;">
           <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 12px;">
             <div>
               <div style="font-size: 15px; font-weight: 800; color: #fff; display: flex; align-items: center; gap: 10px;">
-                <span>📊 Kuota Slot Akun Medsos:</span>
-                <span style="color: #38bdf8; background: rgba(56,189,248,0.15); padding: 3px 10px; border-radius: 8px; font-size: 14px; border: 1px solid rgba(56,189,248,0.3);">${count} / ${maxLimit} Slot Terpakai</span>
-                <span style="font-size: 11px; color: #c084fc; border: 1px solid rgba(192,132,252,0.35); padding: 2px 8px; border-radius: 6px; text-transform: uppercase; font-weight: 700;">Paket ${plan.toUpperCase()}</span>
+                ${quotaTitleHtml}
               </div>
               <p style="color: #94a3b8; font-size: 12px; margin: 6px 0 0 0; line-height: 1.5;">
-                Slot bebas dialokasikan: Anda bisa menghubungkan hingga <strong>${maxLimit} akun sekaligus</strong> (misal ${maxLimit} akun TikTok atau kombinasi platform lainnya).
+                ${quotaSubHtml}
               </p>
             </div>
             <div>
@@ -4076,7 +4101,7 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
             </div>
           </div>
           <div style="background: rgba(255,255,255,0.08); border-radius: 999px; height: 8px; overflow: hidden; width: 100%;">
-            <div style="width: ${Math.min(100, (count / maxLimit) * 100)}%; background: linear-gradient(90deg, #38bdf8, #ec4899); height: 100%; border-radius: 999px; transition: width 0.4s ease;"></div>
+            <div style="width: ${progressPercent}%; background: linear-gradient(90deg, #38bdf8, #ec4899); height: 100%; border-radius: 999px; transition: width 0.4s ease;"></div>
           </div>
         </div>
       `;
@@ -4114,10 +4139,13 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
           `;
         }
 
+        const isPlatFull = isTrial && platAccounts.length >= 1;
         let buttonHtml = '';
         if (isExpired) {
           buttonHtml = `<button type="button" class="btn-secondary" style="width: 100%; font-size: 11px; padding: 8px 12px; opacity: 0.7;" onclick="redirectToPricingOrUpgrade()">🔒 Upgrade Kuota</button>`;
-        } else if (isQuotaFull) {
+        } else if (isPlatFull) {
+          buttonHtml = `<button type="button" class="btn-secondary" style="width: 100%; font-size: 11px; padding: 8px 12px; opacity: 0.85; border-color: rgba(192,132,252,0.4); color: #c084fc;" onclick="redirectToPricingOrUpgrade()" title="Batas 1 akun per platform di paket Free Trial. Upgrade untuk Multi-Akun ${ch.name}">🔒 Upgrade untuk Multi-Akun ${ch.name}</button>`;
+        } else if (!isTrial && isQuotaFull) {
           buttonHtml = `<button type="button" class="btn-secondary" style="width: 100%; font-size: 11px; padding: 8px 12px; opacity: 0.7;" onclick="redirectToPricingOrUpgrade()">🔒 Kuota Penuh (${maxLimit}/${maxLimit})</button>`;
         } else {
           buttonHtml = `
@@ -4159,9 +4187,17 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
 
       const { email, apiKey } = getValidUserCredentials();
       try {
-        const fullUrl = getApiUrl(`${authEndpoint}?email=${encodeURIComponent(email)}&api_key=${encodeURIComponent(apiKey)}`);
+        const fullUrl = getApiUrl(`${authEndpoint}?email=${encodeURIComponent(email)}&api_key=${encodeURIComponent(apiKey)}&platform=${encodeURIComponent(platform)}`);
         const res = await fetch(fullUrl);
         const data = await res.json().catch(() => ({}));
+        
+        if (!res.ok) {
+          alert(data.message || 'Batas kuota penautan akun untuk paket Anda telah tercapai.');
+          if (data.message && data.message.includes('upgrade')) {
+            redirectToPricingOrUpgrade();
+          }
+          return;
+        }
         
         if (res.ok && data.success && data.url) {
           const width = 640, height = 750;
