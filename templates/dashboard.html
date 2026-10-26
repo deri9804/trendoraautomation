@@ -2410,7 +2410,7 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
                   <label for="tiktokVideoInput" style="display: block; border: 2px dashed rgba(56, 189, 248, 0.35); border-radius: 14px; padding: 20px 16px; text-align: center; cursor: pointer; background: rgba(56, 189, 248, 0.02); transition: all 0.2s;" ondragover="event.preventDefault(); this.style.borderColor='#38bdf8';" ondragleave="this.style.borderColor='rgba(56, 189, 248, 0.35)';" ondrop="handleTiktokVideoDrop(event)">
                     <div style="font-size: 28px; margin-bottom: 6px;">🎬</div>
                     <div style="color: #fff; font-size: 13px; font-weight: 700; margin-bottom: 4px;">Pilih Berkas Video (.MP4 / .MOV)</div>
-                    <div style="color: #64748b; font-size: 11px;">Maksimal 4.5MB untuk upload langsung, atau gunakan tab "Input URL Video" untuk video hingga 500MB</div>
+                    <div style="color: #64748b; font-size: 11px;">Maksimal 500MB (.MP4, .MOV, .WebM) — Mendukung video Full HD & 4K</div>
                     <input type="file" id="tiktokVideoInput" accept="video/mp4,video/quicktime,video/webm" style="display: none;" onchange="handleTiktokVideoFileSelected(this.files)">
                   </label>
                 </div>
@@ -5231,9 +5231,6 @@ ${data.hashtags}`;
         return;
       }
       const sizeMb = (file.size / (1024 * 1024)).toFixed(1);
-      if (file.size > 4.5 * 1024 * 1024) {
-        alert(`💡 Info Ukuran Video: ${sizeMb} MB\n\nKarena hosting Trendora berjalan di arsitektur Serverless Vercel (batas upload langsung 4.5 MB), untuk file video di atas 4.5 MB:\n\n👉 Silakan gunakan tab "🔗 Input URL Video" di atas dengan memasukkan link video online publik (Google Drive direct link, Dropbox, atau Cloud Storage) agar video dapat dipublikasikan dengan kualitas penuh tanpa batasan ukuran.\n\nAtau kompres video Anda agar ukurannya di bawah 4.5 MB.`);
-      }
       if (file.size > 500 * 1024 * 1024) {
         alert('Ukuran video terlalu besar. Maksimal 500MB.');
         return;
@@ -5715,11 +5712,10 @@ ${data.hashtags}`;
           alert('Silakan pilih berkas video (.mp4/.mov) dari perangkat Anda, atau beralih ke tab "🔗 Input URL Video".');
           return;
         }
-        if (window.selectedTiktokVideoFile.size > 4.5 * 1024 * 1024) {
+        if (window.selectedTiktokVideoFile.size > 500 * 1024 * 1024) {
           clearInterval(progressInterval);
           progressModal.style.display = 'none';
-          const fSizeMb = (window.selectedTiktokVideoFile.size / (1024 * 1024)).toFixed(1);
-          alert(`⚠️ Ukuran Berkas Video Terlalu Besar (${fSizeMb} MB)\n\nArsitektur Serverless Vercel memiliki batas upload berkas langsung maksimal 4.5 MB.\n\nSolusi Praktis:\n1. Klik tab "🔗 Input URL Video" di atas.\n2. Tempelkan link video publik Anda (Google Drive link, Dropbox, dll).\n3. Video berukuran besar hingga 500 MB akan langsung diunduh resmi oleh Meta Facebook / TikTok tanpa batasan ukuran.`);
+          alert('⚠️ Ukuran Berkas Video Terlalu Besar (Maksimal 500 MB).');
           return;
         }
       }

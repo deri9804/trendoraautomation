@@ -1,5 +1,11 @@
 import os
 
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except Exception:
+    pass
+
 # CONFIGURATION SECRET KEY FOR SESSIONS
 SECRET_KEY = os.environ.get("SECRET_KEY", "trendora_session_isolated_secret_key_2026_x89a")
 
