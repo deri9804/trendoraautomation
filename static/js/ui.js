@@ -351,3 +351,21 @@ window.toggleFaq = toggleFaq;
 window.toggleChat = toggleChat;
 window.handleChatKeyPress = handleChatKeyPress;
 window.sendChatMessage = sendChatMessage;
+function toggleMobileNav() {
+  const drawer = document.getElementById('mobileNavDrawer');
+  const btn = document.getElementById('mobileNavToggle');
+  if (!drawer || !btn) return;
+  const isHidden = drawer.style.display === 'none' || !drawer.style.display;
+  drawer.style.display = isHidden ? 'block' : 'none';
+  btn.classList.toggle('active', isHidden);
+}
+
+function closeMobileNav() {
+  const drawer = document.getElementById('mobileNavDrawer');
+  const btn = document.getElementById('mobileNavToggle');
+  if (drawer) drawer.style.display = 'none';
+  if (btn) btn.classList.remove('active');
+}
+
+window.toggleMobileNav = toggleMobileNav;
+window.closeMobileNav = closeMobileNav;

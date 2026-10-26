@@ -2,31 +2,32 @@
 <header class="header-sticky">
   <!-- TOP BANNER -->
   <div class="top-banner" id="topBanner">
-    <span class="banner-badge">AUTOMATION ENGINE</span>
-    <span>Hubungkan n8n ke 10+ Sosial Media Secara Otomatis</span>
-    <button class="btn-banner" onclick="scrollToPricing()">Mulai Gratis &rarr;</button>
+    <span class="banner-badge">⚡ OFFICIAL NODE</span>
+    <span>Auto-Publish ke 7 Sosial Media via n8n & REST API</span>
+    <button class="btn-banner" onclick="scrollToPricing()">Coba Gratis 7 Hari &rarr;</button>
   </div>
 
   <!-- NAVBAR -->
   <nav class="navbar">
-    <!-- REVISI: Menampilkan gambar logo berdampingan dengan teks atas-bawah -->
-    <div class="logo" style="cursor: pointer; display: flex; align-items: center; gap: 12px;" onclick="showLandingPage()">
-      <img src="{{ url_for('static', filename='logo-trendora.png') }}" alt="TRENDORA Logo" style="height: 65px; width: auto; object-fit: contain;" onerror="this.src='logo-trendora.png'">
-      <div style="display: flex; flex-direction: column; line-height: 1.1;">
-        <span>⚡ TRENDORA</span>
-        <span>AUTOMATION</span>
+    <!-- LOGO BRAND -->
+    <div class="logo" style="cursor: pointer; display: flex; align-items: center; gap: 10px;" onclick="showLandingPage()">
+      <img src="{{ url_for('static', filename='logo-trendora.png') }}" alt="TRENDORA Logo" style="height: 38px; width: auto; object-fit: contain;" onerror="this.src='logo-trendora.png'">
+      <div style="display: flex; flex-direction: column; line-height: 1.15;">
+        <span style="font-size: 16px; font-weight: 900; letter-spacing: 0.5px; background: linear-gradient(135deg, #fff 30%, #ec4899 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">TRENDORA</span>
+        <span style="font-size: 10px; font-weight: 700; color: #94a3b8; letter-spacing: 1.5px;">AUTOMATION</span>
       </div>
     </div>
     
-    <!-- LANDING PAGE NAVIGATION LINKS -->
+    <!-- DESKTOP NAVIGATION LINKS -->
     <ul class="nav-links" id="navLinksLanding">
       <li><a href="#hero" onclick="showLandingPage()">Beranda</a></li>
-      <li><a id="navDashLink" style="display: none; color: #34d399; font-weight: bold; cursor: pointer;" onclick="showDashboardPage()">Dashboard 🚀</a></li>
       <li><a href="#features" onclick="showLandingPage()">Fitur</a></li>
-      <li><a href="#about" onclick="showLandingPage()">Tentang</a></li>
+      <li><a href="#platforms" onclick="showLandingPage()">Platform</a></li>
+      <li><a href="#n8n-docs" onclick="showLandingPage()">n8n Node</a></li>
       <li><a href="#pricing" onclick="showLandingPage()">Harga</a></li>
       <li><a href="#faq" onclick="showLandingPage()">FAQ</a></li>
-      <li><a href="#n8n-docs" onclick="showLandingPage()">Dokumentasi API</a></li>
+      <li><a href="#contact" onclick="showLandingPage()">Kontak</a></li>
+      <li><a id="navDashLink" style="display: none; color: #38bdf8; font-weight: 700; cursor: pointer;" onclick="showDashboardPage()">Dashboard 🚀</a></li>
     </ul>
 
     <!-- DASHBOARD PAGE NAVIGATION LINKS (Aktif saat di halaman dashboard) -->
@@ -35,18 +36,46 @@
       <li><a style="cursor: pointer;" onclick="showLandingPage()">🌐 Landing Page / Web</a></li>
     </ul>
 
-    <!-- GUEST AUTH BUTTONS -->
-    <div class="auth-buttons" id="navGuestGroup">
-      <a class="btn-login" style="cursor: pointer;" onclick="openLoginModal()">Log in</a>
-    </div>
-
-    <!-- LOGGED IN USER MENU -->
-    <div class="auth-buttons" id="navUserGroup" style="display: none;">
-      <div class="user-profile-badge" style="cursor: pointer;" onclick="showDashboardPage()" title="Buka Dashboard">
-        <span class="user-avatar">👤</span>
-        <span id="navUserName">User</span>
+    <!-- AUTH BUTTONS GROUP (Desktop) -->
+    <div class="nav-auth-wrapper" style="display: flex; align-items: center; gap: 12px;">
+      <!-- GUEST AUTH BUTTONS -->
+      <div class="auth-buttons" id="navGuestGroup" style="display: flex; align-items: center; gap: 10px;">
+        <a class="btn-login-clean" style="cursor: pointer; color: #cbd5e1; font-size: 13px; font-weight: 600; text-decoration: none; padding: 8px 14px; border-radius: 8px; transition: color 0.2s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='#cbd5e1'" onclick="openLoginModal()">Log In</a>
+        <button class="btn-pink" style="padding: 8px 18px; font-size: 13px; font-weight: 700; border-radius: 10px;" onclick="scrollToPricing()">Daftar Gratis 🚀</button>
       </div>
-      <button class="btn-secondary" style="padding: 6px 14px; font-size: 12px;" onclick="handleLogout()">Keluar 🚪</button>
+
+      <!-- LOGGED IN USER MENU -->
+      <div class="auth-buttons" id="navUserGroup" style="display: none; align-items: center; gap: 10px;">
+        <div class="user-profile-badge" style="cursor: pointer;" onclick="showDashboardPage()" title="Buka Dashboard">
+          <span class="user-avatar">👤</span>
+          <span id="navUserName">User</span>
+        </div>
+        <button class="btn-secondary" style="padding: 6px 14px; font-size: 12px; border-radius: 8px;" onclick="handleLogout()">Keluar 🚪</button>
+      </div>
+
+      <!-- MOBILE HAMBURGER BUTTON -->
+      <button class="mobile-nav-toggle" id="mobileNavToggle" onclick="toggleMobileNav()" aria-label="Toggle Navigation Menu">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
     </div>
   </nav>
+
+  <!-- MOBILE DRAWER MENU -->
+  <div class="mobile-nav-drawer" id="mobileNavDrawer" style="display: none;">
+    <ul class="mobile-nav-list">
+      <li><a href="#hero" onclick="closeMobileNav(); showLandingPage()">🏠 Beranda</a></li>
+      <li><a href="#features" onclick="closeMobileNav(); showLandingPage()">⚡ Fitur Unggulan</a></li>
+      <li><a href="#platforms" onclick="closeMobileNav(); showLandingPage()">📱 Platform Didukung</a></li>
+      <li><a href="#n8n-docs" onclick="closeMobileNav(); showLandingPage()">🔌 n8n Documentation</a></li>
+      <li><a href="#pricing" onclick="closeMobileNav(); showLandingPage()">💳 Harga & Paket</a></li>
+      <li><a href="#faq" onclick="closeMobileNav(); showLandingPage()">❓ Tanya Jawab (FAQ)</a></li>
+      <li><a href="#contact" onclick="closeMobileNav(); showLandingPage()">📩 Hubungi Kami</a></li>
+    </ul>
+    <div style="padding: 16px 20px; border-top: 1px solid rgba(255,255,255,0.08); display: flex; flex-direction: column; gap: 10px;">
+      <button class="btn-pink" style="width: 100%; padding: 12px; font-size: 14px; font-weight: 700; border-radius: 10px;" onclick="closeMobileNav(); scrollToPricing()">Mulai Free Trial 7 Hari 🚀</button>
+      <button class="btn-secondary" style="width: 100%; padding: 10px; font-size: 13px; border-radius: 10px;" onclick="closeMobileNav(); openLoginModal()">Log In Akun</button>
+    </div>
+  </div>
 </header>

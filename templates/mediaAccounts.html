@@ -1,70 +1,171 @@
-<!-- SOCIAL MEDIA ACCOUNT STATUS & QUOTA WIDGET -->
-<section class="widget-section">
-  <div class="widget-container">
-    <div class="widget-header">
-      <div>
-        <h3>📡 Status Koneksi Platform & Sisa Kuota</h3>
-        <p>Pantau keterhubungan akun sosial media dan kapasitas posting harian kamu.</p>
+<!-- FEATURES SECTION (FITUR UNGGULAN) -->
+<section id="features" class="features-section" style="padding: 80px 8%; max-width: 1400px; margin: 0 auto;">
+  <div style="text-align: center; max-width: 780px; margin: 0 auto 50px auto;">
+    <span class="tag" style="display: inline-block; color: #ec4899; font-size: 12px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 12px;">
+      &bull; FITUR UTAMA TRENDORA AUTOMATION
+    </span>
+    <h2 style="font-size: 36px; line-height: 1.2; font-weight: 800; color: #fff; margin-bottom: 14px;">
+      Solusi Lengkap untuk Scale-Up Konten <span style="background: linear-gradient(135deg, #ec4899, #8b5cf6); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Multi-Platform</span>
+    </h2>
+    <p style="color: #94a3b8; font-size: 15px; line-height: 1.6;">
+      Hemat puluhan jam kerja manual setiap minggu. Cukup buat video satu kali, biarkan mesin automasi Trendora mendistribusikannya ke seluruh penjuru media sosial.
+    </p>
+  </div>
+
+  <!-- 6 FEATURES GRID -->
+  <div class="features-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 24px;">
+    
+    <!-- Feature 1: 7 Platform -->
+    <div class="feature-card" style="background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 18px; padding: 28px; transition: all 0.3s ease; position: relative; overflow: hidden;" onmouseover="this.style.borderColor='rgba(236,72,153,0.4)'; this.style.transform='translateY(-4px)';" onmouseout="this.style.borderColor='rgba(255,255,255,0.08)'; this.style.transform='none';">
+      <div style="width: 50px; height: 50px; border-radius: 12px; background: linear-gradient(135deg, rgba(236,72,153,0.2), rgba(139,92,246,0.2)); display: flex; align-items: center; justify-content: center; font-size: 24px; margin-bottom: 18px; border: 1px solid rgba(236,72,153,0.3);">
+        🚀
       </div>
-      <div class="quota-badge">
-        <span>Sisa Kuota Harian: <strong>85 / 100 Post</strong></span>
-      </div>
+      <h3 style="font-size: 18px; font-weight: 700; color: #fff; margin-bottom: 10px;">7 Platform Sekaligus</h3>
+      <p style="color: #94a3b8; font-size: 13.5px; line-height: 1.6;">
+        Tautkan TikTok, Instagram Reels, Facebook Page, YouTube Shorts, Twitter/X, Threads, dan LinkedIn dalam satu portal terintegrasi.
+      </p>
     </div>
 
-    <!-- KUOTA PROGRESS BAR -->
-    <div class="quota-bar-wrapper">
-      <div class="quota-progress" style="width: 85%;"></div>
+    <!-- Feature 2: n8n Node -->
+    <div class="feature-card" style="background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 18px; padding: 28px; transition: all 0.3s ease; position: relative; overflow: hidden;" onmouseover="this.style.borderColor='rgba(56,189,248,0.4)'; this.style.transform='translateY(-4px)';" onmouseout="this.style.borderColor='rgba(255,255,255,0.08)'; this.style.transform='none';">
+      <div style="width: 50px; height: 50px; border-radius: 12px; background: linear-gradient(135deg, rgba(56,189,248,0.2), rgba(59,130,246,0.2)); display: flex; align-items: center; justify-content: center; font-size: 24px; margin-bottom: 18px; border: 1px solid rgba(56,189,248,0.3);">
+        🔌
+      </div>
+      <h3 style="font-size: 18px; font-weight: 700; color: #fff; margin-bottom: 10px;">Official n8n Community Node</h3>
+      <p style="color: #94a3b8; font-size: 13.5px; line-height: 1.6;">
+        Tinggal pasang <code>n8n-nodes-trendora-automation</code> di n8n kamu. Cukup drag &amp; drop ke canvas tanpa perlu repot coding HTTP request atau OAuth manual.
+      </p>
     </div>
 
-    <!-- PLATFORMS GRID -->
-    <div class="accounts-grid">
+    <!-- Feature 3: Video Spinner -->
+    <div class="feature-card" style="background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 18px; padding: 28px; transition: all 0.3s ease; position: relative; overflow: hidden;" onmouseover="this.style.borderColor='rgba(52,211,153,0.4)'; this.style.transform='translateY(-4px)';" onmouseout="this.style.borderColor='rgba(255,255,255,0.08)'; this.style.transform='none';">
+      <div style="width: 50px; height: 50px; border-radius: 12px; background: linear-gradient(135deg, rgba(52,211,153,0.2), rgba(16,185,129,0.2)); display: flex; align-items: center; justify-content: center; font-size: 24px; margin-bottom: 18px; border: 1px solid rgba(52,211,153,0.3);">
+        🛡️
+      </div>
+      <h3 style="font-size: 18px; font-weight: 700; color: #fff; margin-bottom: 10px;">Anti-Duplicate Video Spinner</h3>
+      <p style="color: #94a3b8; font-size: 13.5px; line-height: 1.6;">
+        Algoritma cerdas yang memodifikasi atom biner kontainer MP4 dan cryptographic hash (SHA-256) per akun, menjaga video kamu aman dari deteksi re-upload.
+      </p>
+    </div>
+
+    <!-- Feature 4: Scheduler -->
+    <div class="feature-card" style="background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 18px; padding: 28px; transition: all 0.3s ease; position: relative; overflow: hidden;" onmouseover="this.style.borderColor='rgba(251,191,36,0.4)'; this.style.transform='translateY(-4px)';" onmouseout="this.style.borderColor='rgba(255,255,255,0.08)'; this.style.transform='none';">
+      <div style="width: 50px; height: 50px; border-radius: 12px; background: linear-gradient(135deg, rgba(251,191,36,0.2), rgba(245,158,11,0.2)); display: flex; align-items: center; justify-content: center; font-size: 24px; margin-bottom: 18px; border: 1px solid rgba(251,191,36,0.3);">
+        📅
+      </div>
+      <h3 style="font-size: 18px; font-weight: 700; color: #fff; margin-bottom: 10px;">Kalender Konten &amp; Auto-Schedule</h3>
+      <p style="color: #94a3b8; font-size: 13.5px; line-height: 1.6;">
+        Jadwalkan postingan berminggu-minggu ke depan. Sistem otomatis mempublikasikan video pada jam prime-time dengan interval jeda cerdas (*staggered delay*).
+      </p>
+    </div>
+
+    <!-- Feature 5: Auto-DM -->
+    <div class="feature-card" style="background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 18px; padding: 28px; transition: all 0.3s ease; position: relative; overflow: hidden;" onmouseover="this.style.borderColor='rgba(168,85,247,0.4)'; this.style.transform='translateY(-4px)';" onmouseout="this.style.borderColor='rgba(255,255,255,0.08)'; this.style.transform='none';">
+      <div style="width: 50px; height: 50px; border-radius: 12px; background: linear-gradient(135deg, rgba(168,85,247,0.2), rgba(147,51,234,0.2)); display: flex; align-items: center; justify-content: center; font-size: 24px; margin-bottom: 18px; border: 1px solid rgba(168,85,247,0.3);">
+        💬
+      </div>
+      <h3 style="font-size: 18px; font-weight: 700; color: #fff; margin-bottom: 10px;">Instagram Auto-DM &amp; Comment Bot</h3>
+      <p style="color: #94a3b8; font-size: 13.5px; line-height: 1.6;">
+        Tangkap prospek penjualan langsung dari komentar! Bot otomatis membalas komentar audiens dan mengirimkan link produk via Private DM resmi Meta API.
+      </p>
+    </div>
+
+    <!-- Feature 6: Multi-Account Scale Up -->
+    <div class="feature-card" style="background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 18px; padding: 28px; transition: all 0.3s ease; position: relative; overflow: hidden;" onmouseover="this.style.borderColor='rgba(244,63,94,0.4)'; this.style.transform='translateY(-4px)';" onmouseout="this.style.borderColor='rgba(255,255,255,0.08)'; this.style.transform='none';">
+      <div style="width: 50px; height: 50px; border-radius: 12px; background: linear-gradient(135deg, rgba(244,63,94,0.2), rgba(225,29,72,0.2)); display: flex; align-items: center; justify-content: center; font-size: 24px; margin-bottom: 18px; border: 1px solid rgba(244,63,94,0.3);">
+        👥
+      </div>
+      <h3 style="font-size: 18px; font-weight: 700; color: #fff; margin-bottom: 10px;">Ternak Akun (Hingga 30 Akun)</h3>
+      <p style="color: #94a3b8; font-size: 13.5px; line-height: 1.6;">
+        Cocok untuk affiliate creator dan agency digital. Kelola dan sebar konten ke puluhan akun sosmed secara terpusat tanpa risiko terdeteksi antar akun.
+      </p>
+    </div>
+
+  </div>
+</section>
+
+<!-- SUPPORTED PLATFORMS SHOWCASE -->
+<section id="platforms" class="platforms-section" style="padding: 40px 8% 80px 8%; max-width: 1400px; margin: 0 auto;">
+  <div style="background: linear-gradient(135deg, rgba(56, 189, 248, 0.05) 0%, rgba(168, 85, 247, 0.05) 100%); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 24px; padding: 40px 30px; text-align: center;">
+    
+    <span class="tag" style="display: inline-block; color: #38bdf8; font-size: 11px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 10px;">
+      &bull; 7 PLATFORM MEDIA SOSIAL RESMI
+    </span>
+    
+    <h3 style="font-size: 24px; font-weight: 800; color: #fff; margin-bottom: 8px;">
+      Didukung Sepenuhnya dengan Akses Resmi API
+    </h3>
+    <p style="color: #94a3b8; font-size: 14px; max-width: 600px; margin: 0 auto 32px auto;">
+      Semua integrasi menggunakan OAuth 2.0 resmi dari penyedia platform, aman dari pemblokiran akun dan kompatibel dengan format video vertikal (9:16) maupun feed horizontal.
+    </p>
+
+    <!-- PLATFORMS BADGE GRID -->
+    <div style="display: flex; justify-content: center; align-items: center; flex-wrap: wrap; gap: 14px;">
+      
+      <!-- TikTok -->
+      <div style="display: flex; align-items: center; gap: 8px; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.12); padding: 10px 18px; border-radius: 14px;">
+        <span style="font-size: 20px;">🎵</span>
+        <div style="text-align: left;">
+          <div style="font-size: 13px; font-weight: 700; color: #fff;">TikTok Video</div>
+          <div style="font-size: 10px; color: #94a3b8;">Direct Post API</div>
+        </div>
+      </div>
+
       <!-- Instagram Reels -->
-      <div class="account-card">
-        <div class="account-info">
-          <span class="platform-icon">📸</span>
-          <div>
-            <h4>Instagram Reels</h4>
-            <span class="account-handle">@brand.official</span>
-          </div>
+      <div style="display: flex; align-items: center; gap: 8px; background: rgba(0,0,0,0.5); border: 1px solid rgba(236,72,153,0.3); padding: 10px 18px; border-radius: 14px;">
+        <span style="font-size: 20px;">📸</span>
+        <div style="text-align: left;">
+          <div style="font-size: 13px; font-weight: 700; color: #fff;">Instagram Reels</div>
+          <div style="font-size: 10px; color: #f472b6;">Meta Graph API</div>
         </div>
-        <span class="status-badge connected">&bull; Connected</span>
       </div>
 
-      <!-- TikTok Video -->
-      <div class="account-card">
-        <div class="account-info">
-          <span class="platform-icon">🎵</span>
-          <div>
-            <h4>TikTok Video</h4>
-            <span class="account-handle">@brand_tiktok</span>
-          </div>
+      <!-- Facebook Page / Reels -->
+      <div style="display: flex; align-items: center; gap: 8px; background: rgba(0,0,0,0.5); border: 1px solid rgba(24,119,242,0.3); padding: 10px 18px; border-radius: 14px;">
+        <span style="font-size: 20px;">📘</span>
+        <div style="text-align: left;">
+          <div style="font-size: 13px; font-weight: 700; color: #fff;">Facebook Page</div>
+          <div style="font-size: 10px; color: #60a5fa;">Reels &amp; Feed Post</div>
         </div>
-        <span class="status-badge connected">&bull; Connected</span>
       </div>
 
       <!-- YouTube Shorts -->
-      <div class="account-card">
-        <div class="account-info">
-          <span class="platform-icon">▶️</span>
-          <div>
-            <h4>YouTube Shorts</h4>
-            <span class="account-handle">Brand Channel</span>
-          </div>
+      <div style="display: flex; align-items: center; gap: 8px; background: rgba(0,0,0,0.5); border: 1px solid rgba(239,68,68,0.3); padding: 10px 18px; border-radius: 14px;">
+        <span style="font-size: 20px;">▶️</span>
+        <div style="text-align: left;">
+          <div style="font-size: 13px; font-weight: 700; color: #fff;">YouTube Shorts</div>
+          <div style="font-size: 10px; color: #f87171;">Data API v3 Resumable</div>
         </div>
-        <span class="status-badge pending">&bull; Pending Auth</span>
       </div>
 
-      <!-- Facebook Reels -->
-      <div class="account-card">
-        <div class="account-info">
-          <span class="platform-icon">📘</span>
-          <div>
-            <h4>Facebook Page</h4>
-            <span class="account-handle">Brand Page ID</span>
-          </div>
+      <!-- Twitter / X -->
+      <div style="display: flex; align-items: center; gap: 8px; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.12); padding: 10px 18px; border-radius: 14px;">
+        <span style="font-size: 20px;">𝕏</span>
+        <div style="text-align: left;">
+          <div style="font-size: 13px; font-weight: 700; color: #fff;">Twitter / X</div>
+          <div style="font-size: 10px; color: #94a3b8;">X API v2 Media Upload</div>
         </div>
-        <span class="status-badge connected">&bull; Connected</span>
       </div>
+
+      <!-- Threads -->
+      <div style="display: flex; align-items: center; gap: 8px; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.12); padding: 10px 18px; border-radius: 14px;">
+        <span style="font-size: 20px;">🧵</span>
+        <div style="text-align: left;">
+          <div style="font-size: 13px; font-weight: 700; color: #fff;">Threads</div>
+          <div style="font-size: 10px; color: #cbd5e1;">Official Threads API</div>
+        </div>
+      </div>
+
+      <!-- LinkedIn -->
+      <div style="display: flex; align-items: center; gap: 8px; background: rgba(0,0,0,0.5); border: 1px solid rgba(10,102,194,0.3); padding: 10px 18px; border-radius: 14px;">
+        <span style="font-size: 20px;">💼</span>
+        <div style="text-align: left;">
+          <div style="font-size: 13px; font-weight: 700; color: #fff;">LinkedIn</div>
+          <div style="font-size: 10px; color: #38bdf8;">Community Video API</div>
+        </div>
+      </div>
+
     </div>
+
   </div>
 </section>

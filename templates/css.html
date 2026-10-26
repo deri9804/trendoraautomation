@@ -987,6 +987,76 @@
   .typing-dot:nth-child(2) { animation-delay: -0.16s; }
   @keyframes typing { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1); } }
 
+  .mobile-nav-toggle {
+    display: none;
+    flex-direction: column;
+    justify-content: space-between;
+    width: 30px;
+    height: 22px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    z-index: 1001;
+  }
+  .mobile-nav-toggle span {
+    display: block;
+    width: 100%;
+    height: 3px;
+    background-color: #ffffff;
+    border-radius: 2px;
+    transition: all 0.3s ease;
+  }
+  .mobile-nav-toggle.active span:nth-child(1) {
+    transform: rotate(45deg) translate(5px, 6px);
+  }
+  .mobile-nav-toggle.active span:nth-child(2) {
+    opacity: 0;
+  }
+  .mobile-nav-toggle.active span:nth-child(3) {
+    transform: rotate(-45deg) translate(5px, -6px);
+  }
+
+  .mobile-nav-drawer {
+    display: none;
+    position: fixed;
+    top: 58px;
+    left: 0;
+    width: 100%;
+    background: rgba(13, 10, 26, 0.98);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-bottom: 1px solid rgba(236, 72, 153, 0.3);
+    z-index: 999;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.8);
+    animation: drawerSlideDown 0.25s ease-out;
+  }
+  @keyframes drawerSlideDown {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .mobile-nav-list {
+    list-style: none;
+    padding: 14px 20px 8px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .mobile-nav-list a {
+    display: block;
+    color: #cbd5e1;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 600;
+    padding: 10px 14px;
+    border-radius: 10px;
+    transition: all 0.2s ease;
+  }
+  .mobile-nav-list a:hover {
+    background: rgba(236, 72, 153, 0.15);
+    color: #ec4899;
+  }
+
   /* FLOATING WHATSAPP BUTTON STYLES */
   .wa-float-btn {
     position: fixed;
@@ -1019,8 +1089,9 @@
   }
 
   @media (max-width: 900px) {
+    .mobile-nav-toggle { display: flex !important; }
     .hero { grid-template-columns: 1fr; padding-top: 120px; }
-    .nav-links { display: none; }
+    .nav-links { display: none !important; }
     .webhook-tester-box { flex-direction: column; }
     .checkout-grid { grid-template-columns: 1fr; gap: 20px; }
     .checkout-modal-card { max-width: 95% !important; padding: 20px !important; }
