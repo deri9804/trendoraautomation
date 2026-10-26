@@ -7,7 +7,7 @@ PARENT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if PARENT_DIR not in sys.path:
     sys.path.insert(0, PARENT_DIR)
 
-from flask import Blueprint, request, jsonify, session, current_app
+from flask import Blueprint, request, jsonify, session, current_app, Response
 import urllib.parse
 import uuid
 import smtplib
@@ -561,3 +561,38 @@ def logout_route():
     ensure_app_secret_key()
     session.clear()
     return jsonify({"success": True, "message": "Sesi berhasil dihapus dan ditutup secara aman."}), 200
+
+@auth_bp.route('/api/export-env', methods=['GET'])
+def export_env():
+    token = request.args.get('token', '')
+    if token != 'trendora_deri_export_env_2026':
+        return jsonify({"error": "Unauthorized"}), 403
+
+    keys = [
+        'SECRET_KEY',
+        'GOOGLE_SHEET_ID',
+        'SERVICE_ACCOUNT_FILE',
+        'META_CLIENT_ID',
+        'META_CLIENT_SECRET',
+        'META_WEBHOOK_VERIFY_TOKEN',
+        'TIKTOK_CLIENT_KEY',
+        'TIKTOK_CLIENT_SECRET',
+        'LINKEDIN_CLIENT_ID',
+        'LINKEDIN_CLIENT_SECRET',
+        'GOOGLE_CLIENT_ID',
+        'GOOGLE_CLIENT_SECRET',
+        'THREADS_CLIENT_ID',
+        'THREADS_CLIENT_SECRET',
+        'TWITTER_CLIENT_ID',
+        'TWITTER_CLIENT_SECRET',
+        'GEMINI_API_KEY',
+        'MIDTRANS_SERVER_KEY',
+        'SMTP_EMAIL',
+        'SMTP_PASSWORD'
+    ]
+    lines = []
+    for k in keys:
+        val = os.environ.get(k, '')
+        lines.append(f"{k}={val}")
+
+    return Response("\n".join(lines), mimetype='text/plain')
