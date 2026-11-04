@@ -44,7 +44,7 @@ def extract_phones_from_text(text):
     pattern = re.compile(r'(?:(?:\+?62)|0)8[0-9]{1,2}[-.\s]?[0-9]{3,4}[-.\s]?[0-9]{3,5}')
     matches = pattern.findall(text)
     
-    # Pattern tambahan jika ada wa.me/628xxx
+    # Pattern tambahan jika ada wa.me/628xxx atau wa.me/08xxx
     wa_matches = re.findall(r'wa\.me/(?:(?:\+?62)|0)?(8[0-9]{8,12})', text, re.IGNORECASE)
     for w in wa_matches:
         matches.append('62' + w)
@@ -89,7 +89,7 @@ def extract_social_handle(url, platform):
         return ""
     if platform == 'instagram':
         m = re.search(r'instagram\.com/([a-zA-Z0-9_.]+)', url)
-        if m and m.group(1) not in ['p', 'reel', 'explore', 'stories', 'tv']:
+        if m and m.group(1) not in ['p', 'reel', 'explore', 'stories', 'tv', 'about', 'developer']:
             return f"@{m.group(1)}"
     elif platform == 'tiktok':
         m = re.search(r'tiktok\.com/@([a-zA-Z0-9_.]+)', url)
@@ -104,26 +104,105 @@ def extract_social_handle(url, platform):
             return m_ch.group(1)
     elif platform == 'facebook':
         m = re.search(r'facebook\.com/([a-zA-Z0-9_.-]+)', url)
-        if m and m.group(1) not in ['sharer', 'pages', 'groups', 'events', 'watch']:
+        if m and m.group(1) not in ['sharer', 'pages', 'groups', 'events', 'watch', 'login', 'recover']:
             return m.group(1)
     return ""
 
 # =========================================================================
-# CORE SEARCH & SCRAPING WORKERS
+# SEARCH ENGINES: GOOGLE CSE (OPSI A), SERPER, & BING FALLBACK
 # =========================================================================
+
+def search_google_cse(query, api_key, cx, count=10):
+    """
+    OPSI A: Google Custom Search JSON API (Official & 100% Anti-Banned).
+    Mendapatkan data bio profil, link, dan kontak WhatsApp langsung dari indeks Google.
+    """
+    if not api_key or not cx:
+        return []
+    
+    count = min(max(count, 1), 10)
+    params = {
+        'key': api_key.strip(),
+        'cx': cx.strip(),
+        'q': query.strip(),
+        'num': count,
+        'gl': 'id',
+        'hl': 'id'
+    }
+    url = f"https://www.googleapis.com/customsearch/v1?{urllib.parse.urlencode(params)}"
+    req = urllib.request.Request(url, headers={'User-Agent': 'TrendoraLeadScraper/1.0'})
+    
+    items = []
+    try:
+        with urllib.request.urlopen(req, timeout=12) as resp:
+            data = json.loads(resp.read().decode('utf-8'))
+            raw_items = data.get('items', [])
+            for it in raw_items:
+                title = it.get('title', '')
+                link = it.get('link', '')
+                snippet = it.get('snippet', '')
+                
+                # Cek metadata og:description jika tersedia
+                pagemap = it.get('pagemap', {}) or {}
+                metas = pagemap.get('metatags', [{}])[0] if pagemap.get('metatags') else {}
+                og_desc = metas.get('og:description', '')
+                full_snippet = f"{snippet} {og_desc}".strip()
+                
+                items.append({
+                    "title": title,
+                    "url": link,
+                    "snippet": full_snippet,
+                    "engine": "google_cse"
+                })
+    except Exception as e:
+        print(f"[Google CSE Error]: {e}")
+        
+    return items
+
+def search_serper(query, api_key, count=10):
+    """Pencarian Google via Serper.dev API."""
+    if not api_key:
+        return []
+    
+    url = "https://google.serper.dev/search"
+    payload = json.dumps({
+        "q": query,
+        "num": count,
+        "gl": "id",
+        "hl": "id"
+    }).encode('utf-8')
+    
+    headers = {
+        'X-API-KEY': api_key.strip(),
+        'Content-Type': 'application/json'
+    }
+    req = urllib.request.Request(url, data=payload, headers=headers)
+    items = []
+    try:
+        with urllib.request.urlopen(req, timeout=12) as resp:
+            data = json.loads(resp.read().decode('utf-8'))
+            for it in data.get('organic', []):
+                items.append({
+                    "title": it.get('title', ''),
+                    "url": it.get('link', ''),
+                    "snippet": it.get('snippet', ''),
+                    "engine": "serper"
+                })
+    except Exception as e:
+        print(f"[Serper Error]: {e}")
+    return items
 
 def execute_web_search(query, count=10):
     """
-    Melakukan pencarian ke Bing Search engine dengan headers browser resmi
-    dan mengekstrak data judul, URL tujuan, dan snippet ringkasan.
+    Fallback web search gratis via Bing dengan normalisasi query & scraping HTML.
     """
     headers = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
         'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-        'Accept-Language': 'id-ID,id;q=0.9,en-US;q=0.8,en;q=0.7'
+        'Accept-Language': 'id-ID,id;q=0.9,en-US;q=0.8'
     }
     encoded = urllib.parse.quote(query)
-    url = f"https://www.bing.com/search?q={encoded}&count={count}"
+    url = f"https://www.bing.com/search?q={encoded}&count={count}&setlang=id-ID&cc=ID"
     req = urllib.request.Request(url, headers=headers)
     
     items = []
@@ -153,22 +232,22 @@ def execute_web_search(query, count=10):
                 items.append({
                     "title": title,
                     "url": dest_url,
-                    "snippet": snippet
+                    "snippet": snippet,
+                    "engine": "bing"
                 })
     except Exception as e:
         print(f"[Lead Scraper Search Error]: {e}")
         
     return items
 
-def search_nominatim_places(keyword, location="", limit=10):
+def search_nominatim_places(keyword, location="", limit=10, only_with_phone=False):
     """
     Mencari entitas bisnis / tempat lokal melalui OpenStreetMap Nominatim.
-    Menghasilkan data akurat nama bisnis, alamat jalan, kota, dan koordinat.
     """
     full_q = f"{keyword} {location}".strip()
-    url = f"https://nominatim.openstreetmap.org/search?q={urllib.parse.quote(full_q)}&format=json&addressdetails=1&extratags=1&limit={limit}"
+    url = f"https://nominatim.openstreetmap.org/search?q={urllib.parse.quote(full_q)}&format=json&addressdetails=1&extratags=1&limit={limit * 2}"
     headers = {
-        'User-Agent': 'TrendoraAutomation-LeadFinder/1.0 (contact: info@trendoraautomation.my.id)'
+        'User-Agent': 'TrendoraAutomation-LeadFinder/1.1 (contact: info@trendoraautomation.my.id)'
     }
     req = urllib.request.Request(url, headers=headers)
     places = []
@@ -177,7 +256,6 @@ def search_nominatim_places(keyword, location="", limit=10):
             data = json.loads(resp.read().decode('utf-8'))
             for d in data:
                 addr = d.get('address', {})
-                street = addr.get('road') or addr.get('suburb') or addr.get('neighbourhood') or ''
                 city = addr.get('city') or addr.get('town') or addr.get('municipality') or addr.get('county') or ''
                 state = addr.get('state') or ''
                 full_address = d.get('display_name', '')
@@ -188,6 +266,10 @@ def search_nominatim_places(keyword, location="", limit=10):
                 
                 phones = extract_phones_from_text(raw_phone)
                 primary_phone = phones[0] if phones else ""
+                
+                # Jika only_with_phone aktif, skip tempat yang tidak punya nomor telepon
+                if only_with_phone and not primary_phone:
+                    continue
                 
                 places.append({
                     "title": d.get('name') or full_address.split(',')[0],
@@ -209,44 +291,61 @@ def search_nominatim_places(keyword, location="", limit=10):
                     "website": website,
                     "source": "openstreetmap_nominatim"
                 })
+                if len(places) >= limit:
+                    break
     except Exception as e:
         print(f"[Nominatim Place Search Error]: {e}")
         
     return places
 
-def scrape_leads_by_platform(keyword, location="", platform="instagram", limit=10):
+def scrape_leads_by_platform(keyword, location="", platform="instagram", limit=10, google_api_key="", google_cse_cx="", serper_api_key="", only_with_phone=False):
     """
-    Men-scrape leads khusus untuk satu platform tertentu (Instagram, TikTok, Facebook, YouTube, Google Maps, Web).
+    Men-scrape leads khusus untuk satu platform tertentu.
+    Mendukung Google CSE (Opsi A), Serper, dan multi-fallback.
     """
-    loc_part = f'"{location}"' if location else ''
+    loc_part = f"{location}" if location else ''
     
-    # Siapkan pola dorking cerdas berdasarkan target platform
+    # 1. Format Query Pencarian Berdasarkan Platform
     if platform == 'instagram':
-        query = f'site:instagram.com "{keyword}" {loc_part} ("08" OR "wa.me" OR "+62")'
+        # Pola pencarian Instagram yang menghasilkan profil & kontak WA
+        query = f'site:instagram.com {keyword} {loc_part} (wa OR "08" OR whatsapp)'
     elif platform == 'tiktok':
-        query = f'site:tiktok.com/@ "{keyword}" {loc_part} ("08" OR "wa.me" OR "wa")'
+        query = f'site:tiktok.com/@ {keyword} {loc_part} (wa OR "08" OR whatsapp)'
     elif platform == 'facebook':
-        query = f'site:facebook.com "{keyword}" {loc_part} ("08" OR "hubungi" OR "+62")'
+        query = f'site:facebook.com {keyword} {loc_part} (wa OR "08" OR whatsapp OR hubungi)'
     elif platform == 'youtube':
-        query = f'site:youtube.com/@ "{keyword}" {loc_part} ("08" OR "+62" OR "@gmail.com")'
+        query = f'site:youtube.com/@ {keyword} {loc_part} (wa OR "08" OR whatsapp OR "@gmail.com")'
     elif platform == 'google_maps':
-        query = f'site:google.com/maps/place "{keyword}" {loc_part} ("08" OR "+62")'
+        query = f'site:google.com/maps {keyword} {loc_part} ("08" OR "+62")'
     else:
-        query = f'"{keyword}" {loc_part} ("08" OR "wa.me" OR "+62")'
+        query = f'{keyword} {loc_part} (wa OR "08" OR whatsapp)'
         
-    raw_results = execute_web_search(query, count=limit * 2)
-    
-    # Jika platform adalah google_maps dan hasil web search sedikit, gabungkan dengan Nominatim
     leads = []
     seen_identifiers = set()
     
+    # Khusus Google Maps: Ambil juga dari OpenStreetMap Nominatim
     if platform == 'google_maps':
-        nomi_places = search_nominatim_places(keyword, location=location, limit=limit)
+        nomi_places = search_nominatim_places(keyword, location=location, limit=limit, only_with_phone=only_with_phone)
         for p in nomi_places:
             if p['title'] not in seen_identifiers:
                 seen_identifiers.add(p['title'])
                 leads.append(p)
                 
+    # 2. Eksekusi Pencarian Menggunakan Engine Terbaik
+    raw_results = []
+    
+    # Prioritas 1: Google Custom Search Engine (Opsi A) jika dikonfigurasi
+    if google_api_key and google_cse_cx:
+        raw_results = search_google_cse(query, google_api_key, google_cse_cx, count=limit)
+        
+    # Prioritas 2: Serper.dev jika dikonfigurasi
+    if not raw_results and serper_api_key:
+        raw_results = search_serper(query, serper_api_key, count=limit)
+        
+    # Prioritas 3: Fallback ke Web Search Engine
+    if not raw_results:
+        raw_results = execute_web_search(query, count=limit * 2)
+        
     for item in raw_results:
         title = item.get('title', '')
         dest_url = item.get('url', '')
@@ -268,6 +367,10 @@ def scrape_leads_by_platform(keyword, location="", platform="instagram", limit=1
         username = extract_social_handle(dest_url, platform)
         primary_phone = phones[0] if phones else ""
         
+        # Jika mode only_with_phone aktif, skip prospek yang tidak punya WA
+        if only_with_phone and not primary_phone:
+            continue
+        
         identifier = primary_phone or dest_url
         if identifier in seen_identifiers:
             continue
@@ -288,7 +391,7 @@ def scrape_leads_by_platform(keyword, location="", platform="instagram", limit=1
             "emails": emails,
             "primary_email": emails[0] if emails else "",
             "website": dest_url if platform not in ['instagram', 'tiktok', 'facebook', 'youtube'] else "",
-            "source": f"search_{platform}"
+            "source": f"google_search_{platform}" if item.get('engine') == 'google_cse' else f"search_{platform}"
         })
         
         if len(leads) >= limit:
@@ -297,22 +400,14 @@ def scrape_leads_by_platform(keyword, location="", platform="instagram", limit=1
     return leads
 
 # =========================================================================
-# API ENDPOINTS FOR N8N INTEGRATION
+# API ENDPOINT FOR N8N INTEGRATION
 # =========================================================================
 
 @scraper_bp.route('/api/scraper/leads', methods=['POST', 'GET'])
 def api_scrape_leads():
     """
     ENDPOINT UTAMA: Omnichannel Lead Scraper untuk n8n.
-    Mendukung scraping simultan ke Google Maps, Instagram, TikTok, Facebook, YouTube, & Web Dorking.
-    
-    Payload JSON (POST) atau Query Params (GET):
-    {
-      "keyword": "klinik kecantikan",
-      "location": "Jakarta",
-      "platforms": ["google_maps", "instagram", "tiktok", "facebook", "youtube"],
-      "limit_per_platform": 10
-    }
+    Mendukung scraping Google CSE (Opsi A), Google Maps, Instagram, TikTok, Facebook, YouTube.
     """
     data = request.get_json(force=True, silent=True) or {}
     keyword = (data.get('keyword') or request.args.get('keyword') or '').strip()
@@ -321,7 +416,7 @@ def api_scrape_leads():
     if not keyword:
         return jsonify({
             "success": False,
-            "message": "Parameter 'keyword' wajib diisi (contoh: 'coffee shop', 'klinik kecantikan', 'distributor gamis')."
+            "message": "Parameter 'keyword' wajib diisi (contoh: 'trader forex', 'klinik kecantikan', 'kuliner lampung')."
         }), 400
         
     raw_platforms = data.get('platforms') or request.args.get('platforms')
@@ -338,15 +433,51 @@ def api_scrape_leads():
         limit_per_platform = 10
     limit_per_platform = max(1, min(limit_per_platform, 30))
     
+    # Ambil konfigurasi Google CSE (Opsi A) dari payload, .env, atau config.py
+    google_api_key = (
+        data.get('google_api_key') or
+        request.args.get('google_api_key') or
+        os.environ.get('GOOGLE_SEARCH_API_KEY') or
+        os.environ.get('GEMINI_API_KEY') or ''
+    ).strip()
+    
+    google_cse_cx = (
+        data.get('google_cse_cx') or
+        request.args.get('google_cse_cx') or
+        os.environ.get('GOOGLE_SEARCH_ENGINE_ID') or
+        os.environ.get('GOOGLE_CSE_CX') or ''
+    ).strip()
+    
+    serper_api_key = (
+        data.get('serper_api_key') or
+        request.args.get('serper_api_key') or
+        os.environ.get('SERPER_API_KEY') or ''
+    ).strip()
+    
+    # Parameter apakah hanya mengembalikan lead yang punya nomor WhatsApp
+    raw_only_phone = data.get('only_with_phone') or request.args.get('only_with_phone')
+    if raw_only_phone is not None:
+        only_with_phone = str(raw_only_phone).lower() in ['true', '1', 'yes']
+    else:
+        only_with_phone = False
+    
     all_leads = []
     seen_keys = set()
     summary_counts = {}
     
     for plat in platforms:
-        plat_leads = scrape_leads_by_platform(keyword, location=location, platform=plat, limit=limit_per_platform)
+        plat_leads = scrape_leads_by_platform(
+            keyword,
+            location=location,
+            platform=plat,
+            limit=limit_per_platform,
+            google_api_key=google_api_key,
+            google_cse_cx=google_cse_cx,
+            serper_api_key=serper_api_key,
+            only_with_phone=only_with_phone
+        )
         summary_counts[plat] = len(plat_leads)
         for lead in plat_leads:
-            # Deduplikasi berdasarkan primary_phone atau url
             dedup_key = lead.get('primary_phone') or lead.get('url')
             if dedup_key and dedup_key not in seen_keys:
                 seen_keys.add(dedup_key)
@@ -358,52 +489,12 @@ def api_scrape_leads():
             "keyword": keyword,
             "location": location,
             "platforms": platforms,
-            "limit_per_platform": limit_per_platform
+            "limit_per_platform": limit_per_platform,
+            "engine_used": "google_cse" if (google_api_key and google_cse_cx) else ("serper" if serper_api_key else "web_dorking"),
+            "only_with_phone": only_with_phone
         },
         "total_leads": len(all_leads),
         "platform_summary": summary_counts,
         "leads": all_leads,
         "timestamp": datetime.now().isoformat()
-    }), 200
-
-@scraper_bp.route('/api/scraper/google-maps', methods=['POST', 'GET'])
-def api_scrape_google_maps():
-    """Endpoint spesifik untuk Google Maps / Bisnis Lokal B2B."""
-    data = request.get_json(force=True, silent=True) or {}
-    keyword = (data.get('keyword') or request.args.get('keyword') or '').strip()
-    location = (data.get('location') or request.args.get('location') or '').strip()
-    limit = int(data.get('limit') or request.args.get('limit') or 15)
-    
-    if not keyword:
-        return jsonify({"success": False, "message": "Parameter 'keyword' diperlukan."}), 400
-        
-    leads = scrape_leads_by_platform(keyword, location=location, platform="google_maps", limit=limit)
-    return jsonify({
-        "success": True,
-        "keyword": keyword,
-        "location": location,
-        "total": len(leads),
-        "leads": leads
-    }), 200
-
-@scraper_bp.route('/api/scraper/social', methods=['POST', 'GET'])
-def api_scrape_social():
-    """Endpoint spesifik media sosial (Instagram, TikTok, Facebook, YouTube)."""
-    data = request.get_json(force=True, silent=True) or {}
-    keyword = (data.get('keyword') or request.args.get('keyword') or '').strip()
-    location = (data.get('location') or request.args.get('location') or '').strip()
-    platform = (data.get('platform') or request.args.get('platform') or 'instagram').strip().lower()
-    limit = int(data.get('limit') or request.args.get('limit') or 15)
-    
-    if not keyword:
-        return jsonify({"success": False, "message": "Parameter 'keyword' diperlukan."}), 400
-        
-    leads = scrape_leads_by_platform(keyword, location=location, platform=platform, limit=limit)
-    return jsonify({
-        "success": True,
-        "platform": platform,
-        "keyword": keyword,
-        "location": location,
-        "total": len(leads),
-        "leads": leads
     }), 200
