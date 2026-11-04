@@ -5,6 +5,7 @@ import html
 import base64
 import urllib.request
 import urllib.parse
+import urllib.error
 from datetime import datetime
 from flask import Blueprint, request, jsonify
 
@@ -116,9 +117,10 @@ def search_google_cse(query, api_key, cx, count=10):
     """
     OPSI A: Google Custom Search JSON API (Official & 100% Anti-Banned).
     Mendapatkan data bio profil, link, dan kontak WhatsApp langsung dari indeks Google.
+    Mengembalikan: (items, debug_status)
     """
     if not api_key or not cx:
-        return []
+        return [], "Missing API Key or CX"
     
     count = min(max(count, 1), 10)
     params = {
@@ -133,10 +135,12 @@ def search_google_cse(query, api_key, cx, count=10):
     req = urllib.request.Request(url, headers={'User-Agent': 'TrendoraLeadScraper/1.0'})
     
     items = []
+    debug_status = "OK"
     try:
         with urllib.request.urlopen(req, timeout=12) as resp:
             data = json.loads(resp.read().decode('utf-8'))
             raw_items = data.get('items', [])
+            debug_status = f"Google CSE OK: found {len(raw_items)} items for query: {query}"
             for it in raw_items:
                 title = it.get('title', '')
                 link = it.get('link', '')
@@ -154,10 +158,20 @@ def search_google_cse(query, api_key, cx, count=10):
                     "snippet": full_snippet,
                     "engine": "google_cse"
                 })
+    except urllib.error.HTTPError as e:
+        err_text = e.read().decode('utf-8', errors='ignore')
+        try:
+            err_json = json.loads(err_text)
+            err_msg = err_json.get('error', {}).get('message', err_text[:120])
+        except Exception:
+            err_msg = err_text[:120]
+        debug_status = f"Google CSE HTTP Error {e.code}: {err_msg}"
+        print(f"[Google CSE Error]: {debug_status}")
     except Exception as e:
-        print(f"[Google CSE Error]: {e}")
+        debug_status = f"Google CSE Exception: {str(e)}"
+        print(f"[Google CSE Error]: {debug_status}")
         
-    return items
+    return items, debug_status
 
 def search_serper(query, api_key, count=10):
     """Pencarian Google via Serper.dev API."""
@@ -302,26 +316,46 @@ def scrape_leads_by_platform(keyword, location="", platform="instagram", limit=1
     """
     Men-scrape leads khusus untuk satu platform tertentu.
     Mendukung Google CSE (Opsi A), Serper, dan multi-fallback.
+    Mengembalikan: (leads, debug_info)
     """
     loc_part = f"{location}" if location else ''
+    is_google_cse = bool(google_api_key and google_cse_cx)
     
-    # 1. Format Query Pencarian Berdasarkan Platform
-    if platform == 'instagram':
-        # Pola pencarian Instagram yang menghasilkan profil & kontak WA
-        query = f'site:instagram.com {keyword} {loc_part} (wa OR "08" OR whatsapp)'
-    elif platform == 'tiktok':
-        query = f'site:tiktok.com/@ {keyword} {loc_part} (wa OR "08" OR whatsapp)'
-    elif platform == 'facebook':
-        query = f'site:facebook.com {keyword} {loc_part} (wa OR "08" OR whatsapp OR hubungi)'
-    elif platform == 'youtube':
-        query = f'site:youtube.com/@ {keyword} {loc_part} (wa OR "08" OR whatsapp OR "@gmail.com")'
-    elif platform == 'google_maps':
-        query = f'site:google.com/maps {keyword} {loc_part} ("08" OR "+62")'
+    # 1. Format Query Pencarian:
+    # Catatan: Jika menggunakan Google CSE, Google CSE sudah membatasi ke domain yang ada di kontrol panel.
+    # Namun jika Google CSE disetel ke situs tertentu, query jangan terlalu rumit.
+    if is_google_cse:
+        # Query simpel yang sangat efektif di Google CSE
+        if platform == 'instagram':
+            query = f'{keyword} {loc_part} wa OR "08" OR whatsapp'
+        elif platform == 'tiktok':
+            query = f'{keyword} {loc_part} wa OR "08" OR whatsapp'
+        elif platform == 'facebook':
+            query = f'{keyword} {loc_part} wa OR "08" OR whatsapp'
+        elif platform == 'youtube':
+            query = f'{keyword} {loc_part} wa OR "08" OR whatsapp'
+        elif platform == 'google_maps':
+            query = f'{keyword} {loc_part} "08" OR "+62"'
+        else:
+            query = f'{keyword} {loc_part} wa'
     else:
-        query = f'{keyword} {loc_part} (wa OR "08" OR whatsapp)'
+        # Dorking web search standar
+        if platform == 'instagram':
+            query = f'site:instagram.com {keyword} {loc_part} (wa OR "08" OR whatsapp)'
+        elif platform == 'tiktok':
+            query = f'site:tiktok.com/@ {keyword} {loc_part} (wa OR "08" OR whatsapp)'
+        elif platform == 'facebook':
+            query = f'site:facebook.com {keyword} {loc_part} (wa OR "08" OR whatsapp)'
+        elif platform == 'youtube':
+            query = f'site:youtube.com/@ {keyword} {loc_part} (wa OR "08" OR whatsapp)'
+        elif platform == 'google_maps':
+            query = f'site:google.com/maps {keyword} {loc_part} ("08" OR "+62")'
+        else:
+            query = f'{keyword} {loc_part} (wa OR "08" OR whatsapp)'
         
     leads = []
     seen_identifiers = set()
+    debug_info = ""
     
     # Khusus Google Maps: Ambil juga dari OpenStreetMap Nominatim
     if platform == 'google_maps':
@@ -335,16 +369,18 @@ def scrape_leads_by_platform(keyword, location="", platform="instagram", limit=1
     raw_results = []
     
     # Prioritas 1: Google Custom Search Engine (Opsi A) jika dikonfigurasi
-    if google_api_key and google_cse_cx:
-        raw_results = search_google_cse(query, google_api_key, google_cse_cx, count=limit)
+    if is_google_cse:
+        raw_results, debug_info = search_google_cse(query, google_api_key, google_cse_cx, count=limit)
         
     # Prioritas 2: Serper.dev jika dikonfigurasi
     if not raw_results and serper_api_key:
         raw_results = search_serper(query, serper_api_key, count=limit)
+        debug_info = f"Serper results: {len(raw_results)}"
         
     # Prioritas 3: Fallback ke Web Search Engine
-    if not raw_results:
+    if not raw_results and not is_google_cse:
         raw_results = execute_web_search(query, count=limit * 2)
+        debug_info = f"Web dorking fallback: {len(raw_results)}"
         
     for item in raw_results:
         title = item.get('title', '')
@@ -397,7 +433,7 @@ def scrape_leads_by_platform(keyword, location="", platform="instagram", limit=1
         if len(leads) >= limit:
             break
             
-    return leads
+    return leads, debug_info
 
 # =========================================================================
 # API ENDPOINT FOR N8N INTEGRATION
@@ -464,9 +500,10 @@ def api_scrape_leads():
     all_leads = []
     seen_keys = set()
     summary_counts = {}
+    debug_per_platform = {}
     
     for plat in platforms:
-        plat_leads = scrape_leads_by_platform(
+        plat_leads, p_debug = scrape_leads_by_platform(
             keyword,
             location=location,
             platform=plat,
@@ -477,6 +514,7 @@ def api_scrape_leads():
             only_with_phone=only_with_phone
         )
         summary_counts[plat] = len(plat_leads)
+        debug_per_platform[plat] = p_debug
         for lead in plat_leads:
             dedup_key = lead.get('primary_phone') or lead.get('url')
             if dedup_key and dedup_key not in seen_keys:
@@ -495,6 +533,7 @@ def api_scrape_leads():
         },
         "total_leads": len(all_leads),
         "platform_summary": summary_counts,
+        "debug_info": debug_per_platform,
         "leads": all_leads,
         "timestamp": datetime.now().isoformat()
     }), 200
