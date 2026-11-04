@@ -9,12 +9,89 @@
 
   <!-- NAVBAR -->
   <nav class="navbar">
-    <!-- LOGO BRAND -->
-    <div class="logo" style="cursor: pointer; display: flex; align-items: center; gap: 10px;" onclick="showLandingPage()">
-      <img src="{{ url_for('static', filename='logo-trendora.png') }}" alt="TRENDORA Logo" style="height: 38px; width: auto; object-fit: contain;" onerror="this.src='logo-trendora.png'">
-      <div style="display: flex; flex-direction: column; line-height: 1.15;">
-        <span style="font-size: 16px; font-weight: 900; letter-spacing: 0.5px; background: linear-gradient(135deg, #fff 30%, #ec4899 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">TRENDORA</span>
-        <span style="font-size: 10px; font-weight: 700; color: #94a3b8; letter-spacing: 1.5px;">AUTOMATION</span>
+    <!-- LOGO BRAND & CONSOLE SWITCHER -->
+    <div style="display: flex; align-items: center; gap: 12px;">
+      <div class="logo" style="cursor: pointer; display: flex; align-items: center; gap: 10px;" onclick="showLandingPage()">
+        <img src="{{ url_for('static', filename='logo-trendora.png') }}" alt="TRENDORA Logo" style="height: 38px; width: auto; object-fit: contain;" onerror="this.src='logo-trendora.png'">
+        <div style="display: flex; flex-direction: column; line-height: 1.15;">
+          <span style="font-size: 16px; font-weight: 900; letter-spacing: 0.5px; background: linear-gradient(135deg, #fff 30%, #ec4899 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">TRENDORA</span>
+          <span style="font-size: 10px; font-weight: 700; color: #94a3b8; letter-spacing: 1.5px;">AUTOMATION</span>
+        </div>
+      </div>
+
+      <!-- HETZNER-STYLE CONSOLE SWITCHER DROPDOWN -->
+      <div class="console-switcher-wrap" id="mainConsoleSwitcherContainer" style="position: relative;">
+        <button type="button" onclick="toggleMainConsoleMenu(event)" class="btn-console-switcher" id="btnMainConsole" style="display: inline-flex; align-items: center; gap: 7px; padding: 5px 10px; background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 9px; color: #f8fafc; font-size: 11.5px; font-weight: 700; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.background='rgba(255, 255, 255, 0.1)'" onmouseout="this.style.background='rgba(255, 255, 255, 0.06)'" title="Ganti Console Layanan Trendora Ecosystem">
+          <span style="display: flex; align-items: center; gap: 6px;">
+            <span style="width: 7px; height: 7px; border-radius: 50%; background: #ec4899; box-shadow: 0 0 6px #ec4899;"></span>
+            <span class="console-name-desktop" style="font-size: 11px; font-weight: 700;">Trendora Social</span>
+            <span style="padding: 1px 5px; background: rgba(236, 72, 153, 0.2); border: 1px solid rgba(236, 72, 153, 0.4); border-radius: 4px; font-size: 8.5px; font-weight: 800; color: #f472b6;">Auto-Post</span>
+          </span>
+          <svg id="mainConsoleChevron" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="transition: transform 0.2s; color: #94a3b8;"><polyline points="6 9 12 15 18 9"></polyline></svg>
+        </button>
+
+        <!-- DROPDOWN MENU CONSOLE ECOSYSTEM -->
+        <div id="mainConsoleSwitcherMenu" style="display: none; position: absolute; left: 0; top: calc(100% + 8px); width: 310px; background: #0f172a; border: 1px solid rgba(255, 255, 255, 0.14); border-radius: 16px; box-shadow: 0 20px 40px -5px rgba(0, 0, 0, 0.75), 0 0 0 1px rgba(255, 255, 255, 0.05); padding: 8px 0; z-index: 9999; backdrop-filter: blur(20px);">
+          <div style="padding: 8px 16px; border-bottom: 1px solid rgba(255, 255, 255, 0.08); display: flex; align-items: center; justify-content: space-between;">
+            <span style="font-size: 10px; font-weight: 800; color: #94a3b8; letter-spacing: 1px; text-transform: uppercase;">PILIH CONSOLE LAYANAN</span>
+            <span style="font-size: 9px; color: #64748b; font-weight: 600;">Ecosystem</span>
+          </div>
+
+          <!-- Option 1: Social Media Auto-Publish (Aktif Saat Ini) -->
+          <a href="/" style="display: flex; align-items: flex-start; gap: 12px; padding: 12px 16px; background: rgba(236, 72, 153, 0.08); border-left: 4px solid #ec4899; text-decoration: none; transition: background 0.2s;">
+            <div style="width: 32px; height: 32px; border-radius: 9px; background: rgba(236, 72, 153, 0.2); color: #ec4899; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 15px;">
+              📱
+            </div>
+            <div style="flex: 1; min-width: 0;">
+              <div style="font-size: 12px; font-weight: 800; color: #f8fafc; display: flex; align-items: center; gap: 6px;">
+                Trendora Social Media
+                <span style="padding: 1px 5px; border-radius: 4px; background: rgba(236, 72, 153, 0.25); color: #f472b6; font-size: 9px; font-weight: 700;">Aktif</span>
+              </div>
+              <div style="font-size: 11px; color: #94a3b8; margin-top: 2px; line-height: 1.3;">Auto-Publish ke 7 Sosmed via n8n &amp; REST API</div>
+            </div>
+          </a>
+
+          <!-- Option 2: Trendora WA Web (Gateway Baileys) -->
+          <a href="https://whatsappapi.trendoraautomation.my.id/" target="_blank" rel="noopener noreferrer" style="display: flex; align-items: flex-start; gap: 12px; padding: 12px 16px; border-left: 4px solid transparent; text-decoration: none; transition: all 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.04)'; this.style.borderLeftColor='#38bdf8'" onmouseout="this.style.background='transparent'; this.style.borderLeftColor='transparent'">
+            <div style="width: 32px; height: 32px; border-radius: 9px; background: rgba(56, 189, 248, 0.15); color: #38bdf8; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 15px;">
+              💬
+            </div>
+            <div style="flex: 1; min-width: 0;">
+              <div style="font-size: 12px; font-weight: 800; color: #f8fafc; display: flex; align-items: center; gap: 6px;">
+                Trendora WA Web
+                <span style="padding: 1px 5px; border-radius: 4px; background: rgba(56, 189, 248, 0.2); color: #38bdf8; font-size: 9px; font-weight: 700;">Multi-Slot</span>
+              </div>
+              <div style="font-size: 11px; color: #94a3b8; margin-top: 2px; line-height: 1.3;">Gateway WA Web Baileys, Auto-Responder &amp; Blast Massal</div>
+            </div>
+          </a>
+
+          <!-- Option 3: Trendora Meta Official Cloud API -->
+          <a href="https://whatsappapi.trendoraautomation.my.id/meta" target="_blank" rel="noopener noreferrer" style="display: flex; align-items: flex-start; gap: 12px; padding: 12px 16px; border-left: 4px solid transparent; text-decoration: none; transition: all 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.04)'; this.style.borderLeftColor='#25D366'" onmouseout="this.style.background='transparent'; this.style.borderLeftColor='transparent'">
+            <div style="width: 32px; height: 32px; border-radius: 9px; background: rgba(37, 211, 102, 0.15); color: #25D366; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 15px;">
+              ⚡
+            </div>
+            <div style="flex: 1; min-width: 0;">
+              <div style="font-size: 12px; font-weight: 800; color: #f8fafc; display: flex; align-items: center; gap: 6px;">
+                Meta Cloud Console
+                <span style="padding: 1px 5px; border-radius: 4px; background: rgba(37, 211, 102, 0.2); color: #25D366; font-size: 9px; font-weight: 700;">Official API</span>
+              </div>
+              <div style="font-size: 11px; color: #94a3b8; margin-top: 2px; line-height: 1.3;">WhatsApp Business API Resmi Meta, Anti-Banned &amp; Verified</div>
+            </div>
+          </a>
+          <!-- Option 4: Trendora Cloud (Cloud Storage & Workspace) -->
+          <a href="https://cloud.trendoraautomation.my.id" target="_blank" rel="noopener noreferrer" style="display: flex; align-items: flex-start; gap: 12px; padding: 12px 16px; border-left: 4px solid transparent; text-decoration: none; transition: all 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.04)'; this.style.borderLeftColor='#6366f1'" onmouseout="this.style.background='transparent'; this.style.borderLeftColor='transparent'">
+            <div style="width: 32px; height: 32px; border-radius: 9px; background: rgba(99, 102, 241, 0.15); color: #818cf8; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 15px;">
+              ☁️
+            </div>
+            <div style="flex: 1; min-width: 0;">
+              <div style="font-size: 12px; font-weight: 800; color: #f8fafc; display: flex; align-items: center; gap: 6px;">
+                Trendora Cloud
+                <span style="padding: 1px 5px; border-radius: 4px; background: rgba(99, 102, 241, 0.2); color: #818cf8; font-size: 9px; font-weight: 700;">Storage</span>
+              </div>
+              <div style="font-size: 11px; color: #94a3b8; margin-top: 2px; line-height: 1.3;">Cloud Storage, File Sharing &amp; Workspace Ekosistem</div>
+            </div>
+          </a>
+        </div>
       </div>
     </div>
     
@@ -72,6 +149,7 @@
       <li><a href="#pricing" onclick="closeMobileNav(); showLandingPage()">💳 Harga & Paket</a></li>
       <li><a href="#faq" onclick="closeMobileNav(); showLandingPage()">❓ Tanya Jawab (FAQ)</a></li>
       <li><a href="#contact" onclick="closeMobileNav(); showLandingPage()">📩 Hubungi Kami</a></li>
+      <li><a href="https://whatsappapi.trendoraautomation.my.id/" target="_blank" rel="noopener noreferrer" style="color: #25D366; font-weight: 700;">💬 WhatsApp Gateway &amp; Meta Cloud 🚀</a></li>
     </ul>
     <div style="padding: 16px 20px; border-top: 1px solid rgba(255,255,255,0.08); display: flex; flex-direction: column; gap: 10px;">
       <button class="btn-pink" style="width: 100%; padding: 12px; font-size: 14px; font-weight: 700; border-radius: 10px;" onclick="closeMobileNav(); scrollToPricing()">Mulai Free Trial 7 Hari 🚀</button>
@@ -79,3 +157,28 @@
     </div>
   </div>
 </header>
+
+<script>
+  function toggleMainConsoleMenu(e) {
+    if (e) e.stopPropagation();
+    const menu = document.getElementById('mainConsoleSwitcherMenu');
+    const chevron = document.getElementById('mainConsoleChevron');
+    if (menu) {
+      const isHidden = menu.style.display === 'none' || !menu.style.display;
+      menu.style.display = isHidden ? 'block' : 'none';
+      if (chevron) {
+        chevron.style.transform = isHidden ? 'rotate(180deg)' : 'rotate(0deg)';
+      }
+    }
+  }
+
+  document.addEventListener('click', function(e) {
+    const container = document.getElementById('mainConsoleSwitcherContainer');
+    const menu = document.getElementById('mainConsoleSwitcherMenu');
+    if (container && !container.contains(e.target) && menu && menu.style.display === 'block') {
+      menu.style.display = 'none';
+      const chevron = document.getElementById('mainConsoleChevron');
+      if (chevron) chevron.style.transform = 'rotate(0deg)';
+    }
+  });
+</script>

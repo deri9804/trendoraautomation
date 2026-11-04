@@ -9,6 +9,7 @@ from routes.auth import auth_bp
 from routes.webhook_n8n import webhook_bp
 from routes.oauth_social import oauth_bp
 from routes.instagram_auto_dm import ig_auto_dm_bp
+from routes.scraper_leads import scraper_bp
 
 # Inisialisasi Aplikasi Flask
 app = Flask(__name__)
@@ -29,6 +30,7 @@ app.register_blueprint(auth_bp)
 app.register_blueprint(webhook_bp)
 app.register_blueprint(oauth_bp)
 app.register_blueprint(ig_auto_dm_bp)
+app.register_blueprint(scraper_bp)
 
 # Global Security Headers & CORS Handler
 @app.after_request
