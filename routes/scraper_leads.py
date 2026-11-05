@@ -372,15 +372,19 @@ def scrape_leads_by_platform(keyword, location="", platform="instagram", limit=1
     if is_google_cse:
         raw_results, debug_info = search_google_cse(query, google_api_key, google_cse_cx, count=limit)
         
-    # Prioritas 2: Serper.dev jika dikonfigurasi
+    # Prioritas 2: Serper.dev jika dikonfigurasi (atau fallback jika CSE gagal)
     if not raw_results and serper_api_key:
-        raw_results = search_serper(query, serper_api_key, count=limit)
-        debug_info = f"Serper results: {len(raw_results)}"
+        serper_results = search_serper(query, serper_api_key, count=limit)
+        if serper_results:
+            raw_results = serper_results
+            debug_info = f"Serper results: {len(raw_results)}"
         
-    # Prioritas 3: Fallback ke Web Search Engine
-    if not raw_results and not is_google_cse:
-        raw_results = execute_web_search(query, count=limit * 2)
-        debug_info = f"Web dorking fallback: {len(raw_results)}"
+    # Prioritas 3: Fallback ke Web Search Engine jika engine utama belum ada hasil
+    if not raw_results:
+        # Gunakan dork query spesifik platform untuk web search fallback
+        dork_q = f'site:{platform}.com {keyword} {loc_part} (wa OR "08" OR whatsapp)'
+        raw_results = execute_web_search(dork_q, count=limit * 2)
+        debug_info = f"{debug_info} | Web fallback: {len(raw_results)} items" if debug_info else f"Web dorking: {len(raw_results)} items"
         
     for item in raw_results:
         title = item.get('title', '')
