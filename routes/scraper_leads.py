@@ -198,14 +198,18 @@ def search_google_cse(query, api_key, cx, count=10):
     return items, debug_status
 
 def search_serper(query, api_key, count=10):
-    """Pencarian Google via Serper.dev API."""
+    """Pencarian Google via Serper.dev API dengan buffer hasil yang lebih luas."""
     if not api_key:
         return []
+    
+    # Ambil 2x hingga 3x lipat hasil dari Serper (maks 30) agar setelah disaring nomor WhatsApp,
+    # kuota lead yang dibutuhkan tetap terpenuhi secara maksimal.
+    fetch_num = min(max(count * 2, 10), 30)
     
     url = "https://google.serper.dev/search"
     payload = json.dumps({
         "q": query,
-        "num": count,
+        "num": fetch_num,
         "gl": "id",
         "hl": "id"
     }).encode('utf-8')
@@ -345,22 +349,23 @@ def scrape_leads_by_platform(keyword, location="", platform="instagram", limit=1
     loc_part = f"{location}" if location else ''
     is_google_cse = bool(google_api_key and google_cse_cx)
     
-    # 1. Format Query Pencarian:
-    # Dork query spesifik platform untuk Google (Serper) & Web Search
+    # 1. Format Query Pencarian Spesifik WhatsApp:
+    # Hindari kata '08' polos karena sering mencocokkan durasi video (1:08) atau tanggal (08 Nov)
+    wa_dork = '("wa.me" OR "whatsapp" OR "wa 08" OR "wa: 08" OR "order wa" OR "kontak wa" OR "hubungi")'
     if platform == 'instagram':
-        dork_query = f'site:instagram.com {keyword} {loc_part} (wa OR "08" OR whatsapp)'
+        dork_query = f'site:instagram.com {keyword} {loc_part} {wa_dork}'
     elif platform == 'tiktok':
-        dork_query = f'site:tiktok.com/@ {keyword} {loc_part} (wa OR "08" OR whatsapp)'
+        dork_query = f'site:tiktok.com/@ {keyword} {loc_part} {wa_dork}'
     elif platform == 'facebook':
-        dork_query = f'site:facebook.com {keyword} {loc_part} (wa OR "08" OR whatsapp)'
+        dork_query = f'site:facebook.com {keyword} {loc_part} {wa_dork}'
     elif platform == 'youtube':
-        dork_query = f'site:youtube.com/@ {keyword} {loc_part} (wa OR "08" OR whatsapp)'
+        dork_query = f'site:youtube.com/@ {keyword} {loc_part} {wa_dork}'
     elif platform == 'google_maps':
         dork_query = f'site:google.com/maps {keyword} {loc_part} ("08" OR "+62")'
     else:
-        dork_query = f'{keyword} {loc_part} (wa OR "08" OR whatsapp)'
+        dork_query = f'{keyword} {loc_part} {wa_dork}'
         
-    cse_query = f'{keyword} {loc_part} wa OR "08" OR whatsapp'
+    cse_query = f'{keyword} {loc_part} {wa_dork}'
         
     leads = []
     seen_identifiers = set()
@@ -501,12 +506,12 @@ def api_scrape_leads():
         os.environ.get('GOOGLE_CSE_CX') or ''
     ).strip()
     
-    # Parameter apakah hanya mengembalikan lead yang punya nomor WhatsApp
+    # Parameter apakah hanya mengembalikan lead yang punya nomor WhatsApp (Default: True untuk SDR outreach)
     raw_only_phone = data.get('only_with_phone') or request.args.get('only_with_phone')
     if raw_only_phone is not None:
         only_with_phone = str(raw_only_phone).lower() in ['true', '1', 'yes']
     else:
-        only_with_phone = False
+        only_with_phone = True
     
     all_leads = []
     seen_keys = set()
