@@ -9,13 +9,25 @@ import urllib.error
 from datetime import datetime
 from flask import Blueprint, request, jsonify
 
-try:
-    from dotenv import load_dotenv
-    # Pastikan .env dimuat dari direktori root proyek
-    _basedir = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
-    load_dotenv(os.path.join(_basedir, '.env'), override=True)
-except Exception:
-    pass
+# Fungsi bawaan Python murni untuk memuat file .env (tanpa dependensi eksternal / bebas error Pylance)
+def _load_env_fallback():
+    try:
+        _basedir = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
+        _env_path = os.path.join(_basedir, '.env')
+        if os.path.exists(_env_path):
+            with open(_env_path, 'r', encoding='utf-8', errors='ignore') as f:
+                for line in f:
+                    line = line.strip()
+                    if line and not line.startswith('#') and '=' in line:
+                        k, v = line.split('=', 1)
+                        k = k.strip()
+                        v = v.strip().strip("'\"")
+                        if k:
+                            os.environ[k] = v
+    except Exception:
+        pass
+
+_load_env_fallback()
 
 scraper_bp = Blueprint('scraper_leads', __name__)
 
