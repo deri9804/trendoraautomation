@@ -322,36 +322,21 @@ def scrape_leads_by_platform(keyword, location="", platform="instagram", limit=1
     is_google_cse = bool(google_api_key and google_cse_cx)
     
     # 1. Format Query Pencarian:
-    # Catatan: Jika menggunakan Google CSE, Google CSE sudah membatasi ke domain yang ada di kontrol panel.
-    # Namun jika Google CSE disetel ke situs tertentu, query jangan terlalu rumit.
-    if is_google_cse:
-        # Query simpel yang sangat efektif di Google CSE
-        if platform == 'instagram':
-            query = f'{keyword} {loc_part} wa OR "08" OR whatsapp'
-        elif platform == 'tiktok':
-            query = f'{keyword} {loc_part} wa OR "08" OR whatsapp'
-        elif platform == 'facebook':
-            query = f'{keyword} {loc_part} wa OR "08" OR whatsapp'
-        elif platform == 'youtube':
-            query = f'{keyword} {loc_part} wa OR "08" OR whatsapp'
-        elif platform == 'google_maps':
-            query = f'{keyword} {loc_part} "08" OR "+62"'
-        else:
-            query = f'{keyword} {loc_part} wa'
+    # Dork query spesifik platform untuk Google (Serper) & Web Search
+    if platform == 'instagram':
+        dork_query = f'site:instagram.com {keyword} {loc_part} (wa OR "08" OR whatsapp)'
+    elif platform == 'tiktok':
+        dork_query = f'site:tiktok.com/@ {keyword} {loc_part} (wa OR "08" OR whatsapp)'
+    elif platform == 'facebook':
+        dork_query = f'site:facebook.com {keyword} {loc_part} (wa OR "08" OR whatsapp)'
+    elif platform == 'youtube':
+        dork_query = f'site:youtube.com/@ {keyword} {loc_part} (wa OR "08" OR whatsapp)'
+    elif platform == 'google_maps':
+        dork_query = f'site:google.com/maps {keyword} {loc_part} ("08" OR "+62")'
     else:
-        # Dorking web search standar
-        if platform == 'instagram':
-            query = f'site:instagram.com {keyword} {loc_part} (wa OR "08" OR whatsapp)'
-        elif platform == 'tiktok':
-            query = f'site:tiktok.com/@ {keyword} {loc_part} (wa OR "08" OR whatsapp)'
-        elif platform == 'facebook':
-            query = f'site:facebook.com {keyword} {loc_part} (wa OR "08" OR whatsapp)'
-        elif platform == 'youtube':
-            query = f'site:youtube.com/@ {keyword} {loc_part} (wa OR "08" OR whatsapp)'
-        elif platform == 'google_maps':
-            query = f'site:google.com/maps {keyword} {loc_part} ("08" OR "+62")'
-        else:
-            query = f'{keyword} {loc_part} (wa OR "08" OR whatsapp)'
+        dork_query = f'{keyword} {loc_part} (wa OR "08" OR whatsapp)'
+        
+    cse_query = f'{keyword} {loc_part} wa OR "08" OR whatsapp'
         
     leads = []
     seen_identifiers = set()
@@ -368,22 +353,21 @@ def scrape_leads_by_platform(keyword, location="", platform="instagram", limit=1
     # 2. Eksekusi Pencarian Menggunakan Engine Terbaik
     raw_results = []
     
-    # Prioritas 1: Google Custom Search Engine (Opsi A) jika dikonfigurasi
-    if is_google_cse:
-        raw_results, debug_info = search_google_cse(query, google_api_key, google_cse_cx, count=limit)
-        
-    # Prioritas 2: Serper.dev jika dikonfigurasi (atau fallback jika CSE gagal)
-    if not raw_results and serper_api_key:
-        serper_results = search_serper(query, serper_api_key, count=limit)
+    # Prioritas 1: Serper.dev jika dikonfigurasi (Google Search Live 100% Anti-Banned & Tanpa Batas CSE)
+    if serper_api_key:
+        serper_results = search_serper(dork_query, serper_api_key, count=limit)
         if serper_results:
             raw_results = serper_results
-            debug_info = f"Serper results: {len(raw_results)}"
+            debug_info = f"Serper Google Search OK: found {len(raw_results)} items"
+            
+    # Prioritas 2: Google Custom Search Engine (Opsi A) jika Serper belum ada
+    if not raw_results and is_google_cse:
+        raw_results, cse_debug = search_google_cse(cse_query, google_api_key, google_cse_cx, count=limit)
+        debug_info = cse_debug
         
-    # Prioritas 3: Fallback ke Web Search Engine jika engine utama belum ada hasil
+    # Prioritas 3: Fallback ke Web Search Engine jika kedua API di atas belum mengembalikan hasil
     if not raw_results:
-        # Gunakan dork query spesifik platform untuk web search fallback
-        dork_q = f'site:{platform}.com {keyword} {loc_part} (wa OR "08" OR whatsapp)'
-        raw_results = execute_web_search(dork_q, count=limit * 2)
+        raw_results = execute_web_search(dork_query, count=limit * 2)
         debug_info = f"{debug_info} | Web fallback: {len(raw_results)} items" if debug_info else f"Web dorking: {len(raw_results)} items"
         
     for item in raw_results:
