@@ -61,12 +61,16 @@ def extract_phones_from_text(text):
     """Mengekstrak dan menormalkan semua nomor HP/WhatsApp Indonesia dari teks."""
     if not text:
         return []
-    # Pattern mencakup: 08xx-xxxx-xxxx, +628xxxx, 628xxxx, wa.me/628xxx
-    pattern = re.compile(r'(?:(?:\+?62)|0)8[0-9]{1,2}[-.\s]?[0-9]{3,4}[-.\s]?[0-9]{3,5}')
-    matches = pattern.findall(text)
+        
+    # Normalisasi karakter kurung atau slash agar tidak menghalangi deteksi nomor
+    norm_text = text.replace('(', ' ').replace(')', ' ').replace('/', ' ')
     
-    # Pattern tambahan jika ada wa.me/628xxx atau wa.me/08xxx
-    wa_matches = re.findall(r'wa\.me/(?:(?:\+?62)|0)?(8[0-9]{8,12})', text, re.IGNORECASE)
+    # Pattern fleksibel: +62 8xx, 08xx, 628xx dengan spasi/strip/titik opsional
+    pattern = re.compile(r'(?:(?:\+?62[-.\s]?)|0)8[0-9]{1,2}[-.\s]?[0-9]{3,4}[-.\s]?[0-9]{3,5}')
+    matches = pattern.findall(norm_text)
+    
+    # Pattern tambahan jika ada link WhatsApp: wa.me, wa.link, atau api.whatsapp.com
+    wa_matches = re.findall(r'(?:wa\.me|wa\.link|phone=)(?:%2B|\+)?(?:62|0)?(8[0-9]{8,12})', text, re.IGNORECASE)
     for w in wa_matches:
         matches.append('62' + w)
         
