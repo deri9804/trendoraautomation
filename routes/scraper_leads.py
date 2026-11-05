@@ -9,6 +9,14 @@ import urllib.error
 from datetime import datetime
 from flask import Blueprint, request, jsonify
 
+try:
+    from dotenv import load_dotenv
+    # Pastikan .env dimuat dari direktori root proyek
+    _basedir = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
+    load_dotenv(os.path.join(_basedir, '.env'), override=True)
+except Exception:
+    pass
+
 scraper_bp = Blueprint('scraper_leads', __name__)
 
 # =========================================================================
@@ -457,12 +465,17 @@ def api_scrape_leads():
         limit_per_platform = 10
     limit_per_platform = max(1, min(limit_per_platform, 30))
     
-    # Ambil konfigurasi Google CSE (Opsi A) dari payload, .env, atau config.py
+    # Ambil konfigurasi API Search: Prioritas Serper.dev, baru Google CSE
+    serper_api_key = (
+        data.get('serper_api_key') or
+        request.args.get('serper_api_key') or
+        os.environ.get('SERPER_API_KEY') or ''
+    ).strip()
+    
     google_api_key = (
         data.get('google_api_key') or
         request.args.get('google_api_key') or
-        os.environ.get('GOOGLE_SEARCH_API_KEY') or
-        os.environ.get('GEMINI_API_KEY') or ''
+        os.environ.get('GOOGLE_SEARCH_API_KEY') or ''
     ).strip()
     
     google_cse_cx = (
@@ -470,12 +483,6 @@ def api_scrape_leads():
         request.args.get('google_cse_cx') or
         os.environ.get('GOOGLE_SEARCH_ENGINE_ID') or
         os.environ.get('GOOGLE_CSE_CX') or ''
-    ).strip()
-    
-    serper_api_key = (
-        data.get('serper_api_key') or
-        request.args.get('serper_api_key') or
-        os.environ.get('SERPER_API_KEY') or ''
     ).strip()
     
     # Parameter apakah hanya mengembalikan lead yang punya nomor WhatsApp
@@ -516,7 +523,7 @@ def api_scrape_leads():
             "location": location,
             "platforms": platforms,
             "limit_per_platform": limit_per_platform,
-            "engine_used": "google_cse" if (google_api_key and google_cse_cx) else ("serper" if serper_api_key else "web_dorking"),
+            "engine_used": "serper" if serper_api_key else ("google_cse" if (google_api_key and google_cse_cx) else "web_dorking"),
             "only_with_phone": only_with_phone
         },
         "total_leads": len(all_leads),
