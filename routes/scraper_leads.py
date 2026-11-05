@@ -131,6 +131,13 @@ def extract_social_handle(url, platform):
         m = re.search(r'facebook\.com/([a-zA-Z0-9_.-]+)', url)
         if m and m.group(1) not in ['sharer', 'pages', 'groups', 'events', 'watch', 'login', 'recover']:
             return m.group(1)
+    elif platform == 'linkedin':
+        m = re.search(r'linkedin\.com/in/([a-zA-Z0-9_.-]+)', url)
+        if m:
+            return m.group(1)
+        m_co = re.search(r'linkedin\.com/company/([a-zA-Z0-9_.-]+)', url)
+        if m_co:
+            return m_co.group(1)
     return ""
 
 # =========================================================================
@@ -360,6 +367,8 @@ def scrape_leads_by_platform(keyword, location="", platform="instagram", limit=1
         dork_query = f'site:facebook.com {keyword} {loc_part} {wa_dork}'
     elif platform == 'youtube':
         dork_query = f'site:youtube.com/@ {keyword} {loc_part} {wa_dork}'
+    elif platform == 'linkedin':
+        dork_query = f'site:linkedin.com/in/ {keyword} {loc_part} ("wa.me" OR "whatsapp" OR "wa 08" OR "contact" OR "hubungi" OR "email")'
     elif platform == 'google_maps':
         dork_query = f'site:google.com/maps {keyword} {loc_part} ("08" OR "+62")'
     else:
@@ -414,6 +423,8 @@ def scrape_leads_by_platform(keyword, location="", platform="instagram", limit=1
             continue
         elif platform == 'youtube' and ('youtube.com' not in dest_url and 'youtu.be' not in dest_url):
             continue
+        elif platform == 'linkedin' and 'linkedin.com' not in dest_url:
+            continue
             
         phones = extract_phones_from_text(combined)
         emails = extract_emails_from_text(combined)
@@ -443,7 +454,7 @@ def scrape_leads_by_platform(keyword, location="", platform="instagram", limit=1
             "whatsapp_url": f"https://wa.me/{primary_phone}" if primary_phone else "",
             "emails": emails,
             "primary_email": emails[0] if emails else "",
-            "website": dest_url if platform not in ['instagram', 'tiktok', 'facebook', 'youtube'] else "",
+            "website": dest_url if platform not in ['instagram', 'tiktok', 'facebook', 'youtube', 'linkedin'] else "",
             "source": f"google_search_{platform}" if item.get('engine') == 'google_cse' else f"search_{platform}"
         })
         
@@ -478,7 +489,7 @@ def api_scrape_leads():
     elif isinstance(raw_platforms, list):
         platforms = [str(p).strip().lower() for p in raw_platforms]
     else:
-        platforms = ["google_maps", "instagram", "tiktok", "facebook", "youtube"]
+        platforms = ["google_maps", "instagram", "tiktok", "facebook", "youtube", "linkedin"]
         
     try:
         limit_per_platform = int(data.get('limit_per_platform') or request.args.get('limit_per_platform') or 10)
