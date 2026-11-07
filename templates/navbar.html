@@ -14,7 +14,7 @@
       <div class="logo" style="cursor: pointer; display: flex; align-items: center; gap: 10px;" onclick="showLandingPage()">
         <img src="{{ url_for('static', filename='logo-trendora.png') }}" alt="TRENDORA Logo" style="height: 38px; width: auto; object-fit: contain;" onerror="this.src='logo-trendora.png'">
         <div style="display: flex; flex-direction: column; line-height: 1.15;">
-          <span style="font-size: 16px; font-weight: 900; letter-spacing: 0.5px; background: linear-gradient(135deg, #fff 30%, #ec4899 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">TRENDORA</span>
+          <span class="brand-text-gradient" style="font-size: 16px; font-weight: 900; letter-spacing: 0.5px;">TRENDORA</span>
           <span style="font-size: 10px; font-weight: 700; color: #94a3b8; letter-spacing: 1.5px;">AUTOMATION</span>
         </div>
       </div>
@@ -97,13 +97,13 @@
     
     <!-- DESKTOP NAVIGATION LINKS -->
     <ul class="nav-links" id="navLinksLanding">
-      <li><a href="#hero" onclick="showLandingPage()">Beranda</a></li>
-      <li><a href="#features" onclick="showLandingPage()">Fitur</a></li>
-      <li><a href="#platforms" onclick="showLandingPage()">Platform</a></li>
+      <li><a href="#hero" onclick="showLandingPage()">Home</a></li>
+      <li><a href="#features" onclick="showLandingPage()">Features</a></li>
+      <li><a href="#platforms" onclick="showLandingPage()">Platforms</a></li>
       <li><a href="#n8n-docs" onclick="showLandingPage()">n8n Node</a></li>
-      <li><a href="#pricing" onclick="showLandingPage()">Harga</a></li>
+      <li><a href="#pricing" onclick="showLandingPage()">Pricing</a></li>
       <li><a href="#faq" onclick="showLandingPage()">FAQ</a></li>
-      <li><a href="#contact" onclick="showLandingPage()">Kontak</a></li>
+      <li><a href="#contact" onclick="showLandingPage()">Contact</a></li>
       <li><a id="navDashLink" style="display: none; color: #38bdf8; font-weight: 700; cursor: pointer;" onclick="showDashboardPage()">Dashboard 🚀</a></li>
     </ul>
 
@@ -114,20 +114,102 @@
     </ul>
 
     <!-- AUTH BUTTONS GROUP (Desktop) -->
-    <div class="nav-auth-wrapper" style="display: flex; align-items: center; gap: 12px;">
+    <div class="nav-auth-wrapper" style="display: flex; align-items: center; gap: 10px;">
+      <!-- LANGUAGE SWITCHER TOGGLE (EN / ID) -->
+      <button type="button" id="btnLangToggle" onclick="toggleLanguage()" class="btn-lang-toggle" style="display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px; background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.16); border-radius: 9px; color: #f8fafc; font-size: 11.5px; font-weight: 700; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.background='rgba(255, 255, 255, 0.15)'" onmouseout="this.style.background='rgba(255, 255, 255, 0.08)'" title="Switch Language / Ganti Bahasa (EN / ID)">
+        <span id="langFlagIcon" style="font-size: 13px;">🇺🇸</span>
+        <span id="langLabelText">EN (US)</span>
+      </button>
+
+      <!-- MINI FORM / BUTTON AKUN INSTAGRAM OUTREACH (DISAMPING PILIHAN BAHASA) -->
+      <div class="ig-outreach-container" id="igOutreachContainer" style="position: relative;">
+        <button type="button" id="btnIgOutreachToggle" onclick="toggleIgOutreachModal(event)" class="btn-ig-outreach" style="display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px; background: linear-gradient(135deg, rgba(236, 72, 153, 0.18), rgba(168, 85, 247, 0.18)); border: 1px solid rgba(236, 72, 153, 0.45); border-radius: 9px; color: #f8fafc; font-size: 11.5px; font-weight: 700; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.background='linear-gradient(135deg, rgba(236, 72, 153, 0.32), rgba(168, 85, 247, 0.32))'" onmouseout="this.style.background='linear-gradient(135deg, rgba(236, 72, 153, 0.18), rgba(168, 85, 247, 0.18))'" title="Kelola Multi-Akun Instagram Outreach / Auto DM">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#f472b6" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
+            <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
+            <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
+          </svg>
+          <span style="font-size: 11.5px;">Akun DM</span>
+          <span id="igOutreachBadge" style="padding: 1px 6px; background: #ec4899; border-radius: 10px; font-size: 9.5px; font-weight: 800; color: #fff; min-width: 14px; text-align: center;">0</span>
+          <svg id="igOutreachChevron" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="transition: transform 0.2s; color: #94a3b8;"><polyline points="6 9 12 15 18 9"></polyline></svg>
+        </button>
+
+        <!-- DROPDOWN MINI FORM & DAFTAR AKUN OUTREACH -->
+        <div id="igOutreachDropdown" style="display: none; position: absolute; right: 0; top: calc(100% + 8px); width: 340px; background: #0b1120; border: 1px solid rgba(236, 72, 153, 0.35); border-radius: 16px; box-shadow: 0 25px 50px -10px rgba(0, 0, 0, 0.9), 0 0 25px rgba(236, 72, 153, 0.15); padding: 14px; z-index: 10000; backdrop-filter: blur(25px); color: #f8fafc;">
+          
+          <!-- Header Popup -->
+          <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(255, 255, 255, 0.08); padding-bottom: 9px; margin-bottom: 11px;">
+            <div>
+              <div style="font-size: 12.5px; font-weight: 800; color: #f8fafc; display: flex; align-items: center; gap: 6px;">
+                <span>📸</span> Akun Instagram Outreach
+              </div>
+              <div style="font-size: 10px; color: #94a3b8;">Rotasi otomatis kirim DM via Apify</div>
+            </div>
+            <button type="button" onclick="closeIgOutreachModal()" style="background: none; border: none; color: #94a3b8; font-size: 16px; cursor: pointer; line-height: 1;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='#94a3b8'">&times;</button>
+          </div>
+
+          <!-- Section 1: Daftar Akun Terhubung -->
+          <div style="margin-bottom: 12px;">
+            <div style="font-size: 10.5px; font-weight: 700; color: #cbd5e1; margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center;">
+              <span>DAFTAR AKUN AKTIF</span>
+              <span id="igAccountActiveCount" style="color: #38bdf8; font-size: 10px;">0 Akun</span>
+            </div>
+            <div id="igOutreachAccountsList" style="max-height: 130px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; padding-right: 2px;">
+              <div style="padding: 10px; text-align: center; color: #64748b; font-size: 11px; background: rgba(255, 255, 255, 0.03); border-radius: 8px;">
+                Memuat daftar akun...
+              </div>
+            </div>
+          </div>
+
+          <!-- Section 2: Mini Form Tambah Akun -->
+          <div style="border-top: 1px solid rgba(255, 255, 255, 0.08); padding-top: 10px;">
+            <div style="font-size: 10.5px; font-weight: 700; color: #ec4899; margin-bottom: 8px;">
+              + TAMBAH AKUN INSTAGRAM BOT
+            </div>
+            
+            <form id="formAddIgOutreach" onsubmit="handleSaveIgOutreach(event)" style="display: flex; flex-direction: column; gap: 7px;">
+              <div>
+                <input type="text" id="igInputUsername" placeholder="Username IG (cth: bot_sales1)" required style="width: 100%; box-sizing: border-box; padding: 7px 10px; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 7px; color: #fff; font-size: 11.5px; outline: none;" onfocus="this.style.borderColor='#ec4899'" onblur="this.style.borderColor='rgba(255, 255, 255, 0.12)'">
+              </div>
+
+              <div>
+                <input type="password" id="igInputSessionId" placeholder="Cookie sessionid Instagram" required style="width: 100%; box-sizing: border-box; padding: 7px 10px; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 7px; color: #fff; font-size: 11.5px; outline: none;" onfocus="this.style.borderColor='#ec4899'" onblur="this.style.borderColor='rgba(255, 255, 255, 0.12)'">
+                <div style="font-size: 9.5px; color: #94a3b8; margin-top: 3px; line-height: 1.25;">
+                  💡 Ambil cookie <code style="color: #f472b6;">sessionid</code> dari browser saat login di instagram.com
+                </div>
+              </div>
+
+              <div style="display: flex; gap: 7px; align-items: center;">
+                <div style="flex: 1;">
+                  <label style="font-size: 9.5px; color: #94a3b8; display: block; margin-bottom: 2px;">Batas DM/Hari:</label>
+                  <input type="number" id="igInputDailyLimit" value="20" min="1" max="100" style="width: 100%; box-sizing: border-box; padding: 6px 9px; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 7px; color: #fff; font-size: 11.5px; outline: none;">
+                </div>
+                <div style="flex: 1.5; padding-top: 14px;">
+                  <button type="submit" id="btnSubmitIgOutreach" style="width: 100%; padding: 7px 10px; background: linear-gradient(135deg, #ec4899, #d946ef); border: none; border-radius: 7px; color: #fff; font-size: 11px; font-weight: 700; cursor: pointer; transition: opacity 0.2s;" onmouseover="this.style.opacity='0.9'" onmouseout="this.style.opacity='1'">
+                    + Simpan Akun
+                  </button>
+                </div>
+              </div>
+            </form>
+
+            <div id="igOutreachAlert" style="display: none; margin-top: 8px; padding: 6px 9px; border-radius: 6px; font-size: 10px; text-align: center;"></div>
+          </div>
+        </div>
+      </div>
+
       <!-- GUEST AUTH BUTTONS -->
       <div class="auth-buttons" id="navGuestGroup" style="display: flex; align-items: center; gap: 10px;">
-        <a class="btn-login-clean" style="cursor: pointer; color: #cbd5e1; font-size: 13px; font-weight: 600; text-decoration: none; padding: 8px 14px; border-radius: 8px; transition: color 0.2s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='#cbd5e1'" onclick="openLoginModal()">Log In</a>
-        <button class="btn-pink" style="padding: 8px 18px; font-size: 13px; font-weight: 700; border-radius: 10px;" onclick="scrollToPricing()">Daftar Gratis 🚀</button>
+        <a class="btn-login-clean" id="btnNavLogin" style="cursor: pointer; color: #cbd5e1; font-size: 13px; font-weight: 600; text-decoration: none; padding: 8px 14px; border-radius: 8px; transition: color 0.2s;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='#cbd5e1'" onclick="openLoginModal()">Log In</a>
+        <button class="btn-pink" id="btnNavSignUp" style="padding: 8px 18px; font-size: 13px; font-weight: 700; border-radius: 10px;" onclick="scrollToPricing()">Get Started Free 🚀</button>
       </div>
 
       <!-- LOGGED IN USER MENU -->
       <div class="auth-buttons" id="navUserGroup" style="display: none; align-items: center; gap: 10px;">
-        <div class="user-profile-badge" style="cursor: pointer;" onclick="showDashboardPage()" title="Buka Dashboard">
+        <div class="user-profile-badge" style="cursor: pointer;" onclick="showDashboardPage()" title="Open Dashboard">
           <span class="user-avatar">👤</span>
           <span id="navUserName">User</span>
         </div>
-        <button class="btn-secondary" style="padding: 6px 14px; font-size: 12px; border-radius: 8px;" onclick="handleLogout()">Keluar 🚪</button>
+        <button class="btn-secondary" id="btnNavLogout" style="padding: 6px 14px; font-size: 12px; border-radius: 8px;" onclick="handleLogout()">Log Out 🚪</button>
       </div>
 
       <!-- MOBILE HAMBURGER BUTTON -->
@@ -142,18 +224,18 @@
   <!-- MOBILE DRAWER MENU -->
   <div class="mobile-nav-drawer" id="mobileNavDrawer" style="display: none;">
     <ul class="mobile-nav-list">
-      <li><a href="#hero" onclick="closeMobileNav(); showLandingPage()">🏠 Beranda</a></li>
-      <li><a href="#features" onclick="closeMobileNav(); showLandingPage()">⚡ Fitur Unggulan</a></li>
-      <li><a href="#platforms" onclick="closeMobileNav(); showLandingPage()">📱 Platform Didukung</a></li>
+      <li><a href="#hero" onclick="closeMobileNav(); showLandingPage()">🏠 Home</a></li>
+      <li><a href="#features" onclick="closeMobileNav(); showLandingPage()">⚡ Features</a></li>
+      <li><a href="#platforms" onclick="closeMobileNav(); showLandingPage()">📱 Supported Platforms</a></li>
       <li><a href="#n8n-docs" onclick="closeMobileNav(); showLandingPage()">🔌 n8n Documentation</a></li>
-      <li><a href="#pricing" onclick="closeMobileNav(); showLandingPage()">💳 Harga & Paket</a></li>
-      <li><a href="#faq" onclick="closeMobileNav(); showLandingPage()">❓ Tanya Jawab (FAQ)</a></li>
-      <li><a href="#contact" onclick="closeMobileNav(); showLandingPage()">📩 Hubungi Kami</a></li>
+      <li><a href="#pricing" onclick="closeMobileNav(); showLandingPage()">💳 Pricing &amp; Plans</a></li>
+      <li><a href="#faq" onclick="closeMobileNav(); showLandingPage()">❓ FAQ</a></li>
+      <li><a href="#contact" onclick="closeMobileNav(); showLandingPage()">📩 Contact Us</a></li>
       <li><a href="https://whatsappapi.trendoraautomation.my.id/" target="_blank" rel="noopener noreferrer" style="color: #25D366; font-weight: 700;">💬 WhatsApp Gateway &amp; Meta Cloud 🚀</a></li>
     </ul>
     <div style="padding: 16px 20px; border-top: 1px solid rgba(255,255,255,0.08); display: flex; flex-direction: column; gap: 10px;">
-      <button class="btn-pink" style="width: 100%; padding: 12px; font-size: 14px; font-weight: 700; border-radius: 10px;" onclick="closeMobileNav(); scrollToPricing()">Mulai Free Trial 7 Hari 🚀</button>
-      <button class="btn-secondary" style="width: 100%; padding: 10px; font-size: 13px; border-radius: 10px;" onclick="closeMobileNav(); openLoginModal()">Log In Akun</button>
+      <button class="btn-pink" style="width: 100%; padding: 12px; font-size: 14px; font-weight: 700; border-radius: 10px;" onclick="closeMobileNav(); scrollToPricing()">Start 7-Day Free Trial 🚀</button>
+      <button class="btn-secondary" style="width: 100%; padding: 10px; font-size: 13px; border-radius: 10px;" onclick="closeMobileNav(); openLoginModal()">Log In</button>
     </div>
   </div>
 </header>
@@ -181,4 +263,158 @@
       if (chevron) chevron.style.transform = 'rotate(0deg)';
     }
   });
+
+  // ==========================================
+  // INSTAGRAM OUTREACH ACCOUNTS MODAL HANDLER
+  // ==========================================
+  function toggleIgOutreachModal(e) {
+    if (e) e.stopPropagation();
+    const dropdown = document.getElementById('igOutreachDropdown');
+    const chevron = document.getElementById('igOutreachChevron');
+    if (!dropdown) return;
+
+    const isHidden = dropdown.style.display === 'none' || !dropdown.style.display;
+    dropdown.style.display = isHidden ? 'block' : 'none';
+    if (chevron) {
+      chevron.style.transform = isHidden ? 'rotate(180deg)' : 'rotate(0deg)';
+    }
+    if (isHidden) {
+      fetchIgOutreachAccounts();
+    }
+  }
+
+  function closeIgOutreachModal() {
+    const dropdown = document.getElementById('igOutreachDropdown');
+    const chevron = document.getElementById('igOutreachChevron');
+    if (dropdown) dropdown.style.display = 'none';
+    if (chevron) chevron.style.transform = 'rotate(0deg)';
+  }
+
+  document.addEventListener('click', function(e) {
+    const container = document.getElementById('igOutreachContainer');
+    const dropdown = document.getElementById('igOutreachDropdown');
+    if (container && !container.contains(e.target) && dropdown && dropdown.style.display === 'block') {
+      closeIgOutreachModal();
+    }
+  });
+
+  async function fetchIgOutreachAccounts() {
+    const listEl = document.getElementById('igOutreachAccountsList');
+    const badgeEl = document.getElementById('igOutreachBadge');
+    const countEl = document.getElementById('igAccountActiveCount');
+    try {
+      const resp = await fetch('/api/instagram/outreach-accounts');
+      const data = await resp.json();
+      if (!data.success) throw new Error(data.message || 'Gagal memuat akun');
+
+      const accounts = data.accounts || [];
+      if (badgeEl) badgeEl.innerText = accounts.length;
+      if (countEl) countEl.innerText = `${accounts.length} Akun`;
+
+      if (accounts.length === 0) {
+        listEl.innerHTML = `
+          <div style="padding: 10px; text-align: center; color: #64748b; font-size: 11px; background: rgba(255, 255, 255, 0.03); border-radius: 8px;">
+            Belum ada akun terhubung. Tambahkan akun bot/outreach di bawah untuk mulai kirim DM otomatis.
+          </div>
+        `;
+        return;
+      }
+
+      listEl.innerHTML = accounts.map(acc => {
+        const isOverLimit = acc.sent_today >= acc.daily_limit;
+        const statusBadge = isOverLimit 
+          ? `<span style="padding: 2px 6px; background: rgba(239, 68, 68, 0.2); border: 1px solid rgba(239, 68, 68, 0.4); color: #f87171; border-radius: 5px; font-size: 9px; font-weight: 700;">Limit Habis (${acc.sent_today}/${acc.daily_limit})</span>`
+          : `<span style="padding: 2px 6px; background: rgba(34, 197, 94, 0.2); border: 1px solid rgba(34, 197, 94, 0.4); color: #4ade80; border-radius: 5px; font-size: 9px; font-weight: 700;">🟢 Aktif (${acc.sent_today}/${acc.daily_limit} DM)</span>`;
+
+        return `
+          <div style="display: flex; align-items: center; justify-content: space-between; padding: 7px 10px; background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 8px;">
+            <div style="display: flex; align-items: center; gap: 7px; min-width: 0;">
+              <span style="font-size: 14px;">🤖</span>
+              <div style="min-width: 0;">
+                <div style="font-size: 11px; font-weight: 700; color: #f8fafc; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                  @${acc.username}
+                </div>
+                <div style="margin-top: 2px;">${statusBadge}</div>
+              </div>
+            </div>
+            <button type="button" onclick="handleDeleteIgOutreach(${acc.id}, '@${acc.username}')" style="background: none; border: none; color: #ef4444; font-size: 13px; cursor: pointer; padding: 4px; border-radius: 4px; transition: background 0.2s;" onmouseover="this.style.background='rgba(239, 68, 68, 0.15)'" onmouseout="this.style.background='none'" title="Hapus Akun">
+              🗑️
+            </button>
+          </div>
+        `;
+      }).join('');
+    } catch (err) {
+      if (listEl) listEl.innerHTML = `<div style="color: #ef4444; font-size: 10.5px; padding: 6px;">Error: ${err.message}</div>`;
+    }
+  }
+
+  async function handleSaveIgOutreach(e) {
+    e.preventDefault();
+    const btn = document.getElementById('btnSubmitIgOutreach');
+    const alertEl = document.getElementById('igOutreachAlert');
+    const username = document.getElementById('igInputUsername').value.trim();
+    const session_id = document.getElementById('igInputSessionId').value.trim();
+    const daily_limit = parseInt(document.getElementById('igInputDailyLimit').value) || 20;
+
+    btn.disabled = true;
+    btn.innerText = 'Menyimpan...';
+    alertEl.style.display = 'none';
+
+    try {
+      const resp = await fetch('/api/instagram/outreach-accounts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, session_id, daily_limit })
+      });
+      const data = await resp.json();
+      if (!data.success) throw new Error(data.message || 'Gagal menyimpan');
+
+      alertEl.style.display = 'block';
+      alertEl.style.background = 'rgba(34, 197, 94, 0.2)';
+      alertEl.style.border = '1px solid rgba(34, 197, 94, 0.4)';
+      alertEl.style.color = '#4ade80';
+      alertEl.innerText = data.message;
+
+      document.getElementById('igInputUsername').value = '';
+      document.getElementById('igInputSessionId').value = '';
+      fetchIgOutreachAccounts();
+
+      setTimeout(() => { alertEl.style.display = 'none'; }, 4000);
+    } catch (err) {
+      alertEl.style.display = 'block';
+      alertEl.style.background = 'rgba(239, 68, 68, 0.2)';
+      alertEl.style.border = '1px solid rgba(239, 68, 68, 0.4)';
+      alertEl.style.color = '#f87171';
+      alertEl.innerText = err.message;
+    } finally {
+      btn.disabled = false;
+      btn.innerText = '+ Simpan Akun';
+    }
+  }
+
+  async function handleDeleteIgOutreach(accId, username) {
+    if (!confirm(`Hapus akun outreach ${username}?`)) return;
+    try {
+      const resp = await fetch(`/api/instagram/outreach-accounts/${accId}`, { method: 'DELETE' });
+      const data = await resp.json();
+      if (!data.success) throw new Error(data.message || 'Gagal menghapus');
+      fetchIgOutreachAccounts();
+    } catch (err) {
+      alert('Gagal menghapus: ' + err.message);
+    }
+  }
+
+  // Load count at startup
+  document.addEventListener('DOMContentLoaded', function() {
+    fetch('/api/instagram/outreach-accounts')
+      .then(r => r.json())
+      .then(d => {
+        if (d && d.success) {
+          const badge = document.getElementById('igOutreachBadge');
+          if (badge) badge.innerText = d.total || 0;
+        }
+      })
+      .catch(() => {});
+  });
 </script>
+<script src="{{ url_for('static', filename='js/i18n.js') }}"></script>

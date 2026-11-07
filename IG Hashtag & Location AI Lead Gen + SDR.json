@@ -1,0 +1,930 @@
+{
+  "name": "Omnichannel AI Lead Gen & SDR (Trendora + WA + IG DM)",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "node-trigger-scraper",
+      "name": "1. Start Scraper",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        400,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "scrapeLeads",
+        "keyword": "trading forex",
+        "location": "Indonesia",
+        "targetPlatforms": [
+          "instagram",
+          "tiktok",
+          "facebook",
+          "google_maps"
+        ],
+        "limitPerPlatform": 10,
+        "outputFormat": "itemPerLead"
+      },
+      "id": "node-trendora-scraper",
+      "name": "Trendora Lead Scraper",
+      "type": "n8n-nodes-trendora-automation.trendoraAutomation",
+      "typeVersion": 1,
+      "position": [
+        620,
+        200
+      ],
+      "credentials": {
+        "trendoraAutomationApi": {
+          "id": "l1OpRt5LSmlMRRGm",
+          "name": "Trendora Automation account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Standardisasi & Filter Duplikasi Leads (WA vs Social DM)\nconst results = [];\nconst seen = new Set();\n\nfor (const item of $input.all()) {\n  const d = item.json;\n  \n  // 1. Ekstrak & bersihkan nomor WA\n  let rawPhone = d.primary_phone || (Array.isArray(d.phones) && d.phones[0]) || '';\n  let phone = String(rawPhone).replace(/\\D/g, '');\n  if (phone.startsWith('0')) {\n    phone = '62' + phone.slice(1);\n  }\n\n  // 2. Ekstrak & bersihkan username / profil sosmed\n  let username = d.username || '';\n  if (username && !username.startsWith('@') && !username.startsWith('http')) {\n    username = '@' + username;\n  }\n  let profileUrl = d.url || (username.startsWith('@') ? `https://instagram.com/${username.replace('@','')}` : '');\n\n  // Identifier unik (nomor WA atau link profil)\n  const identifier = phone && phone.length >= 9 ? phone : (username || profileUrl);\n  if (!identifier || seen.has(identifier)) {\n    continue;\n  }\n  seen.add(identifier);\n\n  const hasWa = Boolean(phone && phone.length >= 9);\n\n  results.push({\n    json: {\n      has_wa: hasWa,\n      Phone: hasWa ? phone : '',\n      Nama_Bisnis: d.title || d.username || 'Kak',\n      Username: username,\n      Platform: d.platform || 'instagram',\n      Kategori: d.category || 'Trading/Bisnis',\n      Alamat_Lokasi: d.address || d.city || '',\n      Profil_URL: profileUrl,\n      Snippet_Bio: d.snippet || '',\n      Source: d.source || 'Trendora Scraper',\n      Status: hasWa ? 'QUEUED_FOR_WA' : 'READY_FOR_IG_DM',\n      Last_Contacted: new Date().toISOString()\n    }\n  });\n}\n\nreturn results;"
+      },
+      "id": "node-filter-dedupe",
+      "name": "Filter & Deduplicate Leads",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        840,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.has_wa }}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "id": "node-if-has-wa",
+      "name": "Check WA vs Social DM",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        1060,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Halo, tolong buatkan pesan perkenalan WhatsApp untuk prospek berikut:\n\nNama / Akun: {{ $json.Nama_Bisnis }}\nPlatform: {{ $json.Platform }}\nUsername / Tautan: {{ $json.Username || $json.Profil_URL }}\nKategori / Lokasi: {{ $json.Kategori }} - {{ $json.Alamat_Lokasi }}\nBio / Info Profil: {{ $json.Snippet_Bio }}\n\nBuat pesan yang santai, personal, hangat, dan mengundang mereka masuk ke komunitas trading kita!",
+        "options": {
+          "systemMessage": "Kamu adalah Community Specialist & Partner Relations dari komunitas trader profesional \"Alpha Traders Community\" (komunitas edukasi trading & sinyal independen).\n\nKarakter & Gaya Bahasa:\n- Sangat ramah, santai, sopan, dan luwes seperti sesama pegiat bisnis/trader di WhatsApp.\n- Gunakan bahasa Indonesia sehari-hari yang profesional dan sapaan \"Kak\" atau nama kontak.\n- Hindari bahasa kaku, formal birokratis, atau gaya robotik.\n\nTujuan Pesan:\nMembuat 1 pesan WhatsApp perkenalan pertama yang singkat (maksimal 3-4 kalimat) untuk menyapa prospek, mengapresiasi profil mereka, dan mengundang mereka bergabung ke Komunitas Trading Eksklusif secara GRATIS.\n\nBenefit Komunitas yang Perlu Disampaikan Ringkas:\n- Edukasi & mentoring trading lengkap (pemula s/d mahir).\n- Indikator custom premium (mempermudah analisa chart).\n- Sinyal trading harian (Gold / Forex / Crypto) dengan Risk Management jelas.\n\nSyarat Bergabung:\n- 100% GRATIS tanpa biaya keanggotaan/bulanan.\n- Cukup buka akun trading via link broker partner resmi kami.\n\nAturan Penting:\n1. Personalisasi pesan dengan menyebut Nama dan platform tempat profil mereka ditemukan.\n2. Jangan hard-selling atau terkesan spam. Buka percakapan dengan pertanyaan santai di akhir pesan (misal: \"Kira-kira Kakak sudah pernah trading atau ada ketertarikan buat gabung belajar bareng di grup komunitas kami kak? 😊\").\n3. DILARANG menjanjikan profit pasti, kaya instan, atau jaminan cuan.\n4. Output HANYA isi teks pesan WhatsApp saja, siap kirim langsung ke chat (tanpa tanda kutip di awal/akhir, tanpa pembuka markdown)."
+        }
+      },
+      "id": "node-ai-agent-wa",
+      "name": "AI Agent (Outbound WA)",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        1320,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-1.5-flash",
+        "options": {}
+      },
+      "id": "node-gemini-model-wa",
+      "name": "Google Gemini Chat Model (WA Intro)",
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        1320,
+        -100
+      ],
+      "credentials": {
+        "googlePalmApi": {
+          "id": "auSmpLEJam063Zyv",
+          "name": "Google Gemini(PaLM) Api account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "amount": 30,
+        "unit": "seconds"
+      },
+      "id": "node-delay-wa",
+      "name": "Anti-Banned Delay (30 Detik)",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        1540,
+        100
+      ],
+      "webhookId": "anti-banned-delay-wa"
+    },
+    {
+      "parameters": {
+        "operation": "sendText",
+        "session_key": "1",
+        "phone_number": "={{ $('Filter & Deduplicate Leads').item.json.Phone }}",
+        "message": "={{ $('AI Agent (Outbound WA)').item.json.output }}"
+      },
+      "id": "node-send-wa",
+      "name": "Send Intro via Trendora WA",
+      "type": "n8n-nodes-trendora-wa.trendoraWa",
+      "typeVersion": 1,
+      "position": [
+        1760,
+        100
+      ],
+      "credentials": {
+        "trendoraWaApi": {
+          "id": "TNCegnVJ2zajEkTt",
+          "name": "Trendora WA account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_GOOGLE_SHEET_ID",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Leads",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Phone": "={{ $('Filter & Deduplicate Leads').item.json.Phone }}",
+            "Nama_Bisnis": "={{ $('Filter & Deduplicate Leads').item.json.Nama_Bisnis }}",
+            "Platform": "={{ $('Filter & Deduplicate Leads').item.json.Platform }}",
+            "Username": "={{ $('Filter & Deduplicate Leads').item.json.Username }}",
+            "Kategori": "={{ $('Filter & Deduplicate Leads').item.json.Kategori }}",
+            "Alamat_Lokasi": "={{ $('Filter & Deduplicate Leads').item.json.Alamat_Lokasi }}",
+            "Profil_URL": "={{ $('Filter & Deduplicate Leads').item.json.Profil_URL }}",
+            "Snippet_Bio": "={{ $('Filter & Deduplicate Leads').item.json.Snippet_Bio }}",
+            "Pesan_Terkirim": "={{ $('AI Agent (Outbound WA)').item.json.output }}",
+            "Status": "INTRO_WA_SENT",
+            "Ringkasan_Chat": "Pesan perkenalan komunitas trading dikirim via Trendora WA.",
+            "Last_Contacted": "={{ $now.toISO() }}"
+          },
+          "matchingColumns": [
+            "Phone"
+          ]
+        },
+        "options": {}
+      },
+      "id": "node-save-wa-sheet",
+      "name": "Save WA Lead to GSheets",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        1980,
+        100
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "detCi81lb0gcmmxs",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Data Akun Instagram / Sosmed:\n- Nama: {{ $json.Nama_Bisnis }}\n- Platform: {{ $json.Platform }}\n- Handle/Link: {{ $json.Username || $json.Profil_URL }}\n- Bio: {{ $json.Snippet_Bio }}\n- Kategori: {{ $json.Kategori }}\n\nBuat 1 pesan Direct Message (DM) Instagram yang personal, santai, dan menarik untuk mengundang mereka ke Komunitas Trading Eksklusif kita!",
+        "options": {
+          "systemMessage": "Kamu adalah Community Outreach Specialist dari \"Alpha Traders Community\".\n\nTujuan:\nMembuat 1 pesan DM Instagram pendek (2-3 kalimat) yang sangat personal untuk menyapa akun prospek.\n\nGaya Bahasa:\n- Santai, ramah, seperti sesama konten kreator / pebisnis di Instagram.\n- Sebut nama atau akun Instagram mereka.\n- Apresiasi konten/profil mereka secara wajar.\n- Infokan secara singkat bahwa ada komunitas trading gratis dengan fasilitas indikator chart custom & sinyal harian.\n- Akhiri dengan pertanyaan santai: \"Kira-kira Kakak tertarik buat intip komunitas belajar trading kami kah kak? 🙌\"\n\nAturan Penting:\n1. Output HANYA teks DM langsung siap kirim.\n2. Dilarang janji manis / cuan pasti.\n3. Maksimal 3 kalimat agar nyaman dibaca di layar DM HP."
+        }
+      },
+      "id": "node-ai-agent-ig",
+      "name": "AI Agent (Outbound IG DM)",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        1320,
+        340
+      ]
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-1.5-flash",
+        "options": {}
+      },
+      "id": "node-gemini-model-ig",
+      "name": "Google Gemini Chat Model (IG DM)",
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        1320,
+        520
+      ],
+      "credentials": {
+        "googlePalmApi": {
+          "id": "auSmpLEJam063Zyv",
+          "name": "Google Gemini(PaLM) Api account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://trendoraautomation.my.id/api/social/send-dm",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"platform\": \"instagram\",\n  \"recipient\": \"{{ $('Filter & Deduplicate Leads').item.json.Username }}\",\n  \"message\": \"{{ $json.output }}\"\n}"
+      },
+      "id": "node-send-ig-dm-trendora",
+      "name": "Send DM via Trendora",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1540,
+        340
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_GOOGLE_SHEET_ID",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Leads",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Phone": "-",
+            "Nama_Bisnis": "={{ $('Filter & Deduplicate Leads').item.json.Nama_Bisnis }}",
+            "Platform": "={{ $('Filter & Deduplicate Leads').item.json.Platform }}",
+            "Username": "={{ $('Filter & Deduplicate Leads').item.json.Username }}",
+            "Kategori": "={{ $('Filter & Deduplicate Leads').item.json.Kategori }}",
+            "Alamat_Lokasi": "={{ $('Filter & Deduplicate Leads').item.json.Alamat_Lokasi }}",
+            "Profil_URL": "={{ $('Filter & Deduplicate Leads').item.json.Profil_URL }}",
+            "Snippet_Bio": "={{ $('Filter & Deduplicate Leads').item.json.Snippet_Bio }}",
+            "Pesan_Terkirim": "={{ $('AI Agent (Outbound IG DM)').item.json.output }}",
+            "Sender_Account": "={{ $('Send DM via Trendora').item.json.sender_account || 'Trendora Rotator' }}",
+            "Status": "DM_SENT",
+            "Ringkasan_Chat": "DM Instagram terkirim via Trendora & Apify Cloud Bot.",
+            "Last_Contacted": "={{ $now.toISO() }}"
+          },
+          "matchingColumns": [
+            "Username"
+          ]
+        },
+        "options": {}
+      },
+      "id": "node-save-ig-sheet",
+      "name": "Save IG Lead to GSheets",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        1760,
+        340
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "detCi81lb0gcmmxs",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "path": "wa-incoming-leads",
+        "showGuide": false
+      },
+      "id": "node-wa-trigger",
+      "name": "Trendora WA Trigger",
+      "type": "n8n-nodes-trendora-wa.trendoraWaTrigger",
+      "typeVersion": 1,
+      "position": [
+        400,
+        780
+      ],
+      "webhookId": "wa-incoming-leads-hook"
+    },
+    {
+      "parameters": {
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_GOOGLE_SHEET_ID",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Leads",
+          "mode": "name"
+        },
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "Phone",
+              "operation": "equals",
+              "value": "={{ $json.phone_number }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "node-check-sheet-inbound",
+      "name": "Check Lead in GSheets",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        620,
+        780
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "detCi81lb0gcmmxs",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Data Prospek:\n- Nama Kontak: {{ $('Check Lead in GSheets').first()?.json?.Nama_Bisnis || $('Trendora WA Trigger').first()?.json?.sender_name }}\n- Nomor WhatsApp: {{ $('Trendora WA Trigger').first()?.json?.phone_number }}\n- Status Sebelumnya: {{ $('Check Lead in GSheets').first()?.json?.Status || 'Baru' }}\n- Catatan Terakhir: {{ $('Check Lead in GSheets').first()?.json?.Ringkasan_Chat || '-' }}\n\nPesan Masuk dari Prospek:\n\"{{ $('Trendora WA Trigger').first()?.json?.message }}\"\n\nTolong berikan balasan WhatsApp yang persuasif & ramah, rangkum obrolan, dan tentukan status prospek dalam format JSON murni.",
+        "options": {
+          "systemMessage": "Kamu adalah Senior AI Consultant untuk Komunitas Trading Eksklusif (Partner Resmi Broker Trading).\n\nTugas Utama:\n1. Membalas chat WhatsApp dari prospek yang merespon penawaran komunitas trading kita secara cerdas, ramah, persuasif, dan solutif.\n2. Memberikan edukasi dan menjawab pertanyaan mereka:\n   - Apa itu komunitas: Wadah sharing dan belajar sesama trader dari pemula sampai mahir.\n   - Fasilitas: Full edukasi & modul, indikator custom akurat di chart, serta sinyal trading harian (Gold XAUUSD, Forex, Crypto).\n   - Biaya: 100% GRATIS, tidak ada biaya langganan bulanan maupun biaya masuk.\n   - Syarat: Cukup mendaftar akun trading dan verifikasi lewat link broker partner resmi kami agar bisa dimasukkan ke sistem member VIP.\n   - Modal/Deposit: Fleksibel sesuai kemampuan mereka sendiri, dan saldo 100% tetap milik member di akun broker mereka untuk trading (bukan disetor ke komunitas).\n3. Jika prospek ingin gabung atau minta link: Berikan sambutan hangat dan infokan bahwa link pendaftaran broker serta panduan akses grup VIP akan segera dikirimkan.\n4. Rangkum inti chat dalam 1-2 kalimat padat.\n5. Klasifikasikan status prospek menjadi salah satu dari:\n   - \"Hot_Lead\": Siap mendaftar, minta link broker, atau ingin segera gabung ke grup VIP.\n   - \"Interested\": Masih bertanya-tanya seputar sinyal, indikator, edukasi, atau cara kerja broker.\n   - \"FollowUp_Later\": Belum sempat respon panjang, sibuk, minta dihubungi nanti, atau masih ragu.\n   - \"Not_Interested\": Menolak secara tegas, tidak minat trading, atau minta di-stop.\n\nFORMAT KELUARAN WAJIB JSON MURNI:\n{\n  \"reply_message\": \"Teks balasan ramah untuk dikirim ke prospek via WhatsApp (gunakan emoji yang pas)\",\n  \"summary\": \"Ringkasan topik obrolan terakhir dan respon prospek\",\n  \"status\": \"Hot_Lead | Interested | FollowUp_Later | Not_Interested\"\n}\nPERINGATAN: Berikan JSON murni tanpa pembuka/penutup markdown seperti ```json."
+        }
+      },
+      "id": "node-ai-agent-inbound",
+      "name": "AI Agent1 (Inbound SDR)",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        840,
+        780
+      ]
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-1.5-flash",
+        "options": {}
+      },
+      "id": "node-gemini-model-inbound",
+      "name": "Google Gemini Chat Model1",
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        840,
+        960
+      ],
+      "credentials": {
+        "googlePalmApi": {
+          "id": "auSmpLEJam063Zyv",
+          "name": "Google Gemini(PaLM) Api account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "let raw = $input.first().json.output || '';\nraw = raw.replace(/```json/gi, '').replace(/```/g, '').trim();\n\nlet parsed = {};\ntry {\n  parsed = JSON.parse(raw);\n} catch (e) {\n  const matchReply = raw.match(/\"reply_message\"\\s*:\\s*\"([^\"]+)\"/);\n  const matchSummary = raw.match(/\"summary\"\\s*:\\s*\"([^\"]+)\"/);\n  const matchStatus = raw.match(/\"status\"\\s*:\\s*\"([^\"]+)\"/);\n\n  parsed = {\n    reply_message: matchReply ? matchReply[1] : raw,\n    summary: matchSummary ? matchSummary[1] : 'Percakapan sedang berlangsung.',\n    status: matchStatus ? matchStatus[1] : 'Interested'\n  };\n}\n\nreturn [{\n  json: {\n    reply_message: parsed.reply_message || 'Terima kasih atas pesan Kakak! Ada yang bisa kami bantu seputar komunitas trading kami?',\n    summary: parsed.summary || 'Prospek membalas chat WhatsApp.',\n    status: parsed.status || 'Interested'\n  }\n}];"
+      },
+      "id": "node-parse-inbound-json",
+      "name": "Parse AI JSON Output",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1080,
+        780
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "sendText",
+        "session_key": "1",
+        "phone_number": "={{ $('Trendora WA Trigger').first()?.json?.phone_number }}",
+        "message": "={{ $json.reply_message }}"
+      },
+      "id": "node-send-inbound-wa",
+      "name": "Send AI Reply via Trendora WA",
+      "type": "n8n-nodes-trendora-wa.trendoraWa",
+      "typeVersion": 1,
+      "position": [
+        1300,
+        780
+      ],
+      "credentials": {
+        "trendoraWaApi": {
+          "id": "TNCegnVJ2zajEkTt",
+          "name": "Trendora WA account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_GOOGLE_SHEET_ID",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Leads",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Phone": "={{ $('Trendora WA Trigger').first()?.json?.phone_number }}",
+            "Ringkasan_Chat": "={{ $('Parse AI JSON Output').first().json.summary }}",
+            "Status": "={{ $('Parse AI JSON Output').first().json.status }}",
+            "Last_Contacted": "={{ $now.toISO() }}"
+          },
+          "matchingColumns": [
+            "Phone"
+          ]
+        },
+        "options": {}
+      },
+      "id": "node-update-inbound-sheet",
+      "name": "Update Summary & Status",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        1520,
+        780
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "detCi81lb0gcmmxs",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "hoursInterval": 24
+            }
+          ]
+        }
+      },
+      "id": "node-followup-trigger",
+      "name": "3. Daily Follow-Up Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        400,
+        1180
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_GOOGLE_SHEET_ID",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Leads",
+          "mode": "name"
+        },
+        "options": {}
+      },
+      "id": "node-get-all-leads",
+      "name": "Get All Leads",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        620,
+        1180
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "detCi81lb0gcmmxs",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const now = new Date().getTime();\nconst eligibleLeads = [];\n\nfor (const item of $input.all()) {\n  const d = item.json;\n  const lastContact = d.Last_Contacted ? new Date(d.Last_Contacted).getTime() : 0;\n  const hoursSince = (now - lastContact) / (1000 * 60 * 60);\n\n  // Follow-up hanya untuk prospek WA yang belum closing dan sudah lewat >24 jam\n  const eligibleStatus = ['INTRO_WA_SENT', 'FollowUp_Later', 'Interested'];\n  if (d.Phone && d.Phone !== '-' && eligibleStatus.includes(d.Status) && hoursSince >= 24) {\n    eligibleLeads.push({\n      json: d\n    });\n  }\n}\n\nreturn eligibleLeads;"
+      },
+      "id": "node-filter-idle",
+      "name": "Filter >24h Idle Leads",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        840,
+        1180
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Nama Prospek: {{ $json.Nama_Bisnis }}\nStatus Terakhir: {{ $json.Status }}\nRingkasan Chat Terakhir: {{ $json.Ringkasan_Chat }}\n\nTolong buatkan pesan follow-up WhatsApp yang hangat, santai, dan tidak memaksa (maksimal 2 kalimat).",
+        "options": {
+          "systemMessage": "Kamu adalah Senior Consultant dari Komunitas Trading \"Alpha Traders Community\".\n\nTugas Utama:\nBuat pesan follow-up WhatsApp yang santai, sopan, dan hangat (maksimal 2 kalimat) untuk menyapa prospek yang belum sempat membalas atau belum menyelesaikan registrasi broker partner.\n\nAturan Pesan:\n1. Sapa prospek dengan ramah (sebut nama mereka jika ada).\n2. Jangan terkesan mendesak, menyudutkan, atau hard-selling.\n3. Singgung secara halus tentang update sinyal trading hari ini yang sedang potensial, atau tanyakan apakah ada kendala saat membuka link broker partner.\n4. Tawarkan bantuan jika mereka butuh panduan langkah pendaftarannya.\n5. Output HANYA isi teks pesan WhatsApp siap kirim (tanpa tanda kutip pembungkus, tanpa format tambahan)."
+        }
+      },
+      "id": "node-ai-agent-followup",
+      "name": "AI Agent2 (Follow-Up Generator)",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        1080,
+        1180
+      ]
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-1.5-flash",
+        "options": {}
+      },
+      "id": "node-gemini-model-followup",
+      "name": "Google Gemini Chat Model2",
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        1080,
+        1360
+      ],
+      "credentials": {
+        "googlePalmApi": {
+          "id": "auSmpLEJam063Zyv",
+          "name": "Google Gemini(PaLM) Api account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "amount": 35,
+        "unit": "seconds"
+      },
+      "id": "node-delay-followup",
+      "name": "Anti-Banned Delay Follow-Up (35 Detik)",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        1300,
+        1180
+      ],
+      "webhookId": "anti-banned-delay-followup"
+    },
+    {
+      "parameters": {
+        "operation": "sendText",
+        "session_key": "1",
+        "phone_number": "={{ $('Filter >24h Idle Leads').item.json.Phone }}",
+        "message": "={{ $('AI Agent2 (Follow-Up Generator)').item.json.output }}"
+      },
+      "id": "node-send-followup-wa",
+      "name": "Send Follow-Up via Trendora WA",
+      "type": "n8n-nodes-trendora-wa.trendoraWa",
+      "typeVersion": 1,
+      "position": [
+        1520,
+        1180
+      ],
+      "credentials": {
+        "trendoraWaApi": {
+          "id": "TNCegnVJ2zajEkTt",
+          "name": "Trendora WA account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_GOOGLE_SHEET_ID",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Leads",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Phone": "={{ $('Filter >24h Idle Leads').item.json.Phone }}",
+            "Status": "FOLLOWUP_1_SENT",
+            "Ringkasan_Chat": "Pesan follow-up telah dikirim secara otomatis via Trendora WA.",
+            "Last_Contacted": "={{ $now.toISO() }}"
+          },
+          "matchingColumns": [
+            "Phone"
+          ]
+        },
+        "options": {}
+      },
+      "id": "node-mark-followup-sheet",
+      "name": "Mark FollowUp Status",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        1740,
+        1180
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "detCi81lb0gcmmxs",
+          "name": "Google Sheets account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "1. Start Scraper": {
+      "main": [
+        [
+          {
+            "node": "Trendora Lead Scraper",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Trendora Lead Scraper": {
+      "main": [
+        [
+          {
+            "node": "Filter & Deduplicate Leads",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter & Deduplicate Leads": {
+      "main": [
+        [
+          {
+            "node": "Check WA vs Social DM",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check WA vs Social DM": {
+      "main": [
+        [
+          {
+            "node": "AI Agent (Outbound WA)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "AI Agent (Outbound IG DM)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent (Outbound WA)": {
+      "main": [
+        [
+          {
+            "node": "Anti-Banned Delay (30 Detik)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model (WA Intro)": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent (Outbound WA)",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Anti-Banned Delay (30 Detik)": {
+      "main": [
+        [
+          {
+            "node": "Send Intro via Trendora WA",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Intro via Trendora WA": {
+      "main": [
+        [
+          {
+            "node": "Save WA Lead to GSheets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent (Outbound IG DM)": {
+      "main": [
+        [
+          {
+            "node": "Send DM via Trendora",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send DM via Trendora": {
+      "main": [
+        [
+          {
+            "node": "Save IG Lead to GSheets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model (IG DM)": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent (Outbound IG DM)",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Trendora WA Trigger": {
+      "main": [
+        [
+          {
+            "node": "Check Lead in GSheets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Lead in GSheets": {
+      "main": [
+        [
+          {
+            "node": "AI Agent1 (Inbound SDR)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent1 (Inbound SDR)",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent1 (Inbound SDR)": {
+      "main": [
+        [
+          {
+            "node": "Parse AI JSON Output",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse AI JSON Output": {
+      "main": [
+        [
+          {
+            "node": "Send AI Reply via Trendora WA",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send AI Reply via Trendora WA": {
+      "main": [
+        [
+          {
+            "node": "Update Summary & Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "3. Daily Follow-Up Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get All Leads",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get All Leads": {
+      "main": [
+        [
+          {
+            "node": "Filter >24h Idle Leads",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter >24h Idle Leads": {
+      "main": [
+        [
+          {
+            "node": "AI Agent2 (Follow-Up Generator)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model2": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent2 (Follow-Up Generator)",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent2 (Follow-Up Generator)": {
+      "main": [
+        [
+          {
+            "node": "Anti-Banned Delay Follow-Up (35 Detik)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Anti-Banned Delay Follow-Up (35 Detik)": {
+      "main": [
+        [
+          {
+            "node": "Send Follow-Up via Trendora WA",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Follow-Up via Trendora WA": {
+      "main": [
+        [
+          {
+            "node": "Mark FollowUp Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

@@ -1042,7 +1042,8 @@
     .cal-status-published { background: #10b981; box-shadow: 0 0 6px #10b981; }
     .cal-status-failed { background: #ef4444; box-shadow: 0 0 6px #ef4444; }
     .cal-status-cancelled { background: #64748b; }
-
+    #navGuestGroup { display: none !important; }
+    #navUserGroup { display: flex !important; }
   </style>
 </head>
 <body>
@@ -1053,24 +1054,24 @@
     <!-- SIDEBAR NAVIGASI -->
         <!-- SIDEBAR NAVIGASI SLEEK -->
     <aside class="dash-sidebar">
-      <div class="sidebar-section-label">NAVIGASI UTAMA</div>
+      <div class="sidebar-section-label" id="sidebarLabelMainNav">MAIN NAVIGATION</div>
       <ul class="sidebar-menu">
         <li>
           <button type="button" class="sidebar-tab-btn active" data-tab="overview" onclick="switchDashboardTab('overview')">
             <svg class="menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
-            <span>Ringkasan / Beranda</span>
+            <span>Overview / Dashboard</span>
           </button>
         </li>
         <li>
           <button type="button" class="sidebar-tab-btn" data-tab="integration" onclick="switchDashboardTab('integration')">
             <svg class="menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
-            <span>Integrasi n8n &amp; API</span>
+            <span>n8n Integration</span>
           </button>
         </li>
         <li>
           <button type="button" class="sidebar-tab-btn" data-tab="social" onclick="switchDashboardTab('social')">
             <svg class="menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>
-            <span>Akun Sosial Media</span>
+            <span>Social Media Accounts</span>
           </button>
         </li>
         <li>
@@ -1083,7 +1084,7 @@
                 <li>
           <button type="button" class="sidebar-tab-btn" data-tab="content-calendar" onclick="switchDashboardTab('content-calendar')">
             <svg class="menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
-            <span>Kalender Konten</span>
+            <span>Content Calendar</span>
             <span class="menu-badge-new" style="background: linear-gradient(135deg, #10b981, #059669);">AUTO</span>
           </button>
         </li>
@@ -1098,7 +1099,7 @@
           <button type="button" class="sidebar-tab-btn" data-tab="tiktok-studio" onclick="handleStudioSidebarClick(event)">
             <svg class="menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"><polygon points="23 7 16 12 23 17 23 7"></polygon><rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect></svg>
             <span>Studio Publisher</span>
-            <span class="submenu-toggle-pill" onclick="handleStudioToggleBtn(event)" title="Klik untuk Buka/Tutup Sub-Menu">
+            <span class="submenu-toggle-pill" onclick="handleStudioToggleBtn(event)" title="Toggle Sub-Menu">
               <svg class="submenu-arrow" id="studioSubmenuArrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="transition: transform 0.25s;"><polyline points="6 9 12 15 18 9"></polyline></svg>
             </span>
           </button>
@@ -1148,7 +1149,7 @@
             <li>
               <button type="button" class="sidebar-sub-btn" data-studio-plat="multi" onclick="selectStudioPlatformFromSidebar('multi')">
                 <span style="font-size: 13px;">⚡</span>
-                <span>Multi-Broadcast</span>
+                <span id="sidebarMultiBroadcastText">Multi-Broadcast</span>
               </button>
             </li>
           </ul>
@@ -1156,34 +1157,34 @@
         <li>
           <button type="button" class="sidebar-tab-btn" data-tab="logs" onclick="switchDashboardTab('logs')">
             <svg class="menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
-            <span>Log &amp; Riwayat</span>
+            <span>Activity Logs &amp; History</span>
           </button>
         </li>
       </ul>
       
-      <div class="sidebar-section-label">PENGATURAN &amp; BANTUAN</div>
+      <div class="sidebar-section-label" id="sidebarLabelSettings">SETTINGS &amp; SUPPORT</div>
       <ul class="sidebar-menu">
         <li>
           <a href="#" onclick="redirectToPricingOrUpgrade()">
             <svg class="menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>
-            <span>Langganan (Upgrade)</span>
+            <span id="sidebarUpgradeText">Subscription (Upgrade)</span>
           </a>
         </li>
         <li>
           <a href="/#n8n-docs" target="_blank">
             <svg class="menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
-            <span>Dokumentasi API</span>
+            <span id="sidebarApiDocText">API Documentation</span>
           </a>
         </li>
         <li>
           <a href="https://wa.me/6289635602758?text=Halo%20Admin%20TRENDORA%2C%20saya%20butuh%20bantuan%20dashboard" target="_blank" style="color: #34d399;">
             <svg class="menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
-            <span>Bantuan WhatsApp</span>
+            <span id="sidebarWaSupportText">WhatsApp Support</span>
           </a>
         </li>
       </ul>
       
-      <div class="sidebar-section-label">LAYANAN LAINNYA (ECOSYSTEM)</div>
+      <div class="sidebar-section-label" id="sidebarLabelEcosystem">OTHER SERVICES (ECOSYSTEM)</div>
       <ul class="sidebar-menu">
         <li>
           <a href="https://whatsappapi.trendoraautomation.my.id/" target="_blank" rel="noopener noreferrer" style="color: #38bdf8; display: flex; align-items: center; justify-content: space-between;">
@@ -1217,7 +1218,7 @@
         <li>
           <a href="#" onclick="handleSecureLogout()" style="color: #f87171;">
             <svg class="menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
-            <span>Keluar Akun</span>
+            <span id="sidebarLogoutText">Log Out</span>
           </a>
         </li>
       </ul>
@@ -1226,17 +1227,17 @@
     <!-- KONTEN UTAMA DASHBOARD -->
     <main class="dash-content">
       <button class="btn-toggle-sidebar" onclick="toggleSidebar()">
-        <span id="sidebarIconDash">◀</span> <span>Tutup Menu</span>
+        <span id="sidebarIconDash">◀</span> <span id="sidebarToggleText">Collapse Menu</span>
       </button>
       
       <!-- ALERT FREE TRIAL HABIS (7 HARI LEWAT) -->
       <div id="trialExpiredAlertBanner" class="expired-banner-box" style="display: none;">
         <div class="expired-banner-text">
-          <h3 style="color: #fca5a5; font-size: 18px; font-weight: 800; margin-bottom: 4px;">🔒 Masa Free Trial 7 Hari Anda Telah Habis!</h3>
-          <p style="color: #e5e7eb; font-size: 13px;">API Key dan akses posting otomatis Anda saat ini <strong>terkunci</strong>. Silakan upgrade ke paket berbayar untuk membuka kembali seluruh fitur tanpa batas.</p>
+          <h3 style="color: #fca5a5; font-size: 18px; font-weight: 800; margin-bottom: 4px;">🔒 Your 7-Day Free Trial Has Expired!</h3>
+          <p style="color: #e5e7eb; font-size: 13px;">Your API Key and auto-publishing access are currently <strong>locked</strong>. Please upgrade to a premium plan to unlock all unlimited features.</p>
         </div>
         <button class="btn-pink pulse-upgrade-btn" onclick="redirectToPricingOrUpgrade()" style="padding: 12px 24px; font-size: 13px; font-weight: 800; white-space: nowrap;">
-          ⭐ Upgrade Akun Berbayar &rarr;
+          ⭐ Upgrade Account &rarr;
         </button>
       </div>
 
@@ -1251,11 +1252,11 @@
               <img id="dashAvatar" src="" style="width: 56px; height: 56px; border-radius: 50%; border: 2px solid #ec4899; display: none;" alt="User Avatar" />
               <div>
                 <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 4px;">
-                  <h2 style="font-size: 24px; color: #fff; margin: 0; font-weight: 800;">Halo, <span id="dashName">User</span>! 👋</h2>
-                  <span id="dashAccountStatusBadge" class="trial-active-badge">Memeriksa status...</span>
+                  <h2 style="font-size: 24px; color: #fff; margin: 0; font-weight: 800;"><span id="dashGreetingText">Hello</span>, <span id="dashName">User</span>! 👋</h2>
+                  <span id="dashAccountStatusBadge" class="trial-active-badge">Checking status...</span>
                 </div>
                 <p style="color: #94a3b8; font-size: 13px; margin: 0;">
-                  Akun: <span id="dashUserEmail" style="color: #cbd5e1; font-weight: 600;">-</span> &bull; 
+                  <span id="dashAccountPrefix">Account:</span> <span id="dashUserEmail" style="color: #cbd5e1; font-weight: 600;">-</span> &bull; 
                   <span style="color: #38bdf8;">Multi-Channel Automation Engine</span>
                 </p>
               </div>
@@ -1265,7 +1266,7 @@
             <div style="display: flex; gap: 10px; flex-wrap: wrap;">
               <button type="button" class="btn-pink" style="font-size: 12px; padding: 10px 18px; font-weight: 700; display: flex; align-items: center; gap: 8px;" onclick="switchDashboardTab('integration')">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
-                <span>⚡ Integrasi n8n</span>
+                <span>⚡ n8n Integration</span>
               </button>
               <button type="button" class="btn-secondary" style="font-size: 12px; padding: 10px 18px; font-weight: 600; display: flex; align-items: center; gap: 8px;" onclick="switchDashboardTab('tiktok-studio')">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="23 7 16 12 23 17 23 7"></polygon><rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect></svg>
@@ -1282,9 +1283,9 @@
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"></rect><line x1="7" y1="2" x2="7" y2="22"></line><line x1="17" y1="2" x2="17" y2="22"></line><line x1="2" y1="12" x2="22" y2="12"></line><line x1="2" y1="7" x2="7" y2="7"></line><line x1="2" y1="17" x2="7" y2="17"></line><line x1="17" y1="17" x2="22" y2="17"></line><line x1="17" y1="7" x2="22" y2="7"></line></svg>
             </div>
             <div>
-              <div class="stat-label">Total Video Diproses</div>
-              <div class="stat-number" id="statOverviewTotal">0 Video</div>
-              <div class="stat-sub">Riwayat posting otomatis</div>
+              <div class="stat-label">Total Videos Processed</div>
+              <div class="stat-number" id="statOverviewTotal">0 Videos</div>
+              <div class="stat-sub">Auto-publishing history</div>
             </div>
           </div>
 
@@ -1293,9 +1294,9 @@
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
             </div>
             <div>
-              <div class="stat-label">Tingkat Keberhasilan</div>
+              <div class="stat-label">Success Rate</div>
               <div class="stat-number" id="statOverviewSuccessRate">100%</div>
-              <div class="stat-sub" id="statOverviewSuccessSub">Semua request terkirim</div>
+              <div class="stat-sub" id="statOverviewSuccessSub">All requests delivered</div>
             </div>
           </div>
 
@@ -1304,9 +1305,9 @@
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>
             </div>
             <div>
-              <div class="stat-label">Sosial Media Aktif</div>
-              <div class="stat-number" id="statOverviewChannels">0 Saluran</div>
-              <div class="stat-sub" id="statOverviewChannelsSub">TikTok, Meta &amp; Lainnya</div>
+              <div class="stat-label">Active Social Channels</div>
+              <div class="stat-number" id="statOverviewChannels">0 Channels</div>
+              <div class="stat-sub" id="statOverviewChannelsSub">TikTok, Meta &amp; Others</div>
             </div>
           </div>
 
@@ -1315,9 +1316,9 @@
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>
             </div>
             <div>
-              <div class="stat-label">Status Lisensi</div>
-              <div class="stat-number" id="statOverviewPlan" style="font-size: 19px;">Trial 7 Hari</div>
-              <div class="stat-sub" id="statOverviewPlanSub">Fitur aktif</div>
+              <div class="stat-label">License Status</div>
+              <div class="stat-number" id="statOverviewPlan" style="font-size: 19px;">7-Day Trial</div>
+              <div class="stat-sub" id="statOverviewPlanSub">Active plan</div>
             </div>
           </div>
         </div>
@@ -1470,23 +1471,23 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
       <!-- ============================================== -->
       <section id="tab-social" class="dash-tab-section">
         <!-- TIKTOK PRIVACY TIPS ALERT -->
-        <div style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.25); border-radius: 14px; padding: 16px 20px; margin-bottom: 24px; display: flex; align-items: flex-start; gap: 14px;">
+        <div id="boxTiktokPrivacyTips" style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.25); border-radius: 14px; padding: 16px 20px; margin-bottom: 24px; display: flex; align-items: flex-start; gap: 14px;">
           <span style="font-size: 24px; line-height: 1;">💡</span>
           <div style="font-size: 13px; color: #d1d5db; line-height: 1.5;">
-            <strong style="color: #34d399; font-size: 14px; display: block; margin-bottom: 3px;">Tips Pengaturan Akun TikTok Creator:</strong>
-            Jika video ter-upload dalam status <code style="background: rgba(0,0,0,0.3); color: #f59e0b; padding: 2px 6px; border-radius: 4px;">Hanya Saya (Self Only)</code> meskipun setelan di n8n / dashboard sudah <strong>Public</strong>, periksa profil TikTok Anda di aplikasi HP. Pastikan toggle <strong>Akun Privat</strong> dinonaktifkan (Buka TikTok &gt; Profil &gt; Pengaturan & Privasi &gt; Privasi &gt; matikan <em>Akun Privat</em>). API resmi TikTok secara default mengunci upload ke 'Hanya Saya' jika akun kreator disetel privat.
+            <strong id="tiktokTipTitle" style="color: #34d399; font-size: 14px; display: block; margin-bottom: 3px;">💡 TikTok Creator Account Setup Tips:</strong>
+            <span id="tiktokTipBody">If your video uploads in <code style="background: rgba(0,0,0,0.3); color: #f59e0b; padding: 2px 6px; border-radius: 4px;">Only Me (Self Only)</code> status even though set to <strong>Public</strong> in n8n / dashboard, check your TikTok mobile app profile. Ensure that <strong>Private Account</strong> is toggled off (Go to TikTok &gt; Profile &gt; Settings &amp; Privacy &gt; Privacy &gt; disable <em>Private Account</em>). Official TikTok API locks uploads to 'Only Me' by default if the creator profile is set to private.</span>
           </div>
         </div>
 
         <div class="dashboard-hero-card" style="margin-bottom: 30px; display: block;">
           <div style="margin-bottom: 20px;">
             <span style="display: inline-block; background: rgba(56,189,248,0.15); color: #38bdf8; padding: 4px 12px; border-radius: 12px; font-size: 11px; font-weight: 800; margin-bottom: 8px;">CONNECTED CHANNELS</span>
-            <h3 style="margin-bottom: 6px; font-size: 22px; color: #fff;">📱 Saluran Sosial Media Terhubung</h3>
-            <p style="color: #9ca3af; font-size: 13px;">Hubungkan akun sosial media Anda melalui otorisasi resmi OAuth2. Postingan dari n8n otomatis dikirimkan ke akun yang aktif.</p>
+            <h3 style="margin-bottom: 6px; font-size: 22px; color: #fff;">📱 Connected Social Media Channels</h3>
+            <p style="color: #9ca3af; font-size: 13px;">Connect your social media accounts via official OAuth2 authorization. Scheduled posts from n8n and Studio Publisher are automatically dispatched to active accounts.</p>
           </div>
           
           <div id="socialConnectionsList" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px;">
-            <p style="color: #6b7280; font-size: 13px;">Memuat status koneksi sosial media...</p>
+            <p style="color: #6b7280; font-size: 13px;">Loading connected social media status...</p>
           </div>
         </div>
       </section>
@@ -2398,15 +2399,15 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
                 <span id="studioHeaderTitleText">Direct Share to Facebook Reels</span>
               </h2>
               <p id="studioHeaderSubtitle" style="color: #9ca3af; font-size: 13px; margin: 0; max-width: 680px;">
-                Pilih video, lihat pratinjau langsung di smartphone vertikal 9:16, optimasi dengan AI Hook &amp; Caption, lalu bagikan secara resmi ke Facebook Page &amp; Reels Anda.
+                Select a video, preview live in 9:16 vertical smartphone frame, optimize with AI Hook &amp; Caption, and publish officially to your Facebook Page &amp; Reels.
               </p>
             </div>
 
             <!-- Status Koneksi Akun Dinamis (Meta FB, IG, YouTube, TikTok) -->
             <div id="studioConnBox" style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 12px 18px; text-align: right; min-width: 250px;">
-              <div id="studioConnPlatformLabel" style="font-size: 11px; color: #9ca3af; margin-bottom: 4px; font-weight: 600;">Status Akun Meta / Facebook:</div>
+              <div id="studioConnPlatformLabel" style="font-size: 11px; color: #9ca3af; margin-bottom: 4px; font-weight: 600;">Meta / Facebook Page Account Status:</div>
               <div id="studioConnStatusBadge" class="status-badge failed" style="margin-bottom: 6px;">
-                ○ Belum Terhubung
+                ○ NOT CONNECTED
               </div>
               <div id="studioCreatorCard" style="display: none; align-items: center; justify-content: flex-end; gap: 8px; margin-top: 6px; padding-top: 6px; border-top: 1px solid rgba(255,255,255,0.06);">
                 <img id="studioCreatorAvatar" src="" alt="Avatar" style="width: 26px; height: 26px; border-radius: 50%; border: 1px solid #1877f2; object-fit: cover;">
@@ -2417,7 +2418,7 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
               </div>
               <div id="studioConnectBtnWrap" style="display: block; margin-top: 6px;">
                 <button type="button" class="btn-secondary" id="btnStudioConnectAccount" style="font-size: 11px; padding: 6px 12px; color: #60a5fa; border-color: rgba(96,165,250,0.4);" onclick="handleConnectStudioPlatform()">
-                  🔗 Hubungkan Akun
+                  🔗 Connect Account
                 </button>
               </div>
             </div>
@@ -2431,10 +2432,10 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
               <div style="margin-bottom: 14px;">
                 <div style="display: flex; gap: 8px; margin-bottom: 12px;">
                   <button type="button" id="btnModeUploadFile" class="btn-pink" style="flex: 1; font-size: 12px; padding: 8px 12px; font-weight: 700;" onclick="switchVideoSourceMode('file')">
-                    📁 Unggah Berkas Video
+                    📁 Upload Video File
                   </button>
                   <button type="button" id="btnModeInputUrl" class="btn-secondary" style="flex: 1; font-size: 12px; padding: 8px 12px;" onclick="switchVideoSourceMode('url')">
-                    🔗 Input URL Video
+                    🔗 Input Video URL
                   </button>
                 </div>
 
@@ -2442,8 +2443,8 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
                 <div id="boxVideoFileInput">
                   <label for="tiktokVideoInput" style="display: block; border: 2px dashed rgba(56, 189, 248, 0.35); border-radius: 14px; padding: 20px 16px; text-align: center; cursor: pointer; background: rgba(56, 189, 248, 0.02); transition: all 0.2s;" ondragover="event.preventDefault(); this.style.borderColor='#38bdf8';" ondragleave="this.style.borderColor='rgba(56, 189, 248, 0.35)';" ondrop="handleTiktokVideoDrop(event)">
                     <div style="font-size: 28px; margin-bottom: 6px;">🎬</div>
-                    <div style="color: #fff; font-size: 13px; font-weight: 700; margin-bottom: 4px;">Pilih Berkas Video (.MP4 / .MOV)</div>
-                    <div style="color: #64748b; font-size: 11px;">Maksimal 500MB (.MP4, .MOV, .WebM) — Mendukung video Full HD & 4K</div>
+                    <div style="color: #fff; font-size: 13px; font-weight: 700; margin-bottom: 4px;">Choose Video File (.MP4 / .MOV)</div>
+                    <div style="color: #64748b; font-size: 11px;">Up to 500MB (.MP4, .MOV, .WebM) — Supports Full HD &amp; 4K video</div>
                     <input type="file" id="tiktokVideoInput" accept="video/mp4,video/quicktime,video/webm" style="display: none;" onchange="handleTiktokVideoFileSelected(this.files)">
                   </label>
                 </div>
@@ -2453,7 +2454,7 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
                   <div style="display: flex; gap: 8px;">
                     <input type="url" id="tiktokMediaUrlInput" placeholder="https://domain.com/sample-video.mp4" style="flex: 1; background: #090d16; border: 1px solid rgba(255,255,255,0.12); color: #fff; padding: 10px 14px; border-radius: 10px; font-size: 13px;">
                     <button type="button" class="btn-pink" style="font-size: 12px; padding: 10px 14px; white-space: nowrap;" onclick="handleLoadVideoFromUrl()">
-                      Muat Video
+                      Load Video
                     </button>
                   </div>
                 </div>
@@ -2473,8 +2474,8 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
                       <polygon points="5 3 19 12 5 21 5 3"></polygon>
                     </svg>
                   </div>
-                  <div id="studioPlaceholderTitle" style="font-size: 13px; font-weight: 700; color: #cbd5e1; margin-bottom: 6px;">Pratinjau Smartphone 9:16</div>
-                  <div style="font-size: 11px; line-height: 1.5;">Pilih atau unggah file video di atas untuk melihat simulasi pratinjau live sebelum dipublikasikan.</div>
+                  <div id="studioPlaceholderTitle" style="font-size: 13px; font-weight: 700; color: #cbd5e1; margin-bottom: 6px;">9:16 Smartphone Preview</div>
+                  <div style="font-size: 11px; line-height: 1.5;">Select or upload a video file above to view live preview simulation before publishing.</div>
                 </div>
 
                 <!-- OVERLAY SIMULASI PLATFORM (Meta FB, Instagram, YouTube, TikTok) -->
@@ -2512,14 +2513,14 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
                       <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
                         <img src="https://ui-avatars.com/api/?name=Trendora+Official&background=1877f2&color=fff" style="width: 28px; height: 28px; border-radius: 50%; border: 1.5px solid #1877f2;" alt="Page Avatar">
                         <span style="font-size: 12px; font-weight: 800; color: #fff;">Trendora Official</span>
-                        <span style="background: #1877f2; color: #fff; font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 4px;">+ Ikuti</span>
+                        <span style="background: #1877f2; color: #fff; font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 4px;">+ Follow</span>
                       </div>
-                      <div id="studioPreviewCaptionFb" style="font-size: 11px; color: #f1f5f9; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin-bottom: 4px;">
-                        Video otomasi bisnis siap tayang di Facebook Reels 🚀 #TrendoraAutomation
+                      <div id="studioPreviewCaptionFb" style="font-size: 11px; color: #f1f5f9; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin-bottom: 4px;">
+                        Business automation video ready for Facebook Reels 🚀 #TrendoraAutomation
                       </div>
                       <div style="font-size: 10px; color: #cbd5e1; display: flex; align-items: center; gap: 4px;">
                         <span>🎵</span>
-                        <span>Audio Asli - Trendora Official</span>
+                        <span>Original Audio - Trendora Official</span>
                       </div>
                     </div>
                   </div>
@@ -2559,14 +2560,14 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
                       <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
                         <img src="https://ui-avatars.com/api/?name=Trendora+Official&background=e1306c&color=fff" style="width: 26px; height: 26px; border-radius: 50%; border: 1.5px solid #e1306c;" alt="IG Avatar">
                         <span style="font-size: 12px; font-weight: 800; color: #fff;">trendora.automation</span>
-                        <span style="color: #cbd5e1; font-size: 11px;">• Ikuti</span>
+                        <span style="color: #cbd5e1; font-size: 11px;">• Follow</span>
                       </div>
-                      <div id="studioPreviewCaptionIg" style="font-size: 11px; color: #f1f5f9; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin-bottom: 4px;">
+                      <div id="studioPreviewCaptionIg" style="font-size: 11px; color: #f1f5f9; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin-bottom: 4px;">
                         Automate your growth with Trendora Instagram Reels ⚡ #ViralReels #AI
                       </div>
                       <div style="font-size: 10px; color: #cbd5e1; display: flex; align-items: center; gap: 4px;">
                         <span>🎵</span>
-                        <span>Audio Asli • trendora.automation</span>
+                        <span>Original Audio • trendora.automation</span>
                       </div>
                     </div>
                   </div>
@@ -2599,7 +2600,7 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
                       </div>
                       <div class="phone-overlay-icon-btn">
                         <span style="font-size: 20px;">↗️</span>
-                        <span>Bagikan</span>
+                        <span>Share</span>
                       </div>
                       <div class="phone-overlay-icon-btn">
                         <span style="font-size: 20px;">🔀</span>
@@ -2616,12 +2617,12 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
                         <span style="font-size: 12px; font-weight: 800; color: #fff;">@TrendoraAutomation</span>
                         <span style="background: #ff0000; color: #fff; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 12px;">Subscribe</span>
                       </div>
-                      <div id="studioPreviewTitleYt" style="font-size: 12px; font-weight: 700; color: #fff; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin-bottom: 4px;">
-                        Cara Otomasi YouTube Shorts dalam 3 Menit! #Shorts #Tech
+                      <div id="studioPreviewTitleYt" style="font-size: 12px; font-weight: 700; color: #fff; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin-bottom: 4px;">
+                        How to Automate YouTube Shorts in 3 Minutes! #Shorts #Tech
                       </div>
                       <div style="font-size: 10px; color: #cbd5e1; display: flex; align-items: center; gap: 4px;">
                         <span>🎵</span>
-                        <span>Suara Asli - Trendora Automation</span>
+                        <span>Original Audio - Trendora Automation</span>
                       </div>
                     </div>
                   </div>
@@ -2629,8 +2630,8 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
                   <!-- OVERLAY: TIKTOK DIRECT POST -->
                   <div class="phone-overlay-layer" id="overlay-tiktok" style="display: none;">
                     <div style="display: flex; justify-content: center; gap: 14px; font-size: 13px; font-weight: 700;">
-                      <span style="color: #94a3b8;">Mengikuti</span>
-                      <span style="color: #fff; border-bottom: 2px solid #fff; padding-bottom: 2px;">Untuk Anda</span>
+                      <span style="color: #94a3b8;">Following</span>
+                      <span style="color: #fff; border-bottom: 2px solid #fff; padding-bottom: 2px;">For You</span>
                     </div>
 
                     <div class="phone-overlay-side-icons">
@@ -2663,12 +2664,12 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
                       <div style="font-size: 13px; font-weight: 800; color: #fff; margin-bottom: 4px;">
                         @trendora.automation
                       </div>
-                      <div id="studioPreviewCaptionTt" style="font-size: 11px; color: #f1f5f9; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin-bottom: 6px;">
-                        Video konten TikTok otomatis via Trendora Direct Share API 🚀 #TrendoraAutomation #TikTokViral
+                      <div id="studioPreviewCaptionTt" style="font-size: 11px; color: #f1f5f9; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin-bottom: 6px;">
+                        Automated TikTok video content via Trendora Direct Share API 🚀 #TrendoraAutomation #TikTokViral
                       </div>
                       <div style="font-size: 10px; color: #cbd5e1; display: flex; align-items: center; gap: 4px;">
                         <span>🎵</span>
-                        <span>Musik Asli - Trendora Studio Official</span>
+                        <span>Original Audio - Trendora Studio Official</span>
                       </div>
                     </div>
                   </div>
@@ -2687,7 +2688,7 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
                         </div>
                       </div>
                       <div id="studioPreviewCaptionCard" style="font-size: 11px; color: #e2e8f0; line-height: 1.5; margin-bottom: 8px; max-height: 80px; overflow-y: auto;">
-                        Konten video siap tayang dengan integrasi omnichannel otomatis ⚡
+                        Video content ready to publish with automated omnichannel integration ⚡
                       </div>
                       <div style="display: flex; justify-content: space-between; font-size: 10px; color: #94a3b8; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 6px;">
                         <span>💬 42</span>
@@ -2704,7 +2705,7 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
               <!-- Metadata info under video -->
               <div style="margin-top: 12px; text-align: center;">
                 <span style="font-size: 11px; color: #94a3b8; background: rgba(255,255,255,0.04); padding: 4px 10px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.08);">
-                  📐 Aspek Rasio: <strong>Vertikal 9:16</strong> &bull; <span id="tiktokVideoMetaDisplay">Belum ada video dipilih</span>
+                  📐 Aspect Ratio: <strong>Vertical 9:16</strong> &bull; <span id="tiktokVideoMetaDisplay">No video selected</span>
                 </span>
               </div>
             </div>
@@ -2722,32 +2723,32 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
                   <span style="font-size: 10px; font-weight: 700; background: rgba(56, 189, 248, 0.2); color: #38bdf8; padding: 2px 8px; border-radius: 8px; border: 1px solid rgba(56, 189, 248, 0.3);">AI AUTO-HOOK</span>
                 </div>
                 <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-                  <input type="text" id="studioAiTopicInput" placeholder="Ketik topik video (contoh: Rahasia Otomasi Bisnis Online di 2026)..." style="flex: 1; min-width: 200px; background: #090d16; border: 1px solid rgba(255,255,255,0.14); color: #fff; padding: 10px 14px; border-radius: 10px; font-size: 13px;">
+                  <input type="text" id="studioAiTopicInput" placeholder="Enter video topic (e.g. Business Automation Secrets in 2026)..." style="flex: 1; min-width: 200px; background: #090d16; border: 1px solid rgba(255,255,255,0.14); color: #fff; padding: 10px 14px; border-radius: 10px; font-size: 13px;">
                   <select id="studioAiToneSelect" style="background: #090d16; border: 1px solid rgba(255,255,255,0.14); color: #fff; padding: 10px 12px; border-radius: 10px; font-size: 12px; cursor: pointer;">
                     <option value="viral">🔥 Viral &amp; High CTR</option>
-                    <option value="professional">💼 Profesional &amp; Bisnis</option>
-                    <option value="casual">☕ Santai &amp; Edukatif</option>
-                    <option value="sales">🎯 Hard Selling &amp; Promo</option>
+                    <option value="professional">💼 Professional &amp; Business</option>
+                    <option value="casual">☕ Casual &amp; Educational</option>
+                    <option value="sales">🎯 Direct Sales &amp; Promo</option>
                   </select>
                   <button type="button" id="btnStudioGenerateAi" class="btn-pink" style="font-size: 12px; padding: 10px 16px; font-weight: 700; display: flex; align-items: center; gap: 6px; white-space: nowrap;" onclick="generateStudioAICaption()">
                     <span id="studioAiBtnIcon">⚡</span>
-                    <span id="studioAiBtnText">Buatkan Hook AI</span>
+                    <span id="studioAiBtnText">Generate AI Hook</span>
                   </button>
                 </div>
 
                 <!-- Tombol Mode Multi-Variasi -->
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px; flex-wrap: wrap; gap: 8px;">
                   <button type="button" id="btnStudioAiMultiVariations" style="background: rgba(168, 85, 247, 0.12); border: 1px solid rgba(168, 85, 247, 0.35); color: #c084fc; font-size: 11px; font-weight: 700; padding: 6px 12px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: all 0.2s;" onclick="generateStudioAIMultiVariations()">
-                    <span>🎯 Buat 4 Variasi Sudut Pandang (Multi-Angle Hook)</span>
+                    <span id="studioAiMultiVarText">🎯 Generate 4 Angles (Multi-Angle Hook)</span>
                   </button>
-                  <span style="font-size: 11px; color: #64748b;">Otomatis buat hook berbeda agar tidak dianggap konten duplikat</span>
+                  <span id="studioAiMultiVarSub" style="font-size: 11px; color: #64748b;">Automatically generates distinct hooks to avoid duplicate content flags</span>
                 </div>
 
                 <!-- Kontainer Kartu 4 Variasi Hook -->
                 <div id="studioAiVariationsBox" style="display: none; margin-top: 14px; padding-top: 14px; border-top: 1px solid rgba(255,255,255,0.08);">
                   <div style="font-size: 12px; font-weight: 700; color: #fff; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
-                    <span>✨ Pilih Variasi Hook &amp; Caption:</span>
-                    <span style="font-size: 10.5px; color: #38bdf8;">Klik kartu untuk menerapkan</span>
+                    <span id="studioAiVariationsHeader">✨ Choose Hook &amp; Caption Variation:</span>
+                    <span id="studioAiVariationsHint" style="font-size: 10.5px; color: #38bdf8;">Click card to apply</span>
                   </div>
                   <div id="studioAiVariationsGrid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px;">
                   </div>
@@ -2757,31 +2758,31 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
               <!-- FIELD: JUDUL VIDEO KHUSUS YOUTUBE & FACEBOOK -->
               <div id="studioBoxVideoTitle" style="display: none; margin-bottom: 20px;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                  <label for="studioYtTitleInput" style="font-size: 13px; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 6px;">
-                    🏷️ Judul Video (Title) <span style="color: #ff0000;">*</span>
+                  <label for="studioYtTitleInput" id="studioLabelVideoTitle" style="font-size: 13px; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 6px;">
+                    🏷️ Video Title <span style="color: #ff0000;">*</span>
                   </label>
                   <span style="font-size: 11px; color: #64748b; font-family: monospace;">
                     <span id="studioYtTitleCounter">0</span> / 100
                   </span>
                 </div>
-                <input type="text" id="studioYtTitleInput" maxlength="100" placeholder="Masukkan judul menarik dengan Click-Through-Rate tinggi..." style="width: 100%; background: #090d16; border: 1px solid rgba(255,255,255,0.12); color: #fff; padding: 11px 14px; border-radius: 12px; font-size: 13px;" oninput="updateStudioTitleCounter()">
+                <input type="text" id="studioYtTitleInput" maxlength="100" placeholder="Enter compelling video title with high CTR..." style="width: 100%; background: #090d16; border: 1px solid rgba(255,255,255,0.12); color: #fff; padding: 11px 14px; border-radius: 12px; font-size: 13px;" oninput="updateStudioTitleCounter()">
               </div>
 
               <!-- 1. Caption / Deskripsi Postingan (Universal) -->
               <div style="margin-bottom: 20px;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                  <label for="tiktokCaptionInput" style="font-size: 13px; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 6px;">
-                    📝 Deskripsi / Caption Video
+                  <label for="tiktokCaptionInput" id="studioLabelCaption" style="font-size: 13px; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 6px;">
+                    📝 Video Caption / Description
                   </label>
                   <span style="font-size: 11px; color: #64748b; font-family: monospace;">
                     <span id="tiktokCaptionCounter">0</span> / <span id="studioCaptionMaxLen">5000</span>
                   </span>
                 </div>
-                <textarea id="tiktokCaptionInput" rows="4" maxlength="5000" placeholder="Tulis caption menarik untuk video Anda... Sertakan hashtag untuk menjangkau audiens secara organik." style="width: 100%; background: #090d16; border: 1px solid rgba(255,255,255,0.12); color: #fff; padding: 12px 14px; border-radius: 12px; font-size: 13px; line-height: 1.6; resize: vertical;" oninput="updateStudioCaptionPreview()"></textarea>
+                <textarea id="tiktokCaptionInput" rows="4" maxlength="5000" placeholder="Write an engaging caption for your video... Include hashtags to reach audiences organically." style="width: 100%; background: #090d16; border: 1px solid rgba(255,255,255,0.12); color: #fff; padding: 12px 14px; border-radius: 12px; font-size: 13px; line-height: 1.6; resize: vertical;" oninput="updateStudioCaptionPreview()"></textarea>
                 
                 <!-- Quick Hashtag chips -->
                 <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; align-items: center;">
-                  <span style="font-size: 11px; color: #64748b;">Hashtag Cepat:</span>
+                  <span id="studioQuickHashtagsLabel" style="font-size: 11px; color: #64748b;">Quick Hashtags:</span>
                   <button type="button" class="tiktok-hashtag-chip" onclick="appendTiktokHashtag('#TrendoraAutomation')">#TrendoraAutomation</button>
                   <button type="button" class="tiktok-hashtag-chip" onclick="appendTiktokHashtag('#ReelsViral')">#ReelsViral</button>
                   <button type="button" class="tiktok-hashtag-chip" onclick="appendTiktokHashtag('#Shorts')">#Shorts</button>
@@ -2800,28 +2801,28 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
                 <div style="margin-bottom: 20px;">
                   <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
                     <label for="studioFbPageSelect" style="font-size: 13px; font-weight: 700; color: #fff;">
-                      📘 Pilih Facebook Page Tujuan <span style="color: #1877f2;">*</span>
+                      📘 Select Target Facebook Page <span style="color: #1877f2;">*</span>
                     </label>
                     <button type="button" style="background: none; border: none; color: #60a5fa; font-size: 11px; cursor: pointer; text-decoration: underline;" onclick="fetchStudioMetaAccounts(true)">
-                      🔄 Refresh Halaman
+                      🔄 Refresh Pages
                     </button>
                   </div>
                   <select id="studioFbPageSelect" style="width: 100%; background: #090d16; border: 1px solid rgba(255,255,255,0.12); color: #fff; padding: 12px 14px; border-radius: 12px; font-size: 13px; cursor: pointer;" onchange="handleStudioFbPageChange()">
-                    <option value="">-- Belum ada Facebook Page terhubung --</option>
+                    <option value="">-- No Facebook Page connected yet --</option>
                   </select>
                   <p style="font-size: 11px; color: #94a3b8; margin: 6px 0 0 0;">
-                    Video Reels akan dipublikasikan secara resmi ke Halaman Facebook yang Anda pilih melalui Graph API.
+                    Reels videos and posts will be published officially to your selected Facebook Page via Meta Graph API.
                   </p>
                 </div>
 
                 <!-- Format Postingan Facebook -->
                 <div style="margin-bottom: 20px;">
-                  <label for="studioFbFormatSelect" style="display: block; font-size: 13px; font-weight: 700; color: #fff; margin-bottom: 8px;">
-                    🎯 Format Distribusi Konten Meta
+                  <label for="studioFbFormatSelect" id="studioFbFormatLabel" style="display: block; font-size: 13px; font-weight: 700; color: #fff; margin-bottom: 8px;">
+                    🎯 Meta Content Distribution Format
                   </label>
                   <select id="studioFbFormatSelect" style="width: 100%; background: #090d16; border: 1px solid rgba(255,255,255,0.12); color: #fff; padding: 12px 14px; border-radius: 12px; font-size: 13px;">
-                    <option value="reels" selected>🌟 Facebook Reels (Format Vertikal 9:16 - Jangkauan Organik Maksimal)</option>
-                    <option value="feed">📹 Video Feed Standar Halaman</option>
+                    <option value="reels" selected>🌟 Facebook Reels (9:16 Vertical Format - Maximum Organic Reach)</option>
+                    <option value="feed">📹 Standard Page Feed Video</option>
                   </select>
                 </div>
               </div>
@@ -3180,10 +3181,10 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
                   <div style="display: flex; align-items: center; gap: 8px;">
                     <span style="font-size: 18px;">🛡️</span>
-                    <span style="font-size: 13px; font-weight: 800; color: #fff;">Smart Multi-Account Shield (Anti-Duplicate &amp; Anti-Spam)</span>
+                    <span id="studioShieldTitle" style="font-size: 13px; font-weight: 800; color: #fff;">Smart Multi-Account Shield (Anti-Duplicate &amp; Anti-Spam)</span>
                   </div>
-                  <span style="font-size: 10px; background: rgba(56,189,248,0.2); color: #38bdf8; padding: 2px 8px; border-radius: 6px; font-weight: 700; border: 1px solid rgba(56,189,248,0.4);">
-                    ALGORITMA SAFE
+                  <span id="studioShieldBadge" style="font-size: 10px; background: rgba(56,189,248,0.2); color: #38bdf8; padding: 2px 8px; border-radius: 6px; font-weight: 700; border: 1px solid rgba(56,189,248,0.4);">
+                    SAFE ALGORITHM
                   </span>
                 </div>
 
@@ -3191,11 +3192,11 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
                 <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 14px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; margin-bottom: 12px;">
                   <div>
                     <div style="font-size: 12.5px; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 6px;">
-                      <span>⚡ Auto-Video Spinner (Unique File Hash)</span>
-                      <span style="font-size: 9px; background: #059669; color: #fff; padding: 1px 5px; border-radius: 4px;">AKTIF</span>
+                      <span id="studioSpinnerLabel">⚡ Auto-Video Spinner (Unique File Hash)</span>
+                      <span id="studioSpinnerBadge" style="font-size: 9px; background: #059669; color: #fff; padding: 1px 5px; border-radius: 4px;">ACTIVE</span>
                     </div>
-                    <div style="font-size: 11px; color: #94a3b8; margin-top: 2px; line-height: 1.4;">
-                      Otomatis merotasi atom MP4 &amp; binary hash agar tiap akun menerima file unik, mencegah shadowban "Unoriginal Content".
+                    <div id="studioSpinnerSub" style="font-size: 11px; color: #94a3b8; margin-top: 2px; line-height: 1.4;">
+                      Automatically rotates MP4 atoms &amp; binary hash so each account receives a unique file, preventing "Unoriginal Content" penalties.
                     </div>
                   </div>
                   <label class="tiktok-custom-switch">
@@ -3206,30 +3207,30 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
 
                 <!-- 2. Staggered Delay Scheduling (Jeda Waktu Acak) -->
                 <div style="padding: 12px 14px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 10px;">
-                  <div style="font-size: 12.5px; font-weight: 700; color: #fff; margin-bottom: 8px;">
-                    ⏱️ Mode Distribusi Waktu (Anti-Blast Spam)
+                  <div id="studioDistModeLabel" style="font-size: 12.5px; font-weight: 700; color: #fff; margin-bottom: 8px;">
+                    ⏱️ Publishing Timeline Mode (Anti-Blast Spam)
                   </div>
                   <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px;">
                     <label style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: #cbd5e1; cursor: pointer; padding: 8px 10px; border-radius: 8px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08);">
                       <input type="radio" name="studioDistMode" value="immediate" checked onchange="handleStaggeredModeChange(false)">
-                      <span>⚡ Terbitkan Seketika</span>
+                      <span id="studioDistImmLabel">⚡ Publish Immediately</span>
                     </label>
                     <label style="display: flex; align-items: center; gap: 8px; font-size: 12px; color: #cbd5e1; cursor: pointer; padding: 8px 10px; border-radius: 8px; background: rgba(56,189,248,0.06); border: 1px solid rgba(56,189,248,0.3);">
                       <input type="radio" name="studioDistMode" value="staggered" onchange="handleStaggeredModeChange(true)">
-                      <span>🛡️ Distribusi Bertahap (Aman)</span>
+                      <span id="studioDistStagLabel">🛡️ Staggered Distribution (Safe)</span>
                     </label>
                   </div>
                   <div id="studioStaggeredOptionsBox" style="display: none; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.06);">
                     <div style="display: flex; justify-content: space-between; align-items: center; font-size: 11.5px; color: #94a3b8; margin-bottom: 8px;">
-                      <span>Pilih Rentang Jeda Acak:</span>
+                      <span id="studioStaggerSelectLabel">Select Random Delay Range:</span>
                       <select id="studioStaggerIntervalSelect" style="background: #090d16; color: #fff; border: 1px solid rgba(255,255,255,0.15); border-radius: 6px; padding: 4px 8px; font-size: 11.5px;" onchange="updateStaggerPreviewText()">
-                        <option value="15" selected>15 - 25 Menit (Rekomendasi)</option>
-                        <option value="30">30 - 45 Menit (Ekstra Aman)</option>
-                        <option value="60">1 Jam per Akun</option>
+                        <option value="15" selected>15 - 25 Minutes (Recommended)</option>
+                        <option value="30">30 - 45 Minutes (Extra Safe)</option>
+                        <option value="60">1 Hour per Account</option>
                       </select>
                     </div>
                     <div id="studioStaggerPreviewNote" style="background: rgba(56,189,248,0.08); border-left: 2px solid #38bdf8; padding: 8px 10px; border-radius: 4px; font-size: 11px; color: #bae6fd; line-height: 1.4;">
-                      ℹ️ Akun pertama terbit sekarang. Akun berikutnya dijadwalkan bertahap dengan jeda acak agar akun Anda dinilai organik.
+                      ℹ️ First account publishes immediately. Subsequent accounts are scheduled with random intervals to simulate organic activity.
                     </div>
                   </div>
                 </div>
@@ -3241,11 +3242,11 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
                   <div style="display: flex; justify-content: space-between; align-items: center;">
                     <div>
                       <div style="font-size: 12.5px; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 6px;">
-                        <span>📅 Jadwalkan untuk Nanti (Auto-Publish)</span>
-                        <span style="font-size: 9px; background: #0284c7; color: #fff; padding: 1px 5px; border-radius: 4px;">KALENDER</span>
+                        <span id="studioScheduleToggleLabel">📅 Schedule for Later (Auto-Publish)</span>
+                        <span style="font-size: 9px; background: #0284c7; color: #fff; padding: 1px 5px; border-radius: 4px;">CALENDAR</span>
                       </div>
-                      <div style="font-size: 11px; color: #94a3b8; margin-top: 2px;">
-                        Simpan ke antrean Kalender Konten dan posting otomatis di jam audiens paling aktif.
+                      <div id="studioScheduleToggleSub" style="font-size: 11px; color: #94a3b8; margin-top: 2px;">
+                        Add to Content Calendar queue and auto-post at peak audience hours.
                       </div>
                     </div>
                     <label class="tiktok-custom-switch">
@@ -3254,19 +3255,19 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
                     </label>
                   </div>
                   <div id="studioSchedulePickerBox" style="display: none; margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.06);">
-                    <label style="display: block; font-size: 11.5px; color: #cbd5e1; font-weight: 600; margin-bottom: 6px;">
-                      Pilih Tanggal &amp; Waktu Tayang (WIB):
+                    <label id="studioSchedulePickerLabel" style="display: block; font-size: 11.5px; color: #cbd5e1; font-weight: 600; margin-bottom: 6px;">
+                      Select Date &amp; Time (WIB):
                     </label>
                     <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 8px;">
                       <input type="datetime-local" id="studioScheduleDateTime" style="background: #090d16; color: #fff; border: 1px solid rgba(56,189,248,0.4); border-radius: 8px; padding: 8px 12px; font-size: 12.5px; flex: 1; min-width: 220px;" />
                       <span style="font-size: 11px; color: #94a3b8;">Status: <strong style="color: #38bdf8;">Auto-Publish Queue</strong></span>
                     </div>
                     <div style="display: flex; gap: 6px; flex-wrap: wrap;">
-                      <span style="font-size: 10px; color: #94a3b8; align-self: center;">Rekomendasi Jam Ramai:</span>
-                      <button type="button" class="tiktok-hashtag-chip" style="font-size: 10px; padding: 2px 8px;" onclick="setStudioSchedulePreset(12, 0)">Siang 12:00</button>
-                      <button type="button" class="tiktok-hashtag-chip" style="font-size: 10px; padding: 2px 8px;" onclick="setStudioSchedulePreset(17, 30)">Sore 17:30</button>
-                      <button type="button" class="tiktok-hashtag-chip" style="font-size: 10px; padding: 2px 8px;" onclick="setStudioSchedulePreset(19, 30)">Malam 19:30</button>
-                      <button type="button" class="tiktok-hashtag-chip" style="font-size: 10px; padding: 2px 8px;" onclick="setStudioSchedulePreset(21, 0)">Malam 21:00</button>
+                      <span id="studioSchedulePeakHoursLabel" style="font-size: 10px; color: #94a3b8; align-self: center;">Recommended Peak Hours:</span>
+                      <button type="button" class="tiktok-hashtag-chip" style="font-size: 10px; padding: 2px 8px;" onclick="setStudioSchedulePreset(12, 0)">Noon 12:00</button>
+                      <button type="button" class="tiktok-hashtag-chip" style="font-size: 10px; padding: 2px 8px;" onclick="setStudioSchedulePreset(17, 30)">Evening 17:30</button>
+                      <button type="button" class="tiktok-hashtag-chip" style="font-size: 10px; padding: 2px 8px;" onclick="setStudioSchedulePreset(19, 30)">Night 19:30</button>
+                      <button type="button" class="tiktok-hashtag-chip" style="font-size: 10px; padding: 2px 8px;" onclick="setStudioSchedulePreset(21, 0)">Night 21:00</button>
                     </div>
                   </div>
                 </div>
@@ -3280,21 +3281,21 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
                     <span id="studioSubmitBtnIcon">
                       <svg width="22" height="22" viewBox="0 0 24 24" fill="#ffffff"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
                     </span>
-                    <span id="studioSubmitBtnText">🚀 Publikasikan ke Facebook Reels Sekarang</span>
+                    <span id="studioSubmitBtnText">🚀 Publish to Facebook Reels Now</span>
                   </button>
 
                   <!-- Tooltip on hover when button is disabled -->
                   <div id="tiktokShareTooltip" style="display: none; position: absolute; bottom: calc(100% + 10px); left: 50%; transform: translateX(-50%); background: #1e293b; color: #f8fafc; padding: 8px 14px; border-radius: 8px; font-size: 12px; font-weight: 600; white-space: normal; width: max-content; max-width: 320px; text-align: center; box-shadow: 0 8px 24px rgba(0,0,0,0.6); border: 1px solid rgba(255,255,255,0.15); z-index: 100; pointer-events: none;">
-                    <span id="tiktokShareTooltipText">Silakan pilih atau unggah file video terlebih dahulu.</span>
+                    <span id="tiktokShareTooltipText">Please select or upload a video file first.</span>
                     <div style="position: absolute; top: 100%; left: 50%; transform: translateX(-50%); border-width: 6px; border-style: solid; border-color: #1e293b transparent transparent transparent;"></div>
                   </div>
                 </div>
                 
                 <div id="tiktokShareNotice" style="margin-top: 10px; font-size: 12px; color: #94a3b8; text-align: center; min-height: 18px;">
-                  ⚠️ Silakan pilih file video di atas sebelum mempublikasikan.
+                  ⚠️ Please select or upload a video file above before publishing.
                 </div>
-                <div style="margin-top: 6px; font-size: 11px; color: #64748b; text-align: center;">
-                  ℹ️ Setelah dipublikasikan, server platform akan memproses resolusi HD dan video akan segera tampil di feed profil Anda.
+                <div id="tiktokShareSubNotice" style="margin-top: 6px; font-size: 11px; color: #64748b; text-align: center;">
+                  ℹ️ Once published, platform servers will process high-definition video before rendering on your page feed.
                 </div>
               </div>
 
@@ -3314,9 +3315,9 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
             <span id="studioProgressModalIcon" style="font-size: 26px;">🚀</span>
           </div>
 
-          <h3 id="studioProgressModalTitle" style="font-size: 20px; color: #fff; font-weight: 800; margin-bottom: 8px;">Mengunggah ke Facebook Reels...</h3>
+          <h3 id="studioProgressModalTitle" style="font-size: 20px; color: #fff; font-weight: 800; margin-bottom: 8px;">Publishing to Facebook Reels...</h3>
           <p id="tiktokUploadStatusText" style="font-size: 13px; color: #94a3b8; min-height: 38px; line-height: 1.5; margin-bottom: 20px;">
-            Mempersiapkan berkas video dan memvalidasi otorisasi akun...
+            Preparing video file and validating account authorization...
           </p>
 
           <!-- Progress Bar -->
@@ -3342,15 +3343,15 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
             <span style="font-size: 32px;">✅</span>
           </div>
 
-          <h3 id="studioSuccessModalTitle" style="font-size: 22px; color: #fff; font-weight: 800; margin-bottom: 6px;">Video Berhasil Dipublikasikan!</h3>
+          <h3 id="studioSuccessModalTitle" style="font-size: 22px; color: #fff; font-weight: 800; margin-bottom: 6px;">Video Successfully Published!</h3>
           <p id="studioSuccessModalSubtitle" style="font-size: 13px; color: #94a3b8; margin-bottom: 20px; line-height: 1.5;">
-            Video Anda telah sukses diposting ke platform melalui otorisasi resmi API.
+            Your video has been published to the platform via official API authorization.
           </p>
 
           <!-- Detail Status Box -->
           <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 16px; text-align: left; font-size: 12px; margin-bottom: 20px; line-height: 1.8;">
             <div style="display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 6px; margin-bottom: 6px;">
-              <span style="color: #64748b;">Target Platform:</span>
+              <span id="studioSuccessTargetPlatLabel" style="color: #64748b;">Target Platform:</span>
               <span id="studioSuccessPlatformBadge" style="color: #60a5fa; font-weight: 700;">Facebook Reels</span>
             </div>
             <div style="display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 6px; margin-bottom: 6px;">
@@ -3358,34 +3359,34 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
               <span id="tiktokSuccessPublishId" style="color: #34d399; font-family: monospace; font-weight: 700;">-</span>
             </div>
             <div style="display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 6px; margin-bottom: 6px;">
-              <span style="color: #64748b;">Akun / Halaman Tujuan:</span>
+              <span id="studioSuccessDestLabel" style="color: #64748b;">Destination Account / Page:</span>
               <span id="studioSuccessDestination" style="color: #fff; font-weight: 600;">-</span>
             </div>
             <div style="display: flex; justify-content: space-between;">
-              <span style="color: #64748b;">Waktu Publikasi:</span>
+              <span id="studioSuccessTimeLabel" style="color: #64748b;">Publication Time:</span>
               <span id="tiktokSuccessTimestamp" style="color: #94a3b8;">-</span>
             </div>
           </div>
 
           <!-- Explanation of Where Content Went -->
           <div id="studioSuccessExplainBox" style="background: rgba(56, 189, 248, 0.08); border-left: 3px solid #38bdf8; border-radius: 0 8px 8px 0; padding: 12px; text-align: left; font-size: 12px; color: #cbd5e1; line-height: 1.6; margin-bottom: 24px;">
-            📌 <strong>Konfirmasi Publikasi:</strong> Video telah berhasil dikirim ke server platform. <em>Setelah dipublikasikan, sistem platform memerlukan beberapa detik untuk memproses resolusi video sebelum muncul di beranda publik.</em>
+            📌 <strong>Publication Confirmed:</strong> Video was successfully delivered to platform servers. <em>Platform systems require a few seconds to process high-definition video before appearing on your public feed.</em>
           </div>
 
           <!-- Action Buttons -->
           <div style="display: flex; gap: 10px; flex-direction: column;">
             <a id="btnOpenTiktokProfile" href="https://www.facebook.com/" target="_blank" rel="noopener noreferrer" class="btn-tiktok-share btn-submit-facebook" style="text-decoration: none;">
               <span id="studioSuccessOpenBtnIcon">🚀</span>
-              <span id="studioSuccessOpenBtnText">Buka Halaman / Postingan</span>
+              <span id="studioSuccessOpenBtnText">Watch Reel on Facebook</span>
             </a>
             
             <a id="btnOpenFbPageProfile" href="https://www.facebook.com/" target="_blank" rel="noopener noreferrer" class="btn-secondary" style="display: none; text-decoration: none; font-size: 13px; padding: 12px; align-items: center; justify-content: center; gap: 8px;">
               <span>📘</span>
-              <span>Buka Tab Video Halaman Facebook</span>
+              <span id="studioSuccessFbTabBtnText">Open Facebook Page Videos Tab</span>
             </a>
 
-            <button type="button" class="btn-secondary" style="font-size: 13px; padding: 12px;" onclick="closeTiktokSuccessModal()">
-              Tutup &amp; Buat Postingan Baru
+            <button type="button" id="studioSuccessCloseBtn" class="btn-secondary" style="font-size: 13px; padding: 12px;" onclick="closeTiktokSuccessModal()">
+              Close &amp; Create New Post
             </button>
           </div>
 
@@ -3625,13 +3626,14 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
     function toggleSidebar() {
       document.body.classList.toggle('sidebar-hidden');
       const icon = document.getElementById('sidebarIconDash');
-      const btnText = icon.nextElementSibling;
+      const btnText = document.getElementById('sidebarToggleText') || (icon ? icon.nextElementSibling : null);
+      const isEn = (typeof window.currentLanguage === 'string' ? window.currentLanguage !== 'id' : true);
       if (document.body.classList.contains('sidebar-hidden')) {
-        icon.innerText = '▶';
-        btnText.innerText = 'Buka Menu';
+        if (icon) icon.innerText = '▶';
+        if (btnText) btnText.innerText = isEn ? 'Expand Menu' : 'Buka Menu';
       } else {
-        icon.innerText = '◀';
-        btnText.innerText = 'Tutup Menu';
+        if (icon) icon.innerText = '◀';
+        if (btnText) btnText.innerText = isEn ? 'Collapse Menu' : 'Tutup Menu';
       }
     }
 
@@ -4047,6 +4049,18 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
         if (res.ok) {
           const data = await res.json();
           if (data.success) {
+            if ((!data.by_platform || !data.by_platform.facebook || data.by_platform.facebook.length === 0) && Array.isArray(window.studioMetaAccounts) && window.studioMetaAccounts.length > 0) {
+              if (!data.by_platform) data.by_platform = {};
+              data.by_platform.facebook = window.studioMetaAccounts.map(a => ({
+                id: a.id,
+                platform: 'facebook',
+                name: a.name || 'Facebook Page',
+                username: a.category || a.username || 'Page',
+                avatar_url: a.avatar_url || '',
+                connected_at: ''
+              }));
+              data.count = (data.count || 0) + data.by_platform.facebook.length;
+            }
             window.socialAccountsData = data;
             window.allSocialAccounts = Array.isArray(data.accounts) ? data.accounts : [];
             renderSocialChannels();
@@ -4094,25 +4108,27 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
       let quotaSubHtml = '';
       let progressPercent = 0;
 
+      const isEn = (typeof window.currentLanguage === 'string' ? window.currentLanguage !== 'id' : true);
+
       if (isTrial) {
         quotaTitleHtml = `
-          <span>📊 Kuota Akun Medsos:</span>
-          <span style="color: #38bdf8; background: rgba(56,189,248,0.15); padding: 3px 10px; border-radius: 8px; font-size: 14px; border: 1px solid rgba(56,189,248,0.3);">${count} / 7 Platform Terhubung</span>
-          <span style="font-size: 11px; color: #c084fc; border: 1px solid rgba(192,132,252,0.35); padding: 2px 8px; border-radius: 6px; text-transform: uppercase; font-weight: 700;">Paket FREE TRIAL (1 Akun / Platform)</span>
+          <span>${isEn ? '📊 Social Media Account Quotas:' : '📊 Kuota Akun Medsos:'}</span>
+          <span style="color: #38bdf8; background: rgba(56,189,248,0.15); padding: 3px 10px; border-radius: 8px; font-size: 14px; border: 1px solid rgba(56,189,248,0.3);">${count} / 7 ${isEn ? 'Platforms Connected' : 'Platform Terhubung'}</span>
+          <span style="font-size: 11px; color: #c084fc; border: 1px solid rgba(192,132,252,0.35); padding: 2px 8px; border-radius: 6px; text-transform: uppercase; font-weight: 700;">${isEn ? 'FREE TRIAL PLAN (1 Account / Platform)' : 'Paket FREE TRIAL (1 Akun / Platform)'}</span>
         `;
-        quotaSubHtml = `
-          Paket Free Trial mengizinkan <strong>1 profil untuk setiap platform media sosial</strong> (TikTok, Facebook, Instagram, YouTube, dll). Upgrade ke Starter/VIP/VVIP untuk fitur Multi-Akun (kelola banyak akun di platform yang sama).
-        `;
+        quotaSubHtml = isEn 
+          ? `Free Trial permits <strong>1 account per social media platform</strong> (TikTok, Facebook, Instagram, YouTube, etc). Upgrade to Starter/VIP/VVIP for Multi-Account support.`
+          : `Paket Free Trial mengizinkan <strong>1 profil untuk setiap platform media sosial</strong> (TikTok, Facebook, Instagram, YouTube, dll). Upgrade ke Starter/VIP/VVIP untuk fitur Multi-Akun.`;
         progressPercent = Math.min(100, (count / 7) * 100);
       } else {
         quotaTitleHtml = `
-          <span>📊 Kuota Slot Akun Medsos:</span>
-          <span style="color: #38bdf8; background: rgba(56,189,248,0.15); padding: 3px 10px; border-radius: 8px; font-size: 14px; border: 1px solid rgba(56,189,248,0.3);">${count} / ${maxLimit} Slot Terpakai</span>
-          <span style="font-size: 11px; color: #c084fc; border: 1px solid rgba(192,132,252,0.35); padding: 2px 8px; border-radius: 6px; text-transform: uppercase; font-weight: 700;">Paket ${plan.toUpperCase()}</span>
+          <span>${isEn ? '📊 Social Media Account Quotas:' : '📊 Kuota Slot Akun Medsos:'}</span>
+          <span style="color: #38bdf8; background: rgba(56,189,248,0.15); padding: 3px 10px; border-radius: 8px; font-size: 14px; border: 1px solid rgba(56,189,248,0.3);">${count} / ${maxLimit} ${isEn ? 'Slots Used' : 'Slot Terpakai'}</span>
+          <span style="font-size: 11px; color: #c084fc; border: 1px solid rgba(192,132,252,0.35); padding: 2px 8px; border-radius: 6px; text-transform: uppercase; font-weight: 700;">${isEn ? 'UNLIMITED PLAN' : 'Paket ' + plan.toUpperCase()}</span>
         `;
-        quotaSubHtml = `
-          Slot bebas dialokasikan: Anda bisa menghubungkan hingga <strong>${maxLimit} akun sekaligus</strong> (misal ${maxLimit} akun TikTok atau kombinasi platform lainnya).
-        `;
+        quotaSubHtml = isEn
+          ? `Flexible slot allocation: You can connect up to <strong>${maxLimit} accounts simultaneously</strong> (e.g. multiple Facebook Pages, TikTok, or multi-platform combinations).`
+          : `Slot bebas dialokasikan: Anda bisa menghubungkan hingga <strong>${maxLimit} akun sekaligus</strong> (misal ${maxLimit} akun TikTok atau kombinasi platform lainnya).`;
         progressPercent = Math.min(100, (count / maxLimit) * 100);
       }
 
@@ -4129,7 +4145,7 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
             </div>
             <div>
               <button type="button" class="btn-secondary" style="font-size: 11px; padding: 7px 14px; border-color: rgba(56,189,248,0.4); color: #38bdf8;" onclick="loadSocialAccountsData()">
-                🔄 Segarkan Data Akun
+                ${isEn ? '🔄 Refresh Accounts' : '🔄 Segarkan Data Akun'}
               </button>
             </div>
           </div>
@@ -4141,33 +4157,35 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
 
       // 2. Render Cards for each Platform
       htmlOutput += channels.map(ch => {
-        const platAccounts = byPlat[ch.key] || [];
+        let platAccounts = byPlat[ch.key] || [];
         const isConn = platAccounts.length > 0;
 
         let accountsListHtml = '';
         if (isConn) {
           accountsListHtml = `
             <div style="display: flex; flex-direction: column; gap: 6px; margin: 12px 0 10px 0; max-height: 160px; overflow-y: auto;">
-              ${platAccounts.map(acc => `
+              ${platAccounts.map(acc => {
+                const fbAvatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(acc.name || 'User')}&background=1e293b&color=fff`;
+                return `
                 <div style="display: flex; align-items: center; justify-content: space-between; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 8px 12px;">
                   <div style="display: flex; align-items: center; gap: 8px; overflow: hidden;">
-                    <img src="${acc.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(acc.name)}&background=1e293b&color=fff`}" style="width: 24px; height: 24px; border-radius: 50%; object-fit: cover; border: 1px solid ${ch.color};">
+                    <img src="${acc.avatar_url || fbAvatar}" referrerpolicy="no-referrer" onerror="this.onerror=null; this.src='${fbAvatar}';" style="width: 24px; height: 24px; border-radius: 50%; object-fit: cover; border: 1px solid ${ch.color};">
                     <div style="line-height: 1.2; overflow: hidden;">
                       <div style="font-size: 12px; font-weight: 700; color: #fff; white-space: nowrap; text-overflow: ellipsis; overflow: hidden;">${acc.name}</div>
                       <div style="font-size: 10px; color: #94a3b8;">${acc.username || ''}</div>
                     </div>
                   </div>
-                  <button type="button" style="background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.25); color: #f87171; font-size: 11px; cursor: pointer; padding: 4px 8px; border-radius: 6px; transition: all 0.2s;" title="Putuskan akun ini" onclick="handleDisconnectSingleAccount('${ch.key}', '${acc.id}')">
-                    ✕ Putuskan
+                  <button type="button" style="background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.25); color: #f87171; font-size: 11px; cursor: pointer; padding: 4px 8px; border-radius: 6px; transition: all 0.2s;" title="Disconnect account" onclick="handleDisconnectSingleAccount('${ch.key}', '${acc.id}')">
+                    ${isEn ? '✕ Disconnect' : '✕ Putuskan'}
                   </button>
                 </div>
-              `).join('')}
+              `;}).join('')}
             </div>
           `;
         } else {
           accountsListHtml = `
             <div style="padding: 10px 0; color: #64748b; font-size: 11.5px;">
-              Belum ada akun ${ch.name} yang terhubung.
+              ${isEn ? `No ${ch.name} account connected yet.` : `Belum ada akun ${ch.name} yang terhubung.`}
             </div>
           `;
         }
@@ -4175,18 +4193,22 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
         const isPlatFull = isTrial && platAccounts.length >= 1;
         let buttonHtml = '';
         if (isExpired) {
-          buttonHtml = `<button type="button" class="btn-secondary" style="width: 100%; font-size: 11px; padding: 8px 12px; opacity: 0.7;" onclick="redirectToPricingOrUpgrade()">🔒 Upgrade Kuota</button>`;
+          buttonHtml = `<button type="button" class="btn-secondary" style="width: 100%; font-size: 11px; padding: 8px 12px; opacity: 0.7;" onclick="redirectToPricingOrUpgrade()">${isEn ? '🔒 Upgrade Quota' : '🔒 Upgrade Kuota'}</button>`;
         } else if (isPlatFull) {
-          buttonHtml = `<button type="button" class="btn-secondary" style="width: 100%; font-size: 11px; padding: 8px 12px; opacity: 0.85; border-color: rgba(192,132,252,0.4); color: #c084fc;" onclick="redirectToPricingOrUpgrade()" title="Batas 1 akun per platform di paket Free Trial. Upgrade untuk Multi-Akun ${ch.name}">🔒 Upgrade untuk Multi-Akun ${ch.name}</button>`;
+          buttonHtml = `<button type="button" class="btn-secondary" style="width: 100%; font-size: 11px; padding: 8px 12px; opacity: 0.85; border-color: rgba(192,132,252,0.4); color: #c084fc;" onclick="redirectToPricingOrUpgrade()">${isEn ? `🔒 Upgrade for Multi-${ch.name}` : `🔒 Upgrade untuk Multi-Akun ${ch.name}`}</button>`;
         } else if (!isTrial && isQuotaFull) {
-          buttonHtml = `<button type="button" class="btn-secondary" style="width: 100%; font-size: 11px; padding: 8px 12px; opacity: 0.7;" onclick="redirectToPricingOrUpgrade()">🔒 Kuota Penuh (${maxLimit}/${maxLimit})</button>`;
+          buttonHtml = `<button type="button" class="btn-secondary" style="width: 100%; font-size: 11px; padding: 8px 12px; opacity: 0.7;" onclick="redirectToPricingOrUpgrade()">${isEn ? `🔒 Quota Full (${maxLimit}/${maxLimit})` : `🔒 Kuota Penuh (${maxLimit}/${maxLimit})`}</button>`;
         } else {
           buttonHtml = `
             <button type="button" class="btn-pink" style="width: 100%; font-size: 11px; padding: 8px 12px; font-weight: 700;" onclick="handleConnectSocial('${ch.key}', '${ch.authUrl}')">
-              ${isConn ? `+ Tambah Akun ${ch.name}` : `🔗 Hubungkan ${ch.name}`}
+              ${isConn ? (isEn ? `+ Add ${ch.name}` : `+ Tambah Akun ${ch.name}`) : (isEn ? `🔗 Connect ${ch.name}` : `🔗 Hubungkan ${ch.name}`)}
             </button>
           `;
         }
+
+        const statusBadgeText = isConn 
+          ? (isEn ? `● ${platAccounts.length} Active Account${platAccounts.length > 1 ? 's' : ''}` : `● ${platAccounts.length} Akun Aktif`)
+          : (isEn ? '○ Not Connected' : '○ Belum Terhubung');
 
         return `
           <div class="social-card-item" id="card-social-${ch.key}" style="display: flex; flex-direction: column; justify-content: space-between; padding: 18px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.08); border-radius: 14px;">
@@ -4197,7 +4219,7 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
                   <h4 style="font-size: 14px; color: #fff; margin: 0; font-weight: 700;">${ch.name}</h4>
                 </div>
                 <span class="status-badge ${isConn ? 'success' : 'failed'}" style="font-size: 10.5px; padding: 2px 8px;">
-                  ${isConn ? `● ${platAccounts.length} Akun Aktif` : '○ Belum Terhubung'}
+                  ${statusBadgeText}
                 </span>
               </div>
               ${accountsListHtml}
@@ -4285,17 +4307,39 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
     });
 
     async function handleDisconnectSingleAccount(platform, accountId) {
-      if (!confirm(`Apakah Anda yakin ingin memutuskan akun ini dari ${platform}?`)) return;
+      const isEn = (typeof window.currentLanguage === 'string' ? window.currentLanguage !== 'id' : true);
+      if (!confirm(isEn ? `Are you sure you want to disconnect this account from ${platform}?` : `Apakah Anda yakin ingin memutuskan akun ini dari ${platform}?`)) return;
       const { email } = getValidUserCredentials();
       try {
+        // 1. Optimistic UI update: hapus seketika dari memori browser agar tidak ada delay visual
+        const platKey = (platform === 'fb' || platform === 'facebook_page') ? 'facebook' : (platform === 'ig' ? 'instagram' : platform);
+        if (platKey === 'facebook') {
+          window.studioMetaAccounts = (window.studioMetaAccounts || []).filter(a => String(a.id) !== String(accountId));
+          if (window.studioMetaAccounts.length === 0) {
+            const sel = document.getElementById('studioFbPageSelect');
+            if (sel) sel.innerHTML = isEn ? '<option value="">-- No Facebook Page connected yet --</option>' : '<option value="">-- Belum ada Facebook Page terhubung --</option>';
+          }
+        }
+        if (window.socialAccountsData && window.socialAccountsData.by_platform) {
+          if (window.socialAccountsData.by_platform[platKey]) {
+            window.socialAccountsData.by_platform[platKey] = window.socialAccountsData.by_platform[platKey].filter(a => String(a.id) !== String(accountId));
+            window.socialAccountsData.count = Math.max(0, (window.socialAccountsData.count || 1) - 1);
+          }
+        }
+        renderSocialChannels();
+        updateStudioStatus(window.currentStudioPlatform || 'facebook');
+
+        // 2. Kirim sinyal hapus ke server backend & database
         const res = await fetch(getApiUrl('/api/social/disconnect-account'), {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email: email, platform: platform, account_id: accountId })
         });
-        if (res.ok) {
-          await loadSocialAccountsData();
-        }
+        
+        // 3. Muat ulang kondisi riil dari server untuk memastikan sinkronisasi 100%
+        await loadSocialAccountsData();
+        if (typeof fetchStudioMetaAccounts === 'function') await fetchStudioMetaAccounts();
+        updateStudioStatus(window.currentStudioPlatform || 'facebook');
       } catch (e) {
         console.warn('Gagal memutuskan akun:', e);
       }
@@ -4608,6 +4652,8 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
         if (el) el.style.display = 'none';
       });
 
+      const isEn = (typeof window.currentLanguage === 'string' ? window.currentLanguage !== 'id' : true);
+
       // Platform specific customizations
       if (platformKey === 'facebook') {
         if (badgeWrap) {
@@ -4616,9 +4662,11 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
           badgeWrap.style.color = '#60a5fa';
         }
         if (badgeText) badgeText.innerText = 'FACEBOOK CONTENT SHARING & REELS STUDIO';
-        if (titleText) titleText.innerText = 'Direct Share to Facebook Reels';
+        if (titleText) titleText.innerText = isEn ? 'Direct Share to Facebook Reels & Page' : 'Direct Share to Facebook Reels';
         if (titleIcon) titleIcon.innerHTML = `<svg width="24" height="24" viewBox="0 0 24 24" fill="#1877f2"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>`;
-        if (subtitle) subtitle.innerText = 'Pilih video, lihat pratinjau live smartphone 9:16, optimasi dengan AI Hook & Caption, lalu bagikan secara resmi ke Facebook Page & Reels Anda.';
+        if (subtitle) subtitle.innerText = isEn 
+          ? 'Select a video, preview live in 9:16 vertical smartphone frame, optimize with AI Hook & Caption, and publish officially to your Facebook Page & Reels.'
+          : 'Pilih video, lihat pratinjau live smartphone 9:16, optimasi dengan AI Hook & Caption, lalu bagikan secara resmi ke Facebook Page & Reels Anda.';
         
         const fbFields = document.getElementById('studioFieldsFacebook');
         if (fbFields) fbFields.style.display = 'block';
@@ -4627,7 +4675,7 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
         if (boxTitle) boxTitle.style.display = 'block';
         if (captionMaxLen) captionMaxLen.innerText = '5000';
         if (submitBtn) submitBtn.classList.add('btn-submit-facebook');
-        if (submitBtnText) submitBtnText.innerText = '🚀 Publikasikan ke Facebook Reels Sekarang';
+        if (submitBtnText) submitBtnText.innerText = isEn ? '🚀 Publish to Facebook Reels Now' : '🚀 Publikasikan ke Facebook Reels Sekarang';
         if (submitBtnIcon) submitBtnIcon.innerHTML = `<svg width="22" height="22" viewBox="0 0 24 24" fill="#fff"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>`;
 
       } else if (platformKey === 'instagram') {
@@ -4637,9 +4685,11 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
           badgeWrap.style.color = '#f472b6';
         }
         if (badgeText) badgeText.innerText = 'INSTAGRAM CONTENT PUBLISHING & REELS STUDIO';
-        if (titleText) titleText.innerText = 'Direct Share to Instagram Reels';
+        if (titleText) titleText.innerText = isEn ? 'Direct Share to Instagram Reels' : 'Direct Share to Instagram Reels';
         if (titleIcon) titleIcon.innerHTML = `<svg width="24" height="24" viewBox="0 0 24 24" fill="#e1306c"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>`;
-        if (subtitle) subtitle.innerText = 'Publikasikan video vertikal berkualitas tinggi langsung ke akun Instagram Bisnis Anda melalui Meta Content Publishing API.';
+        if (subtitle) subtitle.innerText = isEn 
+          ? 'Publish high-quality vertical videos directly to your Instagram Business account via Meta Content Publishing API.'
+          : 'Publikasikan video vertikal berkualitas tinggi langsung ke akun Instagram Bisnis Anda melalui Meta Content Publishing API.';
 
         const igFields = document.getElementById('studioFieldsInstagram');
         if (igFields) igFields.style.display = 'block';
@@ -4648,7 +4698,7 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
         if (boxTitle) boxTitle.style.display = 'none';
         if (captionMaxLen) captionMaxLen.innerText = '2200';
         if (submitBtn) submitBtn.classList.add('btn-submit-instagram');
-        if (submitBtnText) submitBtnText.innerText = '🚀 Publikasikan ke Instagram Reels Sekarang';
+        if (submitBtnText) submitBtnText.innerText = isEn ? '🚀 Publish to Instagram Reels Now' : '🚀 Publikasikan ke Instagram Reels Sekarang';
         if (submitBtnIcon) submitBtnIcon.innerHTML = `📸`;
 
       } else if (platformKey === 'youtube') {
@@ -4658,9 +4708,11 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
           badgeWrap.style.color = '#f87171';
         }
         if (badgeText) badgeText.innerText = 'YOUTUBE DATA API & SHORTS PUBLISHER';
-        if (titleText) titleText.innerText = 'Direct Share to YouTube Shorts';
+        if (titleText) titleText.innerText = isEn ? 'Direct Share to YouTube Shorts' : 'Direct Share to YouTube Shorts';
         if (titleIcon) titleIcon.innerHTML = `<svg width="24" height="24" viewBox="0 0 24 24" fill="#ff0000"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>`;
-        if (subtitle) subtitle.innerText = 'Unggah dan distribusikan YouTube Shorts dengan judul memikat, deklarasi audiens COPPA, dan visibilitas otomatis.';
+        if (subtitle) subtitle.innerText = isEn 
+          ? 'Upload and distribute YouTube Shorts with engaging titles, COPPA compliance audience declaration, and instant visibility.'
+          : 'Unggah dan distribusikan YouTube Shorts dengan judul memikat, deklarasi audiens COPPA, dan visibilitas otomatis.';
 
         const ytFields = document.getElementById('studioFieldsYouTube');
         if (ytFields) ytFields.style.display = 'block';
@@ -4669,7 +4721,7 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
         if (boxTitle) boxTitle.style.display = 'block';
         if (captionMaxLen) captionMaxLen.innerText = '5000';
         if (submitBtn) submitBtn.classList.add('btn-submit-youtube');
-        if (submitBtnText) submitBtnText.innerText = '🚀 Publikasikan ke YouTube Shorts Sekarang';
+        if (submitBtnText) submitBtnText.innerText = isEn ? '🚀 Publish to YouTube Shorts Now' : '🚀 Publikasikan ke YouTube Shorts Sekarang';
         if (submitBtnIcon) submitBtnIcon.innerHTML = `▶️`;
 
       } else if (platformKey === 'tiktok') {
@@ -4681,7 +4733,9 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
         if (badgeText) badgeText.innerText = 'TIKTOK CONTENT SHARING & DIRECT POST STUDIO';
         if (titleText) titleText.innerText = 'Direct Share to TikTok';
         if (titleIcon) titleIcon.innerHTML = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64c.29 0 .58.04.86.11V9.4a6.33 6.33 0 0 0-.86-.06 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34-6.34V8.42a8.27 8.27 0 0 0 4.77 1.48V6.45c-.34 0-.68-.08-1-.24z" fill="#00f2fe"/><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64c.29 0 .58.04.86.11V9.4a6.33 6.33 0 0 0-.86-.06 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34-6.34V8.42a8.27 8.27 0 0 0 4.77 1.48V6.45c-.34 0-.68-.08-1-.24z" fill="#fe2c55" style="mix-blend-mode: screen;"/></svg>`;
-        if (subtitle) subtitle.innerText = 'Pilih video, lihat pratinjau langsung di pemutar vertikal 9:16, kustomisasi judul & privasi, lalu bagikan secara resmi ke akun TikTok Anda.';
+        if (subtitle) subtitle.innerText = isEn 
+          ? 'Select a video, preview live in 9:16 vertical player, customize caption & privacy, and publish officially to your TikTok account.'
+          : 'Pilih video, lihat pratinjau langsung di pemutar vertikal 9:16, kustomisasi judul & privasi, lalu bagikan secara resmi ke akun TikTok Anda.';
 
         const ttFields = document.getElementById('studioFieldsTikTok');
         if (ttFields) ttFields.style.display = 'block';
@@ -4690,7 +4744,7 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
         if (boxTitle) boxTitle.style.display = 'none';
         if (captionMaxLen) captionMaxLen.innerText = '2200';
         if (submitBtn) submitBtn.className = 'btn-tiktok-share';
-        if (submitBtnText) submitBtnText.innerText = 'Share to TikTok';
+        if (submitBtnText) submitBtnText.innerText = isEn ? '🚀 Share to TikTok Now' : 'Share to TikTok';
         if (submitBtnIcon) submitBtnIcon.innerHTML = `<svg width="22" height="22" viewBox="0 0 24 24" fill="#fff"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64c.29 0 .58.04.86.11V9.4a6.33 6.33 0 0 0-.86-.06 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34-6.34V8.42a8.27 8.27 0 0 0 4.77 1.48V6.45c-.34 0-.68-.08-1-.24z" fill="#fff"/></svg>`;
 
       } else if (platformKey === 'twitter') {
@@ -4702,7 +4756,9 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
         if (badgeText) badgeText.innerText = 'TWITTER / X API PUBLISHER';
         if (titleText) titleText.innerText = 'Share Tweet to Twitter / X';
         if (titleIcon) titleIcon.innerHTML = `<svg width="24" height="24" viewBox="0 0 24 24" fill="#1da1f2"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>`;
-        if (subtitle) subtitle.innerText = 'Publikasikan video cuplikan dan narasi tweet berbobot langsung ke lini masa akun Twitter / X Anda.';
+        if (subtitle) subtitle.innerText = isEn 
+          ? 'Publish video clips and insightful tweet threads directly to your Twitter / X timeline.'
+          : 'Publikasikan video cuplikan dan narasi tweet berbobot langsung ke lini masa akun Twitter / X Anda.';
 
         const twFields = document.getElementById('studioFieldsTwitter');
         if (twFields) twFields.style.display = 'block';
@@ -4713,7 +4769,7 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
         if (boxTitle) boxTitle.style.display = 'none';
         if (captionMaxLen) captionMaxLen.innerText = '280';
         if (submitBtn) submitBtn.classList.add('btn-submit-twitter');
-        if (submitBtnText) submitBtnText.innerText = '🚀 Publikasikan Tweet ke Twitter/X Sekarang';
+        if (submitBtnText) submitBtnText.innerText = isEn ? '🚀 Publish Tweet to Twitter/X Now' : '🚀 Publikasikan Tweet ke Twitter/X Sekarang';
         if (submitBtnIcon) submitBtnIcon.innerHTML = `🐦`;
 
       } else if (platformKey === 'linkedin') {
@@ -4725,7 +4781,9 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
         if (badgeText) badgeText.innerText = 'LINKEDIN UGC VIDEO & POST PUBLISHER';
         if (titleText) titleText.innerText = 'Direct Share to LinkedIn';
         if (titleIcon) titleIcon.innerHTML = `<svg width="24" height="24" viewBox="0 0 24 24" fill="#0a66c2"><path d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14m-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.28 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93h2.75M6.46 10.9v8.37H9.2V10.9H6.46M7.83 6.2a1.64 1.64 0 0 0-1.66 1.64 1.63 1.63 0 0 0 1.66 1.63 1.63 1.63 0 0 0 1.64-1.63A1.64 1.64 0 0 0 7.83 6.2z"/></svg>`;
-        if (subtitle) subtitle.innerText = 'Jangkau jaringan profesional dengan video edukatif dan artikel berkualitas melalui LinkedIn UGC API.';
+        if (subtitle) subtitle.innerText = isEn 
+          ? 'Reach your professional network with high-value educational videos and articles via official LinkedIn UGC API.'
+          : 'Jangkau jaringan profesional dengan video edukatif dan artikel berkualitas melalui LinkedIn UGC API.';
 
         const inFields = document.getElementById('studioFieldsLinkedIn');
         if (inFields) inFields.style.display = 'block';
@@ -4736,7 +4794,7 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
         if (boxTitle) boxTitle.style.display = 'none';
         if (captionMaxLen) captionMaxLen.innerText = '3000';
         if (submitBtn) submitBtn.classList.add('btn-submit-linkedin');
-        if (submitBtnText) submitBtnText.innerText = '🚀 Publikasikan ke LinkedIn Sekarang';
+        if (submitBtnText) submitBtnText.innerText = isEn ? '🚀 Publish to LinkedIn Now' : '🚀 Publikasikan ke LinkedIn Sekarang';
         if (submitBtnIcon) submitBtnIcon.innerHTML = `💼`;
 
       } else if (platformKey === 'threads') {
@@ -4748,7 +4806,9 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
         if (badgeText) badgeText.innerText = 'THREADS CONTENT PUBLISHING STUDIO';
         if (titleText) titleText.innerText = 'Direct Share to Threads';
         if (titleIcon) titleIcon.innerHTML = `<svg width="24" height="24" viewBox="0 0 24 24" fill="#ffffff"><path d="M12.186 24C5.452 24 .183 18.736.183 12.012S5.452.024 12.186.024c3.42 0 6.55 1.392 8.814 3.92l-2.678 2.056c-1.62-1.824-3.876-2.82-6.136-2.82-4.912 0-8.91 3.992-8.91 8.832 0 4.84 3.998 8.832 8.91 8.832 3.12 0 5.48-1.456 6.58-4.048h-6.58v-3.152h9.72c.112.56.168 1.152.168 1.768 0 6.32-4.408 11.592-9.982 11.592z"/></svg>`;
-        if (subtitle) subtitle.innerText = 'Bagikan gagasan dan video menarik ke komunitas Threads dengan integrasi resmi Meta Threads API.';
+        if (subtitle) subtitle.innerText = isEn 
+          ? 'Share ideas and engaging short videos to the Threads community via official Meta Threads API.'
+          : 'Bagikan gagasan dan video menarik ke komunitas Threads dengan integrasi resmi Meta Threads API.';
 
         const thFields = document.getElementById('studioFieldsThreads');
         if (thFields) thFields.style.display = 'block';
@@ -4759,7 +4819,7 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
         if (boxTitle) boxTitle.style.display = 'none';
         if (captionMaxLen) captionMaxLen.innerText = '500';
         if (submitBtn) submitBtn.classList.add('btn-submit-threads');
-        if (submitBtnText) submitBtnText.innerText = '🚀 Publikasikan ke Threads Sekarang';
+        if (submitBtnText) submitBtnText.innerText = isEn ? '🚀 Publish to Threads Now' : '🚀 Publikasikan ke Threads Sekarang';
         if (submitBtnIcon) submitBtnIcon.innerHTML = `🧵`;
 
       } else if (platformKey === 'multi') {
@@ -4771,7 +4831,9 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
         if (badgeText) badgeText.innerText = 'OMNICHANNEL MULTI-BROADCAST STUDIO';
         if (titleText) titleText.innerText = 'Omnichannel Multi-Broadcast';
         if (titleIcon) titleIcon.innerHTML = `<span style="font-size: 24px;">⚡</span>`;
-        if (subtitle) subtitle.innerText = 'Distribusikan 1 video secara serempak ke Facebook, Instagram, YouTube, TikTok, dan jaringan sosial lainnya dengan 1 kali klik.';
+        if (subtitle) subtitle.innerText = isEn 
+          ? 'Simultaneously distribute 1 video across Facebook, Instagram, YouTube, TikTok, and other social channels with 1 click.'
+          : 'Distribusikan 1 video secara serempak ke Facebook, Instagram, YouTube, TikTok, dan jaringan sosial lainnya dengan 1 kali klik.';
 
         const multiFields = document.getElementById('studioFieldsMulti');
         if (multiFields) multiFields.style.display = 'block';
@@ -4780,7 +4842,7 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
         if (boxTitle) boxTitle.style.display = 'block';
         if (captionMaxLen) captionMaxLen.innerText = '2200';
         if (submitBtn) submitBtn.classList.add('btn-submit-multi');
-        if (submitBtnText) submitBtnText.innerText = '⚡ Broadcast ke Semua Platform Terpilih';
+        if (submitBtnText) submitBtnText.innerText = isEn ? '⚡ Broadcast to All Selected Platforms' : '⚡ Broadcast ke Semua Platform Terpilih';
         if (submitBtnIcon) submitBtnIcon.innerHTML = `🚀`;
       }
 
@@ -4792,6 +4854,7 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
     function populateStudioAccountSelectors() {
       if (!window.socialAccountsData || !window.socialAccountsData.by_platform) return;
       const byPlat = window.socialAccountsData.by_platform;
+      const isEn = (typeof window.currentLanguage === 'string' ? window.currentLanguage !== 'id' : true);
 
       const populateSelect = (selectId, platKey, defaultLabel) => {
         const sel = document.getElementById(selectId);
@@ -4804,7 +4867,9 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
             </option>
           `).join('');
         } else {
-          sel.innerHTML = `<option value="">-- Belum ada akun ${defaultLabel} terhubung --</option>`;
+          sel.innerHTML = isEn 
+            ? `<option value="">-- No ${defaultLabel} account connected yet --</option>`
+            : `<option value="">-- Belum ada akun ${defaultLabel} terhubung --</option>`;
         }
       };
 
@@ -4871,9 +4936,14 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
       const badge = document.getElementById('studioConnStatusBadge');
       const card = document.getElementById('studioCreatorCard');
       const connectWrap = document.getElementById('studioConnectBtnWrap');
+      const connBtn = document.getElementById('btnStudioConnectAccount');
+      const isEn = (typeof window.currentLanguage === 'string' ? window.currentLanguage !== 'id' : true);
 
       const byPlat = (window.socialAccountsData && window.socialAccountsData.by_platform) || {};
-      const accountsForThisPlat = byPlat[p] || [];
+      let accountsForThisPlat = byPlat[p] || [];
+      if (p === 'facebook' && accountsForThisPlat.length === 0 && Array.isArray(window.studioMetaAccounts) && window.studioMetaAccounts.length > 0) {
+        accountsForThisPlat = window.studioMetaAccounts;
+      }
       const isConn = accountsForThisPlat.length > 0;
 
       const pNames = {
@@ -4887,12 +4957,14 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
         multi: 'Omnichannel Suite'
       };
 
-      if (label) label.innerText = `Status Akun ${pNames[p] || 'Sosial Media'}:`;
+      if (label) {
+        label.innerText = isEn ? `${pNames[p] || 'Social Media'} Account Status:` : `Status Akun ${pNames[p] || 'Sosial Media'}:`;
+      }
 
       if (isConn) {
         if (badge) {
           badge.className = 'status-badge success';
-          badge.innerText = `● Terhubung (${accountsForThisPlat.length} Akun)`;
+          badge.innerText = isEn ? `● Connected (${accountsForThisPlat.length} Account${accountsForThisPlat.length > 1 ? 's' : ''})` : `● Terhubung (${accountsForThisPlat.length} Akun)`;
         }
         if (connectWrap) connectWrap.style.display = 'none';
         if (card) card.style.display = 'flex';
@@ -4901,9 +4973,10 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
       } else {
         if (badge) {
           badge.className = 'status-badge failed';
-          badge.innerText = '○ Belum Terhubung';
+          badge.innerText = isEn ? '○ NOT CONNECTED' : '○ Belum Terhubung';
         }
         if (connectWrap) connectWrap.style.display = 'block';
+        if (connBtn) connBtn.innerText = isEn ? '🔗 Connect Account' : '🔗 Hubungkan Akun';
         if (card) card.style.display = 'none';
       }
 
@@ -4948,6 +5021,20 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
         const sel = document.getElementById('studioFbPageSelect');
         if (accounts.length > 0) {
           window.studioMetaAccounts = accounts;
+          if (window.socialAccountsData) {
+            if (!window.socialAccountsData.by_platform) window.socialAccountsData.by_platform = {};
+            if (!window.socialAccountsData.by_platform.facebook || window.socialAccountsData.by_platform.facebook.length === 0) {
+              window.socialAccountsData.by_platform.facebook = accounts.map(a => ({
+                id: a.id,
+                platform: 'facebook',
+                name: a.name || 'Facebook Page',
+                username: a.category || a.username || 'Page',
+                avatar_url: a.avatar_url || '',
+                connected_at: ''
+              }));
+              if (typeof renderSocialChannels === 'function') renderSocialChannels();
+            }
+          }
           if (sel) {
             sel.innerHTML = accounts.map(acc => `
               <option value="${acc.id}" data-name="${encodeURIComponent(acc.name)}" data-user="${encodeURIComponent(acc.category || acc.username || '')}" data-avatar="${encodeURIComponent(acc.avatar_url || '')}">
@@ -5123,7 +5210,7 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
           <div style="font-size: 12px; font-weight: 700; color: #fff; margin-bottom: 4px; line-height: 1.3;">
             ${v.title || 'Judul Konten'}
           </div>
-          <div style="font-size: 11px; color: #94a3b8; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;">
+          <div style="font-size: 11px; color: #94a3b8; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 3; line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;">
             ${v.hook || v.caption}
           </div>
         </div>
@@ -5610,13 +5697,15 @@ ${data.hashtags}`;
         multi: 'Omnichannel Suite'
       };
 
-      if (modalTitle) modalTitle.innerText = `Mengunggah ke ${pTitleMap[platform] || 'Platform'}...`;
+      const isEn = (typeof window.currentLanguage === 'string' ? window.currentLanguage !== 'id' : true);
+
+      if (modalTitle) modalTitle.innerText = isEn ? `Publishing to ${pTitleMap[platform] || 'Platform'}...` : `Mengunggah ke ${pTitleMap[platform] || 'Platform'}...`;
       if (modalIcon) modalIcon.innerText = platform === 'facebook' ? '📘' : (platform === 'instagram' ? '📸' : (platform === 'youtube' ? '▶️' : (platform === 'tiktok' ? '🎵' : '🚀')));
 
       progressModal.style.display = 'flex';
       barFill.style.width = '15%';
       pctText.innerText = '15%';
-      statusText.innerText = 'Tahap 1/3: Memvalidasi berkas video & otorisasi akun...';
+      statusText.innerText = isEn ? 'Step 1/3: Validating video file & account authorization...' : 'Tahap 1/3: Memvalidasi berkas video & otorisasi akun...';
 
       let currentPct = 15;
       const progressInterval = setInterval(() => {
@@ -5627,9 +5716,9 @@ ${data.hashtags}`;
           pctText.innerText = `${currentPct}%`;
 
           if (currentPct > 35 && currentPct <= 65) {
-            statusText.innerText = `Tahap 2/3: Menginisialisasi session ${pTitleMap[platform]} API...`;
+            statusText.innerText = isEn ? `Step 2/3: Initializing ${pTitleMap[platform]} API session...` : `Tahap 2/3: Menginisialisasi session ${pTitleMap[platform]} API...`;
           } else if (currentPct > 65) {
-            statusText.innerText = 'Tahap 3/3: Mengunggah binary video chunks & memproses publikasi...';
+            statusText.innerText = isEn ? 'Step 3/3: Uploading binary video chunks & processing publish...' : 'Tahap 3/3: Mengunggah binary video chunks & memproses publikasi...';
           }
         }
       }, 400);
@@ -5638,7 +5727,7 @@ ${data.hashtags}`;
         try {
           let finalVideoUrl = window.selectedTiktokVideoUrl || '';
           if (window.selectedTiktokVideoFile) {
-            statusText.innerText = 'Tahap 1/2: Menyimpan video ke media storage...';
+            statusText.innerText = isEn ? 'Step 1/2: Saving video to media storage...' : 'Tahap 1/2: Menyimpan video ke media storage...';
             barFill.style.width = '30%';
             pctText.innerText = '30%';
 
@@ -5655,12 +5744,12 @@ ${data.hashtags}`;
             });
             const upData = await upRes.json().catch(() => ({}));
             if (!upRes.ok || !upData.success) {
-              throw new Error(upData.message || 'Gagal mengunggah berkas video ke server media.');
+              throw new Error(upData.message || (isEn ? 'Failed to upload video file to media storage.' : 'Gagal mengunggah berkas video ke server media.'));
             }
             finalVideoUrl = upData.url;
           }
 
-          statusText.innerText = 'Tahap 2/2: Mendaftarkan jadwal ke Kalender Konten...';
+          statusText.innerText = isEn ? 'Step 2/2: Scheduling post to Content Calendar...' : 'Tahap 2/2: Mendaftarkan jadwal ke Kalender Konten...';
           barFill.style.width = '75%';
           pctText.innerText = '75%';
 
@@ -5831,7 +5920,7 @@ ${data.hashtags}`;
         clearInterval(progressInterval);
         barFill.style.width = '100%';
         pctText.innerText = '100%';
-        statusText.innerText = 'Selesai! Menyinkronkan respon dari server platform...';
+        statusText.innerText = isEn ? 'Done! Syncing response from platform server...' : 'Selesai! Menyinkronkan respon dari server platform...';
 
         const data = await res.json().catch(() => ({}));
 
@@ -5854,11 +5943,11 @@ ${data.hashtags}`;
             if (destSpan) {
               if (platform === 'facebook') {
                 const sel = document.getElementById('studioFbPageSelect');
-                const pName = (sel && sel.selectedIndex >= 0 && sel.value) ? sel.options[sel.selectedIndex].text : 'Facebook Page Terpilih';
+                const pName = (sel && sel.selectedIndex >= 0 && sel.value) ? sel.options[sel.selectedIndex].text : (isEn ? 'Selected Facebook Page' : 'Facebook Page Terpilih');
                 destSpan.innerText = 'Facebook Page: ' + pName;
               } else if (platform === 'instagram') {
                 const igName = document.getElementById('studioIgAccountName');
-                destSpan.innerText = 'Instagram: ' + (igName ? igName.innerText : 'Akun Terhubung');
+                destSpan.innerText = 'Instagram: ' + (igName ? igName.innerText : (isEn ? 'Connected Account' : 'Akun Terhubung'));
               } else if (platform === 'youtube') {
                 destSpan.innerText = 'YouTube Shorts Channel';
               } else if (platform === 'tiktok') {
@@ -5868,7 +5957,7 @@ ${data.hashtags}`;
               }
             }
 
-            if (timeSpan) timeSpan.innerText = new Date().toLocaleString('id-ID');
+            if (timeSpan) timeSpan.innerText = new Date().toLocaleString(isEn ? 'en-US' : 'id-ID');
 
             const pageLinkBtn = document.getElementById('btnOpenFbPageProfile');
             if (pageLinkBtn) {
@@ -5894,7 +5983,7 @@ ${data.hashtags}`;
               }
             }
 
-            if (openText) openText.innerText = platform === 'facebook' ? '🚀 Tonton Reel di Facebook' : `🚀 Buka di ${pTitleMap[platform] || 'Platform'}`;
+            if (openText) openText.innerText = isEn ? (platform === 'facebook' ? '🚀 Watch Reel on Facebook' : `🚀 Open on ${pTitleMap[platform] || 'Platform'}`) : (platform === 'facebook' ? '🚀 Tonton Reel di Facebook' : `🚀 Buka di ${pTitleMap[platform] || 'Platform'}`);
             if (openIcon) openIcon.innerText = platform === 'facebook' ? '🎬' : (platform === 'instagram' ? '📸' : (platform === 'youtube' ? '▶️' : '🎵'));
 
             successModal.style.display = 'flex';
@@ -5902,16 +5991,20 @@ ${data.hashtags}`;
             let errMsg = data.message;
             if (!errMsg) {
               if (res.status === 413) {
-                errMsg = 'Ukuran berkas video melebihi batas transfer langsung serverless Vercel (4.5 MB). Silakan gunakan tab "🔗 Input URL Video" di atas untuk video berukuran besar.';
+                errMsg = isEn 
+                  ? 'Video file size exceeds direct server limit. Please use "🔗 Input Video URL" tab above for large files.'
+                  : 'Ukuran berkas video melebihi batas transfer langsung server. Silakan gunakan tab "🔗 Input URL Video" di atas untuk video berukuran besar.';
               } else if (res.status === 504) {
-                errMsg = 'Koneksi ke server sosial media mengalami timeout. Silakan coba kembali atau gunakan link URL video.';
+                errMsg = isEn
+                  ? 'Connection to social media server timed out. Please retry or use video URL link.'
+                  : 'Koneksi ke server sosial media mengalami timeout. Silakan coba kembali atau gunakan link URL video.';
               } else {
-                errMsg = 'Gagal mempublikasikan video. Pastikan akun sosial media terhubung dan format video valid.';
+                errMsg = isEn
+                  ? 'Failed to publish video. Ensure social account is connected and video format is valid.'
+                  : 'Gagal mempublikasikan video. Pastikan akun sosial media terhubung dan format video valid.';
               }
             }
-            alert(`⚠️ Gagal Mengunggah ke ${pTitleMap[platform] || 'Platform'}:
-
-${errMsg}`);
+            alert(isEn ? `⚠️ Failed to publish to ${pTitleMap[platform] || 'Platform'}:\n\n${errMsg}` : `⚠️ Gagal Mengunggah ke ${pTitleMap[platform] || 'Platform'}:\n\n${errMsg}`);
           }
         }, 600);
 
@@ -5965,7 +6058,9 @@ ${err.message}`);
         event.data === 'OAUTH_SUCCESS'
       )) {
         await verifyUserSession();
-        updateTiktokStudioStatus(['TikTok']);
+        if (typeof loadSocialAccountsData === 'function') await loadSocialAccountsData();
+        if (typeof fetchStudioMetaAccounts === 'function') await fetchStudioMetaAccounts();
+        updateStudioStatus(window.currentStudioPlatform || 'facebook');
       }
     });
 

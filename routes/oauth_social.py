@@ -103,42 +103,25 @@ def disconnect_social():
         return jsonify({"success": False, "message": "Data tidak lengkap"}), 400
 
     email = active_email
+    p = platform.lower()
+    if p in ['fb', 'facebook_page']: p = 'facebook'
+    if p in ['ig']: p = 'instagram'
+    if p in ['x']: p = 'twitter'
 
-    sheet = db.get_gsheet()
-    if sheet:
-        try:
-            all_values = sheet.get_all_values()
-            found_idx = -1
-            for idx in range(len(all_values)-1, 0, -1):
-                row = all_values[idx]
-                if len(row) > 0 and str(row[0]).strip().lower() == email:
-                    found_idx = idx + 1
-                    break
+    # Hapus dari SQLite secara instan (< 1ms)
+    ok, remaining = db.db_delete_social_account(email, p, account_id=None)
+    if p in ['facebook', 'instagram', 'meta']:
+        db.db_delete_social_account(email, 'facebook', 'meta_primary')
 
-            if found_idx != -1:
-                p = platform.lower()
-                batch_updates = []
-                if p == 'tiktok':
-                    batch_updates.append({'range': f'G{found_idx}:I{found_idx}', 'values': [["", "", ""]]})
-                elif p in ['facebook', 'instagram']:
-                    batch_updates.append({'range': f'J{found_idx}', 'values': [[""]]})
-                elif p == 'linkedin':
-                    batch_updates.append({'range': f'K{found_idx}', 'values': [[""]]})
-                elif p == 'youtube':
-                    batch_updates.append({'range': f'L{found_idx}:M{found_idx}', 'values': [["", ""]]})
-                elif p == 'threads':
-                    batch_updates.append({'range': f'N{found_idx}', 'values': [[""]]})
-                elif p in ['twitter', 'x']:
-                    batch_updates.append({'range': f'O{found_idx}', 'values': [[""]]})
-                
-                if batch_updates:
-                    sheet.batch_update(batch_updates)
-                    db.invalidate_sheet_cache()
-                
-                return jsonify({"success": True, "message": f"Berhasil menghapus token {platform}"})
-        except Exception as e:
-            print(f"GSheet Disconnect Error: {e}")
-            return jsonify({"success": False, "message": "Gagal update database. " + str(e)})
+    if email in config.user_2fa_store:
+        if p == 'tiktok': config.user_2fa_store[email]['tiktok_connected'] = False
+        elif p in ['facebook', 'instagram', 'meta']: config.user_2fa_store[email]['meta_connected'] = False
+        elif p == 'linkedin': config.user_2fa_store[email]['linkedin_connected'] = False
+        elif p == 'youtube': config.user_2fa_store[email]['youtube_connected'] = False
+        elif p == 'threads': config.user_2fa_store[email]['threads_connected'] = False
+        elif p in ['twitter', 'x']: config.user_2fa_store[email]['twitter_connected'] = False
+
+    return jsonify({"success": True, "message": f"Successfully disconnected {platform}"})
     
     if email in config.user_2fa_store:
         p = platform.lower()
@@ -281,15 +264,9 @@ def get_tiktok_creator_info():
     if session_email:
         email = session_email
     elif api_key:
-        sheet_u = db.get_gsheet()
-        if sheet_u:
-            try:
-                for r in sheet_u.get_all_values()[1:]:
-                    if len(r) >= 5 and str(r[4]).strip() == api_key:
-                        email = str(r[0]).strip().lower()
-                        break
-            except Exception:
-                pass
+        u = db.db_get_user_by_api_key(api_key)
+        if u:
+            email = u.get('email')
 
     if not email:
         return jsonify({"success": False, "message": "Autentikasi sesi atau API Key valid diperlukan."}), 401
@@ -616,15 +593,15 @@ def meta_callback():
                 except Exception as e_acc:
                     print("[Meta Accounts Fetch Error]:", e_acc)
 
-                # 3. Simpan Token ke Database GSheet & Multi-Account Registry
-                sheet = db.get_gsheet()
-                if sheet and final_token:
-                    all_vals = sheet.get_all_values()
-                    for idx in range(len(all_vals)-1, 0, -1):
-                        row = all_vals[idx]
-                        if len(row) > 0 and str(row[0]).strip().lower() == email.lower():
-                            sheet.update_cell(idx + 1, 10, final_token)
-                            break
+                # 3. Simpan Token Meta ke SQLite Multi-Account Registry
+                db.db_save_social_account(email, {
+                    "id": "meta_primary",
+                    "platform": "facebook",
+                    "name": "Meta User Account",
+                    "username": email,
+                    "access_token": final_token,
+                    "connected_at": datetime.now().isoformat()
+                })
 
                 # Simpan setiap Facebook Page dan Instagram Bisnis ke Multi-Account Registry
                 if 'pages' in locals() and pages:
@@ -785,17 +762,6 @@ def find_meta_page_token(page_id=None, api_key=None, email=None):
     token = None
     if api_key or email:
         token = db.db_get_meta_token_by_api_key(api_key, email=email)
-        
-    if not token:
-        sheet = db.get_gsheet()
-        if sheet:
-            try:
-                for row in sheet.get_all_values()[1:]:
-                    if len(row) >= 10 and str(row[9]).strip():
-                        token = str(row[9]).strip()
-                        break
-            except Exception:
-                pass
 
     if not token:
         return None, None
@@ -1982,14 +1948,35 @@ def twitter_callback():
             with urllib.request.urlopen(req) as response:
                 res_data = json.loads(response.read().decode('utf-8'))
                 access_token = res_data.get('access_token')
-                sheet = db.get_gsheet()
-                if sheet and access_token:
-                    all_vals = sheet.get_all_values()
-                    for idx in range(len(all_vals)-1, 0, -1):
-                        row = all_vals[idx]
-                        if len(row) > 0 and str(row[0]).strip().lower() == email.lower():
-                            sheet.update_cell(idx + 1, 15, access_token)
-                            break
+                if access_token:
+                    tw_name = "Twitter / X User"
+                    tw_user = "@x_user"
+                    tw_avatar = ""
+                    tw_id = f"tw_{uuid.uuid4().hex[:8]}"
+                    try:
+                        u_req = urllib.request.Request(
+                            "https://api.twitter.com/2/users/me?user.fields=profile_image_url,name,username",
+                            headers={"Authorization": f"Bearer {access_token}"}
+                        )
+                        with urllib.request.urlopen(u_req, timeout=10) as u_resp:
+                            u_info = json.loads(u_resp.read().decode('utf-8'))
+                            u_data = u_info.get('data', {})
+                            tw_id = u_data.get('id') or tw_id
+                            tw_name = u_data.get('name') or tw_name
+                            tw_user = f"@{u_data.get('username')}" if u_data.get('username') else tw_user
+                            tw_avatar = u_data.get('profile_image_url') or ""
+                    except Exception as e_tw:
+                        print("[Twitter User Me Fetch Error]:", e_tw)
+
+                    db.db_save_social_account(email, {
+                        "id": tw_id,
+                        "platform": "twitter",
+                        "name": tw_name,
+                        "username": tw_user,
+                        "avatar_url": tw_avatar,
+                        "access_token": access_token,
+                        "connected_at": datetime.now().isoformat()
+                    })
         except Exception as e:
             print("Twitter OAuth Error:", e)
 
@@ -2032,14 +2019,40 @@ def linkedin_callback():
             with urllib.request.urlopen(req) as response:
                 res_data = json.loads(response.read().decode('utf-8'))
                 access_token = res_data.get('access_token')
-                sheet = db.get_gsheet()
-                if sheet and access_token:
-                    all_vals = sheet.get_all_values()
-                    for idx in range(len(all_vals)-1, 0, -1):
-                        row = all_vals[idx]
-                        if len(row) > 0 and str(row[0]).strip().lower() == email.lower():
-                            sheet.update_cell(idx + 1, 11, access_token)
-                            break
+                if access_token:
+                    # Ambil profil riil LinkedIn pengguna via UserInfo (OpenID Connect)
+                    li_name = "LinkedIn User"
+                    li_username = email.split('@')[0] if email else "linkedin.user"
+                    li_avatar = ""
+                    li_sub = f"li_{uuid.uuid4().hex[:8]}"
+                    try:
+                        u_req = urllib.request.Request(
+                            "https://api.linkedin.com/v2/userinfo",
+                            headers={"Authorization": f"Bearer {access_token}"}
+                        )
+                        with urllib.request.urlopen(u_req, timeout=10) as u_resp:
+                            u_info = json.loads(u_resp.read().decode('utf-8'))
+                            li_name = u_info.get('name') or u_info.get('localizedFirstName', '') + " " + u_info.get('localizedLastName', '')
+                            li_name = li_name.strip() or "LinkedIn Profile"
+                            li_avatar = u_info.get('picture') or ""
+                            li_sub = u_info.get('sub') or li_sub
+                            if u_info.get('email'):
+                                li_username = u_info.get('email')
+                            else:
+                                li_username = f"@{li_name.lower().replace(' ', '')}"
+                    except Exception as e_li:
+                        print("[LinkedIn UserInfo Fetch Error]:", e_li)
+
+                    # Simpan ke Multi-Account Social Registry (SQLite)
+                    db.db_save_social_account(email, {
+                        "id": li_sub,
+                        "platform": "linkedin",
+                        "name": li_name,
+                        "username": li_username,
+                        "avatar_url": li_avatar,
+                        "access_token": access_token,
+                        "connected_at": datetime.now().isoformat()
+                    })
         except Exception as e:
             print("LinkedIn OAuth Error:", e)
 
@@ -2084,18 +2097,7 @@ def youtube_callback():
                 res_data = json.loads(response.read().decode('utf-8'))
                 access_token = res_data.get('access_token')
                 refresh_token = res_data.get('refresh_token', '')
-                sheet = db.get_gsheet()
-                if sheet and access_token:
-                    all_vals = sheet.get_all_values()
-                    for idx in range(len(all_vals)-1, 0, -1):
-                        row = all_vals[idx]
-                        if len(row) > 0 and str(row[0]).strip().lower() == email.lower():
-                            row_idx = idx + 1
-                            sheet.update_cell(row_idx, 12, access_token)
-                            if refresh_token:
-                                sheet.update_cell(row_idx, 13, refresh_token)
-                            break
-
+                if access_token:
                     # Ambil informasi Channel YouTube
                     yt_name = "YouTube Channel"
                     yt_handle = "@YouTubeChannel"
@@ -2182,14 +2184,33 @@ def threads_callback():
             with urllib.request.urlopen(req) as response:
                 res_data = json.loads(response.read().decode('utf-8'))
                 access_token = res_data.get('access_token')
-                sheet = db.get_gsheet()
-                if sheet and access_token:
-                    all_vals = sheet.get_all_values()
-                    for idx in range(len(all_vals)-1, 0, -1):
-                        row = all_vals[idx]
-                        if len(row) > 0 and str(row[0]).strip().lower() == email.lower():
-                            sheet.update_cell(idx + 1, 14, access_token)
-                            break
+                user_id = res_data.get('user_id')
+                if access_token:
+                    th_name = "Threads User"
+                    th_user = "@threads"
+                    th_avatar = ""
+                    th_id = str(user_id) if user_id else f"th_{uuid.uuid4().hex[:8]}"
+                    try:
+                        u_req = urllib.request.Request(
+                            f"https://graph.threads.net/v1.0/me?fields=id,username,name,threads_profile_picture_url&access_token={access_token}"
+                        )
+                        with urllib.request.urlopen(u_req, timeout=10) as u_resp:
+                            u_info = json.loads(u_resp.read().decode('utf-8'))
+                            th_name = u_info.get('name') or u_info.get('username') or th_name
+                            th_user = f"@{u_info.get('username')}" if u_info.get('username') else th_user
+                            th_avatar = u_info.get('threads_profile_picture_url') or ""
+                    except Exception as e_th:
+                        print("[Threads User Info Fetch Error]:", e_th)
+
+                    db.db_save_social_account(email, {
+                        "id": th_id,
+                        "platform": "threads",
+                        "name": th_name,
+                        "username": th_user,
+                        "avatar_url": th_avatar,
+                        "access_token": access_token,
+                        "connected_at": datetime.now().isoformat()
+                    })
         except Exception as e:
             print("Threads OAuth Error:", e)
 
@@ -2216,15 +2237,9 @@ def direct_share_to_tiktok():
     if session_email:
         email = session_email
     elif api_key:
-        sheet_u = db.get_gsheet()
-        if sheet_u:
-            try:
-                for r in sheet_u.get_all_values()[1:]:
-                    if len(r) >= 5 and str(r[4]).strip() == api_key:
-                        email = str(r[0]).strip().lower()
-                        break
-            except Exception:
-                pass
+        u = db.db_get_user_by_api_key(api_key)
+        if u:
+            email = u.get('email')
 
     if not email:
         return jsonify({
@@ -2356,15 +2371,9 @@ def get_meta_accounts():
     email = session_email or request.args.get('email', '').strip().lower()
 
     if not email and api_key:
-        sheet_u = db.get_gsheet()
-        if sheet_u:
-            try:
-                for r in sheet_u.get_all_values()[1:]:
-                    if len(r) >= 5 and str(r[4]).strip() == api_key:
-                        email = str(r[0]).strip().lower()
-                        break
-            except Exception:
-                pass
+        u = db.db_get_user_by_api_key(api_key)
+        if u:
+            email = u.get('email')
 
     if not email:
         email = "deripernandi99@gmail.com"
@@ -2413,71 +2422,6 @@ def get_meta_accounts():
             })
     except Exception as e_reg:
         print(f"[Meta Accounts Registry Fetch Error]: {e_reg}")
-
-    # 2. Sinkronkan via Live Meta Graph API jika tersedia token (User Token atau Page Token)
-    meta_token = None
-    if api_key or email:
-        meta_token = db.db_get_meta_token_by_api_key(api_key, email=email)
-    
-    if not meta_token and accounts:
-        meta_token = accounts[0].get('access_token')
-
-    if not meta_token:
-        sheet = db.get_gsheet()
-        if sheet:
-            try:
-                for row in sheet.get_all_values()[1:]:
-                    if len(row) >= 10 and str(row[9]).strip():
-                        if not email or (len(row) >= 1 and str(row[0]).strip().lower() == email):
-                            meta_token = str(row[9]).strip()
-                            break
-            except Exception:
-                pass
-
-    if meta_token:
-        # Coba query /me/accounts (untuk User Access Token)
-        try:
-            acc_url = f"https://graph.facebook.com/v21.0/me/accounts?fields=id,name,category,access_token,instagram_business_account{{id,username,name,profile_picture_url}}&access_token={meta_token}"
-            req = urllib.request.Request(acc_url)
-            with urllib.request.urlopen(req, timeout=10) as resp:
-                data = json.loads(resp.read().decode('utf-8'))
-                for p in data.get('data', []):
-                    pid = str(p.get('id', '')).strip()
-                    if not pid or pid in seen_ids:
-                        continue
-                    seen_ids.add(pid)
-                    ig = p.get('instagram_business_account') or {}
-                    accounts.append({
-                        "id": pid,
-                        "name": p.get('name'),
-                        "category": p.get('category', 'Page'),
-                        "access_token": p.get('access_token', ''),
-                        "instagram_id": ig.get('id', ''),
-                        "instagram_username": ig.get('username') or ('@' + p.get('name', '').lower().replace(' ', '')),
-                        "avatar_url": f"https://graph.facebook.com/v21.0/{pid}/picture?type=normal"
-                    })
-        except Exception as e_user:
-            # Jika User Token gagal (misal token adalah Page Access Token), coba query /me langsung
-            try:
-                me_url = f"https://graph.facebook.com/v21.0/me?fields=id,name,category,instagram_business_account{{id,username,name,profile_picture_url}}&access_token={meta_token}"
-                req = urllib.request.Request(me_url)
-                with urllib.request.urlopen(req, timeout=10) as resp:
-                    p = json.loads(resp.read().decode('utf-8'))
-                    pid = str(p.get('id', '')).strip()
-                    if pid and pid not in seen_ids and p.get('category'):
-                        seen_ids.add(pid)
-                        ig = p.get('instagram_business_account') or {}
-                        accounts.append({
-                            "id": pid,
-                            "name": p.get('name'),
-                            "category": p.get('category', 'Page'),
-                            "access_token": meta_token,
-                            "instagram_id": ig.get('id', ''),
-                            "instagram_username": ig.get('username') or ('@' + p.get('name', '').lower().replace(' ', '')),
-                            "avatar_url": f"https://graph.facebook.com/v21.0/{pid}/picture?type=normal"
-                        })
-            except Exception as e_page:
-                pass
 
     return jsonify({
         "success": True,
@@ -2682,15 +2626,9 @@ def studio_omnichannel_publish():
     email = session_email or request.form.get('email', '').strip().lower()
 
     if not email and api_key:
-        sheet_u = db.get_gsheet()
-        if sheet_u:
-            try:
-                for r in sheet_u.get_all_values()[1:]:
-                    if len(r) >= 5 and str(r[4]).strip() == api_key:
-                        email = str(r[0]).strip().lower()
-                        break
-            except Exception:
-                pass
+        u = db.db_get_user_by_api_key(api_key)
+        if u:
+            email = u.get('email')
 
     if not email:
         email = "deripernandi99@gmail.com" # Default safe session for testing
@@ -3165,21 +3103,8 @@ def get_all_social_accounts():
         "threads": []
     }
 
-    # Filter placeholder meta_primary jika akun Facebook riil sudah ada
-    has_real_fb = any(str(a.get('platform', '')).lower() in ['facebook', 'fb', 'facebook_page'] and str(a.get('id', '')) != 'meta_primary' for a in accounts)
-    if has_real_fb:
-        accounts = [a for a in accounts if not (str(a.get('platform', '')).lower() in ['facebook', 'fb', 'facebook_page'] and str(a.get('id', '')) == 'meta_primary')]
-
-    # Auto-heal: Cek apakah user memiliki Facebook Pages tetapi akun Instagram belum tersinkronkan
-    has_fb_page = any(str(a.get('platform', '')).lower() in ['facebook', 'fb', 'facebook_page'] and str(a.get('id', '')) != 'meta_primary' for a in accounts)
-    has_ig = any(str(a.get('platform', '')).lower() in ['instagram', 'ig'] for a in accounts)
-    if has_fb_page and not has_ig:
-        try:
-            added = db_sync_instagram_from_connected_facebook_pages(email)
-            if added:
-                accounts = db.db_get_social_accounts(email=email, api_key=api_key)
-        except Exception as e_sync:
-            print("[Auto-heal Instagram in social_accounts error]:", e_sync)
+    # Filter placeholder meta_primary agar tidak pernah muncul di list akun
+    accounts = [a for a in accounts if str(a.get('id', '')) != 'meta_primary']
 
     for acc in accounts:
         p = str(acc.get('platform', '')).lower()
@@ -3187,13 +3112,18 @@ def get_all_social_accounts():
         if p in ['ig']: p = 'instagram'
         if p in ['x']: p = 'twitter'
 
+        raw_avatar = acc.get('avatar_url') or ""
+        avatar_url = raw_avatar
+        if raw_avatar and ('tiktokcdn.com' in raw_avatar or 'fbcdn.net' in raw_avatar or 'cdninstagram.com' in raw_avatar):
+            avatar_url = f"/api/proxy/avatar?url={urllib.parse.quote(raw_avatar)}&name={urllib.parse.quote(acc.get('name') or 'User')}"
+
         clean_acc = {
             "id": acc.get('id'),
             "platform": p,
             "name": acc.get('name') or f"Akun {p.capitalize()}",
             "username": acc.get('username') or (acc.get('category') if acc.get('category') else f"@{p}_user"),
             "category": acc.get('category') or acc.get('username') or 'Page',
-            "avatar_url": acc.get('avatar_url') or "",
+            "avatar_url": avatar_url,
             "connected_at": acc.get('connected_at') or ""
         }
         if p in by_platform:
@@ -3217,6 +3147,7 @@ def disconnect_single_social_account():
     """
     Memutuskan 1 akun tertentu dari platform (berdasarkan account_id),
     tanpa menghapus akun-akun lain di platform yang sama.
+    Juga menghapus token dari Google Sheet jika seluruh akun di platform tersebut sudah diputuskan.
     """
     from utils import database as db
     data = request.json or {}
@@ -3231,6 +3162,7 @@ def disconnect_single_social_account():
         return jsonify({"success": False, "message": "ID akun wajib disertakan."}), 400
 
     ok, updated = db.db_delete_social_account(email, platform, account_id)
+
     return jsonify({
         "success": ok,
         "message": f"Akun berhasil diputuskan.",
@@ -3511,3 +3443,30 @@ def cron_process_scheduled_posts():
         "items": processed,
         "timestamp": now.strftime("%d/%m/%Y %H:%M:%S")
     })
+
+@oauth_bp.route('/api/proxy/avatar', methods=['GET'])
+def proxy_avatar():
+    """
+    Proxy foto profil media sosial untuk mencegah pemblokiran Referer/CORS oleh CDN (TikTok, Meta, dll).
+    """
+    img_url = request.args.get('url', '').strip()
+    if not img_url:
+        return Response("URL required", status=400)
+    try:
+        req = urllib.request.Request(img_url, headers={
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+        })
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            content_type = resp.headers.get('Content-Type', 'image/jpeg')
+            return Response(resp.read(), mimetype=content_type, headers={
+                "Cache-Control": "public, max-age=86400"
+            })
+    except Exception as e:
+        name = request.args.get('name', 'User')
+        fallback_url = f"https://ui-avatars.com/api/?name={urllib.parse.quote(name)}&background=1e293b&color=fff"
+        try:
+            with urllib.request.urlopen(fallback_url, timeout=5) as fb_resp:
+                return Response(fb_resp.read(), mimetype='image/png')
+        except Exception:
+            return Response(f"Error: {e}", status=502)
+

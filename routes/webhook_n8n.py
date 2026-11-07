@@ -514,18 +514,8 @@ def n8n_webhook():
     if not api_key:
         return jsonify({"success": False, "message": "API Key is required in Header"}), 400
 
-    # 1. VERIFIKASI USER BERDASARKAN API KEY DI SHEET UTAMA
-    user_data = None
-    sheet_users = db.get_gsheet()
-    if sheet_users:
-        try:
-            all_vals = sheet_users.get_all_values()
-            for r in all_vals[1:]:
-                if len(r) >= 5 and str(r[4]).strip() == api_key:
-                    user_data = db.db_get_user(r[0])
-                    break
-        except Exception as e:
-            print(f"Error finding user by API key: {e}")
+    # 1. VERIFIKASI USER BERDASARKAN API KEY DI SQLITE (< 0.1ms)
+    user_data = db.db_get_user_by_api_key(api_key)
 
     # SECURITY FIX: Tolak jika API Key tidak valid atau tidak terdaftar
     if not user_data:
@@ -812,17 +802,11 @@ def get_logs():
     active_email = session.get('user_email', '').strip().lower()
     api_key = request.headers.get('X-API-Key', '').strip()
 
-    # Jika via API Key tanpa sesi, verifikasi API Key ke database
+    # Jika via API Key tanpa sesi, verifikasi API Key ke database SQLite
     if not active_email and api_key:
-        sheet_u = db.get_gsheet()
-        if sheet_u:
-            try:
-                for r in sheet_u.get_all_values()[1:]:
-                    if len(r) >= 5 and str(r[4]).strip() == api_key:
-                        active_email = str(r[0]).strip().lower()
-                        break
-            except Exception:
-                pass
+        u = db.db_get_user_by_api_key(api_key)
+        if u:
+            active_email = u.get('email', '').strip().lower()
 
     if not active_email:
         return jsonify({

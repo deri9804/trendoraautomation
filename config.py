@@ -49,10 +49,12 @@ SMTP_EMAIL = os.environ.get("SMTP_EMAIL", "trendoraautomation@gmail.com")
 SMTP_PASSWORD = os.environ.get("SMTP_PASSWORD", "")
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 
-# CONFIGURATION LEAD SCRAPER (OPSI A: GOOGLE SEARCH API & SERPER)
+# CONFIGURATION LEAD SCRAPER (OPSI A: GOOGLE SEARCH API & SERPER & APIFY)
 GOOGLE_SEARCH_API_KEY = os.environ.get("GOOGLE_SEARCH_API_KEY", os.environ.get("GEMINI_API_KEY", ""))
 GOOGLE_SEARCH_ENGINE_ID = os.environ.get("GOOGLE_SEARCH_ENGINE_ID", os.environ.get("GOOGLE_CSE_CX", ""))
 SERPER_API_KEY = os.environ.get("SERPER_API_KEY", "")
+APIFY_TOKEN = os.environ.get("APIFY_TOKEN", "")
+
 
 # In-memory store fallback
 user_2fa_store = {}

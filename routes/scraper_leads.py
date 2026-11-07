@@ -355,12 +355,228 @@ def search_nominatim_places(keyword, location="", limit=10, only_with_phone=Fals
         
     return places
 
-def scrape_leads_by_platform(keyword, location="", platform="instagram", limit=10, google_api_key="", google_cse_cx="", serper_api_key="", only_with_phone=False):
+# =========================================================================
+# APIFY ACTOR INTEGRATION FOR SOCIAL MEDIA (INSTAGRAM, TIKTOK, FB, LINKEDIN)
+# =========================================================================
+
+def scrape_leads_via_apify(keyword, location="", platform="instagram", limit=10, apify_token=""):
     """
-    Men-scrape leads khusus untuk satu platform tertentu.
-    Mendukung Google CSE (Opsi A), Serper, dan multi-fallback.
+    Men-scrape leads mendalam via Actor Apify resmi untuk Instagram, TikTok, Facebook, dan LinkedIn.
     Mengembalikan: (leads, debug_info)
     """
+    if not apify_token:
+        return [], "Apify token not provided"
+
+    query = f"{keyword} {location}".strip()
+
+    # Siapkan Actor ID & Payload sesuai platform
+    actor_id = None
+    run_input = {}
+    
+    if platform == 'instagram':
+        # apify/instagram-search-scraper: Search users by keyword/location
+        actor_id = "apify/instagram-search-scraper"
+        run_input = {
+            "search": query,
+            "searchType": "user",
+            "searchLimit": min(limit, 25),
+            "enhanceUserSearchWithFacebookPage": True
+        }
+    elif platform == 'tiktok':
+        # clockworks/tiktok-user-search-scraper: Search TikTok user profiles
+        actor_id = "clockworks/tiktok-user-search-scraper"
+        run_input = {
+            "searchQueries": [query],
+            "maxProfilesPerQuery": min(limit, 25)
+        }
+    elif platform == 'facebook':
+        # apify/facebook-search-scraper: Search Facebook pages & places
+        actor_id = "apify/facebook-search-scraper"
+        run_input = {
+            "categories": [keyword],
+            "locations": [location] if location else [],
+            "searchType": "pages-google",
+            "resultsLimit": min(limit, 25)
+        }
+    elif platform == 'linkedin':
+        # harvestapi/linkedin-profile-search: B2B profile search
+        actor_id = "harvestapi/linkedin-profile-search"
+        run_input = {
+            "searchQuery": query,
+            "maxItems": min(limit, 25),
+            "locations": [location] if location else None
+        }
+    else:
+        return [], f"Platform '{platform}' not configured for Apify"
+
+    items = []
+    # Metode 1: Coba gunakan apify_client jika terpasang
+    try:
+        from apify_client import ApifyClient
+        client = ApifyClient(token=apify_token)
+        print(f"[Apify Runner SDK] Calling {actor_id} for '{query}' (limit={limit})...")
+        run = client.actor(actor_id).call(
+            run_input=run_input,
+            timeout_secs=45
+        )
+        if run and 'defaultDatasetId' in run:
+            dataset = client.dataset(run['defaultDatasetId']).list_items(limit=limit)
+            items = dataset.items if dataset else []
+            print(f"[Apify Runner SDK] {actor_id} returned {len(items)} items")
+    except ImportError:
+        # Metode 2 (Fallback Tanpa Dependensi): Panggil langsung REST API Apify secara sinkron
+        try:
+            actor_slug = actor_id.replace('/', '~')
+            api_url = f"https://api.apify.com/v2/acts/{actor_slug}/run-sync-get-dataset-items?token={apify_token}&timeout=45&limit={limit}"
+            print(f"[Apify Runner REST] Calling {api_url} for '{query}'...")
+            req = urllib.request.Request(
+                api_url,
+                data=json.dumps(run_input).encode('utf-8'),
+                headers={
+                    "Content-Type": "application/json",
+                    "User-Agent": "TrendoraAutomation/1.0"
+                }
+            )
+            with urllib.request.urlopen(req, timeout=50) as resp:
+                raw_data = resp.read().decode('utf-8')
+                parsed = json.loads(raw_data)
+                if isinstance(parsed, list):
+                    items = parsed
+                elif isinstance(parsed, dict) and 'items' in parsed:
+                    items = parsed['items']
+                print(f"[Apify Runner REST] {actor_id} returned {len(items)} items")
+        except Exception as e_rest:
+            err_msg = str(e_rest)
+            print(f"[Apify Runner REST Error on {actor_id}]: {err_msg}")
+            return [], f"Apify REST error ({actor_id}): {err_msg}"
+    except Exception as e:
+        err_msg = str(e)
+        print(f"[Apify Runner SDK Error on {actor_id}]: {err_msg}")
+        return [], f"Apify error ({actor_id}): {err_msg}"
+
+    leads = []
+    seen = set()
+
+    for item in items:
+        title = ""
+        username = ""
+        dest_url = ""
+        snippet = ""
+        website = ""
+        raw_phone = ""
+        raw_email = ""
+
+        if platform == 'instagram':
+            username = item.get('username') or ''
+            title = item.get('fullName') or item.get('name') or username or keyword
+            dest_url = item.get('url') or (f"https://www.instagram.com/{username}/" if username else "")
+            snippet = item.get('biography') or item.get('bio') or ''
+            website = item.get('externalUrl') or item.get('website') or ''
+            raw_phone = item.get('publicPhoneNumber') or item.get('phone') or ''
+            raw_email = item.get('publicEmail') or item.get('email') or ''
+            if username and not username.startswith('@'):
+                username = f"@{username}"
+
+        elif platform == 'tiktok':
+            username = item.get('uniqueId') or item.get('username') or ''
+            title = item.get('nickname') or item.get('name') or username or keyword
+            dest_url = item.get('url') or (f"https://www.tiktok.com/@{username}" if username else "")
+            snippet = item.get('signature') or item.get('bio') or ''
+            bio_link = item.get('bioLink')
+            website = bio_link.get('link') if isinstance(bio_link, dict) else (bio_link or '')
+            if username and not username.startswith('@'):
+                username = f"@{username}"
+
+        elif platform == 'facebook':
+            title = item.get('title') or item.get('name') or keyword
+            dest_url = item.get('url') or item.get('link') or ""
+            snippet = item.get('snippet') or item.get('description') or ''
+            website = item.get('website') or ""
+            raw_phone = item.get('phone') or ''
+            raw_email = item.get('email') or ''
+            username = extract_social_handle(dest_url, 'facebook')
+
+        elif platform == 'linkedin':
+            title = item.get('fullName') or item.get('name') or keyword
+            dest_url = item.get('profileUrl') or item.get('url') or ""
+            snippet = item.get('headline') or item.get('summary') or ''
+            raw_phone = item.get('phone') or ''
+            raw_email = item.get('email') or ''
+            username = extract_social_handle(dest_url, 'linkedin')
+
+        combined_text = f"{title} {snippet} {website} {raw_phone} {raw_email} {dest_url}"
+        phones = extract_phones_from_text(combined_text)
+        emails = extract_emails_from_text(combined_text)
+        if raw_email and raw_email not in emails:
+            emails.insert(0, raw_email)
+
+        primary_phone = phones[0] if phones else (sanitize_phone_to_wa(raw_phone) if raw_phone else "")
+        if primary_phone and primary_phone not in phones:
+            phones.insert(0, primary_phone)
+
+        identifier = primary_phone or dest_url or username or title
+        if not identifier or identifier in seen:
+            continue
+        seen.add(identifier)
+
+        leads.append({
+            "title": title,
+            "platform": platform,
+            "category": keyword,
+            "username": username,
+            "url": dest_url,
+            "snippet": snippet,
+            "address": location if location else "",
+            "city": location if location else "",
+            "phones": phones,
+            "primary_phone": primary_phone,
+            "whatsapp_url": f"https://wa.me/{primary_phone}" if primary_phone else "",
+            "emails": emails,
+            "primary_email": emails[0] if emails else "",
+            "website": website,
+            "source": f"apify_{platform}"
+        })
+
+        if len(leads) >= limit:
+            break
+
+    return leads, f"Apify {platform}: {len(leads)} leads"
+
+def scrape_leads_by_platform(keyword, location="", platform="instagram", limit=10, google_api_key="", google_cse_cx="", serper_api_key="", apify_token="", only_with_phone=False):
+    """
+    Men-scrape leads khusus untuk satu platform tertentu.
+    Mendukung Apify Actors, Serper.dev, Google CSE (Opsi A), dan multi-fallback.
+    Mengembalikan: (leads, debug_info)
+    """
+    leads = []
+    seen_identifiers = set()
+    debug_info = ""
+
+    # Prioritas 0: Apify Actors untuk Platform Sosial (Instagram, TikTok, Facebook, LinkedIn)
+    if apify_token and platform in ['instagram', 'tiktok', 'facebook', 'linkedin']:
+        apify_leads, a_debug = scrape_leads_via_apify(
+            keyword,
+            location=location,
+            platform=platform,
+            limit=limit,
+            apify_token=apify_token
+        )
+        if a_debug:
+            debug_info = a_debug
+
+        for a_lead in apify_leads:
+            p_phone = a_lead.get('primary_phone', '')
+            if only_with_phone and not p_phone:
+                continue
+            ident = p_phone or a_lead.get('url') or a_lead.get('username')
+            if ident and ident not in seen_identifiers:
+                seen_identifiers.add(ident)
+                leads.append(a_lead)
+
+        # Jika Apify sudah mencukupi limit, langsung kembalikan hasilnya
+        if len(leads) >= limit:
+            return leads[:limit], debug_info
+
     # Hindari duplikasi lokasi jika sudah ada di dalam keyword
     loc_part = ""
     if location:
@@ -370,8 +586,7 @@ def scrape_leads_by_platform(keyword, location="", platform="instagram", limit=1
             
     is_google_cse = bool(google_api_key and google_cse_cx)
     
-    # 1. Format Query Pencarian Spesifik WhatsApp:
-    # Query terbukti paling efektif di Google Search tanpa karakter aneh
+    # 1. Format Query Pencarian Spesifik WhatsApp (Fallback engine):
     wa_dork = '("wa.me" OR "whatsapp" OR "08")'
     if platform == 'instagram':
         dork_query = f'site:instagram.com {keyword}{loc_part} {wa_dork}'
@@ -389,10 +604,7 @@ def scrape_leads_by_platform(keyword, location="", platform="instagram", limit=1
         dork_query = f'{keyword}{loc_part} {wa_dork}'
         
     cse_query = f'{keyword}{loc_part} {wa_dork}'
-        
-    leads = []
-    seen_identifiers = set()
-    debug_info = ""
+
     
     # Khusus Google Maps: Ambil juga dari OpenStreetMap Nominatim
     if platform == 'google_maps':
@@ -530,6 +742,19 @@ def api_scrape_leads():
         os.environ.get('GOOGLE_SEARCH_ENGINE_ID') or
         os.environ.get('GOOGLE_CSE_CX') or ''
     ).strip()
+
+    # Ambil konfigurasi Apify Token: Prioritas payload, lalu env / config
+    apify_token = (
+        data.get('apify_token') or
+        request.args.get('apify_token') or
+        os.environ.get('APIFY_TOKEN') or ''
+    ).strip()
+    if not apify_token:
+        try:
+            import config
+            apify_token = getattr(config, 'APIFY_TOKEN', '') or ''
+        except Exception:
+            pass
     
     # Parameter apakah hanya mengembalikan lead yang punya nomor WhatsApp (Default: False agar hasil tetap keluar ke n8n)
     raw_only_phone = data.get('only_with_phone') or request.args.get('only_with_phone')
@@ -552,6 +777,7 @@ def api_scrape_leads():
             google_api_key=google_api_key,
             google_cse_cx=google_cse_cx,
             serper_api_key=serper_api_key,
+            apify_token=apify_token,
             only_with_phone=only_with_phone
         )
         summary_counts[plat] = len(plat_leads)
@@ -569,9 +795,11 @@ def api_scrape_leads():
             "location": location,
             "platforms": platforms,
             "limit_per_platform": limit_per_platform,
-            "engine_used": "serper" if serper_api_key else ("google_cse" if (google_api_key and google_cse_cx) else "web_dorking"),
+            "engine_used": "apify+serper" if (apify_token and serper_api_key) else ("apify" if apify_token else ("serper" if serper_api_key else ("google_cse" if (google_api_key and google_cse_cx) else "web_dorking"))),
+            "apify_active": bool(apify_token),
             "only_with_phone": only_with_phone
         },
+
         "total_leads": len(all_leads),
         "platform_summary": summary_counts,
         "debug_info": debug_per_platform,
