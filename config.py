@@ -1,11 +1,29 @@
 import os
 
+basedir = os.path.abspath(os.path.dirname(__file__))
+env_file = os.path.join(basedir, '.env')
+
 try:
     from dotenv import load_dotenv  # type: ignore
-    basedir = os.path.abspath(os.path.dirname(__file__))
-    load_dotenv(os.path.join(basedir, '.env'), override=True)
+    load_dotenv(env_file, override=True)
 except Exception:
     pass
+
+# Manual fallback parser jika python-dotenv belum terpasang
+if os.path.exists(env_file):
+    try:
+        with open(env_file, 'r', encoding='utf-8', errors='ignore') as f:
+            for line in f:
+                line = line.strip()
+                if not line or line.startswith('#') or '=' not in line:
+                    continue
+                k, v = line.split('=', 1)
+                k = k.strip()
+                v = v.strip().strip('"').strip("'")
+                if k and k not in os.environ:
+                    os.environ[k] = v
+    except Exception as e:
+        print("[Config Env Load Error]:", e)
 
 # CONFIGURATION SECRET KEY FOR SESSIONS
 SECRET_KEY = os.environ.get("SECRET_KEY", "trendora_session_isolated_secret_key_2026_x89a")
