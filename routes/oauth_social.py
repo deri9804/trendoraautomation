@@ -3780,6 +3780,7 @@ def debug_social_diagnostics():
 
     return jsonify({
         "status": "ok",
+        "deployed_version": "v2.6-meta-direct-scan",
         "env_keys": {
             "TIKTOK_CLIENT_KEY": mask(config.TIKTOK_CLIENT_KEY),
             "TIKTOK_CLIENT_KEY_LOADED": bool(config.TIKTOK_CLIENT_KEY),
