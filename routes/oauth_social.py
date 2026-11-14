@@ -443,7 +443,7 @@ def get_meta_auth_url():
 
     redirect_uri = "https://trendoraautomation.my.id/auth/meta/callback"
     state = f"{uuid.uuid4().hex[:8]}|{email}"
-    scopes = "pages_show_list,pages_read_engagement,pages_manage_posts,pages_manage_engagement,pages_read_user_content,pages_manage_metadata,read_insights,instagram_basic,instagram_content_publish,instagram_manage_comments,instagram_manage_messages,pages_messaging"
+    scopes = "pages_show_list,pages_read_engagement,pages_manage_posts,pages_manage_engagement,pages_read_user_content,pages_manage_metadata,read_insights,instagram_basic,instagram_content_publish,instagram_manage_comments,instagram_manage_messages,pages_messaging,business_management"
     
     params = {
         "client_id": config.META_CLIENT_ID,
@@ -453,7 +453,7 @@ def get_meta_auth_url():
         "response_type": "code",
         "auth_type": "rerequest"
     }
-    base_url = "https://www.facebook.com/v18.0/dialog/oauth"
+    base_url = "https://www.facebook.com/v21.0/dialog/oauth"
     full_url = f"{base_url}?{urllib.parse.urlencode(params)}"
     return jsonify({"success": True, "url": full_url})
 
@@ -691,23 +691,22 @@ def meta_callback():
                     except Exception as e_acc2:
                         print("[Meta Accounts Basic Fetch Error]:", e_acc2)
 
+                user_token = long_lived_token
                 if pages:
                     first_page = pages[0]
                     page_name = first_page.get('name')
                     page_id = first_page.get('id')
-                    if first_page.get('access_token'):
-                        final_token = first_page.get('access_token')
                     print(f"[Meta Discovery]: Ditemukan {len(pages)} Facebook Page untuk {email}")
                 else:
                     print(f"[Meta Warning]: User {email} tidak memiliki Facebook Page atau izin Page tidak dicentang.")
 
-                # 3. Simpan Token Meta ke SQLite Multi-Account Registry
+                # 3. Simpan User Token Meta ke SQLite Multi-Account Registry
                 db.db_save_social_account(email, {
                     "id": "meta_primary",
                     "platform": "facebook",
                     "name": "Meta User Account",
                     "username": email,
-                    "access_token": final_token,
+                    "access_token": user_token,
                     "connected_at": datetime.now().isoformat()
                 })
 
@@ -717,7 +716,7 @@ def meta_callback():
                         p_id = p.get('id')
                         p_name = p.get('name', 'Facebook Page')
                         p_cat = p.get('category', 'Page')
-                        p_tok = p.get('access_token') or final_token
+                        p_tok = p.get('access_token') or user_token
                         p_avatar = f"https://graph.facebook.com/v21.0/{p_id}/picture?type=normal"
 
                         # Pastikan username unik per page (bukan category) agar tidak saling menimpa
@@ -3682,16 +3681,88 @@ def debug_social_diagnostics():
 
     meta_live_inspection = {}
     auto_synced_items = []
+
+    # 1. Periksa langsung setiap Halaman Facebook yang tersimpan di SQLite menggunakan token halamannya
+    saved_pages_scan = []
+    try:
+        conn_scan = db.get_db_connection()
+        cur_scan = conn_scan.cursor()
+        cur_scan.execute("SELECT id, name, user_email, access_token FROM social_accounts WHERE platform = 'facebook' AND id != 'meta_primary'")
+        db_pages = [dict(r) for r in cur_scan.fetchall()]
+        conn_scan.close()
+
+        for dp in db_pages:
+            p_id = dp['id']
+            p_name = dp.get('name', 'Page')
+            p_tok = dp.get('access_token')
+            p_email = dp.get('user_email')
+            p_res = {"page_id": p_id, "page_name": p_name}
+            if p_tok:
+                try:
+                    q_url = f"https://graph.facebook.com/v21.0/{p_id}?fields=id,name,instagram_business_account,connected_instagram_account&access_token={p_tok}"
+                    with urllib.request.urlopen(urllib.request.Request(q_url, headers={"User-Agent": "Trendora-Automation/1.0"}), timeout=8) as r_q:
+                        q_data = json.loads(r_q.read().decode('utf-8'))
+                        p_res['graph_response'] = q_data
+
+                        # Cek apakah ada IG ID tertaut
+                        ig_id = None
+                        if q_data.get('instagram_business_account', {}).get('id'):
+                            ig_id = str(q_data['instagram_business_account']['id']).strip()
+                        elif q_data.get('connected_instagram_account', {}).get('id'):
+                            ig_id = str(q_data['connected_instagram_account']['id']).strip()
+
+                        p_res['detected_instagram_id'] = ig_id
+                        if ig_id:
+                            ig_name = f"IG: {p_name}"
+                            ig_user = f"@{p_name.lower().replace(' ', '')}"
+                            ig_pic = ""
+                            try:
+                                u_url = f"https://graph.facebook.com/v21.0/{ig_id}?fields=id,username,name,profile_picture_url&access_token={p_tok}"
+                                with urllib.request.urlopen(urllib.request.Request(u_url, headers={"User-Agent": "Trendora-Automation/1.0"}), timeout=8) as r_u:
+                                    u_data = json.loads(r_u.read().decode('utf-8'))
+                                    if u_data.get('name'): ig_name = u_data.get('name').strip()
+                                    if u_data.get('username'): ig_user = "@" + u_data.get('username').replace('@', '').strip()
+                                    if u_data.get('profile_picture_url'): ig_pic = u_data.get('profile_picture_url').strip()
+                            except Exception as e_ig_prof:
+                                p_res['ig_profile_error'] = str(e_ig_prof)
+
+                            db.db_save_social_account(p_email, {
+                                "id": ig_id,
+                                "platform": "instagram",
+                                "name": ig_name,
+                                "username": ig_user,
+                                "avatar_url": ig_pic,
+                                "access_token": p_tok,
+                                "connected_at": datetime.now().isoformat()
+                            })
+                            auto_synced_items.append(f"Auto-saved Instagram {ig_user} ({ig_id}) from Page {p_name}")
+                except urllib.error.HTTPError as he:
+                    try: p_res['error'] = json.loads(he.read().decode('utf-8'))
+                    except Exception: p_res['error'] = f"HTTP {he.code}: {he.reason}"
+                except Exception as e_page_scan:
+                    p_res['error'] = str(e_page_scan)
+            saved_pages_scan.append(p_res)
+    except Exception as e_db_scan:
+        saved_pages_scan.append({"error": str(e_db_scan)})
+    meta_live_inspection['saved_pages_instagram_scan'] = saved_pages_scan
+
+    # 2. Cek Token meta_primary
     if meta_primary_token:
+        # Cek permissions
         try:
-            # 1. Cek permissions yang diberikan pengguna
             perm_url = f"https://graph.facebook.com/v21.0/me/permissions?access_token={meta_primary_token}"
             with urllib.request.urlopen(urllib.request.Request(perm_url, headers={"User-Agent": "Trendora-Automation/1.0"}), timeout=8) as r_p:
                 p_json = json.loads(r_p.read().decode('utf-8'))
                 meta_live_inspection['granted_permissions'] = [item['permission'] for item in p_json.get('data', []) if item.get('status') == 'granted']
                 meta_live_inspection['declined_permissions'] = [item['permission'] for item in p_json.get('data', []) if item.get('status') != 'granted']
+        except urllib.error.HTTPError as he:
+            try: meta_live_inspection['permissions_error'] = json.loads(he.read().decode('utf-8'))
+            except Exception: meta_live_inspection['permissions_error'] = f"HTTP {he.code}: {he.reason}"
+        except Exception as e_perm:
+            meta_live_inspection['permissions_error'] = str(e_perm)
 
-            # 2. Cek semua Halaman Facebook yang diberikan akses oleh Meta
+        # Cek /me/accounts
+        try:
             acc_url = f"https://graph.facebook.com/v21.0/me/accounts?fields=id,name,category,access_token,instagram_business_account&access_token={meta_primary_token}"
             with urllib.request.urlopen(urllib.request.Request(acc_url, headers={"User-Agent": "Trendora-Automation/1.0"}), timeout=8) as r_a:
                 a_json = json.loads(r_a.read().decode('utf-8'))
@@ -3701,82 +3772,11 @@ def debug_social_diagnostics():
                     {"id": p.get('id'), "name": p.get('name'), "category": p.get('category'), "has_ig_biz": bool(p.get('instagram_business_account'))}
                     for p in pages_from_meta
                 ]
-
-            # 3. Analisis mendalam per halaman dan Auto-Sync ke SQLite jika belum ada
-            pages_detail = []
-            for p in pages_from_meta:
-                p_id = p.get('id')
-                p_name = p.get('name', 'Facebook Page')
-                p_cat = p.get('category', 'Page')
-                p_tok = p.get('access_token') or meta_primary_token
-
-                # Auto-sync Facebook Page jika belum tersimpan
-                p_username = f"@{p.get('username') or 'page_' + p_id}".replace('@@', '@')
-                db.db_save_social_account(meta_primary_email, {
-                    "id": p_id,
-                    "platform": "facebook",
-                    "name": p_name,
-                    "username": p_username,
-                    "avatar_url": f"https://graph.facebook.com/v21.0/{p_id}/picture?type=normal",
-                    "access_token": p_tok,
-                    "category": p_cat,
-                    "connected_at": datetime.now().isoformat()
-                })
-                auto_synced_items.append(f"Facebook Page: {p_name} ({p_id})")
-
-                # Cek Instagram pada Halaman ini
-                ig_info = {}
-                try:
-                    p_detail_url = f"https://graph.facebook.com/v21.0/{p_id}?fields=id,name,instagram_business_account,connected_instagram_account&access_token={p_tok}"
-                    with urllib.request.urlopen(urllib.request.Request(p_detail_url, headers={"User-Agent": "Trendora-Automation/1.0"}), timeout=8) as r_pd:
-                        ig_info = json.loads(r_pd.read().decode('utf-8'))
-                except Exception as e_pd:
-                    ig_info = {"error": str(e_pd)}
-
-                # Ekstrak IG jika ditemukan
-                ig_target_id = None
-                if ig_info.get('instagram_business_account', {}).get('id'):
-                    ig_target_id = str(ig_info['instagram_business_account']['id']).strip()
-                elif ig_info.get('connected_instagram_account', {}).get('id'):
-                    ig_target_id = str(ig_info['connected_instagram_account']['id']).strip()
-
-                if ig_target_id:
-                    ig_name = f"IG: {p_name}"
-                    ig_user = f"@{p_name.lower().replace(' ', '')}"
-                    ig_pic = ""
-                    try:
-                        u_url = f"https://graph.facebook.com/v21.0/{ig_target_id}?fields=id,username,name,profile_picture_url&access_token={p_tok}"
-                        with urllib.request.urlopen(urllib.request.Request(u_url, headers={"User-Agent": "Trendora-Automation/1.0"}), timeout=8) as u_resp:
-                            u_data = json.loads(u_resp.read().decode('utf-8'))
-                            if u_data.get('name'): ig_name = u_data.get('name').strip()
-                            if u_data.get('username'): ig_user = "@" + u_data.get('username').replace('@', '').strip()
-                            if u_data.get('profile_picture_url'): ig_pic = u_data.get('profile_picture_url').strip()
-                    except Exception as e_ig_fetch:
-                        pass
-
-                    db.db_save_social_account(meta_primary_email, {
-                        "id": ig_target_id,
-                        "platform": "instagram",
-                        "name": ig_name,
-                        "username": ig_user,
-                        "avatar_url": ig_pic,
-                        "access_token": p_tok,
-                        "connected_at": datetime.now().isoformat()
-                    })
-                    auto_synced_items.append(f"Instagram: {ig_user} ({ig_target_id}) via {p_name}")
-
-                pages_detail.append({
-                    "page_id": p_id,
-                    "page_name": p_name,
-                    "page_category": p_cat,
-                    "instagram_detected_id": ig_target_id,
-                    "page_raw_instagram_edge": ig_info
-                })
-            meta_live_inspection['pages_instagram_detail'] = pages_detail
-        except Exception as e_insp:
-            meta_live_inspection['error'] = str(e_insp)
-    else:
-        meta_live_inspection['status'] = "meta_primary token not found in database"
+        except urllib.error.HTTPError as he:
+            try: meta_live_inspection['me_accounts_error'] = json.loads(he.read().decode('utf-8'))
+            except Exception: meta_live_inspection['me_accounts_error'] = f"HTTP {he.code}: {he.reason}"
+        except Exception as e_acc:
+            meta_live_inspection['me_accounts_error'] = str(e_acc)
 
     return jsonify({
         "status": "ok",
