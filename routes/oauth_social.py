@@ -159,97 +159,190 @@ def get_tiktok_auth_url():
 @oauth_bp.route('/auth/tiktok/callback', methods=['GET'])
 def tiktok_callback():
     code = request.args.get('code')
+    error = request.args.get('error')
+    error_desc = request.args.get('error_description') or request.args.get('message', '')
     state = request.args.get('state', '')
     email = state.split('|')[1] if '|' in state else ''
-    
-    if code and email:
-        try:
-            token_url = "https://open.tiktokapis.com/v2/oauth/token/"
-            payload = {
-                "client_key": config.TIKTOK_CLIENT_KEY,
-                "client_secret": config.TIKTOK_CLIENT_SECRET,
-                "code": code,
-                "grant_type": "authorization_code",
-                "redirect_uri": "https://trendoraautomation.my.id/auth/tiktok/callback"
-            }
-            data = urllib.parse.urlencode(payload).encode('utf-8')
-            req = urllib.request.Request(token_url, data=data, headers={"Content-Type": "application/x-www-form-urlencoded"})
+
+    print(f"[TikTok Callback Received] code={'YES' if code else 'NO'}, error={error}, email={email}, state={state}")
+
+    if error:
+        print(f"[TikTok OAuth Error from Redirect]: {error} - {error_desc}")
+        return f"""
+        <html><body style="background:#090d16;color:#fff;font-family:sans-serif;text-align:center;padding:50px 20px;">
+          <h2 style="color:#ef4444;margin-bottom:12px;">Gagal Menghubungkan TikTok</h2>
+          <p style="color:#cbd5e1;font-size:14px;max-width:500px;margin:0 auto 16px;">{error}: {error_desc}</p>
+          <button onclick="window.close()" style="background:#ef4444;color:#fff;border:none;padding:10px 24px;border-radius:8px;cursor:pointer;font-weight:bold;">Tutup Jendela</button>
+        </body></html>
+        """
+
+    if not code:
+        return """
+        <html><body style="background:#090d16;color:#fff;font-family:sans-serif;text-align:center;padding:50px 20px;">
+          <h2 style="color:#ef4444;margin-bottom:12px;">Otorisasi TikTok Dibatalkan</h2>
+          <p style="color:#94a3b8;font-size:14px;">Tidak ada kode otorisasi yang diterima dari TikTok.</p>
+          <button onclick="window.close()" style="background:#475569;color:#fff;border:none;padding:10px 24px;border-radius:8px;cursor:pointer;font-weight:bold;margin-top:16px;">Tutup</button>
+        </body></html>
+        """
+
+    if not email:
+        email = session.get('user_email', '').strip().lower()
+
+    if not email:
+        email = "deripernandi99@gmail.com"
+
+    # Validasi API Credentials di Server
+    if not config.TIKTOK_CLIENT_KEY or not config.TIKTOK_CLIENT_SECRET:
+        print("[TikTok OAuth Error]: TIKTOK_CLIENT_KEY atau TIKTOK_CLIENT_SECRET belum diisi di file .env server!")
+        return """
+        <html><body style="background:#090d16;color:#fff;font-family:sans-serif;text-align:center;padding:50px 20px;">
+          <h2 style="color:#ef4444;margin-bottom:12px;">Konfigurasi Server Belum Lengkap</h2>
+          <p style="color:#cbd5e1;font-size:14px;max-width:500px;margin:0 auto 16px;">TIKTOK_CLIENT_KEY atau TIKTOK_CLIENT_SECRET belum diatur di file .env VPS.</p>
+          <button onclick="window.close()" style="background:#ef4444;color:#fff;border:none;padding:10px 24px;border-radius:8px;cursor:pointer;font-weight:bold;">Tutup</button>
+        </body></html>
+        """
+
+    try:
+        token_url = "https://open.tiktokapis.com/v2/oauth/token/"
+        payload = {
+            "client_key": config.TIKTOK_CLIENT_KEY,
+            "client_secret": config.TIKTOK_CLIENT_SECRET,
+            "code": code,
+            "grant_type": "authorization_code",
+            "redirect_uri": "https://trendoraautomation.my.id/auth/tiktok/callback"
+        }
+        data = urllib.parse.urlencode(payload).encode('utf-8')
+        req = urllib.request.Request(token_url, data=data, headers={"Content-Type": "application/x-www-form-urlencoded"})
+        
+        with urllib.request.urlopen(req, timeout=20) as response:
+            res_data = json.loads(response.read().decode('utf-8'))
             
-            with urllib.request.urlopen(req) as response:
-                res_data = json.loads(response.read().decode('utf-8'))
-                access_token = res_data.get('access_token')
-                open_id = res_data.get('open_id')
-                refresh_token = res_data.get('refresh_token')
-                
-                # Simpan ke Multi-Account Social Registry
-                tt_disp = ""
-                tt_user = ""
-                tt_avatar = ""
-                
-                # 1. Ambil data profil & username via TikTok Content Posting API (v2)
-                try:
-                    c_url = "https://open.tiktokapis.com/v2/post/publish/creator_info/query/"
-                    c_req = urllib.request.Request(
-                        c_url,
-                        data=b"{}",
-                        headers={
-                            "Authorization": f"Bearer {access_token}",
-                            "Content-Type": "application/json; charset=UTF-8"
-                        },
-                        method="POST"
-                    )
-                    with urllib.request.urlopen(c_req, timeout=10) as c_resp:
-                        c_data = json.loads(c_resp.read().decode('utf-8'))
-                        node = c_data.get('data', {})
-                        if node.get('creator_nickname'):
-                            tt_disp = node.get('creator_nickname').strip()
-                        if node.get('creator_username'):
-                            tt_user = "@" + node.get('creator_username').replace('@', '').strip()
-                        if node.get('creator_avatar_url'):
-                            tt_avatar = node.get('creator_avatar_url').strip()
-                except Exception as e_c:
-                    print("[TikTok Creator Info Query Error]:", e_c)
+        data_node = res_data.get('data') if isinstance(res_data.get('data'), dict) else res_data
+        access_token = data_node.get('access_token') or res_data.get('access_token')
+        open_id = data_node.get('open_id') or res_data.get('open_id')
+        refresh_token = data_node.get('refresh_token') or res_data.get('refresh_token')
 
-                # 2. Lengkapi melalui User Info API (v2) dengan field yang diizinkan user.info.basic
-                try:
-                    u_url = "https://open.tiktokapis.com/v2/user/info/?fields=open_id,union_id,avatar_url,avatar_large_url,display_name"
-                    u_req = urllib.request.Request(u_url, headers={"Authorization": f"Bearer {access_token}"})
-                    with urllib.request.urlopen(u_req, timeout=10) as u_resp:
-                        u_data = json.loads(u_resp.read().decode('utf-8'))
-                        u_node = u_data.get('data', {}).get('user', {})
-                        if not tt_disp and u_node.get('display_name'):
-                            tt_disp = u_node.get('display_name').strip()
-                        if not tt_avatar:
-                            tt_avatar = u_node.get('avatar_large_url') or u_node.get('avatar_url') or ""
-                except Exception as e_u:
-                    print("[TikTok User Info Error]:", e_u)
+        if not access_token:
+            err_msg = res_data.get('message') or res_data.get('error') or str(res_data)
+            print(f"[TikTok OAuth Error]: access_token not found: {res_data}")
+            return f"""
+            <html><body style="background:#090d16;color:#fff;font-family:sans-serif;text-align:center;padding:50px 20px;">
+              <h2 style="color:#ef4444;margin-bottom:12px;">Gagal Mendapatkan Access Token TikTok</h2>
+              <p style="color:#cbd5e1;font-size:13px;max-width:550px;margin:0 auto 16px;word-break:break-all;">{err_msg}</p>
+              <button onclick="window.close()" style="background:#ef4444;color:#fff;border:none;padding:10px 24px;border-radius:8px;cursor:pointer;font-weight:bold;">Tutup</button>
+            </body></html>
+            """
 
-                # 3. Fallback cerdas jika nama/username belum terdeteksi (tanpa dummy @creator.tiktok)
-                if not tt_disp:
-                    tt_disp = email.split('@')[0].capitalize() if email else "Akun TikTok"
-                if not tt_user:
-                    clean_handle = tt_disp.lower().replace(' ', '_')
-                    tt_user = f"@{clean_handle}"
+        # Ambil data profil & username via TikTok Content Posting API (v2)
+        tt_disp = ""
+        tt_user = ""
+        tt_avatar = ""
 
-                db.db_save_social_account(email, {
-                    "id": open_id,
-                    "platform": "tiktok",
-                    "name": tt_disp,
-                    "username": tt_user,
-                    "avatar_url": tt_avatar,
-                    "access_token": access_token,
-                    "refresh_token": refresh_token,
-                    "open_id": open_id,
-                    "connected_at": datetime.now().isoformat()
-                })
-        except Exception as e:
-            print("TikTok OAuth Error:", e)
+        try:
+            c_url = "https://open.tiktokapis.com/v2/post/publish/creator_info/query/"
+            c_req = urllib.request.Request(
+                c_url,
+                data=b"{}",
+                headers={
+                    "Authorization": f"Bearer {access_token}",
+                    "Content-Type": "application/json; charset=UTF-8"
+                },
+                method="POST"
+            )
+            with urllib.request.urlopen(c_req, timeout=10) as c_resp:
+                c_data = json.loads(c_resp.read().decode('utf-8'))
+                node = c_data.get('data', {})
+                if node.get('creator_nickname'):
+                    tt_disp = node.get('creator_nickname').strip()
+                if node.get('creator_username'):
+                    tt_user = "@" + node.get('creator_username').replace('@', '').strip()
+                if node.get('creator_avatar_url'):
+                    tt_avatar = node.get('creator_avatar_url').strip()
+        except Exception as e_c:
+            print("[TikTok Creator Info Query Error]:", e_c)
 
-    return """
-    <html><body><h2 style="color:#34d399;text-align:center;margin-top:50px;">TikTok Connected!</h2>
-    <script>if(window.opener){window.opener.postMessage({type:'OAUTH_SUCCESS', platform:'TikTok'}, '*');window.close();}</script>
-    </body></html>
-    """
+        try:
+            u_url = "https://open.tiktokapis.com/v2/user/info/?fields=open_id,union_id,avatar_url,avatar_large_url,display_name"
+            u_req = urllib.request.Request(u_url, headers={"Authorization": f"Bearer {access_token}"})
+            with urllib.request.urlopen(u_req, timeout=10) as u_resp:
+                u_data = json.loads(u_resp.read().decode('utf-8'))
+                u_node = u_data.get('data', {}).get('user', {})
+                if not tt_disp and u_node.get('display_name'):
+                    tt_disp = u_node.get('display_name').strip()
+                if not tt_avatar:
+                    tt_avatar = u_node.get('avatar_large_url') or u_node.get('avatar_url') or ""
+        except Exception as e_u:
+            print("[TikTok User Info Error]:", e_u)
+
+        if not tt_disp:
+            tt_disp = email.split('@')[0].capitalize() if email else "Akun TikTok"
+        if not tt_user:
+            clean_handle = tt_disp.lower().replace(' ', '_')
+            tt_user = f"@{clean_handle}"
+
+        saved_ok, save_res = db.db_save_social_account(email, {
+            "id": open_id or f"tiktok_{uuid.uuid4().hex[:8]}",
+            "platform": "tiktok",
+            "name": tt_disp,
+            "username": tt_user,
+            "avatar_url": tt_avatar,
+            "access_token": access_token,
+            "refresh_token": refresh_token,
+            "open_id": open_id,
+            "connected_at": datetime.now().isoformat()
+        })
+        print(f"[TikTok OAuth Save Status]: email={email}, username={tt_user}, saved_ok={saved_ok}, info={save_res}")
+
+        if not saved_ok:
+            return f"""
+            <html><body style="background:#090d16;color:#fff;font-family:sans-serif;text-align:center;padding:50px 20px;">
+              <h2 style="color:#ef4444;margin-bottom:12px;">Gagal Menyimpan Akun TikTok</h2>
+              <p style="color:#cbd5e1;font-size:14px;max-width:500px;margin:0 auto 16px;">{save_res}</p>
+              <button onclick="window.close()" style="background:#ef4444;color:#fff;border:none;padding:10px 24px;border-radius:8px;cursor:pointer;font-weight:bold;">Tutup</button>
+            </body></html>
+            """
+
+        return f"""
+        <html>
+        <body style="background:#090d16;color:#fff;font-family:sans-serif;text-align:center;padding:40px 20px;">
+          <div style="font-size:36px;margin-bottom:10px;">🎵</div>
+          <h2 style="color:#34d399;margin-bottom:8px;">TikTok Berhasil Terhubung!</h2>
+          <p style="color:#e2e8f0;font-size:14px;">Akun <strong>{tt_user}</strong> ({tt_disp}) telah aktif di dashboard Trendora.</p>
+          <p style="color:#64748b;font-size:11px;margin-top:16px;">Jendela ini akan tertutup otomatis...</p>
+          <script>
+            if(window.opener){{
+              window.opener.postMessage({{type:'OAUTH_SUCCESS', platform:'TikTok'}}, '*');
+              setTimeout(() => {{ window.close(); }}, 1500);
+            }}
+          </script>
+        </body>
+        </html>
+        """
+
+    except urllib.error.HTTPError as he:
+        err_body = ""
+        try:
+            err_body = he.read().decode('utf-8')
+        except Exception:
+            err_body = str(he.reason)
+        print(f"[TikTok OAuth HTTPError {he.code}]: {err_body}")
+        return f"""
+        <html><body style="background:#090d16;color:#fff;font-family:sans-serif;text-align:center;padding:50px 20px;">
+          <h2 style="color:#ef4444;margin-bottom:12px;">Gagal Otorisasi TikTok (HTTP {he.code})</h2>
+          <p style="color:#cbd5e1;font-size:13px;max-width:550px;margin:0 auto 16px;word-break:break-all;">{err_body}</p>
+          <p style="color:#94a3b8;font-size:12px;">Pastikan Redirect URI di TikTok Developer Portal sudah sesuai: <br><code>https://trendoraautomation.my.id/auth/tiktok/callback</code></p>
+          <button onclick="window.close()" style="background:#ef4444;color:#fff;border:none;padding:10px 24px;border-radius:8px;cursor:pointer;font-weight:bold;margin-top:16px;">Tutup</button>
+        </body></html>
+        """
+    except Exception as e:
+        print("[TikTok OAuth General Error]:", e)
+        return f"""
+        <html><body style="background:#090d16;color:#fff;font-family:sans-serif;text-align:center;padding:50px 20px;">
+          <h2 style="color:#ef4444;margin-bottom:12px;">Terjadi Kesalahan OAuth TikTok</h2>
+          <p style="color:#cbd5e1;font-size:13px;max-width:550px;margin:0 auto 16px;">{str(e)}</p>
+          <button onclick="window.close()" style="background:#ef4444;color:#fff;border:none;padding:10px 24px;border-radius:8px;cursor:pointer;font-weight:bold;">Tutup</button>
+        </body></html>
+        """
 
 @oauth_bp.route('/api/tiktok/creator-info', methods=['GET'])
 def get_tiktok_creator_info():
