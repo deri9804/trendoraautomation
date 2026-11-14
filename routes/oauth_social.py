@@ -463,35 +463,39 @@ def sync_instagram_accounts_for_page(page_id, page_token, page_name=""):
     Mendukung skema Meta Graph API v21.0:
     1. instagram_business_account (Akun Bisnis/Kreator resmi)
     2. connected_instagram_account (Akun terhubung via Meta Accounts Center)
+    3. instagram_accounts edge (Daftar akun Instagram tertaut di page)
     """
     found_accounts = []
     seen_ig_ids = set()
     ig_ids = []
 
-    # 1. Cek field instagram_business_account pada Page node (tanpa nested braces)
+    # 1. Cek field instagram_business_account & connected_instagram_account pada Page node
     try:
-        url1 = f"https://graph.facebook.com/v21.0/{page_id}?fields=instagram_business_account&access_token={page_token}"
+        url1 = f"https://graph.facebook.com/v21.0/{page_id}?fields=instagram_business_account,connected_instagram_account&access_token={page_token}"
         req1 = urllib.request.Request(url1, headers={"User-Agent": "Trendora-Automation/1.0"})
         with urllib.request.urlopen(req1, timeout=10) as resp:
             data = json.loads(resp.read().decode('utf-8'))
             ig_biz = data.get('instagram_business_account')
             if ig_biz and isinstance(ig_biz, dict) and ig_biz.get('id'):
                 ig_ids.append(str(ig_biz.get('id')).strip())
+            ig_conn = data.get('connected_instagram_account')
+            if ig_conn and isinstance(ig_conn, dict) and ig_conn.get('id'):
+                ig_ids.append(str(ig_conn.get('id')).strip())
     except Exception as e_ig1:
-        print(f"[Meta IG Sync Info]: instagram_business_account query for page {page_id}: {e_ig1}")
+        print(f"[Meta IG Sync Info]: instagram fields query for page {page_id}: {e_ig1}")
 
-    # 2. Cek field connected_instagram_account jika belum ditemukan
+    # 2. Cek edge /{page_id}/instagram_accounts jika belum ditemukan
     if not ig_ids:
         try:
-            url2 = f"https://graph.facebook.com/v21.0/{page_id}?fields=connected_instagram_account&access_token={page_token}"
-            req2 = urllib.request.Request(url2, headers={"User-Agent": "Trendora-Automation/1.0"})
-            with urllib.request.urlopen(req2, timeout=10) as resp:
+            url3 = f"https://graph.facebook.com/v21.0/{page_id}/instagram_accounts?fields=id,username&access_token={page_token}"
+            req3 = urllib.request.Request(url3, headers={"User-Agent": "Trendora-Automation/1.0"})
+            with urllib.request.urlopen(req3, timeout=10) as resp:
                 data = json.loads(resp.read().decode('utf-8'))
-                ig_conn = data.get('connected_instagram_account')
-                if ig_conn and isinstance(ig_conn, dict) and ig_conn.get('id'):
-                    ig_ids.append(str(ig_conn.get('id')).strip())
-        except Exception as e_ig2:
-            print(f"[Meta IG Sync Info]: connected_instagram_account query for page {page_id}: {e_ig2}")
+                for item in data.get('data', []):
+                    if item.get('id'):
+                        ig_ids.append(str(item.get('id')).strip())
+        except Exception as e_ig3:
+            print(f"[Meta IG Sync Info]: instagram_accounts edge query for page {page_id}: {e_ig3}")
 
     # 3. Untuk setiap ID Instagram yang ditemukan, ambil profil detail dari node IG User
     for ig_id in ig_ids:
@@ -667,9 +671,9 @@ def meta_callback():
                 final_token = long_lived_token
                 pages = []
                 try:
-                    # Query 1: Ambil pages beserta instagram_business_account resmi (tanpa nested curly braces)
+                    # Query 1: Ambil pages beserta instagram_business_account & connected_instagram_account resmi
                     params_acc = {
-                        "fields": "id,name,access_token,category,instagram_business_account",
+                        "fields": "id,name,access_token,category,instagram_business_account,connected_instagram_account",
                         "access_token": long_lived_token
                     }
                     acc_url = f"https://graph.facebook.com/v21.0/me/accounts?{urllib.parse.urlencode(params_acc)}"
@@ -736,9 +740,9 @@ def meta_callback():
                         })
 
                         # Ekstrak akun Instagram dari nested page response jika tersedia
-                        ig_biz = p.get('instagram_business_account')
-                        if ig_biz and isinstance(ig_biz, dict) and ig_biz.get('id'):
-                            ig_id = str(ig_biz.get('id')).strip()
+                        ig_node = p.get('instagram_business_account') or p.get('connected_instagram_account')
+                        if ig_node and isinstance(ig_node, dict) and ig_node.get('id'):
+                            ig_id = str(ig_node.get('id')).strip()
                             ig_name = f"IG: {p_name}"
                             ig_user = f"@{p_name.lower().replace(' ', '')}"
                             ig_avatar = ""
@@ -3711,6 +3715,20 @@ def debug_social_diagnostics():
                         elif q_data.get('connected_instagram_account', {}).get('id'):
                             ig_id = str(q_data['connected_instagram_account']['id']).strip()
 
+                        # Cek fallback edge instagram_accounts
+                        if not ig_id:
+                            try:
+                                edge_url = f"https://graph.facebook.com/v21.0/{p_id}/instagram_accounts?fields=id,username&access_token={p_tok}"
+                                with urllib.request.urlopen(urllib.request.Request(edge_url, headers={"User-Agent": "Trendora-Automation/1.0"}), timeout=8) as r_edge:
+                                    edge_data = json.loads(r_edge.read().decode('utf-8'))
+                                    p_res['instagram_accounts_edge'] = edge_data
+                                    for item in edge_data.get('data', []):
+                                        if item.get('id'):
+                                            ig_id = str(item['id']).strip()
+                                            break
+                            except Exception as e_edge:
+                                p_res['edge_error'] = str(e_edge)
+
                         p_res['detected_instagram_id'] = ig_id
                         if ig_id:
                             ig_name = f"IG: {p_name}"
@@ -3780,7 +3798,7 @@ def debug_social_diagnostics():
 
     return jsonify({
         "status": "ok",
-        "deployed_version": "v2.6-meta-direct-scan",
+        "deployed_version": "v2.7-meta-business-edge",
         "env_keys": {
             "TIKTOK_CLIENT_KEY": mask(config.TIKTOK_CLIENT_KEY),
             "TIKTOK_CLIENT_KEY_LOADED": bool(config.TIKTOK_CLIENT_KEY),
