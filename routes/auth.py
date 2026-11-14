@@ -7,7 +7,7 @@ PARENT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if PARENT_DIR not in sys.path:
     sys.path.insert(0, PARENT_DIR)
 
-from flask import Blueprint, request, jsonify, session, current_app, Response
+from flask import Blueprint, request, jsonify, session, current_app, Response, redirect
 import urllib.parse
 import uuid
 import smtplib
@@ -556,8 +556,15 @@ def get_me():
         print(f"[Error /api/me]: {e}")
         return jsonify({"success": False, "message": "Terjadi kesalahan server saat memuat sesi pengguna."}), 500
 
+@auth_bp.route('/logout', methods=['GET', 'POST'])
 @auth_bp.route('/api/logout', methods=['POST', 'GET'])
 def logout_route():
     ensure_app_secret_key()
     session.clear()
-    return jsonify({"success": True, "message": "Sesi berhasil dihapus dan ditutup secara aman."}), 200
+    cookie_name = current_app.session_cookie_name or 'session'
+    if request.path == '/logout':
+        resp = redirect('/')
+    else:
+        resp = jsonify({"success": True, "message": "Sesi berhasil dihapus dan ditutup secara aman."})
+    resp.delete_cookie(cookie_name)
+    return resp

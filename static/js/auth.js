@@ -1,23 +1,44 @@
-function handleLogout() {
-  if (typeof stopPaymentStatusPolling === 'function') stopPaymentStatusPolling();
-  localStorage.removeItem('automedia_user');
-  localStorage.removeItem('automedia_snap_token');
-  globalUserData = null;
-  lastSnapToken = null;
-
+function renderGuestUI() {
   const navGuest = document.getElementById('navGuestGroup');
   const navUser = document.getElementById('navUserGroup');
   const navDashLink = document.getElementById('navDashLink');
+  const navLinksDashboard = document.getElementById('navLinksDashboard');
+  const navLinksLanding = document.getElementById('navLinksLanding');
 
   if (navGuest) navGuest.style.display = 'flex';
   if (navUser) navUser.style.display = 'none';
   if (navDashLink) navDashLink.style.display = 'none';
+  if (navLinksDashboard) navLinksDashboard.style.display = 'none';
+  if (navLinksLanding) navLinksLanding.style.display = 'flex';
+}
+
+async function handleLogout() {
+  if (typeof stopPaymentStatusPolling === 'function') stopPaymentStatusPolling();
+  localStorage.removeItem('automedia_user');
+  localStorage.removeItem('trendora_user');
+  localStorage.removeItem('automedia_snap_token');
+  localStorage.removeItem('user_email');
+  localStorage.removeItem('api_key');
+  sessionStorage.clear();
+  globalUserData = null;
+  lastSnapToken = null;
+
+  renderGuestUI();
+
+  try {
+    await fetch('/api/logout', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'same-origin'
+    });
+  } catch (e) {
+    console.error('Logout error:', e);
+  }
 
   if (window.location.pathname !== '/') {
     window.location.href = '/';
   } else {
-    showLandingPage();
-    showToast('Berhasil keluar dari akun.', '#34d399');
+    window.location.reload();
   }
 }
 
@@ -33,8 +54,9 @@ function checkStoredSession() {
       if (res.status === 401 || !res.ok) {
         // Sesi di server tidak valid atau sudah expired, bersihkan data lokal palsu/usang
         localStorage.removeItem('automedia_user');
+        localStorage.removeItem('trendora_user');
         globalUserData = null;
-        if (typeof renderGuestUI === 'function') renderGuestUI();
+        renderGuestUI();
         if (window.location.pathname.includes('/dashboard')) {
           window.location.href = '/login';
         }
@@ -49,9 +71,13 @@ function checkStoredSession() {
         renderLoggedInUI(globalUserData, false);
       }
     })
-    .catch(err => console.log("Sync session error:", err));
+    .catch(err => {
+      console.log("Sync session error:", err);
+      renderGuestUI();
+    });
   } catch (e) {
     console.error('Session check error:', e);
+    renderGuestUI();
   }
 }
 
@@ -437,6 +463,7 @@ function onLoginSuccess(res) {
   }
 }
 
+window.renderGuestUI = renderGuestUI;
 window.handleLogout = handleLogout;
 window.checkStoredSession = checkStoredSession;
 window.handleConnectSocialClick = handleConnectSocialClick;

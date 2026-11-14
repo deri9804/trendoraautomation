@@ -197,6 +197,20 @@ function renderLoggedInUI(user, autoNavigateToDashboard = true) {
   if (typeof renderSocialConnectionsUI === 'function') renderSocialConnectionsUI();
 }
 
+function renderGuestUI() {
+  const navGuest = document.getElementById('navGuestGroup');
+  const navUser = document.getElementById('navUserGroup');
+  const navDashLink = document.getElementById('navDashLink');
+  const navLinksDashboard = document.getElementById('navLinksDashboard');
+  const navLinksLanding = document.getElementById('navLinksLanding');
+
+  if (navGuest) navGuest.style.display = 'flex';
+  if (navUser) navUser.style.display = 'none';
+  if (navDashLink) navDashLink.style.display = 'none';
+  if (navLinksDashboard) navLinksDashboard.style.display = 'none';
+  if (navLinksLanding) navLinksLanding.style.display = 'flex';
+}
+
 function toggleFaq(element) {
   const parentItem = element.parentElement;
   const icon = element.querySelector('.faq-icon');
@@ -347,6 +361,7 @@ window.handleStartFree = handleStartFree;
 window.closeApiModal = closeApiModal;
 window.showToast = showToast;
 window.renderLoggedInUI = renderLoggedInUI;
+window.renderGuestUI = renderGuestUI;
 window.toggleFaq = toggleFaq;
 window.toggleChat = toggleChat;
 window.handleChatKeyPress = handleChatKeyPress;
