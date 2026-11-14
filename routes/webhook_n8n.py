@@ -47,7 +47,7 @@ def count_today_posts_for_key(api_key):
             print(f"Error checking daily post count: {e}")
     return count
 
-def refresh_tiktok_token(refresh_token, row_idx=None, email=None):
+def refresh_tiktok_token(refresh_token, row_idx=None, email=None, account_id=None):
     if not refresh_token:
         return None
     try:
@@ -66,15 +66,22 @@ def refresh_tiktok_token(refresh_token, row_idx=None, email=None):
             new_refresh_token = res_data.get('refresh_token') or refresh_token
             expires_in = res_data.get('expires_in') or 86400
 
-            # Update ke database SQLite lokal
+            # Update ke database SQLite lokal secara aman terisolasi per akun
             if new_access_token and email:
                 conn = db.get_db_connection()
                 try:
-                    conn.execute("""
-                        UPDATE social_accounts 
-                        SET access_token = ?, refresh_token = ?, token_expires_at = ?, updated_at = CURRENT_TIMESTAMP
-                        WHERE user_email = ? AND platform = 'tiktok'
-                    """, (new_access_token, new_refresh_token, int(time.time() + expires_in), email))
+                    if account_id:
+                        conn.execute("""
+                            UPDATE social_accounts 
+                            SET access_token = ?, refresh_token = ?, token_expires_at = ?, updated_at = CURRENT_TIMESTAMP
+                            WHERE user_email = ? AND platform = 'tiktok' AND id = ?
+                        """, (new_access_token, new_refresh_token, int(time.time() + expires_in), email, account_id))
+                    else:
+                        conn.execute("""
+                            UPDATE social_accounts 
+                            SET access_token = ?, refresh_token = ?, token_expires_at = ?, updated_at = CURRENT_TIMESTAMP
+                            WHERE user_email = ? AND platform = 'tiktok' AND (refresh_token = ? OR access_token = ?)
+                        """, (new_access_token, new_refresh_token, int(time.time() + expires_in), email, refresh_token, refresh_token))
                     conn.commit()
                 finally:
                     conn.close()
@@ -94,13 +101,13 @@ def refresh_tiktok_token(refresh_token, row_idx=None, email=None):
         return None
 
 
-def upload_video_to_tiktok(access_token, refresh_token, media_url=None, caption="", privacy_level="PUBLIC_TO_EVERYONE", row_idx=None, email=None, video_bytes=None, disable_duet=False, disable_comment=False, disable_stitch=False, brand_organic_toggle=False, brand_content_toggle=False):
+def upload_video_to_tiktok(access_token, refresh_token, media_url=None, caption="", privacy_level="PUBLIC_TO_EVERYONE", row_idx=None, email=None, video_bytes=None, disable_duet=False, disable_comment=False, disable_stitch=False, brand_organic_toggle=False, brand_content_toggle=False, account_id=None):
     """
     Mengunggah video ke TikTok menggunakan metode FILE_UPLOAD (Direct Chunk Binary Upload).
     Mendukung upload dari URL publik maupun data video_bytes langsung, serta disclosure commercial content.
     """
     if not access_token and refresh_token:
-        access_token = refresh_tiktok_token(refresh_token, row_idx=row_idx, email=email)
+        access_token = refresh_tiktok_token(refresh_token, row_idx=row_idx, email=email, account_id=account_id)
     if not access_token:
         return False, {"tiktok_error": "Akun TikTok belum terhubung atau Access Token kosong."}
 
@@ -213,7 +220,7 @@ def upload_video_to_tiktok(access_token, refresh_token, media_url=None, caption=
         if not is_ok and refresh_token:
             err_str = str(res.get('tiktok_error', ''))
             if "401" in err_str or "token" in err_str.lower() or "expired" in err_str.lower():
-                new_tok = refresh_tiktok_token(refresh_token, row_idx=row_idx, email=email)
+                new_tok = refresh_tiktok_token(refresh_token, row_idx=row_idx, email=email, account_id=account_id)
                 if new_tok:
                     return _exec_tiktok_upload(new_tok)
         return is_ok, res
@@ -596,46 +603,116 @@ def n8n_webhook():
     privacy_level = details.get('privacy_level') or data.get('privacy_level') or 'PUBLIC_TO_EVERYONE'
     
     # 3. TIKTOK AUTO UPLOAD HANDLER (Menggunakan FILE_UPLOAD, Bebas dari batasan Domain Verification)
+    # Mendukung Multi-Akun TikTok & Akun Spesifik
     if platform == 'tiktok' and status != "PUBLISHED (SUCCESS)":
-        user_tokens = db.db_get_tiktok_tokens_by_api_key(
-            api_key, 
-            email=user_data.get('email') if user_data else None
-        )
-        if isinstance(user_tokens, dict):
-            access_token = user_tokens.get('access_token')
-            refresh_tok = user_tokens.get('refresh_token')
-            row_idx = user_tokens.get('row_idx')
-        elif isinstance(user_tokens, (tuple, list)):
-            access_token = user_tokens[0] if len(user_tokens) > 0 else None
-            refresh_tok = user_tokens[2] if len(user_tokens) > 2 else (user_tokens[1] if len(user_tokens) > 1 else None)
-            row_idx = None
-        else:
-            access_token = None
-            refresh_tok = None
-            row_idx = None
+        user_email = user_data.get('email') if user_data else None
+        all_tiktok_accounts = [
+            a for a in db.db_get_social_accounts(email=user_email, api_key=api_key)
+            if str(a.get('platform', '')).lower() == 'tiktok' and (a.get('access_token') or a.get('refresh_token'))
+        ]
 
-        if not access_token and not refresh_tok:
+        if not all_tiktok_accounts:
             status = "FAILED"
             details['tiktok_error'] = "Akun TikTok belum terhubung di Dashboard TRENDORA. Silakan hubungkan akun TikTok di menu Integrasi Akun Sosial Media."
         elif not media_url:
             status = "FAILED"
             details['tiktok_error'] = "Media URL video tidak ditemukan pada payload n8n (kirimkan parameter 'media_url')."
         else:
-            is_ok, res_dict = upload_video_to_tiktok(
-                access_token, 
-                refresh_tok, 
-                media_url, 
-                caption, 
-                privacy_level=privacy_level, 
-                row_idx=row_idx,
-                email=user_data.get('email') if user_data else None
-            )
-            if is_ok:
-                status = "PUBLISHED (SUCCESS)"
-                details.update(res_dict)
+            # Periksa apakah n8n mengirim target akun spesifik
+            target_q = str(
+                details.get('account') or details.get('account_id') or details.get('username') or details.get('target_account') or details.get('profile') or
+                data.get('account') or data.get('account_id') or data.get('username') or data.get('target_account') or data.get('profile') or ''
+            ).strip().lower()
+
+            target_accounts = []
+            if target_q and target_q not in ['all', 'semua', '*', 'any', 'broadcast']:
+                clean_q = target_q.replace('@', '')
+                for acc in all_tiktok_accounts:
+                    acc_id = str(acc.get('id') or '').lower()
+                    acc_user = str(acc.get('username') or '').lower().replace('@', '')
+                    acc_name = str(acc.get('name') or '').lower()
+                    if clean_q == acc_id or clean_q in acc_user or clean_q in acc_name:
+                        target_accounts.append(acc)
+                if not target_accounts:
+                    target_accounts = all_tiktok_accounts
             else:
+                # Default: Upload ke SEMUA akun TikTok yang tersambung di Trendora
+                target_accounts = all_tiktok_accounts
+
+            # 1. Download file video satu kali saja dari media_url untuk efisiensi
+            req_v = urllib.request.Request(
+                media_url, 
+                headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'}
+            )
+            raw_video_bytes = None
+            try:
+                with urllib.request.urlopen(req_v, timeout=90) as v_res:
+                    raw_video_bytes = v_res.read()
+            except urllib.error.HTTPError as e_http:
                 status = "FAILED"
-                details.update(res_dict)
+                details['tiktok_error'] = f"Gagal mengunduh video dari media_url (HTTP {e_http.code}): {str(e_http)}"
+            except Exception as e_dl:
+                status = "FAILED"
+                details['tiktok_error'] = f"Gagal mengunduh video dari media_url: {str(e_dl)}"
+
+            if raw_video_bytes:
+                tiktok_results = []
+                success_count = 0
+                first_publish_id = None
+
+                for idx, acc in enumerate(target_accounts):
+                    acc_id = acc.get('id')
+                    acc_name = acc.get('name') or acc.get('username') or f"TikTok #{idx+1}"
+                    acc_user = acc.get('username') or ''
+                    acc_token = acc.get('access_token')
+                    acc_refresh = acc.get('refresh_token')
+
+                    # Anti-Shadowban Video Spinner jika upload ke multi-akun
+                    if len(target_accounts) > 1 and len(raw_video_bytes) > 32:
+                        try:
+                            from utils.video_spinner import spin_video_file
+                            video_payload, _, _, _ = spin_video_file(raw_video_bytes, account_id=acc_id, variation_index=idx)
+                        except Exception:
+                            video_payload = raw_video_bytes
+                    else:
+                        video_payload = raw_video_bytes
+
+                    is_ok, res_dict = upload_video_to_tiktok(
+                        access_token=acc_token,
+                        refresh_token=acc_refresh,
+                        media_url=None,
+                        caption=caption,
+                        privacy_level=privacy_level,
+                        video_bytes=video_payload,
+                        row_idx=None,
+                        email=user_email,
+                        account_id=acc_id
+                    )
+
+                    tiktok_results.append({
+                        "account_id": acc_id,
+                        "account_name": acc_name,
+                        "username": acc_user,
+                        "success": is_ok,
+                        "details": res_dict
+                    })
+
+                    if is_ok:
+                        success_count += 1
+                        if not first_publish_id and res_dict.get('publish_id'):
+                            first_publish_id = res_dict.get('publish_id')
+
+                if success_count > 0:
+                    status = "PUBLISHED (SUCCESS)"
+                    details['tiktok_status'] = f"Video sukses diunggah ke {success_count}/{len(target_accounts)} akun TikTok!"
+                    details['tiktok_accounts'] = tiktok_results
+                    if first_publish_id:
+                        details['publish_id'] = first_publish_id
+                else:
+                    status = "FAILED"
+                    err_reasons = [r['details'].get('tiktok_error', 'Gagal upload') for r in tiktok_results if not r['success']]
+                    details['tiktok_error'] = " | ".join(err_reasons) if err_reasons else "Gagal mengunggah video ke akun TikTok yang dipilih."
+                    details['tiktok_accounts'] = tiktok_results
 
     # 4. META (FACEBOOK PAGE) HANDLER
     elif platform == 'facebook':

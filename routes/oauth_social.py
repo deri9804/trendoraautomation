@@ -2431,8 +2431,9 @@ def direct_share_to_tiktok():
             "message": "Autentikasi gagal. Sesi login pengguna atau API Key valid tidak ditemukan."
         }), 401
         
-    # 2. Ambil token TikTok pengguna dari database
-    user_tokens = db.db_get_tiktok_tokens_by_api_key(api_key=api_key, email=email)
+    # 2. Ambil token TikTok pengguna dari database (Mendukung pemilihan akun tertentu)
+    account_id = request.form.get('account_id') or request.headers.get('X-Account-ID')
+    user_tokens = db.db_get_tiktok_tokens_by_api_key(api_key=api_key, email=email, account_id=account_id)
     access_token = user_tokens.get('access_token')
     refresh_token = user_tokens.get('refresh_token')
     row_idx = user_tokens.get('row_idx')
@@ -3076,7 +3077,7 @@ def studio_omnichannel_publish():
     # 4. TIKTOK DIRECT POST
     elif platform == 'tiktok':
         target_name = "TikTok Direct Post"
-        user_tokens = db.db_get_tiktok_tokens_by_api_key(api_key=api_key, email=email)
+        user_tokens = db.db_get_tiktok_tokens_by_api_key(api_key=api_key, email=email, account_id=account_id)
         access_token = user_tokens.get('access_token')
         refresh_token = user_tokens.get('refresh_token')
         row_idx = user_tokens.get('row_idx')

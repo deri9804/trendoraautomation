@@ -606,10 +606,30 @@ class TokenResult(dict):
             return self._tuple[item]
         return super().__getitem__(item)
 
-def db_get_tiktok_tokens_by_api_key(api_key, email=None):
+def db_get_tiktok_tokens_by_api_key(api_key, email=None, account_id=None):
     accs = db_get_social_accounts(email=email, api_key=api_key)
+    if account_id:
+        target = str(account_id).strip().lower()
+        clean_target = target.replace('@', '')
+        for a in accs:
+            if a.get('platform') == 'tiktok' and (a.get('access_token') or a.get('refresh_token')):
+                a_id = str(a.get('id', '')).lower()
+                a_user = str(a.get('username', '')).lower().replace('@', '')
+                a_name = str(a.get('name', '')).lower()
+                if clean_target == a_id or clean_target in a_user or clean_target in a_name:
+                    tok = a.get('access_token') or ''
+                    oid = a.get('open_id') or ''
+                    ref = a.get('refresh_token') or ''
+                    return TokenResult({
+                        'access_token': tok,
+                        'open_id': oid,
+                        'refresh_token': ref,
+                        'row_idx': None,
+                        'username': a.get('username') or '',
+                        'account': a
+                    }, (tok, oid, ref))
     for a in accs:
-        if a.get('platform') == 'tiktok' and a.get('access_token'):
+        if a.get('platform') == 'tiktok' and (a.get('access_token') or a.get('refresh_token')):
             tok = a.get('access_token') or ''
             oid = a.get('open_id') or ''
             ref = a.get('refresh_token') or ''
