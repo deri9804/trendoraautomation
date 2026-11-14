@@ -113,7 +113,7 @@ def generate_50char_api_key():
     return f"TRD-{raw[:5]}-{raw[5:10]}-{raw[10:15]}-{raw[15:20]}-{raw[20:25]}-{raw[25:30]}-{raw[30:35]}-{raw[35:39]}"
 
 def check_user_trial_status(user_data):
-    """Memeriksa apakah akun berstatus Paid, Trial Aktif (1-7 Hari), atau Trial Expired."""
+    """Memeriksa apakah akun berstatus Paid, Trial Aktif (1-3 Hari), atau Trial Expired."""
     if not user_data:
         return {"is_paid": False, "is_trial": False, "is_expired": True, "days_left": 0, "status_text": "Expired"}
     
@@ -124,7 +124,7 @@ def check_user_trial_status(user_data):
     if any(word in status_lower for word in ["paid", "subscriber", "admin", "lifetime", "starter", "vip", "vvip"]):
         return {"is_paid": True, "is_trial": False, "is_expired": False, "days_left": 999, "status_text": "Active (Paid Subscriber)"}
     
-    # Menghitung masa 7 hari dari tanggal registrasi
+    # Menghitung masa 3 hari dari tanggal registrasi
     match = re.search(r'\d{4}-\d{2}-\d{2}(?:\s+\d{2}:\d{2}:\d{2})?', status_str)
     if match:
         date_str = match.group(0)
@@ -138,7 +138,7 @@ def check_user_trial_status(user_data):
     else:
         reg_date = datetime.now()
         
-    expiry_date = reg_date + timedelta(days=7)
+    expiry_date = reg_date + timedelta(days=3)
     now = datetime.now()
     
     if now >= expiry_date:
@@ -158,7 +158,7 @@ def check_user_trial_status(user_data):
             "is_trial": True, 
             "is_expired": False, 
             "days_left": days_left, 
-            "status_text": f"Active (7-Day Free Trial - Sisa {days_left} Hari)",
+            "status_text": f"Active (3-Day Free Trial - Sisa {days_left} Hari)",
             "reg_date": reg_date.strftime("%d/%m/%Y")
         }
 
@@ -411,7 +411,7 @@ def register_trial():
         return jsonify({
             "success": True, 
             "sessionToken": session_token,
-            "message": "Registrasi Free Trial 1 Minggu berhasil!", 
+            "message": "Registrasi Free Trial 3 Hari berhasil!", 
             "user": {
                 "name": name, 
                 "email": email, 
@@ -419,7 +419,7 @@ def register_trial():
                 "isPaid": False,
                 "isTrial": True,
                 "isExpired": False,
-                "daysLeft": 7
+                "daysLeft": 3
             }
         }), 200
     except Exception as e:
@@ -449,7 +449,7 @@ def generate_api_key_route():
                 "success": False, 
                 "isPaid": False, 
                 "isExpired": True,
-                "message": "Masa Free Trial 7 Hari Anda sudah habis! Silakan upgrade akun ke berbayar untuk membuat API Key baru."
+                "message": "Masa Free Trial 3 Hari Anda sudah habis! Silakan upgrade akun ke berbayar untuk membuat API Key baru."
             }), 403
 
         new_api_key = generate_50char_api_key()

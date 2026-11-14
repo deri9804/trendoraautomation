@@ -24,7 +24,7 @@ const LEGAL_DOCUMENTS = {
     <p>Anda <strong>dilarang keras</strong> menggunakan Layanan untuk spam, hoaks, perjudian, melanggar Hak Kekayaan Intelektual, melakukan Reverse Engineering, atau melanggar rate-limit API platform pihak ketiga.</p>
 
     <h4>6. Langganan, Pembayaran, dan Pembatalan</h4>
-    <p>Pembayaran diproses via Midtrans. Tersedia free trial 7 hari. Berlaku garansi uang kembali 30 hari jika terjadi kegagalan sistem utama kami (Force Majeure).</p>
+    <p>Pembayaran diproses via Midtrans. Tersedia free trial 3 hari. Berlaku garansi uang kembali 30 hari jika terjadi kegagalan sistem utama kami (Force Majeure).</p>
 
     <h4>7. Hak Kekayaan Intelektual</h4>
     <p>Infrastruktur dan kode API adalah milik TRENDORA. Anda tetap memegang hak cipta atas konten video Anda sendiri.</p>
@@ -176,7 +176,7 @@ function renderLoggedInUI(user, autoNavigateToDashboard = true) {
   if (dashEmail) dashEmail.innerText = user.email || '-';
   
   if (dashStatus) {
-    dashStatus.innerText = user.status || 'Active (7-Day Free Trial)';
+    dashStatus.innerText = user.status || 'Active (3-Day Free Trial)';
     
     if (user.isPaid) {
       dashStatus.style.color = '#34d399';

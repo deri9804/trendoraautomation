@@ -1230,10 +1230,10 @@
         <span id="sidebarIconDash">◀</span> <span id="sidebarToggleText">Collapse Menu</span>
       </button>
       
-      <!-- ALERT FREE TRIAL HABIS (7 HARI LEWAT) -->
+      <!-- ALERT FREE TRIAL HABIS (3 HARI LEWAT) -->
       <div id="trialExpiredAlertBanner" class="expired-banner-box" style="display: none;">
         <div class="expired-banner-text">
-          <h3 style="color: #fca5a5; font-size: 18px; font-weight: 800; margin-bottom: 4px;">🔒 Your 7-Day Free Trial Has Expired!</h3>
+          <h3 style="color: #fca5a5; font-size: 18px; font-weight: 800; margin-bottom: 4px;">🔒 Your 3-Day Free Trial Has Expired!</h3>
           <p style="color: #e5e7eb; font-size: 13px;">Your API Key and auto-publishing access are currently <strong>locked</strong>. Please upgrade to a premium plan to unlock all unlimited features.</p>
         </div>
         <button class="btn-pink pulse-upgrade-btn" onclick="redirectToPricingOrUpgrade()" style="padding: 12px 24px; font-size: 13px; font-weight: 800; white-space: nowrap;">
@@ -1317,7 +1317,7 @@
             </div>
             <div>
               <div class="stat-label">License Status</div>
-              <div class="stat-number" id="statOverviewPlan" style="font-size: 19px;">7-Day Trial</div>
+              <div class="stat-number" id="statOverviewPlan" style="font-size: 19px;">3-Day Trial</div>
               <div class="stat-sub" id="statOverviewPlanSub">Active plan</div>
             </div>
           </div>
@@ -1331,7 +1331,7 @@
               <div style="font-size: 14px; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 8px;">
                 <span>⚡</span> Kredensial Integrasi Cepat
               </div>
-              <span id="keyStatusPill" style="font-size: 10.5px; font-weight: 700; color: #34d399; background: rgba(52,211,153,0.1); padding: 2px 8px; border-radius: 6px;">Aktif (Trial 7 Hari)</span>
+              <span id="keyStatusPill" style="font-size: 10.5px; font-weight: 700; color: #34d399; background: rgba(52,211,153,0.1); padding: 2px 8px; border-radius: 6px;">Aktif (Trial 3 Hari)</span>
             </div>
 
             <!-- API Key Row -->
@@ -3710,7 +3710,7 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
 
         if (keyBoxWrapper) {
           keyBoxWrapper.classList.add('key-box-locked');
-          keyBoxWrapper.title = "Masa Free Trial 7 Hari telah habis. Klik untuk upgrade!";
+          keyBoxWrapper.title = "Masa Free Trial 3 Hari telah habis. Klik untuk upgrade!";
           keyBoxWrapper.onclick = () => redirectToPricingOrUpgrade();
         }
 
@@ -3750,7 +3750,7 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
             keyStatusPill.style.color = "#34d399";
             keyStatusPill.style.background = "rgba(52,211,153,0.1)";
           } else {
-            const daysLeft = window.currentUserData.daysLeft || 7;
+            const daysLeft = window.currentUserData.daysLeft || 3;
             keyStatusPill.innerText = `Aktif (Trial Sisa ${daysLeft} Hari)`;
             keyStatusPill.style.color = "#38bdf8";
             keyStatusPill.style.background = "rgba(56, 189, 248, 0.1)";
@@ -3779,7 +3779,7 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
       if (window.currentUserData && window.currentUserData.isExpired && !window.currentUserData.isPaid) {
         if (alertBox) {
           alertBox.style.color = "#f87171";
-          alertBox.innerText = "⚠️ Masa Free Trial 7 Hari Anda telah habis! Mengalihkan ke pilihan paket langganan...";
+          alertBox.innerText = "⚠️ Masa Free Trial 3 Hari Anda telah habis! Mengalihkan ke pilihan paket langganan...";
         }
         setTimeout(() => {
           redirectToPricingOrUpgrade();
@@ -3831,7 +3831,7 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
       if (window.currentUserData && window.currentUserData.isExpired && !window.currentUserData.isPaid) {
         if (alertBox) {
           alertBox.style.color = "#f87171";
-          alertBox.innerText = "⚠️ Masa Free Trial 7 Hari telah habis. Silakan upgrade untuk membuat API Key baru!";
+          alertBox.innerText = "⚠️ Masa Free Trial 3 Hari telah habis. Silakan upgrade untuk membuat API Key baru!";
         }
         setTimeout(() => {
           redirectToPricingOrUpgrade();
@@ -3927,7 +3927,7 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
           elPlan.innerText = 'Terkunci';
           if (elPlanSub) elPlanSub.innerText = 'Masa Trial Habis';
         } else {
-          elPlan.innerText = 'Trial 7 Hari';
+          elPlan.innerText = 'Trial 3 Hari';
           if (elPlanSub) elPlanSub.innerText = 'Akses Penuh';
         }
       }
@@ -3955,7 +3955,7 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
           statusBadge.innerText = "🔒 Free Trial Expired (Habis)";
         }
         if (trialNotice) {
-          trialNotice.innerHTML = `&bull; <strong>Masa Free Trial 7 Hari Habis:</strong> Fitur API Key dan otomatisasi terkunci. Silakan upgrade ke paket Creator/Agency untuk melanjutkan.`;
+          trialNotice.innerHTML = `&bull; <strong>Masa Free Trial 3 Hari Habis:</strong> Fitur API Key dan otomatisasi terkunci. Silakan upgrade ke paket Creator/Agency untuk melanjutkan.`;
         }
       } else if (user.isPaid) {
         if (banner) banner.style.display = 'none';
@@ -3968,13 +3968,13 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
         }
       } else {
         if (banner) banner.style.display = 'none';
-        const daysLeft = user.daysLeft || 7;
+        const daysLeft = user.daysLeft || 3;
         if (statusBadge) {
           statusBadge.className = "trial-active-badge";
           statusBadge.innerText = `⚡ Active (Free Trial - Sisa ${daysLeft} Hari)`;
         }
         if (trialNotice) {
-          trialNotice.innerHTML = `&bull; <strong>Masa Free Trial 7 Hari (Sisa ${daysLeft} Hari):</strong> Anda dapat menyalin dan menggunakan API Key secara penuh. Upgrade kapan saja untuk kuota tanpa batas.`;
+          trialNotice.innerHTML = `&bull; <strong>Masa Free Trial 3 Hari (Sisa ${daysLeft} Hari):</strong> Anda dapat menyalin dan menggunakan API Key secara penuh. Upgrade kapan saja untuk kuota tanpa batas.`;
         }
       }
 
@@ -3994,11 +3994,11 @@ X-API-Key: <span id="webhookHeaderKeyExample" style="color:#34d399;">[API_KEY_AN
         name: (stored && stored.name) ? stored.name : 'Deri Pernandi',
         email: emailToUse,
         apiKey: (stored && stored.apiKey && !stored.apiKey.includes('•')) ? stored.apiKey : 'TRD-71C7E-781B8-DC441-A9F32-88E21-7B14A-82190-33A1',
-        status: (stored && stored.status) ? stored.status : '⚡ Active (Free Trial - Sisa 7 Hari)',
+        status: (stored && stored.status) ? stored.status : '⚡ Active (Free Trial - Sisa 3 Hari)',
         isPaid: stored ? stored.isPaid : false,
         isTrial: true,
         isExpired: false,
-        daysLeft: 7,
+        daysLeft: 3,
         connectedPlatforms: (stored && Array.isArray(stored.connectedPlatforms)) ? stored.connectedPlatforms : []
       };
       applyUserData(user);

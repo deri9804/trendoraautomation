@@ -25,7 +25,7 @@ oauth_bp = Blueprint('oauth_social', __name__)
 def check_trial_social_limit(email=None, platform=None):
     """
     Memeriksa batas kuota akun sosial media berdasarkan 4 paket resmi:
-    - Free Trial (7 Hari): Mengizinkan 1 Akun/Profil per masing-masing platform sosial media (TikTok, Facebook, Instagram, YouTube, Twitter/X, LinkedIn, Threads).
+    - Free Trial (3 Hari): Mengizinkan 1 Akun/Profil per masing-masing platform sosial media (TikTok, Facebook, Instagram, YouTube, Twitter/X, LinkedIn, Threads).
     - Starter (150.000 / 30 hari): Maksimal 10 akun sosmed (bebas multi-akun di platform mana saja).
     - VIP (300.000 / 30 hari): Maksimal 20 akun sosmed (bebas multi-akun).
     - VVIP (500.000 / 30 hari): Maksimal 30 akun sosmed (bebas multi-akun).
@@ -55,7 +55,7 @@ def check_trial_social_limit(email=None, platform=None):
     # 1. Pengguna Free Trial (Belum Berbayar): 1 Profil per Platform Medsos
     if not trial_info.get("is_paid", False):
         if trial_info.get("is_expired", False):
-            return False, "Masa Free Trial 7 Hari Anda telah habis. Silakan pilih paket Starter, VIP, atau VVIP untuk melanjutkan."
+            return False, "Masa Free Trial 3 Hari Anda telah habis. Silakan pilih paket Starter, VIP, atau VVIP untuk melanjutkan."
         
         if target_plat:
             plat_accounts = [a for a in saved_accounts if str(a.get('platform', '')).lower() in [target_plat, target_plat[:2]]]
@@ -2739,7 +2739,7 @@ Berikan respon HANYA dalam format JSON valid berikut (tanpa markdown blok ```jso
                 "angle": "Social Proof & FOMO",
                 "title": f"Ribuan Creator Sudah Pakai {clean_topic} 🔥",
                 "hook": f"Kenapa para top creator sekarang pindah ke sistem otomasi {clean_topic} ini?",
-                "caption": f"Karena hemat waktu 80% dan jangkauan audiens meningkat pesat.\n\nUji coba gratis 7 hari sekarang melalui link di profil!",
+                "caption": f"Karena hemat waktu 80% dan jangkauan audiens meningkat pesat.\n\nUji coba gratis 3 hari sekarang melalui link di profil!",
                 "hashtags": ["#TrendoraAutomation", "#TrendingTopic", "#ViralIndonesia", "#BisnisDigital"]
             }
         ]

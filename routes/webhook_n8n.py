@@ -567,8 +567,8 @@ def n8n_webhook():
         return jsonify({
             "success": False,
             "status": "FAILED",
-            "message": "Masa Free Trial 1 Minggu Anda telah habis! Silakan upgrade akun ke berbayar di Dashboard TRENDORA.",
-            "details": {"error": "Free Trial Expired (> 7 hari). Silakan upgrade ke akun berbayar."}
+            "message": "Masa Free Trial 3 Hari Anda telah habis! Silakan upgrade akun ke berbayar di Dashboard TRENDORA.",
+            "details": {"error": "Free Trial Expired (> 3 hari). Silakan upgrade ke akun berbayar."}
         }), 400
         
     if trial_info["is_trial"] and not trial_info["is_paid"]:
