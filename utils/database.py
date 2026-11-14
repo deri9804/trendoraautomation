@@ -444,11 +444,22 @@ def db_save_social_account(email, account_dict):
             if is_trial:
                 same_plat = [r for r in existing_rows if str(r['platform']).lower() == platform and str(r['id']) != 'meta_primary']
                 if len(same_plat) >= 1:
-                    return False, f"Batas kuota Free Trial (1 profil per platform) untuk {platform.capitalize()} telah tercapai! Silakan upgrade paket untuk multi-akun."
+                    # Ganti slot akun lama agar user trial tidak terkunci jika re-connect
+                    old_id = same_plat[0]['id']
+                    cur.execute("DELETE FROM social_accounts WHERE id = ?", (old_id,))
             elif len(existing_rows) >= plan_limit:
                 return False, f"Batas kuota akun ({plan_limit} akun) untuk paket Anda telah tercapai! Silakan upgrade paket untuk menambah akun lebih banyak."
 
-        target_id = found_id or acc_id
+        target_id = acc_id or found_id or f"{platform}_{uuid.uuid4().hex[:8]}"
+
+        # Bersihkan record duplikat lama dengan username sama tapi ID berbeda untuk user ini
+        clean_username = str(account_dict.get('username') or '').strip().lower()
+        if clean_username and clean_username not in ['@user', '@page', '', 'none']:
+            cur.execute(
+                "DELETE FROM social_accounts WHERE lower(user_email) = ? AND lower(platform) = ? AND lower(username) = ? AND id != ?",
+                (clean_email, platform, clean_username, target_id)
+            )
+
         cur.execute("""
         INSERT INTO social_accounts (
             id, user_email, platform, name, username, avatar_url,
@@ -456,6 +467,8 @@ def db_save_social_account(email, account_dict):
             token_expires_at, extra_json, updated_at
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
         ON CONFLICT(id) DO UPDATE SET
+            user_email = excluded.user_email,
+            platform = excluded.platform,
             name = excluded.name,
             username = excluded.username,
             avatar_url = excluded.avatar_url,
