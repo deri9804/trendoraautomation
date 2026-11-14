@@ -47,7 +47,7 @@ def count_today_posts_for_key(api_key):
             print(f"Error checking daily post count: {e}")
     return count
 
-def refresh_tiktok_token(refresh_token, row_idx=None):
+def refresh_tiktok_token(refresh_token, row_idx=None, email=None):
     if not refresh_token:
         return None
     try:
@@ -60,29 +60,47 @@ def refresh_tiktok_token(refresh_token, row_idx=None):
         }
         data = urllib.parse.urlencode(payload).encode('utf-8')
         req = urllib.request.Request(url, data=data, headers={"Content-Type": "application/x-www-form-urlencoded"})
-        with urllib.request.urlopen(req) as res:
+        with urllib.request.urlopen(req, timeout=15) as res:
             res_data = json.loads(res.read().decode('utf-8'))
             new_access_token = res_data.get('access_token')
-            new_refresh_token = res_data.get('refresh_token')
+            new_refresh_token = res_data.get('refresh_token') or refresh_token
+            expires_in = res_data.get('expires_in') or 86400
+
+            # Update ke database SQLite lokal
+            if new_access_token and email:
+                conn = db.get_db_connection()
+                try:
+                    conn.execute("""
+                        UPDATE social_accounts 
+                        SET access_token = ?, refresh_token = ?, token_expires_at = ?, updated_at = CURRENT_TIMESTAMP
+                        WHERE user_email = ? AND platform = 'tiktok'
+                    """, (new_access_token, new_refresh_token, int(time.time() + expires_in), email))
+                    conn.commit()
+                finally:
+                    conn.close()
+
             if new_access_token and row_idx:
                 sheet = db.get_gsheet()
                 if sheet:
-                    sheet.update_cell(row_idx, 7, new_access_token)
-                    if new_refresh_token:
-                        sheet.update_cell(row_idx, 9, new_refresh_token)
+                    try:
+                        sheet.update_cell(row_idx, 7, new_access_token)
+                        if new_refresh_token:
+                            sheet.update_cell(row_idx, 9, new_refresh_token)
+                    except Exception:
+                        pass
             return new_access_token
     except Exception as e:
         print(f"[TikTok Refresh Token Error]: {e}")
         return None
 
 
-def upload_video_to_tiktok(access_token, refresh_token, media_url=None, caption="", privacy_level="PUBLIC_TO_EVERYONE", row_idx=None, video_bytes=None, disable_duet=False, disable_comment=False, disable_stitch=False, brand_organic_toggle=False, brand_content_toggle=False):
+def upload_video_to_tiktok(access_token, refresh_token, media_url=None, caption="", privacy_level="PUBLIC_TO_EVERYONE", row_idx=None, email=None, video_bytes=None, disable_duet=False, disable_comment=False, disable_stitch=False, brand_organic_toggle=False, brand_content_toggle=False):
     """
     Mengunggah video ke TikTok menggunakan metode FILE_UPLOAD (Direct Chunk Binary Upload).
     Mendukung upload dari URL publik maupun data video_bytes langsung, serta disclosure commercial content.
     """
     if not access_token and refresh_token:
-        access_token = refresh_tiktok_token(refresh_token, row_idx)
+        access_token = refresh_tiktok_token(refresh_token, row_idx=row_idx, email=email)
     if not access_token:
         return False, {"tiktok_error": "Akun TikTok belum terhubung atau Access Token kosong."}
 
@@ -195,7 +213,7 @@ def upload_video_to_tiktok(access_token, refresh_token, media_url=None, caption=
         if not is_ok and refresh_token:
             err_str = str(res.get('tiktok_error', ''))
             if "401" in err_str or "token" in err_str.lower() or "expired" in err_str.lower():
-                new_tok = refresh_tiktok_token(refresh_token, row_idx)
+                new_tok = refresh_tiktok_token(refresh_token, row_idx=row_idx, email=email)
                 if new_tok:
                     return _exec_tiktok_upload(new_tok)
         return is_ok, res
@@ -203,7 +221,7 @@ def upload_video_to_tiktok(access_token, refresh_token, media_url=None, caption=
         return False, {"tiktok_error": f"[TikTok Handler Error] {str(e)}"}
 
 
-def refresh_youtube_token(refresh_token, row_idx=None):
+def refresh_youtube_token(refresh_token, row_idx=None, email=None):
     if not refresh_token:
         return None
     try:
@@ -216,13 +234,30 @@ def refresh_youtube_token(refresh_token, row_idx=None):
         }
         data = urllib.parse.urlencode(payload).encode('utf-8')
         req = urllib.request.Request(url, data=data, headers={"Content-Type": "application/x-www-form-urlencoded"})
-        with urllib.request.urlopen(req) as res:
+        with urllib.request.urlopen(req, timeout=15) as res:
             res_data = json.loads(res.read().decode('utf-8'))
             new_access_token = res_data.get('access_token')
+            expires_in = res_data.get('expires_in') or 3600
+
+            if new_access_token and email:
+                conn = db.get_db_connection()
+                try:
+                    conn.execute("""
+                        UPDATE social_accounts 
+                        SET access_token = ?, token_expires_at = ?, updated_at = CURRENT_TIMESTAMP
+                        WHERE user_email = ? AND platform = 'youtube'
+                    """, (new_access_token, int(time.time() + expires_in), email))
+                    conn.commit()
+                finally:
+                    conn.close()
+
             if new_access_token and row_idx:
                 sheet = db.get_gsheet()
                 if sheet:
-                    sheet.update_cell(row_idx, 12, new_access_token)
+                    try:
+                        sheet.update_cell(row_idx, 12, new_access_token)
+                    except Exception:
+                        pass
             return new_access_token
     except Exception as e:
         print(f"[YouTube Refresh Token Error]: {e}")
@@ -340,9 +375,9 @@ def upload_video_to_linkedin(access_token, media_url, caption):
     except Exception as e:
         return False, {"linkedin_error": f"[LinkedIn Error] {str(e)}"}
 
-def upload_video_to_youtube(access_token, refresh_token, media_url, caption, row_idx=None, video_bytes=None, privacy_status="public", coppa_kids=False):
+def upload_video_to_youtube(access_token, refresh_token, media_url, caption, row_idx=None, email=None, video_bytes=None, privacy_status="public", coppa_kids=False):
     if not access_token and refresh_token:
-        access_token = refresh_youtube_token(refresh_token, row_idx)
+        access_token = refresh_youtube_token(refresh_token, row_idx=row_idx, email=email)
     if not access_token:
         return False, {"youtube_error": "Akun YouTube belum terhubung atau Access Token kosong."}
 
@@ -408,7 +443,7 @@ def upload_video_to_youtube(access_token, refresh_token, media_url, caption, row
         return _exec_youtube_upload(access_token)
     except urllib.error.HTTPError as err:
         if err.code in [401, 403] and refresh_token:
-            new_tok = refresh_youtube_token(refresh_token, row_idx)
+            new_tok = refresh_youtube_token(refresh_token, row_idx=row_idx, email=email)
             if new_tok:
                 try:
                     return _exec_youtube_upload(new_tok)
@@ -566,9 +601,18 @@ def n8n_webhook():
             api_key, 
             email=user_data.get('email') if user_data else None
         )
-        access_token = user_tokens.get('access_token')
-        refresh_tok = user_tokens.get('refresh_token')
-        row_idx = user_tokens.get('row_idx')
+        if isinstance(user_tokens, dict):
+            access_token = user_tokens.get('access_token')
+            refresh_tok = user_tokens.get('refresh_token')
+            row_idx = user_tokens.get('row_idx')
+        elif isinstance(user_tokens, (tuple, list)):
+            access_token = user_tokens[0] if len(user_tokens) > 0 else None
+            refresh_tok = user_tokens[2] if len(user_tokens) > 2 else (user_tokens[1] if len(user_tokens) > 1 else None)
+            row_idx = None
+        else:
+            access_token = None
+            refresh_tok = None
+            row_idx = None
 
         if not access_token and not refresh_tok:
             status = "FAILED"
@@ -583,7 +627,8 @@ def n8n_webhook():
                 media_url, 
                 caption, 
                 privacy_level=privacy_level, 
-                row_idx=row_idx
+                row_idx=row_idx,
+                email=user_data.get('email') if user_data else None
             )
             if is_ok:
                 status = "PUBLISHED (SUCCESS)"
@@ -704,9 +749,18 @@ def n8n_webhook():
     # 7. YOUTUBE SHORTS / VIDEO HANDLER
     elif platform == 'youtube':
         yt_tokens = db.db_get_youtube_tokens_by_api_key(api_key, email=user_data.get('email') if user_data else None)
-        yt_access = yt_tokens.get('access_token')
-        yt_refresh = yt_tokens.get('refresh_token')
-        yt_row = yt_tokens.get('row_idx')
+        if isinstance(yt_tokens, dict):
+            yt_access = yt_tokens.get('access_token')
+            yt_refresh = yt_tokens.get('refresh_token')
+            yt_row = yt_tokens.get('row_idx')
+        elif isinstance(yt_tokens, (tuple, list)):
+            yt_access = yt_tokens[0] if len(yt_tokens) > 0 else None
+            yt_refresh = yt_tokens[1] if len(yt_tokens) > 1 else None
+            yt_row = None
+        else:
+            yt_access = None
+            yt_refresh = None
+            yt_row = None
 
         if not yt_access and not yt_refresh:
             status = "FAILED"
@@ -716,7 +770,14 @@ def n8n_webhook():
             details['youtube_error'] = "Media URL video tidak ditemukan pada payload n8n (kirimkan parameter 'media_url')."
         else:
             caption_text = caption or 'Diposting otomatis via TRENDORA Automation ⚡'
-            is_ok, res_dict = upload_video_to_youtube(yt_access, yt_refresh, media_url, caption_text, row_idx=yt_row)
+            is_ok, res_dict = upload_video_to_youtube(
+                yt_access, 
+                yt_refresh, 
+                media_url, 
+                caption_text, 
+                row_idx=yt_row,
+                email=user_data.get('email') if user_data else None
+            )
             if is_ok:
                 status = "PUBLISHED (SUCCESS)"
                 details.update(res_dict)

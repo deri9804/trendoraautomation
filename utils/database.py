@@ -567,12 +567,49 @@ def db_get_social_account_token(email=None, api_key=None, platform=None, account
 # LEGACY GETTER WRAPPERS (UNTUK N8N, CRON, & STUDIO PUBLISHER)
 # =========================================================================
 
+class TokenResult(dict):
+    """
+    Koleksi token serbaguna: mendukung akses dict (res.get('access_token'), res['access_token'])
+    maupun tuple indexing / unpacking (tok, open_id, ref = res).
+    """
+    def __init__(self, data=None, tuple_items=()):
+        super().__init__(data or {})
+        self._tuple = tuple(tuple_items)
+
+    def __iter__(self):
+        return iter(self._tuple)
+
+    def __len__(self):
+        return len(self._tuple)
+
+    def __getitem__(self, item):
+        if isinstance(item, int):
+            return self._tuple[item]
+        return super().__getitem__(item)
+
 def db_get_tiktok_tokens_by_api_key(api_key, email=None):
     accs = db_get_social_accounts(email=email, api_key=api_key)
     for a in accs:
         if a.get('platform') == 'tiktok' and a.get('access_token'):
-            return a.get('access_token'), a.get('open_id', ''), a.get('refresh_token', '')
-    return None, None, None
+            tok = a.get('access_token') or ''
+            oid = a.get('open_id') or ''
+            ref = a.get('refresh_token') or ''
+            return TokenResult({
+                'access_token': tok,
+                'open_id': oid,
+                'refresh_token': ref,
+                'row_idx': None,
+                'username': a.get('username') or '',
+                'account': a
+            }, (tok, oid, ref))
+    return TokenResult({
+        'access_token': None,
+        'open_id': None,
+        'refresh_token': None,
+        'row_idx': None,
+        'username': '',
+        'account': None
+    }, (None, None, None))
 
 def db_get_meta_token_by_api_key(api_key, email=None):
     accs = db_get_social_accounts(email=email, api_key=api_key)
@@ -592,8 +629,22 @@ def db_get_youtube_tokens_by_api_key(api_key, email=None):
     accs = db_get_social_accounts(email=email, api_key=api_key)
     for a in accs:
         if a.get('platform') == 'youtube' and a.get('access_token'):
-            return a.get('access_token'), a.get('refresh_token', '')
-    return None, None
+            tok = a.get('access_token') or ''
+            ref = a.get('refresh_token') or ''
+            return TokenResult({
+                'access_token': tok,
+                'refresh_token': ref,
+                'row_idx': None,
+                'username': a.get('username') or '',
+                'account': a
+            }, (tok, ref))
+    return TokenResult({
+        'access_token': None,
+        'refresh_token': None,
+        'row_idx': None,
+        'username': '',
+        'account': None
+    }, (None, None))
 
 def db_get_threads_token_by_api_key(api_key, email=None):
     accs = db_get_social_accounts(email=email, api_key=api_key)
