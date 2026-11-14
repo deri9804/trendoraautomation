@@ -435,7 +435,7 @@ def db_save_social_account(email, account_dict):
                 if str(r['id']) == acc_id:
                     found_id = r['id']
                     break
-                elif account_dict.get('username') and str(r['username']).lower() == str(account_dict['username']).lower():
+                elif platform not in ['facebook', 'meta', 'instagram'] and account_dict.get('username') and str(r['username']).lower() == str(account_dict['username']).lower():
                     found_id = r['id']
                     break
 
@@ -452,9 +452,9 @@ def db_save_social_account(email, account_dict):
 
         target_id = acc_id or found_id or f"{platform}_{uuid.uuid4().hex[:8]}"
 
-        # Bersihkan record duplikat lama dengan username sama tapi ID berbeda untuk user ini
+        # Bersihkan record duplikat lama dengan username sama tapi ID berbeda untuk user ini (hanya untuk single-account platform)
         clean_username = str(account_dict.get('username') or '').strip().lower()
-        if clean_username and clean_username not in ['@user', '@page', '', 'none']:
+        if platform not in ['facebook', 'meta', 'instagram'] and clean_username and clean_username not in ['@user', '@page', '', 'none']:
             cur.execute(
                 "DELETE FROM social_accounts WHERE lower(user_email) = ? AND lower(platform) = ? AND lower(username) = ? AND id != ?",
                 (clean_email, platform, clean_username, target_id)

@@ -466,59 +466,77 @@ def sync_instagram_accounts_for_page(page_id, page_token, page_name=""):
     """
     found_accounts = []
     seen_ig_ids = set()
+    ig_ids = []
 
-    # 1. Cek instagram_business_account
+    # 1. Cek field instagram_business_account pada Page node (tanpa nested braces)
     try:
-        params1 = {
-            "fields": "instagram_business_account{id,username,name,profile_picture_url}",
-            "access_token": page_token
-        }
-        url1 = f"https://graph.facebook.com/v21.0/{page_id}?{urllib.parse.urlencode(params1)}"
+        url1 = f"https://graph.facebook.com/v21.0/{page_id}?fields=instagram_business_account&access_token={page_token}"
         req1 = urllib.request.Request(url1, headers={"User-Agent": "Trendora-Automation/1.0"})
-        with urllib.request.urlopen(req1, timeout=12) as resp:
+        with urllib.request.urlopen(req1, timeout=10) as resp:
             data = json.loads(resp.read().decode('utf-8'))
             ig_biz = data.get('instagram_business_account')
             if ig_biz and isinstance(ig_biz, dict) and ig_biz.get('id'):
-                ig_id = str(ig_biz.get('id')).strip()
-                if ig_id not in seen_ig_ids:
-                    seen_ig_ids.add(ig_id)
-                    found_accounts.append({
-                        "id": ig_id,
-                        "name": ig_biz.get('name') or f"IG: {page_name}",
-                        "username": '@' + str(ig_biz.get('username') or page_name.lower().replace(' ', '')).replace('@', ''),
-                        "avatar_url": ig_biz.get('profile_picture_url') or '',
-                        "access_token": page_token
-                    })
+                ig_ids.append(str(ig_biz.get('id')).strip())
     except Exception as e_ig1:
-        print(f"[Meta IG Sync Info]: instagram_business_account check for page {page_id}: {e_ig1}")
+        print(f"[Meta IG Sync Info]: instagram_business_account query for page {page_id}: {e_ig1}")
 
-    # 2. Cek connected_instagram_account jika belum ditemukan
-    if not found_accounts:
+    # 2. Cek field connected_instagram_account jika belum ditemukan
+    if not ig_ids:
         try:
-            params2 = {
-                "fields": "connected_instagram_account{id,username,name,profile_picture_url}",
-                "access_token": page_token
-            }
-            url2 = f"https://graph.facebook.com/v21.0/{page_id}?{urllib.parse.urlencode(params2)}"
+            url2 = f"https://graph.facebook.com/v21.0/{page_id}?fields=connected_instagram_account&access_token={page_token}"
             req2 = urllib.request.Request(url2, headers={"User-Agent": "Trendora-Automation/1.0"})
-            with urllib.request.urlopen(req2, timeout=12) as resp:
+            with urllib.request.urlopen(req2, timeout=10) as resp:
                 data = json.loads(resp.read().decode('utf-8'))
                 ig_conn = data.get('connected_instagram_account')
                 if ig_conn and isinstance(ig_conn, dict) and ig_conn.get('id'):
-                    ig_id = str(ig_conn.get('id')).strip()
-                    if ig_id not in seen_ig_ids:
-                        seen_ig_ids.add(ig_id)
-                        found_accounts.append({
-                            "id": ig_id,
-                            "name": ig_conn.get('name') or f"IG: {page_name}",
-                            "username": '@' + str(ig_conn.get('username') or page_name.lower().replace(' ', '')).replace('@', ''),
-                            "avatar_url": ig_conn.get('profile_picture_url') or '',
-                            "access_token": page_token
-                        })
+                    ig_ids.append(str(ig_conn.get('id')).strip())
         except Exception as e_ig2:
-            print(f"[Meta IG Sync Info]: connected_instagram_account check for page {page_id}: {e_ig2}")
+            print(f"[Meta IG Sync Info]: connected_instagram_account query for page {page_id}: {e_ig2}")
 
-    # 3. Otomatis daftarkan langganan webhook (subscribed_apps) untuk setiap akun Instagram yang ditemukan
+    # 3. Untuk setiap ID Instagram yang ditemukan, ambil profil detail dari node IG User
+    for ig_id in ig_ids:
+        if ig_id in seen_ig_ids:
+            continue
+        seen_ig_ids.add(ig_id)
+
+        ig_name = f"IG: {page_name}"
+        ig_username = f"@{page_name.lower().replace(' ', '')}"
+        ig_avatar = ""
+
+        # Query detail profil Instagram resmi
+        try:
+            u_url = f"https://graph.facebook.com/v21.0/{ig_id}?fields=id,username,name,profile_picture_url&access_token={page_token}"
+            u_req = urllib.request.Request(u_url, headers={"User-Agent": "Trendora-Automation/1.0"})
+            with urllib.request.urlopen(u_req, timeout=10) as u_resp:
+                u_data = json.loads(u_resp.read().decode('utf-8'))
+                if u_data.get('name'):
+                    ig_name = u_data.get('name').strip()
+                if u_data.get('username'):
+                    ig_username = "@" + u_data.get('username').replace('@', '').strip()
+                if u_data.get('profile_picture_url'):
+                    ig_avatar = u_data.get('profile_picture_url').strip()
+        except Exception as e_detail:
+            print(f"[Meta IG Detail Fetch Info for {ig_id}]: {e_detail}")
+            # Fallback ringan jika permission profile_picture_url terbatas
+            try:
+                u_url2 = f"https://graph.facebook.com/v21.0/{ig_id}?fields=id,username&access_token={page_token}"
+                u_req2 = urllib.request.Request(u_url2, headers={"User-Agent": "Trendora-Automation/1.0"})
+                with urllib.request.urlopen(u_req2, timeout=8) as u_resp2:
+                    u_data2 = json.loads(u_resp2.read().decode('utf-8'))
+                    if u_data2.get('username'):
+                        ig_username = "@" + u_data2.get('username').replace('@', '').strip()
+            except Exception:
+                pass
+
+        found_accounts.append({
+            "id": ig_id,
+            "name": ig_name,
+            "username": ig_username,
+            "avatar_url": ig_avatar,
+            "access_token": page_token
+        })
+
+    # 4. Otomatis daftarkan langganan webhook (subscribed_apps) untuk setiap akun Instagram yang ditemukan
     for ig_acc in found_accounts:
         ig_id = ig_acc.get('id')
         if ig_id and page_token:
@@ -649,9 +667,9 @@ def meta_callback():
                 final_token = long_lived_token
                 pages = []
                 try:
-                    # Query 1: Ambil pages beserta instagram_business_account resmi
+                    # Query 1: Ambil pages beserta instagram_business_account resmi (tanpa nested curly braces)
                     params_acc = {
-                        "fields": "id,name,access_token,category,instagram_business_account{id,username,name,profile_picture_url}",
+                        "fields": "id,name,access_token,category,instagram_business_account",
                         "access_token": long_lived_token
                     }
                     acc_url = f"https://graph.facebook.com/v21.0/me/accounts?{urllib.parse.urlencode(params_acc)}"
@@ -702,11 +720,16 @@ def meta_callback():
                         p_tok = p.get('access_token') or final_token
                         p_avatar = f"https://graph.facebook.com/v21.0/{p_id}/picture?type=normal"
 
+                        # Pastikan username unik per page (bukan category) agar tidak saling menimpa
+                        p_username = p.get('username') or f"page_{p_id}"
+                        if not p_username.startswith('@'):
+                            p_username = f"@{p_username}"
+
                         db.db_save_social_account(email, {
                             "id": p_id,
                             "platform": "facebook",
                             "name": p_name,
-                            "username": p_cat,
+                            "username": p_username,
                             "avatar_url": p_avatar,
                             "access_token": p_tok,
                             "category": p_cat,
@@ -717,17 +740,30 @@ def meta_callback():
                         ig_biz = p.get('instagram_business_account')
                         if ig_biz and isinstance(ig_biz, dict) and ig_biz.get('id'):
                             ig_id = str(ig_biz.get('id')).strip()
+                            ig_name = f"IG: {p_name}"
+                            ig_user = f"@{p_name.lower().replace(' ', '')}"
+                            ig_avatar = ""
+                            try:
+                                u_url = f"https://graph.facebook.com/v21.0/{ig_id}?fields=id,username,name,profile_picture_url&access_token={p_tok}"
+                                with urllib.request.urlopen(urllib.request.Request(u_url, headers={"User-Agent": "Trendora-Automation/1.0"}), timeout=10) as u_resp:
+                                    u_data = json.loads(u_resp.read().decode('utf-8'))
+                                    if u_data.get('name'): ig_name = u_data.get('name').strip()
+                                    if u_data.get('username'): ig_user = "@" + u_data.get('username').replace('@', '').strip()
+                                    if u_data.get('profile_picture_url'): ig_avatar = u_data.get('profile_picture_url').strip()
+                            except Exception as e_ig_fetch:
+                                print(f"[Meta IG Detail Fetch from Page Error for {ig_id}]: {e_ig_fetch}")
+
                             has_instagram = True
                             db.db_save_social_account(email, {
                                 "id": ig_id,
                                 "platform": "instagram",
-                                "name": ig_biz.get('name') or f"IG: {p_name}",
-                                "username": '@' + str(ig_biz.get('username') or p_name.lower().replace(' ', '')).replace('@', ''),
-                                "avatar_url": ig_biz.get('profile_picture_url') or '',
+                                "name": ig_name,
+                                "username": ig_user,
+                                "avatar_url": ig_avatar,
                                 "access_token": p_tok,
                                 "connected_at": datetime.now().isoformat()
                             })
-                            print(f"[Meta Discovery]: Instagram terhubung dari nested page '{p_name}' -> IG ID: {ig_id}")
+                            print(f"[Meta Discovery]: Instagram terhubung dari nested page '{p_name}' -> IG ID: {ig_id} ({ig_user})")
 
                         # Ekstrak akun Instagram via endpoint page detail
                         ig_list = sync_instagram_accounts_for_page(p_id, p_tok, p_name)
