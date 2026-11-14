@@ -643,6 +643,16 @@ def meta_callback():
                 res_data = json.loads(response.read().decode('utf-8'))
                 short_token = res_data.get('access_token')
 
+            if not short_token:
+                print(f"[Meta OAuth Error]: short_token not in response: {res_data}")
+                return f"""
+                <html><body style="background:#0d0a1a;color:#fff;font-family:sans-serif;text-align:center;padding:40px 20px;">
+                  <h2 style="color:#f87171;">⚠️ Otorisasi Meta Gagal</h2>
+                  <p style="color:#cbd5e1;font-size:14px;max-width:500px;margin:15px auto;">Gagal mendapatkan access token dari Meta: {res_data.get('error', {}).get('message', str(res_data))}</p>
+                  <button onclick="window.close()" style="background:#3b82f6;color:#fff;padding:8px 20px;border:none;border-radius:6px;cursor:pointer;margin-top:15px;">Tutup Jendela</button>
+                </body></html>
+                """
+
             if short_token:
                 # 1. Exchange short-lived token ke Long-Lived Token (60 hari)
                 long_lived_token = short_token
@@ -662,6 +672,7 @@ def meta_callback():
 
                 # 2. Ambil Daftar Halaman Facebook milik User (/me/accounts)
                 final_token = long_lived_token
+                pages = []
                 try:
                     acc_url = (
                         f"https://graph.facebook.com/v21.0/me/accounts?"
@@ -682,7 +693,7 @@ def meta_callback():
                                 final_token = first_page.get('access_token')
                             print(f"[Meta Discovery]: Ditemukan {len(pages)} Facebook Page untuk {email}")
                         else:
-                            print(f"[Meta Warning]: User {email} tidak memiliki Facebook Page.")
+                            print(f"[Meta Warning]: User {email} tidak memiliki Facebook Page atau izin Page tidak dicentang.")
                 except Exception as e_acc:
                     print("[Meta Accounts Fetch Error]:", e_acc)
 
@@ -697,7 +708,7 @@ def meta_callback():
                 })
 
                 # Simpan setiap Facebook Page dan Instagram Bisnis ke Multi-Account Registry
-                if 'pages' in locals() and pages:
+                if pages:
                     for p in pages:
                         p_id = p.get('id')
                         p_name = p.get('name', 'Facebook Page')
@@ -730,8 +741,46 @@ def meta_callback():
                                 "connected_at": datetime.now().isoformat()
                             })
                             print(f"[Meta Discovery]: Instagram terhubung '{ig['name']}' ({ig['username']}) - ID: {ig['id']}")
+                else:
+                    return f"""
+                    <html>
+                    <body style="background:#0d0a1a;color:#fff;font-family:sans-serif;text-align:center;padding:40px 20px;">
+                      <div style="font-size:36px;margin-bottom:10px;">⚠️</div>
+                      <h2 style="color:#fbbf24;margin-bottom:8px;">Belum Ada Facebook Page Ditemukan</h2>
+                      <p style="color:#cbd5e1;font-size:14px;max-width:540px;margin:12px auto;line-height:1.6;">
+                        Akun Facebook Anda berhasil login, namun sistem <strong>tidak mendeteksi Halaman Facebook (Fanpage)</strong> yang Anda kelola atau Anda belum mencentang izin akses Page saat dialog login Meta.
+                      </p>
+                      <div style="background:rgba(255,255,255,0.05);border-radius:10px;padding:14px;max-width:480px;margin:16px auto;text-align:left;font-size:12.5px;color:#94a3b8;line-height:1.5;">
+                        <p style="margin:0 0 6px 0;color:#fff;font-weight:bold;">Ketentuan Meta (Facebook &amp; Instagram API):</p>
+                        1. Otomasi posting video <strong>wajib menggunakan Facebook Page</strong> (tidak mendukung profil pribadi).<br>
+                        2. Akun Instagram wajib bertipe <strong>Profesional (Bisnis/Kreator)</strong> dan ditautkan ke Facebook Page tersebut.<br>
+                        3. Saat login Facebook, pastikan <strong>semua kotak centang izin Halaman dicentang</strong>.
+                      </div>
+                      <button onclick="window.close()" style="background:#3b82f6;color:#fff;padding:10px 24px;border:none;border-radius:8px;cursor:pointer;font-weight:bold;margin-top:10px;">Tutup</button>
+                    </body>
+                    </html>
+                    """
+        except urllib.error.HTTPError as he:
+            err_body = ""
+            try: err_body = he.read().decode('utf-8')
+            except Exception: err_body = str(he.reason)
+            print(f"[Meta OAuth HTTPError {he.code}]: {err_body}")
+            return f"""
+            <html><body style="background:#0d0a1a;color:#fff;font-family:sans-serif;text-align:center;padding:40px 20px;">
+              <h2 style="color:#f87171;">⚠️ Otorisasi Meta Gagal (HTTP {he.code})</h2>
+              <p style="color:#cbd5e1;font-size:13px;max-width:500px;margin:15px auto;word-break:break-all;">{err_body}</p>
+              <button onclick="window.close()" style="background:#3b82f6;color:#fff;padding:8px 20px;border:none;border-radius:6px;cursor:pointer;">Tutup</button>
+            </body></html>
+            """
         except Exception as e:
             print("Meta OAuth Error:", e)
+            return f"""
+            <html><body style="background:#0d0a1a;color:#fff;font-family:sans-serif;text-align:center;padding:40px 20px;">
+              <h2 style="color:#f87171;">⚠️ Terjadi Kesalahan OAuth Meta</h2>
+              <p style="color:#cbd5e1;font-size:13px;max-width:500px;margin:15px auto;">{str(e)}</p>
+              <button onclick="window.close()" style="background:#3b82f6;color:#fff;padding:8px 20px;border:none;border-radius:6px;cursor:pointer;">Tutup</button>
+            </body></html>
+            """
 
     page_msg = f"Halaman <strong>{page_name}</strong> berhasil ditautkan!" if page_name else "Akun Facebook terhubung! (Belum ada Fanpage terdeteksi)"
     ig_msg = "<div style='color:#38bdf8;font-size:12px;margin-top:6px;'>📷 Akun Instagram Bisnis otomatis terdeteksi!</div>" if has_instagram else "<div style='color:#94a3b8;font-size:11.5px;margin-top:6px;'>Tip: Tautkan Instagram Profesional ke Halaman FB Anda agar Reels aktif.</div>"
