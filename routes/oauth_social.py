@@ -3612,3 +3612,42 @@ def proxy_avatar():
         except Exception:
             return Response(f"Error: {e}", status=502)
 
+@oauth_bp.route('/api/debug/social-diagnostics', methods=['GET'])
+def debug_social_diagnostics():
+    """Endpoint diagnostik aman untuk memeriksa status environment variables & isi tabel social_accounts."""
+    from utils import database as db
+    
+    conn = db.get_db_connection()
+    rows = []
+    try:
+        cur = conn.cursor()
+        cur.execute("SELECT id, user_email, platform, username, name, created_at, length(access_token) as token_len FROM social_accounts")
+        rows = [dict(r) for r in cur.fetchall()]
+    except Exception as e:
+        rows = str(e)
+    finally:
+        conn.close()
+
+    def mask(val):
+        if not val:
+            return None
+        s = str(val).strip()
+        return s[:4] + "•" * max(4, len(s) - 8) + s[-4:] if len(s) > 8 else "•" * len(s)
+
+    return jsonify({
+        "status": "ok",
+        "env_keys": {
+            "TIKTOK_CLIENT_KEY": mask(config.TIKTOK_CLIENT_KEY),
+            "TIKTOK_CLIENT_KEY_LOADED": bool(config.TIKTOK_CLIENT_KEY),
+            "TIKTOK_CLIENT_SECRET_LOADED": bool(config.TIKTOK_CLIENT_SECRET),
+            "META_CLIENT_ID": mask(config.META_CLIENT_ID),
+            "META_CLIENT_ID_LOADED": bool(config.META_CLIENT_ID),
+            "META_CLIENT_SECRET_LOADED": bool(config.META_CLIENT_SECRET),
+            "GOOGLE_CLIENT_ID_LOADED": bool(config.GOOGLE_CLIENT_ID),
+            "LINKEDIN_CLIENT_ID_LOADED": bool(config.LINKEDIN_CLIENT_ID),
+        },
+        "session_user_email": session.get('user_email'),
+        "sqlite_social_accounts": rows
+    })
+
+

@@ -34,12 +34,12 @@ SERVICE_ACCOUNT_FILE = os.environ.get("SERVICE_ACCOUNT_FILE", "service_account.j
 GOOGLE_CREDS_JSON = os.environ.get("GOOGLE_APPLICATION_CREDENTIALS_JSON")
 
 # CONFIGURATION TIKTOK DEVELOPER
-TIKTOK_CLIENT_KEY = os.environ.get("TIKTOK_CLIENT_KEY")
-TIKTOK_CLIENT_SECRET = os.environ.get("TIKTOK_CLIENT_SECRET")
+TIKTOK_CLIENT_KEY = os.environ.get("TIKTOK_CLIENT_KEY") or os.environ.get("TIKTOK_KEY") or os.environ.get("TIKTOK_APP_ID") or os.environ.get("TIKTOK_CLIENT_ID")
+TIKTOK_CLIENT_SECRET = os.environ.get("TIKTOK_CLIENT_SECRET") or os.environ.get("TIKTOK_SECRET") or os.environ.get("TIKTOK_APP_SECRET")
 
 # CONFIGURATION META (FACEBOOK & INSTAGRAM)
-META_CLIENT_ID = os.environ.get("META_CLIENT_ID")
-META_CLIENT_SECRET = os.environ.get("META_CLIENT_SECRET")
+META_CLIENT_ID = os.environ.get("META_CLIENT_ID") or os.environ.get("META_APP_ID") or os.environ.get("FACEBOOK_APP_ID") or os.environ.get("FB_APP_ID") or os.environ.get("FACEBOOK_CLIENT_ID")
+META_CLIENT_SECRET = os.environ.get("META_CLIENT_SECRET") or os.environ.get("META_APP_SECRET") or os.environ.get("FACEBOOK_APP_SECRET") or os.environ.get("FB_APP_SECRET") or os.environ.get("FACEBOOK_CLIENT_SECRET")
 META_WEBHOOK_VERIFY_TOKEN = os.environ.get("META_WEBHOOK_VERIFY_TOKEN", "trendora_meta_secret_123")
 
 # CONFIGURATION LINKEDIN
