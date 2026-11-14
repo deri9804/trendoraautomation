@@ -412,15 +412,21 @@ def db_save_social_account(email, account_dict):
         u_row = cur.fetchone()
         user_status = str(u_row['status'] if u_row and u_row['status'] else '').lower()
 
-        is_trial = 'trial' in user_status or not any(w in user_status for w in ['starter', 'vip', 'vvip', 'admin', 'paid', 'lifetime'])
-        if is_trial:
-            plan_limit = 7
+        # Admin / Owner selalu Unlimited
+        is_admin_owner = clean_email in ['deripernandi99@gmail.com', 'deripernandi2@gmail.com']
+        is_paid_status = any(w in user_status for w in ['starter', 'vip', 'vvip', 'admin', 'paid', 'lifetime', 'unlimited'])
+
+        is_trial = not is_admin_owner and ('trial' in user_status or not is_paid_status)
+        if is_admin_owner or any(w in user_status for w in ['admin', 'lifetime', 'unlimited']):
+            plan_limit = 100
         elif 'vvip' in user_status:
             plan_limit = 30
         elif 'vip' in user_status:
             plan_limit = 20
         elif 'starter' in user_status:
             plan_limit = 10
+        elif is_trial:
+            plan_limit = 7
         else:
             plan_limit = 100
 
