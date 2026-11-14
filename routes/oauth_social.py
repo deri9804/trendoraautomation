@@ -3252,6 +3252,17 @@ def get_all_social_accounts():
 
     accounts = db.db_get_social_accounts(email=email, api_key=api_key)
 
+    # Auto-heal: Cek apakah user memiliki Facebook Pages tetapi akun Instagram belum tersinkronkan
+    has_fb_page = any(str(a.get('platform', '')).lower() in ['facebook', 'fb', 'facebook_page'] and str(a.get('id', '')) != 'meta_primary' for a in accounts)
+    has_ig = any(str(a.get('platform', '')).lower() in ['instagram', 'ig'] for a in accounts)
+    if has_fb_page and not has_ig:
+        try:
+            added = db_sync_instagram_from_connected_facebook_pages(email)
+            if added:
+                accounts = db.db_get_social_accounts(email=email, api_key=api_key)
+        except Exception as e_sync:
+            print("[Auto-heal Instagram in get_all_social_accounts error]:", e_sync)
+
     user = db.db_get_user(email) if email else None
     trial_info = check_user_trial_status(user) if user else {"is_paid": False, "is_expired": False}
     status = (user.get('status', '') if user else '').lower()
