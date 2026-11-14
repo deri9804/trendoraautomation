@@ -671,9 +671,9 @@ def meta_callback():
                 final_token = long_lived_token
                 pages = []
                 try:
-                    # Query 1: Ambil pages beserta instagram_business_account & connected_instagram_account resmi
+                    # Query 1: Ambil pages beserta instagram_business_account resmi
                     params_acc = {
-                        "fields": "id,name,access_token,category,instagram_business_account,connected_instagram_account",
+                        "fields": "id,name,access_token,category,instagram_business_account",
                         "access_token": long_lived_token
                     }
                     acc_url = f"https://graph.facebook.com/v21.0/me/accounts?{urllib.parse.urlencode(params_acc)}"
