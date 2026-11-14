@@ -228,7 +228,7 @@ def upload_video_to_tiktok(access_token, refresh_token, media_url=None, caption=
         return False, {"tiktok_error": f"[TikTok Handler Error] {str(e)}"}
 
 
-def refresh_youtube_token(refresh_token, row_idx=None, email=None):
+def refresh_youtube_token(refresh_token, row_idx=None, email=None, account_id=None):
     if not refresh_token:
         return None
     try:
@@ -249,11 +249,18 @@ def refresh_youtube_token(refresh_token, row_idx=None, email=None):
             if new_access_token and email:
                 conn = db.get_db_connection()
                 try:
-                    conn.execute("""
-                        UPDATE social_accounts 
-                        SET access_token = ?, token_expires_at = ?, updated_at = CURRENT_TIMESTAMP
-                        WHERE user_email = ? AND platform = 'youtube'
-                    """, (new_access_token, int(time.time() + expires_in), email))
+                    if account_id:
+                        conn.execute("""
+                            UPDATE social_accounts 
+                            SET access_token = ?, token_expires_at = ?, updated_at = CURRENT_TIMESTAMP
+                            WHERE user_email = ? AND platform = 'youtube' AND id = ?
+                        """, (new_access_token, int(time.time() + expires_in), email, account_id))
+                    else:
+                        conn.execute("""
+                            UPDATE social_accounts 
+                            SET access_token = ?, token_expires_at = ?, updated_at = CURRENT_TIMESTAMP
+                            WHERE user_email = ? AND platform = 'youtube' AND refresh_token = ?
+                        """, (new_access_token, int(time.time() + expires_in), email, refresh_token))
                     conn.commit()
                 finally:
                     conn.close()
@@ -382,9 +389,9 @@ def upload_video_to_linkedin(access_token, media_url, caption):
     except Exception as e:
         return False, {"linkedin_error": f"[LinkedIn Error] {str(e)}"}
 
-def upload_video_to_youtube(access_token, refresh_token, media_url, caption, row_idx=None, email=None, video_bytes=None, privacy_status="public", coppa_kids=False):
+def upload_video_to_youtube(access_token, refresh_token, media_url, caption, row_idx=None, email=None, video_bytes=None, privacy_status="public", coppa_kids=False, account_id=None):
     if not access_token and refresh_token:
-        access_token = refresh_youtube_token(refresh_token, row_idx=row_idx, email=email)
+        access_token = refresh_youtube_token(refresh_token, row_idx=row_idx, email=email, account_id=account_id)
     if not access_token:
         return False, {"youtube_error": "Akun YouTube belum terhubung atau Access Token kosong."}
 
@@ -450,7 +457,7 @@ def upload_video_to_youtube(access_token, refresh_token, media_url, caption, row
         return _exec_youtube_upload(access_token)
     except urllib.error.HTTPError as err:
         if err.code in [401, 403] and refresh_token:
-            new_tok = refresh_youtube_token(refresh_token, row_idx=row_idx, email=email)
+            new_tok = refresh_youtube_token(refresh_token, row_idx=row_idx, email=email, account_id=account_id)
             if new_tok:
                 try:
                     return _exec_youtube_upload(new_tok)
@@ -714,9 +721,10 @@ def n8n_webhook():
                     details['tiktok_error'] = " | ".join(err_reasons) if err_reasons else "Gagal mengunggah video ke akun TikTok yang dipilih."
                     details['tiktok_accounts'] = tiktok_results
 
-    # 4. META (FACEBOOK PAGE) HANDLER
+    # 4. META (FACEBOOK PAGE) HANDLER - Mendukung Multi-Page Facebook
     elif platform == 'facebook':
-        meta_token = db.db_get_meta_token_by_api_key(api_key, email=user_data.get('email') if user_data else None)
+        user_email = user_data.get('email') if user_data else None
+        meta_token = db.db_get_meta_token_by_api_key(api_key, email=user_email)
         if not meta_token:
             status = "FAILED"
             details['facebook_error'] = "Akun Facebook belum terhubung di Dashboard TRENDORA. Silakan hubungkan akun Facebook Anda di dashboard (menu Integrasi Akun Sosial Media) terlebih dahulu."
@@ -729,16 +737,73 @@ def n8n_webhook():
                 page_url = f"https://graph.facebook.com/v18.0/me/accounts?access_token={meta_token}"
                 with urllib.request.urlopen(urllib.request.Request(page_url)) as response:
                     page_data = json.loads(response.read().decode('utf-8'))
-                if page_data.get('data') and len(page_data['data']) > 0:
-                    page_id = page_data['data'][0]['id']
-                    page_token = page_data['data'][0]['access_token']
-                    fb_post_url = f"https://graph.facebook.com/v18.0/{page_id}/videos"
-                    fb_payload = urllib.parse.urlencode({'file_url': media_url, 'description': caption_text, 'access_token': page_token}).encode('utf-8')
-                    with urllib.request.urlopen(urllib.request.Request(fb_post_url, data=fb_payload, method='POST')) as res_post:
-                        fb_res = json.loads(res_post.read().decode('utf-8'))
+                
+                all_pages = page_data.get('data', [])
+                if not all_pages:
+                    saved_fb = [a for a in db.db_get_social_accounts(email=user_email, api_key=api_key) if a.get('platform') == 'facebook' and a.get('id') != 'meta_primary']
+                    for s in saved_fb:
+                        all_pages.append({'id': s.get('id'), 'name': s.get('name'), 'access_token': s.get('access_token')})
+
+                if all_pages:
+                    target_fb_q = str(
+                        details.get('account') or details.get('page_id') or details.get('page') or details.get('username') or
+                        data.get('account') or data.get('page_id') or data.get('page') or data.get('username') or ''
+                    ).strip().lower()
+
+                    target_pages = []
+                    if target_fb_q and target_fb_q not in ['all', 'semua', '*', 'any', 'broadcast']:
+                        clean_q = target_fb_q.replace('@', '')
+                        for p in all_pages:
+                            p_id = str(p.get('id') or '').lower()
+                            p_name = str(p.get('name') or '').lower()
+                            if clean_q == p_id or clean_q in p_name:
+                                target_pages.append(p)
+                        if not target_pages:
+                            target_pages = all_pages
+                    else:
+                        target_pages = all_pages
+
+                    fb_results = []
+                    fb_success_count = 0
+                    first_video_id = None
+
+                    for p in target_pages:
+                        p_id = p.get('id')
+                        p_name = p.get('name') or p_id
+                        p_tok = p.get('access_token') or meta_token
+                        try:
+                            fb_post_url = f"https://graph.facebook.com/v18.0/{p_id}/videos"
+                            fb_payload = urllib.parse.urlencode({'file_url': media_url, 'description': caption_text, 'access_token': p_tok}).encode('utf-8')
+                            with urllib.request.urlopen(urllib.request.Request(fb_post_url, data=fb_payload, method='POST')) as res_post:
+                                fb_res = json.loads(res_post.read().decode('utf-8'))
+                                vid_id = fb_res.get('id')
+                                fb_success_count += 1
+                                if not first_video_id:
+                                    first_video_id = vid_id
+                                fb_results.append({
+                                    "page_id": p_id,
+                                    "page_name": p_name,
+                                    "success": True,
+                                    "video_id": vid_id
+                                })
+                        except Exception as p_err:
+                            fb_results.append({
+                                "page_id": p_id,
+                                "page_name": p_name,
+                                "success": False,
+                                "error": str(p_err)
+                            })
+
+                    if fb_success_count > 0:
                         status = "PUBLISHED (SUCCESS)"
-                        details['fb_status'] = "Video sukses dipost ke Facebook Page"
-                        details['fb_video_id'] = fb_res.get('id')
+                        details['fb_status'] = f"Video sukses diposting ke {fb_success_count}/{len(target_pages)} Facebook Page!"
+                        details['fb_pages'] = fb_results
+                        if first_video_id:
+                            details['fb_video_id'] = first_video_id
+                    else:
+                        status = "FAILED"
+                        details['facebook_error'] = "Gagal memposting video ke Facebook Page yang dipilih."
+                        details['fb_pages'] = fb_results
                 else:
                     status = "FAILED"
                     details['facebook_error'] = "Tidak menemukan Facebook Page pada akun Meta yang terhubung. Pastikan akun Facebook Anda mengelola minimal 1 Facebook Page."
@@ -750,9 +815,10 @@ def n8n_webhook():
                 status = "FAILED"
                 details['facebook_error'] = str(e)
 
-    # 5. META (INSTAGRAM REELS) HANDLER
+    # 5. META (INSTAGRAM REELS) HANDLER - Mendukung Multi-Akun Instagram
     elif platform == 'instagram':
-        meta_token = db.db_get_meta_token_by_api_key(api_key, email=user_data.get('email') if user_data else None)
+        user_email = user_data.get('email') if user_data else None
+        meta_token = db.db_get_meta_token_by_api_key(api_key, email=user_email)
         if not meta_token:
             status = "FAILED"
             details['instagram_error'] = "Akun Instagram belum terhubung di Dashboard TRENDORA. Silakan hubungkan akun Meta/Instagram di Dashboard terlebih dahulu."
@@ -762,52 +828,124 @@ def n8n_webhook():
         else:
             caption_text = caption or 'Auto-post Reels by TRENDORA ⚡'
             try:
-                page_url = f"https://graph.facebook.com/v18.0/me/accounts?access_token={meta_token}"
-                with urllib.request.urlopen(urllib.request.Request(page_url)) as response:
-                    page_data = json.loads(response.read().decode('utf-8'))
-                if page_data.get('data') and len(page_data['data']) > 0:
-                    page_id = page_data['data'][0]['id']
-                    page_token = page_data['data'][0]['access_token']
-                    ig_info_url = f"https://graph.facebook.com/v18.0/{page_id}?fields=instagram_business_account&access_token={meta_token}"
-                    with urllib.request.urlopen(urllib.request.Request(ig_info_url)) as res_ig:
-                        ig_data = json.loads(res_ig.read().decode('utf-8'))
-                    ig_user_id = ig_data.get('instagram_business_account', {}).get('id')
-                    if ig_user_id:
-                        ig_container_url = f"https://graph.facebook.com/v18.0/{ig_user_id}/media"
-                        ig_payload = urllib.parse.urlencode({'media_type': 'REELS', 'video_url': media_url, 'caption': caption_text, 'access_token': meta_token}).encode('utf-8')
-                        with urllib.request.urlopen(urllib.request.Request(ig_container_url, data=ig_payload, method='POST')) as res_cont:
-                            cont_data = json.loads(res_cont.read().decode('utf-8'))
-                            creation_id = cont_data.get('id')
-                        time.sleep(5)
-                        ig_publish_url = f"https://graph.facebook.com/v18.0/{ig_user_id}/media_publish"
-                        ig_pub_payload = urllib.parse.urlencode({'creation_id': creation_id, 'access_token': meta_token}).encode('utf-8')
+                # Muat semua akun Instagram tersimpan di SQLite
+                saved_igs = [a for a in db.db_get_social_accounts(email=user_email, api_key=api_key) if a.get('platform') == 'instagram' and a.get('access_token')]
+
+                # Scan Graph API jika database lokal kosong
+                if not saved_igs:
+                    page_url = f"https://graph.facebook.com/v18.0/me/accounts?access_token={meta_token}"
+                    with urllib.request.urlopen(urllib.request.Request(page_url)) as response:
+                        page_data = json.loads(response.read().decode('utf-8'))
+                    for p in page_data.get('data', []):
+                        p_id = p.get('id')
+                        p_tok = p.get('access_token') or meta_token
                         try:
-                            with urllib.request.urlopen(urllib.request.Request(ig_publish_url, data=ig_pub_payload, method='POST')) as res_pub:
-                                pub_data = json.loads(res_pub.read().decode('utf-8'))
-                                status = "PUBLISHED (SUCCESS)"
-                                details['ig_status'] = "Sukses upload Instagram Reels!"
-                                details['ig_media_id'] = pub_data.get('id')
-                        except urllib.error.HTTPError:
-                            status = "PENDING / RENDERING"
-                            details['ig_status'] = f"Video diproses Instagram (ID: {creation_id})."
+                            ig_info_url = f"https://graph.facebook.com/v18.0/{p_id}?fields=instagram_business_account&access_token={p_tok}"
+                            with urllib.request.urlopen(urllib.request.Request(ig_info_url)) as res_ig:
+                                ig_data = json.loads(res_ig.read().decode('utf-8'))
+                            ig_uid = ig_data.get('instagram_business_account', {}).get('id')
+                            if ig_uid:
+                                saved_igs.append({
+                                    'id': ig_uid,
+                                    'name': p.get('name'),
+                                    'username': f"@ig_{ig_uid}",
+                                    'access_token': p_tok
+                                })
+                        except Exception:
+                            pass
+
+                if saved_igs:
+                    target_ig_q = str(
+                        details.get('account') or details.get('account_id') or details.get('username') or details.get('target_account') or
+                        data.get('account') or data.get('account_id') or data.get('username') or data.get('target_account') or ''
+                    ).strip().lower()
+
+                    target_igs = []
+                    if target_ig_q and target_ig_q not in ['all', 'semua', '*', 'any', 'broadcast']:
+                        clean_q = target_ig_q.replace('@', '')
+                        for acc in saved_igs:
+                            a_id = str(acc.get('id') or '').lower()
+                            a_user = str(acc.get('username') or '').lower().replace('@', '')
+                            a_name = str(acc.get('name') or '').lower()
+                            if clean_q == a_id or clean_q in a_user or clean_q in a_name:
+                                target_igs.append(acc)
+                        if not target_igs:
+                            target_igs = saved_igs
+                    else:
+                        target_igs = saved_igs
+
+                    ig_results = []
+                    ig_success_count = 0
+                    first_ig_media_id = None
+
+                    for acc in target_igs:
+                        ig_user_id = acc.get('id')
+                        ig_user_name = acc.get('name') or acc.get('username') or ig_user_id
+                        ig_token = acc.get('access_token') or meta_token
+                        try:
+                            ig_container_url = f"https://graph.facebook.com/v18.0/{ig_user_id}/media"
+                            ig_payload = urllib.parse.urlencode({'media_type': 'REELS', 'video_url': media_url, 'caption': caption_text, 'access_token': ig_token}).encode('utf-8')
+                            with urllib.request.urlopen(urllib.request.Request(ig_container_url, data=ig_payload, method='POST')) as res_cont:
+                                cont_data = json.loads(res_cont.read().decode('utf-8'))
+                                creation_id = cont_data.get('id')
+                            time.sleep(5)
+                            ig_publish_url = f"https://graph.facebook.com/v18.0/{ig_user_id}/media_publish"
+                            ig_pub_payload = urllib.parse.urlencode({'creation_id': creation_id, 'access_token': ig_token}).encode('utf-8')
+                            try:
+                                with urllib.request.urlopen(urllib.request.Request(ig_publish_url, data=ig_pub_payload, method='POST')) as res_pub:
+                                    pub_data = json.loads(res_pub.read().decode('utf-8'))
+                                    media_id = pub_data.get('id')
+                                    ig_success_count += 1
+                                    if not first_ig_media_id:
+                                        first_ig_media_id = media_id
+                                    ig_results.append({
+                                        "account_id": ig_user_id,
+                                        "username": acc.get('username'),
+                                        "success": True,
+                                        "media_id": media_id
+                                    })
+                            except urllib.error.HTTPError:
+                                ig_success_count += 1
+                                ig_results.append({
+                                    "account_id": ig_user_id,
+                                    "username": acc.get('username'),
+                                    "success": True,
+                                    "status": "PENDING / RENDERING",
+                                    "creation_id": creation_id
+                                })
+                        except Exception as ig_err:
+                            ig_results.append({
+                                "account_id": ig_user_id,
+                                "username": acc.get('username'),
+                                "success": False,
+                                "error": str(ig_err)
+                            })
+
+                    if ig_success_count > 0:
+                        status = "PUBLISHED (SUCCESS)"
+                        details['ig_status'] = f"Video sukses diposting ke {ig_success_count}/{len(target_igs)} akun Instagram Reels!"
+                        details['ig_accounts'] = ig_results
+                        if first_ig_media_id:
+                            details['ig_media_id'] = first_ig_media_id
                     else:
                         status = "FAILED"
-                        details['instagram_error'] = "Facebook Page tidak terhubung ke Akun Bisnis Instagram (instagram_business_account)."
+                        details['instagram_error'] = "Gagal memposting video ke Instagram Reels yang dipilih."
+                        details['ig_accounts'] = ig_results
                 else:
                     status = "FAILED"
-                    details['instagram_error'] = "Tidak menemukan Facebook Page yang terhubung ke Instagram Business."
-            except urllib.error.HTTPError as e_ig:
-                status = "FAILED"
-                err_resp = e_ig.read().decode('utf-8', errors='ignore')
-                details['instagram_error'] = f"[Instagram API HTTP {e_ig.code}] {err_resp}"
+                    details['instagram_error'] = "Tidak menemukan akun Instagram Business yang terhubung."
             except Exception as e:
                 status = "FAILED"
                 details['instagram_error'] = str(e)
 
-    # 6. LINKEDIN UGC VIDEO HANDLER
+    # 6. LINKEDIN UGC VIDEO HANDLER - Mendukung Multi-Profile LinkedIn
     elif platform == 'linkedin':
-        linkedin_token = db.db_get_linkedin_token_by_api_key(api_key, email=user_data.get('email') if user_data else None)
-        if not linkedin_token:
+        user_email = user_data.get('email') if user_data else None
+        all_li_accounts = [
+            a for a in db.db_get_social_accounts(email=user_email, api_key=api_key)
+            if str(a.get('platform', '')).lower() == 'linkedin' and a.get('access_token')
+        ]
+        if not all_li_accounts:
             status = "FAILED"
             details['linkedin_error'] = "Akun LinkedIn belum terhubung atau Token Otorisasi kosong di Dashboard."
         elif not media_url:
@@ -815,31 +953,65 @@ def n8n_webhook():
             details['linkedin_error'] = "Media URL video tidak ditemukan pada payload n8n (kirimkan parameter 'media_url')."
         else:
             caption_text = caption or 'Diposting otomatis via TRENDORA Automation ⚡'
-            is_ok, res_dict = upload_video_to_linkedin(linkedin_token, media_url, caption_text)
-            if is_ok:
+            target_li_q = str(
+                details.get('account') or details.get('account_id') or details.get('username') or details.get('target_account') or
+                data.get('account') or data.get('account_id') or data.get('username') or data.get('target_account') or ''
+            ).strip().lower()
+
+            target_li_accounts = []
+            if target_li_q and target_li_q not in ['all', 'semua', '*', 'any', 'broadcast']:
+                clean_q = target_li_q.replace('@', '')
+                for acc in all_li_accounts:
+                    acc_id = str(acc.get('id') or '').lower()
+                    acc_user = str(acc.get('username') or '').lower().replace('@', '')
+                    acc_name = str(acc.get('name') or '').lower()
+                    if clean_q == acc_id or clean_q in acc_user or clean_q in acc_name:
+                        target_li_accounts.append(acc)
+                if not target_li_accounts:
+                    target_li_accounts = all_li_accounts
+            else:
+                target_li_accounts = all_li_accounts
+
+            li_results = []
+            li_success_count = 0
+            first_post_id = None
+
+            for acc in target_li_accounts:
+                acc_id = acc.get('id')
+                acc_name = acc.get('name') or acc.get('username') or "LinkedIn Profile"
+                acc_tok = acc.get('access_token')
+
+                is_ok, res_dict = upload_video_to_linkedin(acc_tok, media_url, caption_text)
+                li_results.append({
+                    "account_id": acc_id,
+                    "account_name": acc_name,
+                    "success": is_ok,
+                    "details": res_dict
+                })
+                if is_ok:
+                    li_success_count += 1
+                    if not first_post_id and res_dict.get('linkedin_post_id'):
+                        first_post_id = res_dict.get('linkedin_post_id')
+
+            if li_success_count > 0:
                 status = "PUBLISHED (SUCCESS)"
-                details.update(res_dict)
+                details['linkedin_status'] = f"Video sukses diposting ke {li_success_count}/{len(target_li_accounts)} LinkedIn Profile!"
+                details['linkedin_profiles'] = li_results
+                if first_post_id:
+                    details['linkedin_post_id'] = first_post_id
             else:
                 status = "FAILED"
-                details.update(res_dict)
+                details['linkedin_error'] = "Gagal memposting video ke LinkedIn Profile yang dipilih."
+                details['linkedin_profiles'] = li_results
 
-    # 7. YOUTUBE SHORTS / VIDEO HANDLER
+    # 7. YOUTUBE SHORTS / VIDEO HANDLER - Mendukung Multi-Channel YouTube
     elif platform == 'youtube':
-        yt_tokens = db.db_get_youtube_tokens_by_api_key(api_key, email=user_data.get('email') if user_data else None)
-        if isinstance(yt_tokens, dict):
-            yt_access = yt_tokens.get('access_token')
-            yt_refresh = yt_tokens.get('refresh_token')
-            yt_row = yt_tokens.get('row_idx')
-        elif isinstance(yt_tokens, (tuple, list)):
-            yt_access = yt_tokens[0] if len(yt_tokens) > 0 else None
-            yt_refresh = yt_tokens[1] if len(yt_tokens) > 1 else None
-            yt_row = None
-        else:
-            yt_access = None
-            yt_refresh = None
-            yt_row = None
-
-        if not yt_access and not yt_refresh:
+        user_email = user_data.get('email') if user_data else None
+        all_yt_accounts = [
+            a for a in db.db_get_social_accounts(email=user_email, api_key=api_key)
+            if str(a.get('platform', '')).lower() == 'youtube' and (a.get('access_token') or a.get('refresh_token'))
+        ]
+        if not all_yt_accounts:
             status = "FAILED"
             details['youtube_error'] = "Akun YouTube belum terhubung atau Token Otorisasi kosong di Dashboard."
         elif not media_url:
@@ -847,20 +1019,92 @@ def n8n_webhook():
             details['youtube_error'] = "Media URL video tidak ditemukan pada payload n8n (kirimkan parameter 'media_url')."
         else:
             caption_text = caption or 'Diposting otomatis via TRENDORA Automation ⚡'
-            is_ok, res_dict = upload_video_to_youtube(
-                yt_access, 
-                yt_refresh, 
-                media_url, 
-                caption_text, 
-                row_idx=yt_row,
-                email=user_data.get('email') if user_data else None
-            )
-            if is_ok:
-                status = "PUBLISHED (SUCCESS)"
-                details.update(res_dict)
+            target_yt_q = str(
+                details.get('account') or details.get('channel_id') or details.get('username') or details.get('target_account') or
+                data.get('account') or data.get('channel_id') or data.get('username') or data.get('target_account') or ''
+            ).strip().lower()
+
+            target_yt_accounts = []
+            if target_yt_q and target_yt_q not in ['all', 'semua', '*', 'any', 'broadcast']:
+                clean_q = target_yt_q.replace('@', '')
+                for acc in all_yt_accounts:
+                    acc_id = str(acc.get('id') or '').lower()
+                    acc_user = str(acc.get('username') or '').lower().replace('@', '')
+                    acc_name = str(acc.get('name') or '').lower()
+                    if clean_q == acc_id or clean_q in acc_user or clean_q in acc_name:
+                        target_yt_accounts.append(acc)
+                if not target_yt_accounts:
+                    target_yt_accounts = all_yt_accounts
             else:
+                target_yt_accounts = all_yt_accounts
+
+            # Download file video 1x
+            req_v = urllib.request.Request(media_url, headers={'User-Agent': 'TRENDORA-Automation/1.0'})
+            raw_yt_bytes = None
+            try:
+                with urllib.request.urlopen(req_v, timeout=90) as v_resp:
+                    raw_yt_bytes = v_resp.read()
+            except Exception as e_dl:
+                raw_yt_bytes = None
                 status = "FAILED"
-                details.update(res_dict)
+                details['youtube_error'] = f"Gagal mengunduh video: {str(e_dl)}"
+
+            if raw_yt_bytes:
+                yt_results = []
+                yt_success_count = 0
+                first_vid_id = None
+
+                for idx, acc in enumerate(target_yt_accounts):
+                    acc_id = acc.get('id')
+                    acc_name = acc.get('name') or acc.get('username') or f"YouTube #{idx+1}"
+                    acc_user = acc.get('username') or ''
+                    acc_tok = acc.get('access_token')
+                    acc_ref = acc.get('refresh_token')
+
+                    # Anti-Shadowban Video Spinner per channel
+                    if len(target_yt_accounts) > 1 and len(raw_yt_bytes) > 32:
+                        try:
+                            from utils.video_spinner import spin_video_file
+                            v_payload, _, _, _ = spin_video_file(raw_yt_bytes, account_id=acc_id, variation_index=idx)
+                        except Exception:
+                            v_payload = raw_yt_bytes
+                    else:
+                        v_payload = raw_yt_bytes
+
+                    is_ok, res_dict = upload_video_to_youtube(
+                        access_token=acc_tok,
+                        refresh_token=acc_ref,
+                        media_url=None,
+                        caption=caption_text,
+                        row_idx=None,
+                        email=user_email,
+                        video_bytes=v_payload,
+                        account_id=acc_id
+                    )
+
+                    yt_results.append({
+                        "channel_id": acc_id,
+                        "channel_name": acc_name,
+                        "username": acc_user,
+                        "success": is_ok,
+                        "details": res_dict
+                    })
+
+                    if is_ok:
+                        yt_success_count += 1
+                        if not first_vid_id and res_dict.get('youtube_video_id'):
+                            first_vid_id = res_dict.get('youtube_video_id')
+
+                if yt_success_count > 0:
+                    status = "PUBLISHED (SUCCESS)"
+                    details['youtube_status'] = f"Video sukses diunggah ke {yt_success_count}/{len(target_yt_accounts)} YouTube Channel!"
+                    details['youtube_channels'] = yt_results
+                    if first_vid_id:
+                        details['youtube_video_id'] = first_vid_id
+                else:
+                    status = "FAILED"
+                    details['youtube_error'] = "Gagal mengunggah video ke YouTube Channel yang dipilih."
+                    details['youtube_channels'] = yt_results
 
     media_url_val = media_url or ''
     caption_val = caption or ''
